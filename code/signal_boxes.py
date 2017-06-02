@@ -7,7 +7,7 @@ import bs4
 import pandas as pd
 import requests
 
-from utilities import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_table, parse_tr
+from utils import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_table, parse_tr
 
 
 #
@@ -19,18 +19,18 @@ def cdd_sig_box(*directories):
 
 
 # Scrape signal box prefix codes for the given 'key word' (e.g. a starting letter) ===================================
-def scrape_signal_box_prefix_codes(key_word, update=False):
+def scrape_signal_box_prefix_codes(keyword, update=False):
     """
-    :param key_word: [str]
+    :param keyword: [str]
     :param update: [bool]
     :return: 
     """
-    path_to_file = cdd_sig_box("A-Z", key_word.title() + ".pickle")
+    path_to_file = cdd_sig_box("A-Z", keyword.title() + ".pickle")
 
     if os.path.isfile(path_to_file) and not update:
         signal_box_prefix_codes = load_pickle(path_to_file)
     else:
-        url = 'http://www.railwaycodes.org.uk/signal/signal_boxes{}.shtm'.format(key_word)
+        url = 'http://www.railwaycodes.org.uk/signal/signal_boxes{}.shtm'.format(keyword)
         last_updated_date = get_last_updated_date(url)
         source = requests.get(url)
         try:
@@ -41,9 +41,9 @@ def scrape_signal_box_prefix_codes(key_word, update=False):
             data = pd.DataFrame([[x.strip('\xa0') for x in i] for i in records], columns=header)
         except IndexError:
             data = None
-            print("No data is available for the key word '{}'.".format(key_word))
+            print("No data is available for the key word '{}'.".format(keyword))
 
-        sig_keys = [s + key_word.title() for s in ('Signal_boxes_', 'Last_updated_date_')]
+        sig_keys = [s + keyword.title() for s in ('Signal_boxes_', 'Last_updated_date_')]
         signal_box_prefix_codes = dict(zip(sig_keys, [data, last_updated_date]))
         save_pickle(signal_box_prefix_codes, path_to_file)
 

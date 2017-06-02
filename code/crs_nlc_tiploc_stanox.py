@@ -24,7 +24,7 @@ import pandas as pd
 import requests
 from more_itertools import unique_everseen
 
-from utilities import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_tr, parse_table
+from utils import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_tr, parse_table
 
 
 #
@@ -73,13 +73,12 @@ def get_additional_crs_note(update=False):
 
 
 # Locations and CRS, NLC, TIPLOC, STANME and STANOX codes ============================================================
-def scrape_location_codes(key_word, update=False):
+def scrape_location_codes(keyword, update=False):
     """
-    :param key_word: [str] initial letter of station/junction name
+    :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
     :param update: [bool]
-    :return [tuple] containing:
-                [DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all
-                            stations/junctions whose name start with 'initial'
+    :return [tuple], i.e. {[DataFrame]: [str]} where
+                [DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions
                 [str] date of when the data was last updated
 
     c: CRS
@@ -88,12 +87,12 @@ def scrape_location_codes(key_word, update=False):
     s: STANOX
 
     """
-    path_to_file = cdd_loc_codes("A-Z", key_word.title() + ".pickle")
+    path_to_file = cdd_loc_codes("A-Z", keyword.title() + ".pickle")
     if os.path.isfile(path_to_file) and not update:
         location_codes = load_pickle(path_to_file)
     else:
         # Specify the requested URL
-        url = 'http://www.railwaycodes.org.uk/CRS/CRS{}.shtm'.format(key_word)
+        url = 'http://www.railwaycodes.org.uk/CRS/CRS{}.shtm'.format(keyword)
         last_updated_date = get_last_updated_date(url)
         # Request to get connected to the URL
         try:
@@ -183,7 +182,7 @@ def scrape_location_codes(key_word, update=False):
             data = None
             additional_note = None
 
-        location_codes_keys = [s + key_word.title() for s in ('Locations_', 'Last_updated_date_', 'Additional_note_')]
+        location_codes_keys = [s + keyword.title() for s in ('Locations_', 'Last_updated_date_', 'Additional_note_')]
         location_codes = dict(zip(location_codes_keys, [data, last_updated_date, additional_note]))
         save_pickle(location_codes, path_to_file)
 

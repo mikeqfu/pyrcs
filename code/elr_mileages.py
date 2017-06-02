@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from utilities import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_table, isfloat
+from utils import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_table, isfloat
 
 
 def cdd_elr_mileage(*directories):
@@ -19,18 +19,18 @@ def cdd_elr_mileage(*directories):
 
 
 # Scrape Engineer's Line References (ELRs) ===========================================================================
-def scrape_elrs(key_word, update=False):
+def scrape_elrs(keyword, update=False):
     """
-    :param key_word: [str]
+    :param keyword: [str]
     :param update: [bool] 
     :return: 
     """
-    path_to_file = cdd_elr_mileage("A-Z", key_word.title() + ".pickle")
+    path_to_file = cdd_elr_mileage("A-Z", keyword.title() + ".pickle")
     if os.path.isfile(path_to_file) and not update:
         elrs = load_pickle(path_to_file)
     else:
         # Specify the requested URL
-        url = 'http://www.railwaycodes.org.uk/elrs/ELR{}.shtm'.format(key_word.lower())
+        url = 'http://www.railwaycodes.org.uk/elrs/ELR{}.shtm'.format(keyword.lower())
         last_updated_date = get_last_updated_date(url)
         try:
             source = requests.get(url)  # Request to get connected to the url
@@ -41,7 +41,7 @@ def scrape_elrs(key_word, update=False):
             data = None
 
         # Return a dictionary containing both the DataFrame and its last updated date
-        elr_keys = [s + key_word.title() for s in ('ELRs_mileages_', 'Last_updated_date_')]
+        elr_keys = [s + keyword.title() for s in ('ELRs_mileages_', 'Last_updated_date_')]
         elrs = dict(zip(elr_keys, [data, last_updated_date]))
         save_pickle(elrs, path_to_file)
 
