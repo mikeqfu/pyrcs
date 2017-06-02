@@ -6,18 +6,18 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 
 
 class RC:
-    def __init__(self, database_name='RailwayCodes'):
+    def __init__(self):
         """
         We need to be connected to the database server in order to execute the "CREATE DATABASE" command. There is a 
         database called "postgres" created by the "initdb" command when the data storage area is initialised. If we 
         need to create the first of our own database, we can set up a connection to "postgres" in the first instance.
         """
         database_info = {'drivername': 'postgresql+psycopg2',
-                         'username': input('Username: '),
+                         'username': str(input('Username: ')),
                          'password': int(input('Password: ')),
                          'host': 'localhost',
                          'port': 5432,
-                         'database': input('Database: ')}
+                         'database': input('Database: ')}  # default database_name='RailwayCodes'
         # The typical form of a database URL is: url = backend+driver://username:password@host:port/database
         self.url = URL(**database_info)
         self.dialect = self.url.get_dialect()
