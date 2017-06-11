@@ -29,7 +29,7 @@ from utils import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, p
 
 #
 def cdd_loc_codes(*directories):
-    path = cdd_rc_dat("Line data", "CRS, NLC, TIPLOC and STANOX Codes")
+    path = cdd_rc_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
@@ -67,7 +67,7 @@ def get_additional_crs_note(update=False):
             additional_note = parse_additional_note_page(note_url)
             save_pickle(additional_note, path_to_file)
         except Exception as e:
-            print("Getting additional note for CRS ... failed due to {}.".format(e))
+            print("Getting additional note for CRS ... failed due to '{}'.".format(e))
             additional_note = None
     return additional_note
 
@@ -77,9 +77,8 @@ def scrape_location_codes(keyword, update=False):
     """
     :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
     :param update: [bool]
-    :return [tuple], i.e. {[DataFrame]: [str]} where
-                [DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions
-                [str] date of when the data was last updated
+    :return [tuple], i.e. ([DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions,
+                           [str]} date of when the data was last updated)
 
     c: CRS
     n: NLC
@@ -209,7 +208,7 @@ def scrape_other_systems(update=False):
             # Create a dict
             other_systems_codes = dict(zip(systems, tables))
         except Exception as e:
-            print("Scraping location data for other systems ... failed due to {}.".format(e))
+            print("Scraping location data for other systems ... failed due to '{}'.".format(e))
             other_systems_codes = None
 
     return other_systems_codes

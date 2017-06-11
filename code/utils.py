@@ -29,7 +29,12 @@ def cdd_rc_dat(*directories):
 
 
 # Print a web page as PDF ============================================================================================
-def save_to_pdf(url, output_path):
+def save_to_pdf(url_to_webpage, path_to_pdf):
+    """
+    :param url_to_webpage: [str] URL of a web page
+    :param path_to_pdf: [str] local file path
+    :return: Whether the webpa successfully
+    """
     config = pdfkit.configuration(wkhtmltopdf="C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
     pdf_options = {'page-size': 'A4',
                    # 'margin-top': '0',
@@ -38,30 +43,36 @@ def save_to_pdf(url, output_path):
                    # 'margin-bottom': '0',
                    'zoom': '1.0',
                    'encoding': "UTF-8"}
-    status = pdfkit.from_url(url, output_path, configuration=config, options=pdf_options)
-    return "Web page '{}' saved as '{}'".format(url, os.path.basename(output_path)) if status else "Check URL status."
+    status = pdfkit.from_url(url_to_webpage, path_to_pdf, configuration=config, options=pdf_options)
+    return "Web page '{}' saved as '{}'".format(url_to_webpage, os.path.basename(path_to_pdf)) \
+        if status else "Check URL status."
 
 
 # Save pickles =======================================================================================================
-def save_pickle(data, path_to_pickle):
+def save_pickle(pickle_data, path_to_pickle):
+    """
+    :param pickle_data: any object that could be dumped by the 'pickle' package
+    :param path_to_pickle: [str] local file path
+    :return: Whether the data has been successfully saved.
+    """
     pickle_filename = os.path.basename(path_to_pickle)
-    if os.path.isfile(path_to_pickle):
-        print("Updating \"{}\" ... ".format(pickle_filename), end="")
-    else:
-        print("Saving \"{}\" ... ".format(pickle_filename), end="")
+    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving", pickle_filename), end="")
     try:
         os.makedirs(os.path.dirname(path_to_pickle), exist_ok=True)
         pickle_out = open(path_to_pickle, 'wb')
-        pickle.dump(data, pickle_out)
+        pickle.dump(pickle_data, pickle_out)
         pickle_out.close()
         print("Done.")
     except Exception as e:
-        print("Failed.")
-        print(e)
+        print("failed due to {}.".format(e))
 
 
 # Load pickles =======================================================================================================
 def load_pickle(path_to_pickle):
+    """
+    :param path_to_pickle: [str] local file path
+    :return: the object retrieved from the pickle
+    """
     pickle_in = open(path_to_pickle, 'rb')
     data = pickle.load(pickle_in)
     pickle_in.close()
@@ -69,28 +80,51 @@ def load_pickle(path_to_pickle):
 
 
 # Save and load json files ===========================================================================================
-def save_json(data, path_to_json):
+def save_json(json_data, path_to_json):
+    """
+    :param json_data: [Any object that could be dumped by the 'json' package]
+    :param path_to_json: [str] local file path
+    :return:
+    """
     json_filename = os.path.basename(path_to_json)
-    if os.path.isfile(path_to_json):
-        print("Updating \"{}\" ... ".format(json_filename), end="")
-    else:
-        print("Saving \"{}\" ... ".format(json_filename), end="")
+    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_json) else "Saving", json_filename), end="")
     try:
         os.makedirs(os.path.dirname(path_to_json), exist_ok=True)
         json_out = open(path_to_json, 'w')
-        json.dump(data, json_out)
+        json.dump(json_data, json_out)
         json_out.close()
         print("Done.")
     except Exception as e:
-        print("Failed.")
-        print(e)
+        print("failed due to {}.".format(e))
 
 
 def load_json(path_to_json):
+    """
+    :param path_to_json: [str]
+    :return: the json data retrieved
+    """
     json_in = open(path_to_json, 'r')
     data = json.load(json_in)
     json_in.close()
     return data
+
+
+def save_workbook(excel_data, path_to_excel, sep, sheet_name, engine='xlsxwriter'):
+    excel_filename = os.path.basename(path_to_excel)
+    filename, save_as = os.path.splitext(excel_filename)
+    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_excel) else "Saving", excel_filename), end="")
+    try:
+        os.makedirs(os.path.dirname(path_to_excel), exist_ok=True)
+        if save_as == ".csv":  # Save the data to a .csv file
+            excel_data.to_csv(path_to_excel, index=False, sep=sep)
+        else:  # Save the data to a .xlsx or .xls file
+            xlsx_writer = pd.ExcelWriter(path_to_excel, engine)
+            excel_data.to_excel(xlsx_writer, sheet_name, index=False)
+            xlsx_writer.save()
+            xlsx_writer.close()
+        print("Done.")
+    except Exception as e:
+        print("failed due to {}.".format(e))
 
 
 # Save data locally (.pickle, .csv or .xlsx) =========================================================================
@@ -108,19 +142,12 @@ def save(data, path_to_file, sep=',', sheet_name='Details', deep_copy=True):
         dat.reset_index(inplace=True)
 
     # Save the data according to the file extension
-    print("Updating the data ... ", end="") if os.path.isfile(path_to_file) else print("Saving the data ... ", end="")
-    if save_as == ".csv":  # Save the data to a .csv file
-        dat.to_csv(path_to_file, index=False, sep=sep)
-    elif save_as == ".xlsx":  # Save the data to a .xlsx file
-        xlsx_writer = pd.ExcelWriter(path_to_file, engine='xlsxwriter')
-        dat.to_excel(xlsx_writer, sheet_name, index=False)
-        xlsx_writer.save()
-        xlsx_writer.close()
+    if save_as == ".csv" or save_as == ".xlsx" or save_as == ".xls":
+        save_workbook(dat, path_to_file, sep, sheet_name, engine='xlsxwriter')
     elif save_as == ".json":
         save_json(dat, path_to_file)
     else:
         save_pickle(dat, path_to_file)
-    print("Done.")
 
 
 # Convert "miles.chains" to Network Rail mileages ====================================================================

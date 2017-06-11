@@ -12,7 +12,7 @@ def pd_preferences(reset=False):
         set_option('display.width', 560)
         # pd.set_option('precision', 4)
         set_option('display.max_columns', 100)
-        set_option('display.max_rows', 30)
+        set_option('display.max_rows', 10)
         set_option('io.excel.xlsx.writer', 'xlsxwriter')
         set_option('mode.chained_assignment', None)
     else:

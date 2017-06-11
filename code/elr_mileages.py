@@ -11,6 +11,7 @@ import requests
 from utils import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_table, isfloat
 
 
+# Change to "Line data\\ELRs and mileages\\" directory ===============================================================
 def cdd_elr_mileage(*directories):
     path = cdd_rc_dat("Line data", "ELRs and mileages")
     for directory in directories:
@@ -21,9 +22,11 @@ def cdd_elr_mileage(*directories):
 # Scrape Engineer's Line References (ELRs) ===========================================================================
 def scrape_elrs(keyword, update=False):
     """
-    :param keyword: [str]
-    :param update: [bool] 
-    :return: 
+    :param keyword: [str] usually an initial letter of ELR, e.g. 'a', 'b'
+    :param update: [bool] indicate whether to re-scrape the data from online
+    :return: [dict] {'ELRs_mileages_keyword': [DataFrame] data of ELRs whose names start with the given 'keyword',
+                                                including ELR names, line name, mileages, datum and some notes,
+                     'Last_updated_date_keyword': [str] date of when the data was last updated}
     """
     path_to_file = cdd_elr_mileage("A-Z", keyword.title() + ".pickle")
     if os.path.isfile(path_to_file) and not update:
@@ -52,10 +55,9 @@ def scrape_elrs(keyword, update=False):
 def get_elrs(update=False):
     """
     :param update: [bool]
-    :return [dict] containing
-                [DataFrame] general data of (almost all) ELRs whose names start with the given 'initial', including 
-                            ELR names, line name, mileages, datum and some notes
-                [str] date of when the data was last updated
+    :return [dict] {'ELRs_mileages': [DataFrame] data of (almost all) ELRs whose names start with the given 'keyword',
+                                        including ELR names, line name, mileages, datum and some notes,
+                    'Last_updated_date': [str] date of when the data was last updated}
     """
     path_to_file = cdd_elr_mileage("ELRs.pickle")
     if os.path.isfile(path_to_file) and not update:
@@ -77,8 +79,12 @@ def get_elrs(update=False):
     return elrs
 
 
-# Convert miles to Network Rail mileages =====================================
+# Convert miles to Network Rail mileages ====
 def miles_chains_to_mileage(miles_chains):
+    """
+    :param miles_chains:
+    :return:
+    """
     if not pd.isnull(miles_chains):
         mc = str(miles_chains)
         miles = int(mc.split('.')[0])
@@ -88,7 +94,12 @@ def miles_chains_to_mileage(miles_chains):
     return miles_chains
 
 
+# ============================
 def parse_mileage(mileage):
+    """
+    :param mileage:
+    :return:
+    """
     if mileage.dtype == np.float64:
         temp_mileage = mileage
         mileage_note = [''] * len(temp_mileage)
@@ -111,7 +122,12 @@ def parse_mileage(mileage):
     return pd.DataFrame({'Mileage': temp_mileage, 'Mileage_Note': mileage_note})
 
 
+# =====================================
 def parse_node_and_connection(node):
+    """
+    :param node:
+    :return:
+    """
     temp_node = pd.DataFrame([n.split(' with ') for n in node], columns=['Node', 'Connection'])
     conn_node_list = []
     x = 2  # x-th occurrence
@@ -131,7 +147,12 @@ def parse_node_and_connection(node):
     return temp_node.loc[:, ['Node']].join(conn_node)
 
 
+# ============================================
 def parse_mileage_node_and_connection(dat):
+    """
+    :param dat:
+    :return:
+    """
     mileage, node = dat.iloc[:, 0], dat.iloc[:, 1]
     parsed_mileage = parse_mileage(mileage)
     parsed_node_and_connection = parse_node_and_connection(node)
@@ -139,7 +160,13 @@ def parse_mileage_node_and_connection(dat):
     return parsed_dat
 
 
+# ===========================================
 def parse_mileage_file(mileage_file, elr):
+    """
+    :param mileage_file:
+    :param elr:
+    :return:
+    """
     dat = mileage_file[elr]
     if isinstance(dat, dict) and len(dat) > 1:
         dat = {h: parse_mileage_node_and_connection(d) for h, d in dat.items()}
@@ -149,9 +176,12 @@ def parse_mileage_file(mileage_file, elr):
     return mileage_file
 
 
-#
+# Read (from online) the mileage file for the given ELR ==============================================================
 def scrape_mileage_file(elr):
     """
+    :param elr:
+    :return:
+
     Note:
         - In some cases, mileages are unknown hence left blank, e.g. ANI2, Orton Junction with ROB (~3.05)
         - Mileages in parentheses are not on that ELR, but are included for reference, e.g. ANL, (8.67) NORTHOLT [
@@ -205,12 +235,18 @@ def scrape_mileage_file(elr):
     return mileage_file
 
 
+# Get the mileage file for the given ELR (firstly try to load the local data file if available) ======================
 def get_mileage_file(elr, update=False):
+    """
+    :param elr: [str]
+    :param update: [bool] indicate whether to re-scrape the data from online
+    :return: [dict] {elr: [DataFrame] mileage file data,
+                    'Line': [str] line name,
+                    'Note': [str] additional information/notes, or None}
+    """
     path_to_file = cdd_elr_mileage("mileage_files", elr[0].title(), elr + ".pickle")
 
-    if os.path.isfile(path_to_file) and not update:
-        mileage_file = load_pickle(path_to_file)
-    else:
-        mileage_file = scrape_mileage_file(elr)
+    file_exists = os.path.isfile(path_to_file)
+    mileage_file = load_pickle(path_to_file) if file_exists and not update else scrape_mileage_file(elr)
 
     return mileage_file

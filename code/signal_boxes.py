@@ -41,7 +41,7 @@ def scrape_signal_box_prefix_codes(keyword, update=False):
             data = pd.DataFrame([[x.strip('\xa0') for x in i] for i in records], columns=header)
         except IndexError:
             data = None
-            print("No data is available for the key word '{}'.".format(keyword))
+            print("No data is available for the keyword '{}'.".format(keyword))
 
         sig_keys = [s + keyword.title() for s in ('Signal_boxes_', 'Last_updated_date_')]
         signal_box_prefix_codes = dict(zip(sig_keys, [data, last_updated_date]))
@@ -120,7 +120,7 @@ def get_non_national_rail_codes(update=False):
         try:
             non_national_rail_codes = scrape_non_national_rail_codes()
         except Exception as e:
-            print("Getting non-national rail signal codes ... failed due to {}.".format(e))
+            print("Getting non-national rail signal codes ... failed due to '{}'.".format(e))
             non_national_rail_codes = None
 
         save_pickle(non_national_rail_codes, path_to_file)
