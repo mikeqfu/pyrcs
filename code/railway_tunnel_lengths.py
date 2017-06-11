@@ -4,10 +4,10 @@ import os
 import re
 
 import bs4
+import fuzzywuzzy.process
 import measurement.measures
 import pandas as pd
 import requests
-import fuzzywuzzy.process
 
 from utils import cdd_rc_dat, get_last_updated_date, save_pickle, load_pickle, parse_tr
 
