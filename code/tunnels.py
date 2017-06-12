@@ -153,7 +153,7 @@ def get_railway_tunnel_lengths(update=False):
 
             tunnel_lengths = pd.DataFrame(pd.concat(tunnel_data, ignore_index=True))[list(tunnel_data[0].columns)]
 
-            save_pickle(tunnel_lengths, path_to_file)
+            save_pickle({'Tunnels': tunnel_lengths, 'Last_updated_date': max(last_updated_dates)}, path_to_file)
         except Exception as e:
             print("Getting railway tunnel lengths ... failed due to '{}'.".format(e))
             tunnel_lengths = None
