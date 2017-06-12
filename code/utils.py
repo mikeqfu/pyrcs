@@ -307,12 +307,13 @@ def parse_table(source, parser='lxml'):
 
 
 #
-def is_float(string, extras='()~'):
+def is_float(text):
     try:
-        float(string)
+        float(text)
         return True
     except ValueError:
-        if any(extr in string for extr in extras):
+        try:
+            float(re.sub('[()~]', '', text))
             return True
-        else:
+        except ValueError:
             return False

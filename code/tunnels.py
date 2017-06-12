@@ -20,10 +20,11 @@ def cdd_tunnels(*directories):
     return path
 
 
+#
 def get_page_headers():
     intro_url = 'http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm'
-    intro = requests.get(intro_url)
-    pages = [x.text for x in bs4.BeautifulSoup(intro.text, 'lxml').find_all('a', text=re.compile('^Page.*'))]
+    intro_page = requests.get(intro_url)
+    pages = [x.text for x in bs4.BeautifulSoup(intro_page.text, 'lxml').find_all('a', text=re.compile('^Page.*'))]
     return pages
 
 
@@ -42,7 +43,7 @@ def scrape_railway_tunnel_lengths(page_no, update=False):
     path_to_file = cdd_tunnels("Page 1-4", filename + ".pickle")
 
     if os.path.isfile(path_to_file) and not update:
-        tunnels = load_pickle(path_to_file)
+        tunnels_data = load_pickle(path_to_file)
     else:
         url = 'http://www.railwaycodes.org.uk/tunnels/tunnels{}.shtm'.format(page_no)
         last_updated_date = get_last_updated_date(url)
@@ -68,13 +69,13 @@ def scrape_railway_tunnel_lengths(page_no, update=False):
             print("Scraping tunnel lengths data for Page {} ... failed due to '{}'".format(page_no, e))
             tunnels = None
 
-        tunnel_keys = [s + str(page_no) for s in ('Tunnels_', 'Last_updated_date_')]
-        tunnels = dict(zip(tunnel_keys, [tunnels, last_updated_date]))
+        tunnels_keys = [s + str(page_no) for s in ('Tunnels_', 'Last_updated_date_')]
+        tunnels_data = dict(zip(tunnels_keys, [tunnels, last_updated_date]))
 
         # Save the DataFrame(s)
-        save_pickle(tunnels, path_to_file)
+        save_pickle(tunnels_data, path_to_file)
 
-    return tunnels
+    return tunnels_data
 
 
 # Minor lines and other odds and ends
