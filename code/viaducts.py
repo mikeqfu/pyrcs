@@ -87,6 +87,7 @@ def get_railway_viaducts(update=False):
             viaducts = pd.DataFrame(pd.concat(viaducts_data, ignore_index=True))[list(viaducts_data[0].columns)]
 
             save_pickle({'Viaducts': viaducts, 'Last_updated_date': max(last_updated_dates)}, path_to_file)
+
         except Exception as e:
             print("Getting railway tunnel lengths ... failed due to '{}'.".format(e))
             viaducts = None
