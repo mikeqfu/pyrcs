@@ -3,12 +3,11 @@
 import os
 import string
 
-import measurement.measures
-import numpy as np
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_table, isfloat
+from utils import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_table, is_float, \
+    miles_chains_to_mileage
 
 
 # Change to "Line data\\ELRs and mileages\\" directory ===============================================================
@@ -79,28 +78,13 @@ def get_elrs(update=False):
     return elrs
 
 
-# Convert miles to Network Rail mileages ====
-def miles_chains_to_mileage(miles_chains):
-    """
-    :param miles_chains:
-    :return:
-    """
-    if not pd.isnull(miles_chains):
-        mc = str(miles_chains)
-        miles = int(mc.split('.')[0])
-        chains = float(mc.split('.')[1])
-        yards = measurement.measures.Distance(chain=chains).yd
-        miles_chains = '%.4f' % (miles + round(yards / (10 ** 4), 4))
-    return miles_chains
-
-
 # ============================
 def parse_mileage(mileage):
     """
     :param mileage:
     :return:
     """
-    if mileage.dtype == np.float64:
+    if mileage.dtype == pd.np.float64:
         temp_mileage = mileage
         mileage_note = [''] * len(temp_mileage)
     else:
@@ -143,7 +127,14 @@ def parse_node_and_connection(node):
     if all(len(c) == 1 for c in conn_node_list):
         conn_node = pd.DataFrame([c + [None] for c in conn_node_list], columns=['Connection1', 'Connection2'])
     else:
-        conn_node = pd.DataFrame(conn_node_list, columns=['Connection1', 'Connection2'])
+
+        for i in [conn_node_list.index(c) for c in conn_node_list if len(c) > 1]:
+            conn_node_list[i] = [val for sublist in [x.split(', ') for x in conn_node_list[i]] for val in sublist]
+
+        no_conn = max(len(c) for c in conn_node_list)
+        conn_node_list = [c + [None] * (no_conn - len(c)) for c in conn_node_list]
+        conn_node = pd.DataFrame(conn_node_list, columns=['Connection' + str(n + 1) for n in range(no_conn)])
+
     return temp_node.loc[:, ['Node']].join(conn_node)
 
 
@@ -199,7 +190,7 @@ def scrape_mileage_file(elr):
 
         line = {'Line': mileages.columns[1]}
 
-        check_idx = mileages[elr].map(isfloat)
+        check_idx = mileages[elr].map(is_float)
         to_check = mileages[~check_idx]
         if to_check.empty:
             dat = {elr: mileages[check_idx]}
@@ -211,7 +202,7 @@ def scrape_mileage_file(elr):
                 dat[elr].index = range(len(dat[elr]))
             else:
                 idx_vals = to_check.index.get_values()
-                diff = list(np.diff(idx_vals)) + [len(mileages) - np.diff(idx_vals)[-1]]
+                diff = list(pd.np.diff(idx_vals)) + [len(mileages) - pd.np.diff(idx_vals)[-1]]
                 sliced_dat = {mileages[elr][i]: mileages[i + 1:i + d] for i, d in zip(idx_vals, diff)}
                 if len(idx_vals) == 2:
                     note = {'Note': None}

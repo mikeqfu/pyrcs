@@ -77,14 +77,8 @@ def scrape_location_codes(keyword, update=False):
     """
     :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
     :param update: [bool]
-    :return [tuple], i.e. ([DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions,
-                           [str]} date of when the data was last updated)
-
-    c: CRS
-    n: NLC
-    t: TIPLOC
-    s: STANOX
-
+    :return [tuple] ([DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions,
+                     [str]} date of when the data was last updated)
     """
     path_to_file = cdd_loc_codes("A-Z", keyword.title() + ".pickle")
     if os.path.isfile(path_to_file) and not update:

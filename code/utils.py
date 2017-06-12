@@ -33,7 +33,7 @@ def save_to_pdf(url_to_webpage, path_to_pdf):
     """
     :param url_to_webpage: [str] URL of a web page
     :param path_to_pdf: [str] local file path
-    :return: Whether the webpa successfully
+    :return: whether the webpa successfully
     """
     config = pdfkit.configuration(wkhtmltopdf="C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
     pdf_options = {'page-size': 'A4',
@@ -48,12 +48,12 @@ def save_to_pdf(url_to_webpage, path_to_pdf):
         if status else "Check URL status."
 
 
-# Save pickles =======================================================================================================
+# Save pickle ========================================================================================================
 def save_pickle(pickle_data, path_to_pickle):
     """
     :param pickle_data: any object that could be dumped by the 'pickle' package
     :param path_to_pickle: [str] local file path
-    :return: Whether the data has been successfully saved.
+    :return: whether the data has been successfully saved
     """
     pickle_filename = os.path.basename(path_to_pickle)
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving", pickle_filename), end="")
@@ -67,7 +67,7 @@ def save_pickle(pickle_data, path_to_pickle):
         print("failed due to {}.".format(e))
 
 
-# Load pickles =======================================================================================================
+# Load pickle ========================================================================================================
 def load_pickle(path_to_pickle):
     """
     :param path_to_pickle: [str] local file path
@@ -79,12 +79,12 @@ def load_pickle(path_to_pickle):
     return data
 
 
-# Save and load json files ===========================================================================================
+# Save json file =====================================================================================================
 def save_json(json_data, path_to_json):
     """
-    :param json_data: [Any object that could be dumped by the 'json' package]
+    :param json_data: any object that could be dumped by the 'json' package
     :param path_to_json: [str] local file path
-    :return:
+    :return: whether the data has been successfully saved
     """
     json_filename = os.path.basename(path_to_json)
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_json) else "Saving", json_filename), end="")
@@ -98,9 +98,10 @@ def save_json(json_data, path_to_json):
         print("failed due to {}.".format(e))
 
 
+# Load json file =====================================================================================================
 def load_json(path_to_json):
     """
-    :param path_to_json: [str]
+    :param path_to_json: [str] local file path
     :return: the json data retrieved
     """
     json_in = open(path_to_json, 'r')
@@ -109,7 +110,17 @@ def load_json(path_to_json):
     return data
 
 
+# Save Excel workbook ================================================================================================
 def save_workbook(excel_data, path_to_excel, sep, sheet_name, engine='xlsxwriter'):
+    """
+    :param excel_data: any [DataFrame] that could be dumped saved as a Excel workbook, e.g. '.csv', '.xlsx'
+    :param path_to_excel: [str] local file path
+    :param sep: [str] separator for saving excel_data to a '.csv' file
+    :param sheet_name: [str] name of worksheet for saving the excel_data to a e.g. '.xlsx' file
+    :param engine: [str] ExcelWriter engine; pandas writes Excel files using the 'xlwt' module for '.xls' files and the
+                        'openpyxl' or 'xlsxWriter' modules for '.xlsx' files.
+    :return: whether the data has been successfully saved or updated
+    """
     excel_filename = os.path.basename(path_to_excel)
     filename, save_as = os.path.splitext(excel_filename)
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_excel) else "Saving", excel_filename), end="")
@@ -128,7 +139,16 @@ def save_workbook(excel_data, path_to_excel, sep, sheet_name, engine='xlsxwriter
 
 
 # Save data locally (.pickle, .csv or .xlsx) =========================================================================
-def save(data, path_to_file, sep=',', sheet_name='Details', deep_copy=True):
+def save(data, path_to_file, sep=',', engine='xlsxwriter', sheet_name='Details', deep_copy=True):
+    """
+    :param data: any object that could be dumped
+    :param path_to_file: [str] local file path
+    :param sep: [str] separator for '.csv'
+    :param engine: [str] 'xlwt' for .xls; 'xlsxwriter' or 'openpyxl' for .xlsx
+    :param sheet_name: [str] name of worksheet
+    :param deep_copy: [bool] whether make a deep copy of the data before saving it
+    :return: whether the data has been successfully saved or updated
+    """
 
     dat = copy.deepcopy(data) if deep_copy else copy.copy(data)
 
@@ -143,7 +163,7 @@ def save(data, path_to_file, sep=',', sheet_name='Details', deep_copy=True):
 
     # Save the data according to the file extension
     if save_as == ".csv" or save_as == ".xlsx" or save_as == ".xls":
-        save_workbook(dat, path_to_file, sep, sheet_name, engine='xlsxwriter')
+        save_workbook(dat, path_to_file, sep, sheet_name, engine)
     elif save_as == ".json":
         save_json(dat, path_to_file)
     else:
@@ -152,20 +172,32 @@ def save(data, path_to_file, sep=',', sheet_name='Details', deep_copy=True):
 
 # Convert "miles.chains" to Network Rail mileages ====================================================================
 def miles_chains_to_mileage(miles_chains):
-    """ 
-    Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
     """
-    miles, chains = str(miles_chains).split('.')
-    yards = measurement.measures.Distance(chain=chains).yd
-    networkrail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
+    :param miles_chains: [str] 'miles.chains'
+    :return: [str] 'miles.yards'
+
+    Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
+
+    """
+    if not pd.isnull(miles_chains):
+        miles, chains = str(miles_chains).split('.')
+        yards = measurement.measures.Distance(chain=chains).yd
+        networkrail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
+    else:
+        networkrail_mileage = miles_chains
     return networkrail_mileage
 
 
 # Parse date string ==================================================================================================
-def get_parsed_date(str_date, date_type=False):
+def parse_date(str_date, as_date_type=False):
+    """
+    :param str_date: [str]
+    :param as_date_type: [bool]
+    :return: the date formatted as requested
+    """
     parsed_date = dateutil.parser.parse(str_date, fuzzy=True)
     # Or, parsed_date = datetime.strptime(last_update_date[12:], '%d %B %Y')
-    parsed_date = parsed_date.date() if date_type else str(parsed_date.date())
+    parsed_date = parsed_date.date() if as_date_type else str(parsed_date.date())
     return parsed_date
 
 
@@ -190,7 +222,7 @@ def get_last_updated_date(url, parsed=True, date_type=False):
         # Decide whether to convert the date's format
         if parsed:
             # Convert the date to "yyyy-mm-dd" format
-            last_update_date = get_parsed_date(last_update_date, date_type)
+            last_update_date = parse_date(last_update_date, date_type)
     else:
         last_update_date = None  # print('Information not available.')
     return last_update_date
@@ -203,11 +235,9 @@ def parse_tr(header, trs):
     :param trs: [list] contents under tr tags of the web page
     :return: [list] list of lists each comprising a row of the requested table
 
-    Get a list of parsed HTML tr's, each of which corresponds to a piece of
-    record (A key function to drive the following functions)
-
-    Reference:
-    stackoverflow.com/questions/28763891/what-should-i-do-when-tr-has-rowspan
+    Get a list of parsed contents of tr-tag's, each of which corresponds to a piece of record
+    *This is a key function to drive its following functions
+    Reference: stackoverflow.com/questions/28763891/what-should-i-do-when-tr-has-rowspan
 
     """
     tbl_lst = []
@@ -256,16 +286,14 @@ def parse_tr(header, trs):
 def parse_table(source, parser='lxml'):
     """
     :param source: response object to connecting a URL to request a table
-    :param parser:
-    :return [tuple] containing: (see parse_trs())
-                [list] of lists each comprising a row of the requested table;
-                [list] of column names of the requested table
+    :param parser: [str] Optional parsers: 'lxml', 'html5lib', 'html.parser'
+    :return [tuple] ([list] of lists each comprising a row of the requested table - (see also parse_trs())
+                     [list] of column names of the requested table)
     """
     # (If source.status_code == 200, the requested URL is available.)
     # Get plain text from the source URL
     web_page_text = source.text
     # Parse the text
-    # (Optional parsers: 'lxml', 'html5lib', 'html.parser')
     parsed_text = bs4.BeautifulSoup(web_page_text, parser)
     # Get all data under the HTML label 'tr'
     table_temp = parsed_text.find_all('tr')
@@ -279,7 +307,7 @@ def parse_table(source, parser='lxml'):
 
 
 #
-def isfloat(string, extras='()~'):
+def is_float(string, extras='()~'):
     try:
         float(string)
         return True
