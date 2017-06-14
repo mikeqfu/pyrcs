@@ -1,3 +1,5 @@
+""" Settings """
+
 from matplotlib import pyplot, rcParamsDefault
 from numpy.core import arrayprint
 from pandas import reset_option, set_option

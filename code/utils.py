@@ -1,7 +1,10 @@
+""" Utilities - Helper functions """
+
 import copy
 import json
 import os
 import pickle
+import re
 
 import bs4
 import dateutil.parser
@@ -9,6 +12,8 @@ import measurement.measures
 import pandas as pd
 import pdfkit
 import requests
+
+""" Change directories """
 
 
 # Change directory ===================================================================================================
@@ -26,6 +31,9 @@ def cdd_rc_dat(*directories):
     for directory in directories:
         path = os.path.join(path, directory)
     return path
+
+
+""" Save and load data """
 
 
 # Print a web page as PDF ============================================================================================
@@ -168,6 +176,9 @@ def save(data, path_to_file, sep=',', engine='xlsxwriter', sheet_name='Details',
         save_json(dat, path_to_file)
     else:
         save_pickle(dat, path_to_file)
+
+
+""" Converter/parser """
 
 
 # Convert "miles.chains" to Network Rail mileages ====================================================================
@@ -317,3 +328,24 @@ def is_float(text):
             return True
         except ValueError:
             return False
+
+
+#
+def parse_location_name(x):
+    # Data
+    d = re.search('[\w ,]+(?=[ \n]\[)', x)
+    if d is not None:
+        dat = d.group()
+    else:
+        m_pat = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed |\?|\"|\n')
+        # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group() if re.search(m_pat, x) else x
+        dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pat, x) else x
+    # Note
+    n = re.search('(?<=[\n ][[(\'])[\w ,\'\"/?]+', x)
+    if n is not None and (n.group() == "'" or n.group() == '"'):
+        n = re.search('(?<=[[(])[\w ,?]+(?=[])])', x)
+    note = n.group() if n is not None else ''
+    if 'STANOX ' in dat and 'STANOX ' in x and note == '':
+        dat = x[0:x.find('STANOX')].strip()
+        note = x[x.find('STANOX'):]
+    return dat, note

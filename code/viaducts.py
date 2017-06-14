@@ -27,7 +27,7 @@ def get_page_headers():
     return pages
 
 
-# ============================================================================
+#
 def scrape_viaducts(page_no, update=False):
     """
     :param page_no: [int] page number; valid values include 1, 2, 3, 4, 5, and 6
@@ -72,7 +72,7 @@ def scrape_viaducts(page_no, update=False):
     return viaducts_data
 
 
-# ============================================================================
+#
 def get_railway_viaducts(update=False):
     path_to_file = cdd_viaducts("Railway-viaducts.pickle")
     if os.path.isfile(path_to_file) and not update:
