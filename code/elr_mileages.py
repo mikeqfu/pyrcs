@@ -108,7 +108,7 @@ def parse_mileage(mileage):
                     temp_mileage.append(m)
                 mileage_note.append('')
 
-    temp_mileage = [miles_chains_to_mileage(m) for m in temp_mileage]
+    temp_mileage = [parse_mileage(m) for m in temp_mileage]
 
     return pd.DataFrame({'Mileage': temp_mileage, 'Mileage_Note': mileage_note})
 

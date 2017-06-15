@@ -181,7 +181,7 @@ def save(data, path_to_file, sep=',', engine='xlsxwriter', sheet_name='Details',
 """ Converter/parser """
 
 
-# Convert "miles.chains" to Network Rail mileages ====================================================================
+# Convert "miles chains" to Network Rail mileages ====================================================================
 def miles_chains_to_mileage(miles_chains):
     """
     :param miles_chains: [str] 'miles.chains'
@@ -191,12 +191,21 @@ def miles_chains_to_mileage(miles_chains):
 
     """
     if not pd.isnull(miles_chains):
-        miles, chains = str(miles_chains).split('.')
-        yards = measurement.measures.Distance(chain=chains).yd
-        networkrail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
+        if re.match('\d+\.\d+', miles_chains):
+            miles, chains = str(miles_chains).split('.')
+        elif re.match('\d+m \d+ch', miles_chains):
+            miles, chains = re.findall('\d+', miles_chains)
+        else:
+            miles, chains = pd.np.nan, pd.np.nan
+
+        try:
+            yards = measurement.measures.Distance(chain=chains).yd
+            nr_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
+        except (ValueError, TypeError):
+            nr_mileage = miles_chains
     else:
-        networkrail_mileage = miles_chains
-    return networkrail_mileage
+        nr_mileage = miles_chains
+    return nr_mileage
 
 
 # Parse date string ==================================================================================================
