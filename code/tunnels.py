@@ -9,12 +9,12 @@ import measurement.measures
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, get_last_updated_date, save_pickle, load_pickle, parse_tr
+from utils import cdd, get_last_updated_date, save_pickle, load_pickle, parse_tr
 
 
 #
 def cdd_tunnels(*directories):
-    path = cdd_rc_dat("Other assets", "Railway tunnel lengths")
+    path = cdd("Other assets", "Railway tunnel lengths")
     for directory in directories:
         path = os.path.join(path, directory)
     return path

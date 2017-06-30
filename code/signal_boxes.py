@@ -7,12 +7,12 @@ import bs4
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_table, parse_tr
+from utils import cdd, load_pickle, save_pickle, get_last_updated_date, parse_table, parse_tr
 
 
 #
 def cdd_sig_box(*directories):
-    path = cdd_rc_dat("Other assets", "Signal boxes")
+    path = cdd("Other assets", "Signal boxes")
     for directory in directories:
         path = os.path.join(path, directory)
     return path

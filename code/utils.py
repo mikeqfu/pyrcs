@@ -13,11 +13,12 @@ import pandas as pd
 import pdfkit
 import requests
 
-""" Change directories """
+# ===================================================================================================
+""" Change directory """
 
 
-# Change directory ===================================================================================================
-def cdd_rc(*directories):
+# Change directory and sub-directories
+def cd(*directories):
     # Current working directory
     path = os.getcwd()
     for directory in directories:
@@ -25,19 +26,20 @@ def cdd_rc(*directories):
     return path
 
 
-# Change to data directory ===========================================================================================
-def cdd_rc_dat(*directories):
+# Change to data directory and sub-directories
+def cdd(*directories):
     path = os.path.join(os.getcwd(), "dat")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
 
 
+# ====================================================================================================================
 """ Save and load data """
 
 
-# Print a web page as PDF ============================================================================================
-def save_to_pdf(url_to_webpage, path_to_pdf):
+# Print a web page as PDF
+def print_to_pdf(url_to_webpage, path_to_pdf):
     """
     :param url_to_webpage: [str] URL of a web page
     :param path_to_pdf: [str] local file path
@@ -56,7 +58,7 @@ def save_to_pdf(url_to_webpage, path_to_pdf):
         if status else "Check URL status."
 
 
-# Save pickle ========================================================================================================
+# Save pickle
 def save_pickle(pickle_data, path_to_pickle):
     """
     :param pickle_data: any object that could be dumped by the 'pickle' package
@@ -75,7 +77,7 @@ def save_pickle(pickle_data, path_to_pickle):
         print("failed due to {}.".format(e))
 
 
-# Load pickle ========================================================================================================
+# Load pickle
 def load_pickle(path_to_pickle):
     """
     :param path_to_pickle: [str] local file path
@@ -87,7 +89,7 @@ def load_pickle(path_to_pickle):
     return data
 
 
-# Save json file =====================================================================================================
+# Save json file
 def save_json(json_data, path_to_json):
     """
     :param json_data: any object that could be dumped by the 'json' package
@@ -106,7 +108,7 @@ def save_json(json_data, path_to_json):
         print("failed due to {}.".format(e))
 
 
-# Load json file =====================================================================================================
+# Load json file
 def load_json(path_to_json):
     """
     :param path_to_json: [str] local file path
@@ -118,7 +120,7 @@ def load_json(path_to_json):
     return data
 
 
-# Save Excel workbook ================================================================================================
+# Save Excel workbook
 def save_workbook(excel_data, path_to_excel, sep, sheet_name, engine='xlsxwriter'):
     """
     :param excel_data: any [DataFrame] that could be dumped saved as a Excel workbook, e.g. '.csv', '.xlsx'
@@ -146,7 +148,7 @@ def save_workbook(excel_data, path_to_excel, sep, sheet_name, engine='xlsxwriter
         print("failed due to {}.".format(e))
 
 
-# Save data locally (.pickle, .csv or .xlsx) =========================================================================
+# Save data locally (.pickle, .csv or .xlsx)
 def save(data, path_to_file, sep=',', engine='xlsxwriter', sheet_name='Details', deep_copy=True):
     """
     :param data: any object that could be dumped
@@ -178,10 +180,11 @@ def save(data, path_to_file, sep=',', engine='xlsxwriter', sheet_name='Details',
         save_pickle(dat, path_to_file)
 
 
+# ====================================================================================================================
 """ Converter/parser """
 
 
-# Convert "miles chains" to Network Rail mileages ====================================================================
+# Convert "miles chains" to Network Rail mileages
 def miles_chains_to_mileage(miles_chains):
     """
     :param miles_chains: [str] 'miles.chains'
@@ -208,7 +211,7 @@ def miles_chains_to_mileage(miles_chains):
     return nr_mileage
 
 
-# Parse date string ==================================================================================================
+# Parse date string
 def parse_date(str_date, as_date_type=False):
     """
     :param str_date: [str]
@@ -221,7 +224,7 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-# Show last update date ==============================================================================================
+# Show last update date
 def get_last_updated_date(url, parsed=True, date_type=False):
     """
     :param url: [str] URL link of a requested web page
@@ -248,7 +251,7 @@ def get_last_updated_date(url, parsed=True, date_type=False):
     return last_update_date
 
 
-# Get a list of parsed HTML tr's =====================================================================================
+# Get a list of parsed HTML tr's
 def parse_tr(header, trs):
     """
     :param header: [list] list of column names of a requested table
@@ -302,7 +305,7 @@ def parse_tr(header, trs):
     return tbl_lst
 
 
-# Parse the acquired list to make it be ready for creating the DataFrame =============================================
+# Parse the acquired list to make it be ready for creating the DataFrame
 def parse_table(source, parser='lxml'):
     """
     :param source: response object to connecting a URL to request a table
@@ -327,19 +330,6 @@ def parse_table(source, parser='lxml'):
 
 
 #
-def is_float(text):
-    try:
-        float(text)
-        return True
-    except ValueError:
-        try:
-            float(re.sub('[()~]', '', text))
-            return True
-        except ValueError:
-            return False
-
-
-#
 def parse_location_name(x):
     # Data
     d = re.search('[\w ,]+(?=[ \n]\[)', x)
@@ -358,3 +348,20 @@ def parse_location_name(x):
         dat = x[0:x.find('STANOX')].strip()
         note = x[x.find('STANOX'):]
     return dat, note
+
+
+# ====================================================================================================================
+""" Misc """
+
+
+#
+def is_float(text):
+    try:
+        float(text)
+        return True
+    except ValueError:
+        try:
+            float(re.sub('[()~]', '', text))
+            return True
+        except ValueError:
+            return False

@@ -8,19 +8,27 @@ import pandas as pd
 import requests
 from pandas.errors import ParserError
 
-from utils import cdd_rc_dat, save_pickle, load_pickle, is_float, get_last_updated_date, parse_table, \
-    miles_chains_to_mileage
+from utils import cdd, save_pickle, load_pickle
+from utils import is_float, get_last_updated_date, parse_table, miles_chains_to_mileage
 
 
-# Change to "Line data\\ELRs and mileages\\" directory ===============================================================
+# ====================================================================================================================
+""" Change directory """
+
+
+# Change directory to "Line data\\ELRs and mileages"
 def cdd_elr_mileage(*directories):
-    path = cdd_rc_dat("Line data", "ELRs and mileages")
+    path = cdd("Line data", "ELRs and mileages")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
 
 
-# Scrape Engineer's Line References (ELRs) ===========================================================================
+# ====================================================================================================================
+""" Scrape/get data """
+
+
+# Scrape Engineer's Line References (ELRs)
 def scrape_elrs(keyword, update=False):
     """
     :param keyword: [str] usually an initial letter of ELR, e.g. 'a', 'b'
@@ -52,7 +60,7 @@ def scrape_elrs(keyword, update=False):
     return elrs
 
 
-# Get all ELRs and mileages ==========================================================================================
+# Get all ELRs and mileages
 def get_elrs(update=False):
     """
     :param update: [bool]
@@ -194,7 +202,7 @@ def parse_mileage_file(mileage_file, elr):
     return mileage_file
 
 
-# Read (from online) the mileage file for the given ELR ==============================================================
+# Read (from online) the mileage file for the given ELR
 def scrape_mileage_file(elr):
     """
     :param elr:
@@ -260,7 +268,7 @@ def scrape_mileage_file(elr):
     return mileage_file
 
 
-# Get the mileage file for the given ELR (firstly try to load the local data file if available) ======================
+# Get the mileage file for the given ELR (firstly try to load the local data file if available)
 def get_mileage_file(elr, update=False):
     """
     :param elr: [str]
@@ -277,9 +285,14 @@ def get_mileage_file(elr, update=False):
     return mileage_file
 
 
-#
-def get_start_end_mileages(start_elr, end_elr, update=False):
-    #
+# Get to end and start mileages for StartELR and EndELR, respectively, for the connection point
+def get_conn_end_start_mileages(start_elr, end_elr, update=False):
+    """
+    :param start_elr:
+    :param end_elr:
+    :param update:
+    :return:
+    """
     start_elr_mileage_file = get_mileage_file(start_elr, update)[start_elr]
     if isinstance(start_elr_mileage_file, dict):
         for k in start_elr_mileage_file.keys():
@@ -313,6 +326,8 @@ def get_start_end_mileages(start_elr, end_elr, update=False):
                             if start_elr in end_conn[j]:
                                 end_conn_mileage = end_elr_mileage_file.Mileage.loc[j]
                                 break
+                        if start_conn_mileage is not None and end_conn_mileage is not None:
+                            break
                     if start_conn_mileage is not None and end_conn_mileage is not None:
                         break
 

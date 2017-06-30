@@ -1,3 +1,5 @@
+""" Railway station data """
+
 import os
 import re
 import string
@@ -5,21 +7,27 @@ import string
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, load_pickle, save_pickle
+from utils import cdd, load_pickle, save_pickle
 from utils import get_last_updated_date, parse_table, parse_location_name
 
-""" ELRs, mileages, operators, grid references """
+
+# ====================================================================================================================
+""" Change directory """
 
 
-#
+# Change directory to "...dat\\Other assets\\Stations\\ELRs, mileages, operators, grid references" and sub-directories
 def cdd_stnloc(*directories):
-    path = cdd_rc_dat("Other assets", "Stations", "ELRs, mileages, operators, grid references")
+    path = cdd("Other assets", "Stations", "ELRs, mileages, operators, grid references")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
 
 
-# Railway station data by keywords ===================================================================================
+# ====================================================================================================================
+""" ELRs, mileages, operators, grid references """
+
+
+# Railway station data by keywords
 def scrape_station_locations(keyword, update=False):
     """
     :param keyword: [str] station data (including the station name, ELR, mileage, status, owner, operator, degrees of
@@ -75,7 +83,7 @@ def scrape_station_locations(keyword, update=False):
     return station_locations
 
 
-# All railway station data ===========================================================================================
+# Get all railway station data
 def get_station_locations(update=False):
     """
     :param update: [bool]
@@ -110,4 +118,5 @@ def get_station_locations(update=False):
     return station_locations
 
 
+# ====================================================================================================================
 """ Bilingual station names """

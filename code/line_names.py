@@ -1,21 +1,31 @@
+""" Railway line names """
+
 import os
 import re
 
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, load_pickle, save_pickle, get_last_updated_date, parse_table
+from utils import cdd, load_pickle, save_pickle, get_last_updated_date, parse_table
 
 
-#
+# ====================================================================================================================
+""" Change directory """
+
+
+# Change directory to "...dat\\Line data\\Line names" and sub-directories
 def cdd_line_names(*directories):
-    path = cdd_rc_dat("Line data", "Line names")
+    path = cdd("Line data", "Line names")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
 
 
-# Railway line names =================================================================================================
+# ====================================================================================================================
+""" Scrape/get data """
+
+
+# Railway line names
 def scrape_line_names():
     """
     :return [tuple] {'Line_names': [DataFrame] railway line names and routes data,
@@ -56,7 +66,7 @@ def scrape_line_names():
     return line_names
 
 
-# ====================================================================================================================
+# Get data of line names
 def get_line_names(update=False):
     path_to_file = cdd_line_names("Line-names.pickle")
     if os.path.isfile(path_to_file) and not update:

@@ -8,12 +8,12 @@ import fuzzywuzzy.process
 import pandas as pd
 import requests
 
-from utils import cdd_rc_dat, save_pickle, load_pickle, get_last_updated_date, parse_tr
+from utils import cdd, save_pickle, load_pickle, get_last_updated_date, parse_tr
 
 
 #
 def cdd_viaducts(*directories):
-    path = cdd_rc_dat("Other assets", "Railway viaducts")
+    path = cdd("Other assets", "Railway viaducts")
     for directory in directories:
         path = os.path.join(path, directory)
     return path

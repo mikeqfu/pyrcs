@@ -24,16 +24,24 @@ import pandas as pd
 import requests
 from more_itertools import unique_everseen
 
-from utils import cdd_rc_dat, load_pickle, save_pickle
+from utils import cdd, load_pickle, save_pickle
 from utils import get_last_updated_date, parse_tr, parse_table, parse_location_name
+
+
+# ====================================================================================================================
+""" Change directory """
 
 
 #
 def cdd_loc_codes(*directories):
-    path = cdd_rc_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
+    path = cdd("Line data", "CRS, NLC, TIPLOC and STANOX codes")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
+
+
+# ====================================================================================================================
+""" Scrape/get data """
 
 
 #
@@ -73,7 +81,7 @@ def get_additional_crs_note(update=False):
     return additional_note
 
 
-# Locations and CRS, NLC, TIPLOC, STANME and STANOX codes ============================================================
+# Locations and CRS, NLC, TIPLOC, STANME and STANOX codes
 def scrape_location_codes(keyword, update=False):
     """
     :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
@@ -164,7 +172,7 @@ def scrape_location_codes(keyword, update=False):
     return location_codes
 
 
-#
+# Other systems
 def scrape_other_systems(update=False):
     path_to_file = cdd_loc_codes("Other-systems-location-codes.pickle")
     if os.path.isfile(path_to_file) and not update:
@@ -190,7 +198,7 @@ def scrape_other_systems(update=False):
     return other_systems_codes
 
 
-#
+# Get location codes
 def get_location_codes(update=False):
     path_to_file = cdd_loc_codes("CRS-NLC-TIPLOC-STANOX-codes.pickle")
 
