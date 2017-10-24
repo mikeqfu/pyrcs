@@ -8,7 +8,7 @@ import bs4
 import pandas as pd
 import requests
 
-from utils import cdd, get_last_updated_date, parse_tr
+from utils import cdd, get_last_updated_date, parse_tr, load_pickle, save_pickle
 
 # ====================================================================================================================
 """ Change directory """
@@ -16,7 +16,7 @@ from utils import cdd, get_last_updated_date, parse_tr
 
 # Change directory to "...dat\\Line data\\Line of route" and sub-directories
 def cdd_line_of_route(*directories):
-    path = cdd("Line data", "Line of route")
+    path = cdd("Line data", "Line of route codes")
     for directory in directories:
         path = os.path.join(path, directory)
     return path
@@ -81,4 +81,18 @@ def scrape_lor_codes_by_prefix(url):
 def scrape_lor_codes():
     urls = get_lor_urls()
     lor_codes = [scrape_lor_codes_by_prefix(url) for url in urls]
+    return lor_codes
+
+
+def get_lor_codes(update=False):
+    path_to_file = cdd_line_of_route("Line-of-route-codes.pickle")
+    if os.path.isfile(path_to_file) and not update:
+        lor_codes = load_pickle(path_to_file)
+    else:
+        try:
+            lor_codes = scrape_lor_codes()
+            save_pickle(lor_codes, path_to_file)
+        except Exception as e:
+            print("Getting line of route codes ... failed due to '{}'".format(e))
+            lor_codes = None
     return lor_codes
