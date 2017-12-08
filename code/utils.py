@@ -298,9 +298,9 @@ def parse_tr(header, trs):
                     tbl_lst[idx].insert(i[1] + 1, i[3])
 
     for k in range(len(tbl_lst)):
-        l = len(header) - len(tbl_lst[k])
-        if l > 0:
-            tbl_lst[k].extend(['\xa0'] * l)
+        x = len(header) - len(tbl_lst[k])
+        if x > 0:
+            tbl_lst[k].extend(['\xa0'] * x)
 
     return tbl_lst
 
