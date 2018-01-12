@@ -1,5 +1,5 @@
 # railwaycodes-pyutils
-Tools for acquiring GB's railway codes and some other relevant data
+Some helpful tools (Python3.x) for getting GB's railway codes and relevant data from http://www.railwaycodes.org.uk
 
 ### Acknowledgement
 http://www.railwaycodes.org.uk/misc/acknowledgements.shtm
