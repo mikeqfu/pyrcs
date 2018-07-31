@@ -140,12 +140,12 @@ def scrape_location_codes(keyword, update=False):
 
             def extract_others_note(x):
                 n = re.search('(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', x)
-                note = n.group(0) if n is not None else ''
+                note = n.group() if n is not None else ''
                 return note
 
             def strip_others_note(x):
                 d = re.search('[\w ,]+(?= [\[(\'])', x)
-                dat = d.group(0) if d is not None else x
+                dat = d.group() if d is not None else x
                 return dat
 
             other_codes_col = ['CRS', 'NLC', 'TIPLOC', 'STANME']
@@ -156,13 +156,18 @@ def scrape_location_codes(keyword, update=False):
 
             # STANOX
             def parse_stanox_note(x):
-                d = re.search('[\w *,]+(?= [\[(\'])', x)
-                dat = d.group(0) if d is not None else x
-                note = 'Pseudo STANOX' if '*' in dat else ''
-                n = re.search('(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
-                if n is not None:
-                    note = '; '.join(x for x in [note, n.group(0)] if x != '')
-                dat = dat.rstrip('*') if '*' in dat else dat
+                if x == '-':
+                    dat, note = '', ''
+                else:
+                    d = re.search('[\w *,]+(?= [\[(\'])', x)
+                    dat = d.group() if d is not None else x
+                    note = 'Pseudo STANOX' if '*' in dat else ''
+                    n = re.search('(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
+                    if n is not None:
+                        note = '; '.join(x for x in [note, n.group()] if x != '')
+                    if '(' not in note and note.endswith(')'):
+                        note = note.rstrip(')')
+                    dat = dat.rstrip('*') if '*' in dat else dat
                 return dat, note
 
             if not data.empty:
