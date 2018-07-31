@@ -17,16 +17,15 @@ This links to a four-way listing of railway codes:
 import os
 import re
 import string
-from urllib.parse import urljoin
+import urllib.parse
 
 import bs4
+import more_itertools
 import pandas as pd
 import requests
-from more_itertools import unique_everseen
 
 from utils import cdd, load_pickle, save_pickle
-from utils import get_last_updated_date, parse_tr, parse_table, parse_location_name
-
+from utils import get_last_updated_date, parse_table, parse_tr
 
 # ====================================================================================================================
 """ Change directory """
@@ -44,7 +43,26 @@ def cdd_loc_codes(*directories):
 """ Scrape/get data """
 
 
-#
+# Location name modifications
+def create_location_name_mod_dict():
+    location_name_mod_dict = {
+        'Location': {re.compile(' And | \+ '): ' & ',
+                     re.compile('-By-'): '-by-',
+                     re.compile('-In-'): '-in-',
+                     re.compile('-En-Le-'): '-en-le-',
+                     re.compile('-La-'): '-la-',
+                     re.compile('-Le-'): '-le-',
+                     re.compile('-On-'): '-on-',
+                     re.compile('-The-'): '-the-',
+                     re.compile(' Of '): ' of ',
+                     re.compile('-Super-'): '-super-',
+                     re.compile('-Upon-'): '-upon-',
+                     re.compile('-Under-'): '-under-',
+                     re.compile('-Y-'): '-y-'}}
+    return location_name_mod_dict
+
+
+# Addition note page
 def parse_additional_note_page(url, parser='lxml'):
     source = requests.get(url)
     web_page_text = bs4.BeautifulSoup(source.text, parser).find_all(['p', 'pre'])
@@ -63,22 +81,6 @@ def parse_additional_note_page(url, parser='lxml'):
             if text != '' and not any(t in text for t in to_remove):
                 parsed_texts.append(text)
     return parsed_texts
-
-
-#
-def get_additional_crs_note(update=False):
-    path_to_file = cdd_loc_codes("additional-CRS-note.pickle")
-    if os.path.isfile(path_to_file) and not update:
-        additional_note = load_pickle(path_to_file)
-    else:
-        try:
-            note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
-            additional_note = parse_additional_note_page(note_url)
-            save_pickle(additional_note, path_to_file)
-        except Exception as e:
-            print("Getting additional note for CRS ... failed due to '{}'.".format(e))
-            additional_note = None
-    return additional_note
 
 
 # Locations and CRS, NLC, TIPLOC, STANME and STANOX codes
@@ -102,7 +104,7 @@ def scrape_location_codes(keyword, update=False):
             tbl_lst, header = parse_table(source, parser='lxml')
 
             # Get a raw DataFrame
-            reps = {'-': '', '\xa0': '', '&half;': ' and 1/2'}
+            reps = {'\b-\b': '', '\xa0': '', '&half;': ' and 1/2'}
             pattern = re.compile("|".join(reps.keys()))
             tbl_lst = [[pattern.sub(lambda x: reps[x.group(0)], item) for item in record] for record in tbl_lst]
             data = pd.DataFrame(tbl_lst, columns=header)
@@ -110,7 +112,26 @@ def scrape_location_codes(keyword, update=False):
             """ Extract additional information as note """
 
             # Location
-            data[['Location', 'Location_Note']] = data.Location.map(parse_location_name).apply(pd.Series)
+            def parse_loc_note(x):
+                # Data
+                d = re.search('[\w ,]+(?=[ \n]\[)', x)
+                if d is not None:
+                    dat = d.group()
+                else:
+                    m_pat = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed |\?|\"|\n')
+                    # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pat, x) else x
+                    dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pat, x) else x
+                # Note
+                n = re.search('(?<=[\n ][\[(\'])[\w ,\'\"/?]+', x)
+                if n is not None and (n.group() == "'" or n.group() == '"'):
+                    n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', x)
+                note = n.group() if n is not None else ''
+                if 'STANOX ' in dat and 'STANOX ' in x and note == '':
+                    dat = x[0:x.find('STANOX')].strip()
+                    note = x[x.find('STANOX'):]
+                return dat, note
+
+            data[['Location', 'Location_Note']] = data.Location.map(parse_loc_note).apply(pd.Series)
 
             # CRS, NLC, TIPLOC, STANME
             drop_pattern = re.compile('[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
@@ -118,13 +139,13 @@ def scrape_location_codes(keyword, update=False):
             data.drop(labels=idx, axis=0, inplace=True)
 
             def extract_others_note(x):
-                n = re.search('(?<=[[(\'])[\w,? ]+(?=[])\'])', x)
-                note = n.group() if n is not None else ''
+                n = re.search('(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', x)
+                note = n.group(0) if n is not None else ''
                 return note
 
             def strip_others_note(x):
-                d = re.search('[\w ,]+(?= [[(\'])', x)
-                dat = d.group() if d is not None else x
+                d = re.search('[\w ,]+(?= [\[(\'])', x)
+                dat = d.group(0) if d is not None else x
                 return dat
 
             other_codes_col = ['CRS', 'NLC', 'TIPLOC', 'STANME']
@@ -134,29 +155,35 @@ def scrape_location_codes(keyword, update=False):
             data[other_codes_col] = data[other_codes_col].applymap(strip_others_note)
 
             # STANOX
-            def clean_stanox_note(x):
-                d = re.search('[\w *,]+(?= [[(\'])', x)
-                dat = d.group() if d is not None else x
+            def parse_stanox_note(x):
+                d = re.search('[\w *,]+(?= [\[(\'])', x)
+                dat = d.group(0) if d is not None else x
                 note = 'Pseudo STANOX' if '*' in dat else ''
-                n = re.search('(?<=[[(\'])[\w, ]+.(?=[])\'])', x)
+                n = re.search('(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
                 if n is not None:
-                    note = '; '.join(x for x in [note, n.group()] if x != '')
+                    note = '; '.join(x for x in [note, n.group(0)] if x != '')
                 dat = dat.rstrip('*') if '*' in dat else dat
                 return dat, note
 
             if not data.empty:
-                data[['STANOX', 'STANOX_Note']] = data.STANOX.map(clean_stanox_note).apply(pd.Series)
+                data[['STANOX', 'STANOX_Note']] = data.STANOX.map(parse_stanox_note).apply(pd.Series)
             else:  # It is likely that no data is available on the web page for the given 'key_word'
                 data['STANOX_Note'] = data.STANOX
 
             if any('see note' in crs_note for crs_note in data.CRS_Note):
                 loc_idx = [i for i, crs_note in enumerate(data.CRS_Note) if 'see note' in crs_note]
                 web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
-                note_urls = [urljoin(url, l['href']) for l in web_page_text.find_all('a', href=True, text='note')]
+                note_urls = [urllib.parse.urljoin(url, l['href'])
+                             for l in web_page_text.find_all('a', href=True, text='note')]
                 additional_notes = [parse_additional_note_page(note_url) for note_url in note_urls]
                 additional_note = dict(zip(data.CRS.iloc[loc_idx], additional_notes))
             else:
                 additional_note = None
+
+            location_name_mod_dict = create_location_name_mod_dict()
+            data = data.replace(location_name_mod_dict, regex=True)
+
+            data.STANOX = data.STANOX.replace({'-': ''})
 
             data.index = range(len(data))  # Rearrange index
 
@@ -172,7 +199,23 @@ def scrape_location_codes(keyword, update=False):
     return location_codes
 
 
-# Other systems
+# Get note pertaining to CRS
+def get_additional_crs_note(update=False):
+    path_to_file = cdd_loc_codes("additional-CRS-note.pickle")
+    if os.path.isfile(path_to_file) and not update:
+        additional_note = load_pickle(path_to_file)
+    else:
+        try:
+            note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
+            additional_note = parse_additional_note_page(note_url)
+            save_pickle(additional_note, path_to_file)
+        except Exception as e:
+            print("Getting additional note for CRS ... failed due to '{}'.".format(e))
+            additional_note = None
+    return additional_note
+
+
+# Scrape data for other systems
 def scrape_other_systems(update=False):
     path_to_file = cdd_loc_codes("Other-systems-location-codes.pickle")
     if os.path.isfile(path_to_file) and not update:
@@ -183,14 +226,16 @@ def scrape_other_systems(update=False):
             source = requests.get(url)
             web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
             # Get system name
-            systems = [k.text for k in web_page_text.find_all('h3')]
+            system_names = [k.text for k in web_page_text.find_all('h3')]
+            system_names = [n.replace('Tramlnk', 'Tramlink') if 'Tramlnk' in n else n for n in system_names]
             # Get column names for the other systems table
-            headers = list(unique_everseen([h.text for h in web_page_text.find_all('th')]))
+            headers = list(more_itertools.unique_everseen([h.text for h in web_page_text.find_all('th')]))
             # Parse table data for each system
-            table_data = web_page_text.find_all('table', {'border': 1})
+            table_data = web_page_text.find_all('table', {'width': '1100px'})
             tables = [pd.DataFrame(parse_tr(headers, table.find_all('tr')), columns=headers) for table in table_data]
+            codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
             # Create a dict
-            other_systems_codes = dict(zip(systems, tables))
+            other_systems_codes = dict(zip(system_names, codes))
         except Exception as e:
             print("Scraping location data for other systems ... failed due to '{}'.".format(e))
             other_systems_codes = None
@@ -198,7 +243,7 @@ def scrape_other_systems(update=False):
     return other_systems_codes
 
 
-# Get location codes
+# All Location, with CRS, NLC, TIPLOC, STANME and STANOX codes
 def get_location_codes(update=False):
     path_to_file = cdd_loc_codes("CRS-NLC-TIPLOC-STANOX-codes.pickle")
 
@@ -231,3 +276,96 @@ def get_location_codes(update=False):
         save_pickle(location_codes, path_to_file)
 
     return location_codes
+
+
+# Get a dict for location code data for the given keyword
+def get_location_dictionary(keyword, initial=None, drop_duplicates=True, main_key=None):
+    """
+    :param keyword: [str] 'CRS', 'NLC', 'TIPLOC', 'STANOX'
+    :param initial: [str] or None: one of string.ascii_letters, or (default) None
+    :param drop_duplicates: [bool] If drop_duplicates is False, loc_dict will take the last item to be the value
+    :param main_key: [str] or None
+    :return:
+    """
+    assert keyword in ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
+
+    if initial is not None and initial in string.ascii_letters:
+        location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
+    else:
+        location_code = get_location_codes()['Locations']
+
+    assert isinstance(location_code, pd.DataFrame)
+
+    try:
+        loc_code_original = location_code[['Location', keyword]]
+        loc_code_original = loc_code_original[loc_code_original[keyword] != '']
+        if drop_duplicates:
+            if drop_duplicates is True:
+                loc_code = loc_code_original.drop_duplicates(subset=keyword, keep='first')
+            else:
+                loc_code = loc_code_original
+            loc_dict = loc_code.set_index(keyword).to_dict()
+        else:  # drop_duplicates is False
+            loc_code = loc_code_original.groupby(keyword).aggregate(list)
+            loc_code.Location = loc_code.Location.map(lambda x: x[0] if len(x) == 1 else x)
+            loc_dict = loc_code.to_dict()
+
+        if main_key is not None:
+            loc_dict[main_key] = loc_dict.pop('Location')
+            location_dictionary = loc_dict
+        else:
+            location_dictionary = loc_dict['Location']
+    except Exception as e:
+        print("Failed to get location code reference dictionary. This is due to {}.".format(e))
+        location_dictionary = None
+
+    return location_dictionary
+
+
+def get_location_dictionary_v2(keywords, initial=None, as_dict=False, main_key=None):
+    """
+    :param keywords: [list] e.g. ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
+    :param initial: [str] one of string.ascii_letters
+    :param as_dict:
+    :param main_key: [str] or None
+    :return:
+    """
+    assert isinstance(keywords, list) and all(x in ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME'] for x in keywords)
+
+    if initial is not None and initial in string.ascii_letters:
+        location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
+    else:
+        location_code = get_location_codes()['Locations']
+
+    # Deep cleansing location_code
+    try:
+        loc_code = location_code[['Location'] + keywords]
+        loc_code = loc_code.query(' | '.join(["{} != ''".format(k) for k in keywords]))
+
+        loc_code_unique = loc_code.drop_duplicates(subset=keywords, keep=False)
+        loc_code_unique.set_index(keywords, inplace=True)
+
+        duplicated_temp_1 = loc_code[loc_code.duplicated(subset=['Location'] + keywords, keep=False)]
+        duplicated_temp_2 = loc_code[loc_code.duplicated(subset=keywords, keep=False)]
+        duplicated_1 = duplicated_temp_2[duplicated_temp_1.eq(duplicated_temp_2)].dropna().drop_duplicates()
+        duplicated_2 = duplicated_temp_2[~duplicated_temp_1.eq(duplicated_temp_2)].dropna()
+        duplicated = pd.concat([duplicated_1, duplicated_2], axis=0)
+        loc_code_duplicated = duplicated.groupby(keywords).agg(list)
+
+        loc_code_ref = pd.concat([loc_code_unique, loc_code_duplicated], axis=0)
+
+        if as_dict:
+            loc_code_ref_dict = loc_code_ref.to_dict()
+            if main_key is not None:
+                loc_code_ref_dict[main_key] = loc_code_ref_dict.pop('Location')
+                location_code_ref_dict = loc_code_ref_dict
+            else:
+                location_code_ref_dict = loc_code_ref_dict['Location']
+        else:
+            location_code_ref_dict = loc_code_ref
+
+    except Exception as e:
+        print("Failed to get multiple location code indexed reference. This is due to {}.".format(e))
+        location_code_ref_dict = None
+
+    return location_code_ref_dict
