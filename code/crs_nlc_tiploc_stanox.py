@@ -1,17 +1,16 @@
 """ 
-Reference: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+Data source: http://www.railwaycodes.org.uk
 
-CRS, NLC, TIPLOC and STANOX Codes 
+CRS, NLC, TIPLOC and STANOX Codes (Reference: http://www.railwaycodes.org.uk/crs/CRS0.shtm)
 
 This links to a four-way listing of railway codes:
 
-    - Computer reservation system (CRS) codes 
+    - Computer reservation system (CRS) codes
         * [replaced by national reservation system (NRS) codes from late 2004, but the codes are the same]
-    - National location codes (NLCs)
-    - Timing point locations (TIPLOCs)
+    - National location codes (NLC)
+    - Timing point locations (TIPLOC)
     - Station number names (STANME)
     - Station numbers (STANOX)
-
 """
 
 import os
@@ -24,7 +23,7 @@ import more_itertools
 import pandas as pd
 import requests
 
-from utils import cdd, load_pickle, save_pickle
+from utils import cdd, load_pickle, save_pickle, load_json, save_json
 from utils import get_last_updated_date, parse_table, parse_tr
 
 # ====================================================================================================================
@@ -204,24 +203,8 @@ def scrape_location_codes(keyword, update=False):
     return location_codes
 
 
-# Get note pertaining to CRS
-def get_additional_crs_note(update=False):
-    path_to_file = cdd_loc_codes("additional-CRS-note.pickle")
-    if os.path.isfile(path_to_file) and not update:
-        additional_note = load_pickle(path_to_file)
-    else:
-        try:
-            note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
-            additional_note = parse_additional_note_page(note_url)
-            save_pickle(additional_note, path_to_file)
-        except Exception as e:
-            print("Getting additional note for CRS ... failed due to '{}'.".format(e))
-            additional_note = None
-    return additional_note
-
-
 # Scrape data for other systems
-def scrape_other_systems(update=False):
+def scrape_other_systems_codes(update=False):
     path_to_file = cdd_loc_codes("Other-systems-location-codes.pickle")
     if os.path.isfile(path_to_file) and not update:
         other_systems_codes = load_pickle(path_to_file)
@@ -248,6 +231,26 @@ def scrape_other_systems(update=False):
     return other_systems_codes
 
 
+# --------------------------------------------------------------------------------------------------------------------
+""" """
+
+
+# Get note pertaining to CRS
+def get_additional_crs_note(update=False):
+    path_to_file = cdd_loc_codes("additional-CRS-note.pickle")
+    if os.path.isfile(path_to_file) and not update:
+        additional_note = load_pickle(path_to_file)
+    else:
+        try:
+            note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
+            additional_note = parse_additional_note_page(note_url)
+            save_pickle(additional_note, path_to_file)
+        except Exception as e:
+            print("Getting additional note for CRS ... failed due to '{}'.".format(e))
+            additional_note = None
+    return additional_note
+
+
 # All Location, with CRS, NLC, TIPLOC, STANME and STANOX codes
 def get_location_codes(update=False):
     path_to_file = cdd_loc_codes("CRS-NLC-TIPLOC-STANOX-codes.pickle")
@@ -270,7 +273,7 @@ def get_location_codes(update=False):
         additional_note = get_additional_crs_note(update)
 
         # Get other systems codes
-        other_systems_codes = scrape_other_systems(update)
+        other_systems_codes = scrape_other_systems_codes(update)
 
         # Create a dict to include all information
         location_codes = {'Locations': location_codes_data_table,
@@ -284,93 +287,114 @@ def get_location_codes(update=False):
 
 
 # Get a dict for location code data for the given keyword
-def get_location_dictionary(keyword, initial=None, drop_duplicates=True, main_key=None):
+def get_location_codes_dictionary(keyword, initial=None, drop_duplicates=True, main_key=None, update=False):
     """
     :param keyword: [str] 'CRS', 'NLC', 'TIPLOC', 'STANOX'
     :param initial: [str] or None: one of string.ascii_letters, or (default) None
     :param drop_duplicates: [bool] If drop_duplicates is False, loc_dict will take the last item to be the value
     :param main_key: [str] or None
+    :param update: [bool]
     :return:
     """
     assert keyword in ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
 
-    if initial is not None and initial in string.ascii_letters:
-        location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
+    json_filename = keyword + ".json"
+    path_to_json = cdd_loc_codes(json_filename)
+
+    if os.path.isfile(path_to_json) and not update:
+        location_codes_dictionary = load_json(path_to_json)
     else:
-        location_code = get_location_codes()['Locations']
-
-    assert isinstance(location_code, pd.DataFrame)
-
-    try:
-        loc_code_original = location_code[['Location', keyword]]
-        loc_code_original = loc_code_original[loc_code_original[keyword] != '']
-        if drop_duplicates:
-            if drop_duplicates is True:
-                loc_code = loc_code_original.drop_duplicates(subset=keyword, keep='first')
-            else:
-                loc_code = loc_code_original
-            loc_dict = loc_code.set_index(keyword).to_dict()
-        else:  # drop_duplicates is False
-            loc_code = loc_code_original.groupby(keyword).aggregate(list)
-            loc_code.Location = loc_code.Location.map(lambda x: x[0] if len(x) == 1 else x)
-            loc_dict = loc_code.to_dict()
-
-        if main_key is not None:
-            loc_dict[main_key] = loc_dict.pop('Location')
-            location_dictionary = loc_dict
+        if initial is not None and initial in string.ascii_letters:
+            location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
         else:
-            location_dictionary = loc_dict['Location']
-    except Exception as e:
-        print("Failed to get location code reference dictionary. This is due to {}.".format(e))
-        location_dictionary = None
+            location_code = get_location_codes()['Locations']
 
-    return location_dictionary
+        assert isinstance(location_code, pd.DataFrame)
+
+        try:
+            loc_code_original = location_code[['Location', keyword]]
+            loc_code_original = loc_code_original[loc_code_original[keyword] != '']
+            if drop_duplicates:
+                if drop_duplicates is True:
+                    loc_code = loc_code_original.drop_duplicates(subset=keyword, keep='first')
+                else:
+                    loc_code = loc_code_original
+                loc_dict = loc_code.set_index(keyword).to_dict()
+            else:  # drop_duplicates is False
+                loc_code = loc_code_original.groupby(keyword).aggregate(list)
+                loc_code.Location = loc_code.Location.map(lambda x: x[0] if len(x) == 1 else x)
+                loc_dict = loc_code.to_dict()
+
+            if main_key is not None:
+                loc_dict[main_key] = loc_dict.pop('Location')
+                location_codes_dictionary = loc_dict
+            else:
+                location_codes_dictionary = loc_dict['Location']
+
+            save_json(location_codes_dictionary, path_to_json)
+
+        except Exception as e:
+            print("Failed to get location code reference dictionary. This is due to {}.".format(e))
+            location_codes_dictionary = None
+
+    return location_codes_dictionary
 
 
-def get_location_dictionary_v2(keywords, initial=None, as_dict=False, main_key=None):
+def get_location_codes_dictionary_v2(keywords, initial=None, as_dict=False, main_key=None, update=False):
     """
     :param keywords: [list] e.g. ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
     :param initial: [str] one of string.ascii_letters
     :param as_dict:
     :param main_key: [str] or None
+    :param update: [bool]
     :return:
     """
     assert isinstance(keywords, list) and all(x in ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME'] for x in keywords)
 
-    if initial is not None and initial in string.ascii_letters:
-        location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
+    filename = "_".join(keywords) + "_v2" + (".json" if as_dict else ".pickle")
+    path_to_file = cdd_loc_codes(filename)
+
+    if os.path.isfile(path_to_file) and not update:
+        location_code_ref_dict = load_json(path_to_file) if as_dict else load_pickle(path_to_file)
     else:
-        location_code = get_location_codes()['Locations']
 
-    # Deep cleansing location_code
-    try:
-        loc_code = location_code[['Location'] + keywords]
-        loc_code = loc_code.query(' | '.join(["{} != ''".format(k) for k in keywords]))
-
-        loc_code_unique = loc_code.drop_duplicates(subset=keywords, keep=False)
-        loc_code_unique.set_index(keywords, inplace=True)
-
-        duplicated_temp_1 = loc_code[loc_code.duplicated(subset=['Location'] + keywords, keep=False)]
-        duplicated_temp_2 = loc_code[loc_code.duplicated(subset=keywords, keep=False)]
-        duplicated_1 = duplicated_temp_2[duplicated_temp_1.eq(duplicated_temp_2)].dropna().drop_duplicates()
-        duplicated_2 = duplicated_temp_2[~duplicated_temp_1.eq(duplicated_temp_2)].dropna()
-        duplicated = pd.concat([duplicated_1, duplicated_2], axis=0)
-        loc_code_duplicated = duplicated.groupby(keywords).agg(list)
-
-        loc_code_ref = pd.concat([loc_code_unique, loc_code_duplicated], axis=0)
-
-        if as_dict:
-            loc_code_ref_dict = loc_code_ref.to_dict()
-            if main_key is not None:
-                loc_code_ref_dict[main_key] = loc_code_ref_dict.pop('Location')
-                location_code_ref_dict = loc_code_ref_dict
-            else:
-                location_code_ref_dict = loc_code_ref_dict['Location']
+        if initial is not None and initial in string.ascii_letters:
+            location_code = scrape_location_codes(initial)['Locations_' + initial.capitalize()]
         else:
-            location_code_ref_dict = loc_code_ref
+            location_code = get_location_codes()['Locations']
 
-    except Exception as e:
-        print("Failed to get multiple location code indexed reference. This is due to {}.".format(e))
-        location_code_ref_dict = None
+        # Deep cleansing location_code
+        try:
+            loc_code = location_code[['Location'] + keywords]
+            loc_code = loc_code.query(' | '.join(["{} != ''".format(k) for k in keywords]))
+
+            loc_code_unique = loc_code.drop_duplicates(subset=keywords, keep=False)
+            loc_code_unique.set_index(keywords, inplace=True)
+
+            duplicated_temp_1 = loc_code[loc_code.duplicated(subset=['Location'] + keywords, keep=False)]
+            duplicated_temp_2 = loc_code[loc_code.duplicated(subset=keywords, keep=False)]
+            duplicated_1 = duplicated_temp_2[duplicated_temp_1.eq(duplicated_temp_2)].dropna().drop_duplicates()
+            duplicated_2 = duplicated_temp_2[~duplicated_temp_1.eq(duplicated_temp_2)].dropna()
+            duplicated = pd.concat([duplicated_1, duplicated_2], axis=0)
+            loc_code_duplicated = duplicated.groupby(keywords).agg(list)
+            loc_code_duplicated.Location = loc_code_duplicated.Location.map(lambda x: x[0] if len(set(x)) == 1 else x)
+
+            loc_code_ref = pd.concat([loc_code_unique, loc_code_duplicated], axis=0)
+
+            if as_dict:
+                loc_code_ref_dict = loc_code_ref.to_dict()
+                if main_key is not None:
+                    loc_code_ref_dict[main_key] = loc_code_ref_dict.pop('Location')
+                    location_code_ref_dict = loc_code_ref_dict
+                else:
+                    location_code_ref_dict = loc_code_ref_dict['Location']
+                save_json(location_code_ref_dict, path_to_file)
+            else:
+                location_code_ref_dict = loc_code_ref
+                save_pickle(location_code_ref_dict, path_to_file)
+
+        except Exception as e:
+            print("Failed to get multiple location code indexed reference. This is due to {}.".format(e))
+            location_code_ref_dict = None
 
     return location_code_ref_dict
