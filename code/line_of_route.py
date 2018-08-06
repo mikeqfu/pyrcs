@@ -12,11 +12,11 @@ PRIDE numbers are now known as line of route (LOR) numbers.  The name has change
 
 import os
 import re
+import urllib.parse
 
 import bs4
 import pandas as pd
 import requests
-import urllib.parse
 
 from utils import cdd, get_last_updated_date, load_pickle, parse_tr, save_pickle
 
@@ -151,9 +151,12 @@ def get_lor_codes(update=False):
 
 # Scrape ELR/LOR converter
 def scrape_elr_lor_converter():
-    url = 'http://www.railwaycodes.org.uk/pride/elrmapping.shtm'
-    page_data = pd.read_html(url)
 
+    url = 'http://www.railwaycodes.org.uk/pride/elrmapping.shtm'
+
+    last_updated_date = get_last_updated_date(url)
+
+    page_data = pd.read_html(url)
     headers, elr_lor_converter = page_data
     elr_lor_converter.columns = list(headers.loc[0, :])
 
@@ -168,7 +171,9 @@ def scrape_elr_lor_converter():
     elr_lor_converter['ELR_URL'] = [urllib.parse.urljoin(main_url, x) for x in elr_links]
     elr_lor_converter['LOR_URL'] = [main_url + 'pride/' + x for x in lor_links]
 
-    return elr_lor_converter
+    elr_lor_converter_data = {'ELR_LOR_converter': elr_lor_converter, 'Last_updated_date': last_updated_date}
+
+    return elr_lor_converter_data
 
 
 # Get ELR/LOR converter
@@ -178,13 +183,13 @@ def get_elr_lor_converter(update=False):
     path_to_pickle = cdd_line_of_route(pickle_filename)
 
     if os.path.isfile(path_to_pickle) and not update:
-        elr_lor_converter = load_pickle(path_to_pickle)
+        elr_lor_converter_data = load_pickle(path_to_pickle)
     else:
         try:
-            elr_lor_converter = scrape_elr_lor_converter()
-            save_pickle(elr_lor_converter, path_to_pickle)
+            elr_lor_converter_data = scrape_elr_lor_converter()
+            save_pickle(elr_lor_converter_data, path_to_pickle)
         except Exception as e:
             print("Failed to get \"ELR/LOR converter\" due to \"{}\".".format(e))
-            elr_lor_converter = pd.DataFrame()
+            elr_lor_converter_data = {'ELR_LOR_converter': None, 'Last_updated_date': None}
 
-    return elr_lor_converter
+    return elr_lor_converter_data

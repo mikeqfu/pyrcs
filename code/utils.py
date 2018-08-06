@@ -348,6 +348,27 @@ def parse_table(source, parser='lxml'):
     return parse_tr(header, trs), header
 
 
+# Parse location note
+def parse_loc_note(x):
+    # Data
+    d = re.search('[\w ,]+(?=[ \n]\[)', x)
+    if d is not None:
+        dat = d.group()
+    else:
+        m_pat = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed |\?|\"|\n')
+        # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pat, x) else x
+        dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pat, x) else x
+    # Note
+    n = re.search('(?<=[\n ][\[(\'])[\w ,\'\"/?]+', x)
+    if n is not None and (n.group() == "'" or n.group() == '"'):
+        n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', x)
+    note = n.group() if n is not None else ''
+    if 'STANOX ' in dat and 'STANOX ' in x and note == '':
+        dat = x[0:x.find('STANOX')].strip()
+        note = x[x.find('STANOX'):]
+    return dat, note
+
+
 # ====================================================================================================================
 """ Misc """
 

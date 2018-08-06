@@ -24,7 +24,7 @@ import pandas as pd
 import requests
 
 from utils import cdd, load_pickle, save_pickle, load_json, save_json
-from utils import get_last_updated_date, parse_table, parse_tr
+from utils import get_last_updated_date, parse_table, parse_tr, parse_loc_note
 
 # ====================================================================================================================
 """ Change directory """
@@ -111,25 +111,6 @@ def scrape_location_codes(keyword, update=False):
             """ Extract additional information as note """
 
             # Location
-            def parse_loc_note(x):
-                # Data
-                d = re.search('[\w ,]+(?=[ \n]\[)', x)
-                if d is not None:
-                    dat = d.group()
-                else:
-                    m_pat = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed |\?|\"|\n')
-                    # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pat, x) else x
-                    dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pat, x) else x
-                # Note
-                n = re.search('(?<=[\n ][\[(\'])[\w ,\'\"/?]+', x)
-                if n is not None and (n.group() == "'" or n.group() == '"'):
-                    n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', x)
-                note = n.group() if n is not None else ''
-                if 'STANOX ' in dat and 'STANOX ' in x and note == '':
-                    dat = x[0:x.find('STANOX')].strip()
-                    note = x[x.find('STANOX'):]
-                return dat, note
-
             data[['Location', 'Location_Note']] = data.Location.map(parse_loc_note).apply(pd.Series)
 
             # CRS, NLC, TIPLOC, STANME
