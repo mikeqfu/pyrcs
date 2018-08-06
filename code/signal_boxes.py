@@ -7,7 +7,7 @@ import bs4
 import pandas as pd
 import requests
 
-from utils import cdd, load_pickle, save_pickle, get_last_updated_date, parse_table, parse_tr
+from utils import cdd, get_last_updated_date, load_pickle, parse_table, parse_tr, save_pickle
 
 
 #
@@ -56,9 +56,10 @@ def get_signal_box_prefix_codes(update=False):
     :param update: [bool]
     :return: 
     """
-    path_to_file = cdd_sig_box("Signal-box-prefix-codes.pickle")
-    if os.path.isfile(path_to_file) and not update:
-        signal_box_prefix_codes = load_pickle(path_to_file)
+    pickle_filename = "Signal-box-prefix-codes.pickle"
+    path_to_pickle = cdd_sig_box(pickle_filename)
+    if os.path.isfile(path_to_pickle) and not update:
+        signal_box_prefix_codes = load_pickle(path_to_pickle)
     else:
         # Get every data table
         data = [scrape_signal_box_prefix_codes(i, update) for i in string.ascii_lowercase]
@@ -74,7 +75,7 @@ def get_signal_box_prefix_codes(update=False):
         # Create a dict to include all information
         signal_box_prefix_codes = {'Signal_boxes': signal_boxes_data_table, 'Latest_updated_date': last_updated_date}
 
-        save_pickle(signal_box_prefix_codes, path_to_file)
+        save_pickle(signal_box_prefix_codes, path_to_pickle)
 
     return signal_box_prefix_codes
 
@@ -113,9 +114,10 @@ def scrape_non_national_rail_codes():
 
 
 def get_non_national_rail_codes(update=False):
-    path_to_file = cdd_sig_box("Non-national-rail-signals.pickle")
-    if os.path.isfile(path_to_file) and not update:
-        non_national_rail_codes = load_pickle(path_to_file)
+    pickle_filename = "Non-national-rail-signals.pickle"
+    path_to_pickle = cdd_sig_box(pickle_filename)
+    if os.path.isfile(path_to_pickle) and not update:
+        non_national_rail_codes = load_pickle(path_to_pickle)
     else:
         try:
             non_national_rail_codes = scrape_non_national_rail_codes()
@@ -123,6 +125,6 @@ def get_non_national_rail_codes(update=False):
             print("Getting non-national rail signal codes ... failed due to '{}'.".format(e))
             non_national_rail_codes = None
 
-        save_pickle(non_national_rail_codes, path_to_file)
+        save_pickle(non_national_rail_codes, path_to_pickle)
 
     return non_national_rail_codes
