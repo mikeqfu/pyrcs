@@ -1,5 +1,6 @@
 """ Railway tunnel lengths """
 
+import itertools
 import operator
 import os
 import re
@@ -9,7 +10,6 @@ import fuzzywuzzy.process
 import measurement.measures
 import pandas as pd
 import requests
-import itertools
 
 from utils import cdd, get_last_updated_date, load_pickle, parse_tr, save_pickle
 
