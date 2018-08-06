@@ -30,7 +30,7 @@ from utils import get_last_updated_date, parse_table, parse_tr
 """ Change directory """
 
 
-#
+# Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\"
 def cdd_loc_codes(*directories):
     path = cdd("Line data", "CRS, NLC, TIPLOC and STANOX codes")
     for directory in directories:
@@ -61,7 +61,7 @@ def create_location_name_mod_dict():
     return location_name_mod_dict
 
 
-# Addition note page
+# Parse addition note page
 def parse_additional_note_page(url, parser='lxml'):
     source = requests.get(url)
     web_page_text = bs4.BeautifulSoup(source.text, parser).find_all(['p', 'pre'])
@@ -82,7 +82,7 @@ def parse_additional_note_page(url, parser='lxml'):
     return parsed_texts
 
 
-# Locations and CRS, NLC, TIPLOC, STANME and STANOX codes
+# Scrape data of locations including CRS, NLC, TIPLOC, STANME and STANOX codes
 def scrape_location_codes(keyword, update=False):
     """
     :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
@@ -235,7 +235,7 @@ def scrape_other_systems_codes(update=False):
 """ """
 
 
-# Get note pertaining to CRS
+# Get note about CRS
 def get_additional_crs_note(update=False):
     path_to_file = cdd_loc_codes("additional-CRS-note.pickle")
     if os.path.isfile(path_to_file) and not update:
@@ -251,7 +251,7 @@ def get_additional_crs_note(update=False):
     return additional_note
 
 
-# All Location, with CRS, NLC, TIPLOC, STANME and STANOX codes
+# Get all Location data including CRS, NLC, TIPLOC, STANME and STANOX codes either locally or from online
 def get_location_codes(update=False):
     path_to_file = cdd_loc_codes("CRS-NLC-TIPLOC-STANOX-codes.pickle")
 
@@ -340,6 +340,7 @@ def get_location_codes_dictionary(keyword, initial=None, drop_duplicates=True, m
     return location_codes_dictionary
 
 
+# Get a dict/dataframe for location code data for the given keyword
 def get_location_codes_dictionary_v2(keywords, initial=None, as_dict=False, main_key=None, update=False):
     """
     :param keywords: [list] e.g. ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']

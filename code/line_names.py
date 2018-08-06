@@ -1,4 +1,10 @@
-""" Railway line names """
+"""
+
+Data source: http://www.railwaycodes.org.uk
+
+Railway line names (Reference: http://www.railwaycodes.org.uk/misc/line_names.shtm)
+
+"""
 
 import os
 import re
@@ -12,7 +18,7 @@ from utils import cdd, get_last_updated_date, load_pickle, parse_table, save_pic
 """ Change directory """
 
 
-# Change directory to "...dat\\Line data\\Line names" and sub-directories
+# Change directory to "dat\\Line data\\Line names" and sub-directories
 def cdd_line_names(*directories):
     path = cdd("Line data", "Line names")
     for directory in directories:
@@ -24,6 +30,7 @@ def cdd_line_names(*directories):
 """ Scrape/get data """
 
 
+# Parse route column
 def parse_route(x):
     if 'Watford - Euston suburban route' in x:
         route, route_note = 'Watford - Euston suburban route', x
@@ -44,7 +51,7 @@ def parse_route(x):
     return route, route_note
 
 
-# Railway line names
+# Scrape the data of railway line names
 def scrape_line_names():
     """
     :return [tuple] {'Line_names': [DataFrame] railway line names and routes data,
@@ -65,7 +72,7 @@ def scrape_line_names():
     return line_names
 
 
-# Get data of line names
+# Get the data of line names either locally or from online
 def get_line_names(update=False):
     pickle_filename = "Line-names.pickle"
     path_to_pickle = cdd_line_names(pickle_filename)
