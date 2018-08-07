@@ -1,5 +1,6 @@
 """ Utilities - Helper functions """
 
+import collections
 import copy
 import json
 import os
@@ -294,25 +295,37 @@ def parse_tr(header, trs):
         tbl_lst.append(data)
 
     row_spanned = []
-    for no, trs in enumerate(trs):
-        for td_no, rho in enumerate(trs.find_all('td')):
+    for no, tr in enumerate(trs):
+        for td_no, rho in enumerate(tr.find_all('td')):
             # print(data.has_attr("rowspan"))
             if rho.has_attr('rowspan'):
-                row_spanned.append((no, td_no, int(rho['rowspan']), rho.text))
+                row_spanned.append((no, int(rho['rowspan']), td_no, rho.text))
 
     if row_spanned:
-        for i in row_spanned:
-            # assert isinstance(i[0], int)
-            for j in range(1, i[2]):
-                # Add value in next tr
-                idx = i[0] + j
-                # assert isinstance(idx, int)
-                if i[1] >= len(tbl_lst[idx]):
-                    tbl_lst[idx].insert(i[1], i[3])
-                elif i[3] in tbl_lst[idx - 1]:
-                    tbl_lst[idx].insert(tbl_lst[idx - 1].index(i[3]), i[3])
-                else:
-                    tbl_lst[idx].insert(i[1] + 1, i[3])
+        d = collections.defaultdict(list)
+        for k, *v in row_spanned:
+            d[k].append(v)
+        row_spanned = list(d.items())
+
+        for x in row_spanned:
+            i = x[0]
+            to_repeat = x[1]
+            for y in to_repeat:
+                for j in range(1, y[0]):
+                    tbl_lst[i + j].insert(y[1], y[2])
+
+    # if row_spanned:
+    #     for x in row_spanned:
+    #         for j in range(1, x[2]):
+    #             # Add value in next tr
+    #             idx = x[0] + j
+    #             # assert isinstance(idx, int)
+    #             if x[1] >= len(tbl_lst[idx]):
+    #                 tbl_lst[idx].insert(x[1], x[3])
+    #             elif x[3] in tbl_lst[x[0]]:
+    #                 tbl_lst[idx].insert(tbl_lst[x[0]].index(x[3]), x[3])
+    #             else:
+    #                 tbl_lst[idx].insert(x[1] + 1, x[3])
 
     for k in range(len(tbl_lst)):
         n = len(header) - len(tbl_lst[k])
