@@ -1,4 +1,10 @@
-""" Railway station data """
+"""
+
+Data source: http://www.railwaycodes.org.uk
+
+Railway station data (Reference: http://www.railwaycodes.org.uk/stations/station0.shtm)
+
+"""
 
 import itertools
 import os

@@ -23,8 +23,8 @@ import more_itertools
 import pandas as pd
 import requests
 
-from utils import cdd, load_pickle, save_pickle, load_json, save_json
-from utils import get_last_updated_date, parse_table, parse_tr, parse_loc_note
+from utils import cdd, load_json, load_pickle, save_json, save_pickle
+from utils import get_last_updated_date, parse_loc_note, parse_table, parse_tr
 
 # ====================================================================================================================
 """ Change directory """
