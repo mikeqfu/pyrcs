@@ -389,11 +389,8 @@ def parse_loc_note(x):
 #
 def is_float(text):
     try:
-        float(text)
-        return True
+        float(text)  # float(re.sub('[()~]', '', text))
+        test_res = True
     except ValueError:
-        try:
-            float(re.sub('[()~]', '', text))
-            return True
-        except ValueError:
-            return False
+        test_res = False
+    return test_res
