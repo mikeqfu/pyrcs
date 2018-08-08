@@ -72,6 +72,10 @@ def scrape_station_locations(keyword, update=False):
             col = [h.replace('\r\n', ' ').replace('\r', ' ') for h in header]
             station_locations_data = pd.DataFrame(dat, columns=col)
 
+            station_locations_data[['Degrees Longitude', 'Degrees Latitude']] = \
+                station_locations_data[['Degrees Longitude', 'Degrees Latitude']].applymap(
+                    lambda x: pd.np.nan if x == '' else float(x))
+
             station_locations_data[['Station', 'Station_Note']] = \
                 station_locations_data.Station.map(parse_loc_note).apply(pd.Series)
 

@@ -333,7 +333,7 @@ def get_location_codes_dictionary_v2(keywords, initial=None, as_dict=False, main
     """
     assert isinstance(keywords, list) and all(x in ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME'] for x in keywords)
 
-    filename = "_".join(keywords) + "_v2" + (".json" if as_dict else ".pickle")
+    filename = "-".join(keywords) + "-v2" + (".json" if as_dict else ".pickle")
     path_to_file = cdd_loc_codes(filename)
 
     if os.path.isfile(path_to_file) and not update:

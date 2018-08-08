@@ -364,16 +364,24 @@ def parse_table(source, parser='lxml'):
 # Parse location note
 def parse_loc_note(x):
     # Data
-    d = re.search('[\w ,]+(?=[ \n]\[)', x)
+    # d = re.search('[\w ,]+(?=[ \n]\[)', x)
+    # if d is not None:
+    #     dat = d.group()
+    # else:
+    d = re.search('.*(?= \[[\"\']\()', x)
     if d is not None:
         dat = d.group()
+    elif ' [unknown feature, labelled "do not use"]' in x:
+        dat = re.search('\w+(?= \[unknown feature, )', x).group()
     else:
-        m_pat = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed |\?|\"|\n')
-        # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pat, x) else x
-        dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pat, x) else x
+        m_pattern = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at |\?|\"|\n')
+        # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pattern, x) else x
+        dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pattern, x) else x
     # Note
-    n = re.search('(?<=[\n ][\[(\'])[\w ,\'\"/?]+', x)
-    if n is not None and (n.group() == "'" or n.group() == '"'):
+    n = re.search('(?<=\[[\'\"]\().*(?=\)[\'\"]\])', x)
+    if n is None:
+        n = re.search('(?<=[\n ][\[\'(])[\w ,\'\"/?]+', x)
+    elif n.group() == "'" or n.group() == '"':
         n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', x)
     note = n.group() if n is not None else ''
     if 'STANOX ' in dat and 'STANOX ' in x and note == '':
