@@ -103,10 +103,10 @@ def scrape_location_codes(keyword, update=False):
             tbl_lst, header = parse_table(source, parser='lxml')
 
             # Get a raw DataFrame
-            reps = {'\b-\b': '', '\xa0': '', '&half;': ' and 1/2'}
+            reps = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
             pattern = re.compile("|".join(reps.keys()))
             tbl_lst = [[pattern.sub(lambda x: reps[x.group(0)], item) for item in record] for record in tbl_lst]
-            data = pd.DataFrame(tbl_lst, columns=header)
+            data = pd.DataFrame(tbl_lst, columns=header).replace({'\xa0': ''})
 
             """ Extract additional information as note """
 

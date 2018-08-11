@@ -374,7 +374,8 @@ def parse_loc_note(x):
     elif ' [unknown feature, labelled "do not use"]' in x:
         dat = re.search('\w+(?= \[unknown feature, )', x).group()
     else:
-        m_pattern = re.compile('[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at |\?|\"|\n')
+        m_pattern = re.compile(
+            '[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at | \(also known as |\?|\"|\n')
         # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pattern, x) else x
         dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pattern, x) else x
     # Note
