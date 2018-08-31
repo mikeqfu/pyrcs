@@ -16,7 +16,7 @@ import pandas as pd
 import pdfkit
 import requests
 
-# ===================================================================================================
+# ====================================================================================================================
 """ Change directory """
 
 
@@ -308,10 +308,11 @@ def parse_tr(header, trs):
         row_spanned = list(d.items())
 
         for x in row_spanned:
-            i = x[0]
-            to_repeat = x[1]
+            i, to_repeat = x[0], x[1]
             for y in to_repeat:
                 for j in range(1, y[0]):
+                    if y[2] in tbl_lst[i] and y[2] != '\xa0':
+                        y[1] += pd.np.abs(tbl_lst[i].index(y[2]) - y[1])
                     tbl_lst[i + j].insert(y[1], y[2])
 
     # if row_spanned:
@@ -368,27 +369,43 @@ def parse_loc_note(x):
     # if d is not None:
     #     dat = d.group()
     # else:
+
+    # Location name
     d = re.search('.*(?= \[[\"\']\()', x)
     if d is not None:
         dat = d.group()
     elif ' [unknown feature, labelled "do not use"]' in x:
         dat = re.search('\w+(?= \[unknown feature, )', x).group()
+    elif ') [formerly' in x:
+        dat = re.search('.*(?= \[formerly)', x).group()
     else:
         m_pattern = re.compile(
-            '[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at | \(also known as |'
-            ' \(second code set |\?|\"|\n')
+            '[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at | \(also |'
+            ' \(second code |\?|\n| \(\[\'| \(definition unknown\)')
         # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pattern, x) else x
-        dat = ' '.join(x.replace(x[x.find('('):x.find(')') + 1], '').split()) if re.search(m_pattern, x) else x
+        x_tmp = re.search('(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', x)
+        x_tmp = x_tmp.group() if x_tmp is not None else x
+        dat = ' '.join(x.replace(x_tmp, '').split()) if re.search(m_pattern, x) else x
+
     # Note
-    n = re.search('(?<=\[[\'\"]\().*(?=\)[\'\"]\])', x)
-    if n is None:
-        n = re.search('(?<=[\n ][\[\'(])[\w ,\'\"/?]+', x)
-    elif n.group() == "'" or n.group() == '"':
-        n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', x)
-    note = n.group() if n is not None else ''
+    y = x.replace(dat, '').strip()
+    if y == '':
+        note = ''
+    else:
+        n = re.search('(?<=[\[(])[\w ,?]+(?=[])])', y)
+        # n = re.search('(?<=[\n ]((\[\'\()|(\(\[\')))[\w ,\'\"/?]+', y)
+        if n is None:
+            n = re.search('(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*(?=(\)[\'\"]\])|(\][\'\"]\))|\])', y)
+        elif '"now deleted"' in y and y.startswith('(') and y.endswith(')'):
+            n = re.search('(?<=\().*(?=\))', y)
+        note = n.group() if n is not None else ''
+        if note.endswith('\'') or note.endswith('"'):
+            note = note[:-1]
+
     if 'STANOX ' in dat and 'STANOX ' in x and note == '':
         dat = x[0:x.find('STANOX')].strip()
         note = x[x.find('STANOX'):]
+
     return dat, note
 
 
