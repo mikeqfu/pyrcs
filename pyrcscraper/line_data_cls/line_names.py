@@ -12,7 +12,7 @@ import re
 import pandas as pd
 import requests
 
-from utils import cdd, get_last_updated_date, load_pickle, parse_table, save_pickle
+from pyrcscraper.utils import cdd, get_last_updated_date, load_pickle, parse_table, save_pickle
 
 # ====================================================================================================================
 """ Change directory """
@@ -31,20 +31,20 @@ def cdd_line_names(*directories):
 
 
 # Parse route column
-def parse_route(x):
+def parse_route_column(x):
     if 'Watford - Euston suburban route' in x:
         route, route_note = 'Watford - Euston suburban route', x
     elif ', including Moorgate - Farringdon' in x:
         route_note = 'including Moorgate - Farringdon'
         route = x.replace(', including Moorgate - Farringdon', '')
-    elif re.match('.+(?= \[\')', x):
-        route, route_note = re.split(' \[\'\(?', x)
-        route_note = route_note.strip(')\'\]')
-    elif re.match('.+\)$', x):
-        if re.match('.+(?= - \()', x):
+    elif re.match(r'.+(?= \[\')', x):
+        route, route_note = re.split(r' \[\'\(?', x)
+        route_note = route_note.strip(")']")
+    elif re.match(r'.+\)$', x):
+        if re.match(r'.+(?= - \()', x):
             route, route_note = x, None
         else:
-            route, route_note = re.split(' \(\[?\'?', x)
+            route, route_note = re.split(r' \(\[?\'?', x)
             route_note = route_note.rstrip('\'])')
     else:
         route, route_note = x, None
@@ -65,7 +65,7 @@ def scrape_line_names():
     row_lst, header = parse_table(source, parser='lxml')
     line_names_data = pd.DataFrame([[r.replace('\xa0', '').strip() for r in row] for row in row_lst], columns=header)
 
-    line_names_data[['Route', 'Route_note']] = line_names_data.Route.map(parse_route).apply(pd.Series)
+    line_names_data[['Route', 'Route_note']] = line_names_data.Route.map(parse_route_column).apply(pd.Series)
 
     line_names = {'Line_names': line_names_data, 'Last_updated_date': last_updated_date}
 

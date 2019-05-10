@@ -23,8 +23,8 @@ import more_itertools
 import pandas as pd
 import requests
 
-from utils import cdd, load_json, load_pickle, save_json, save_pickle
-from utils import get_last_updated_date, parse_loc_note, parse_table, parse_tr
+from pyrcscraper.utils import cdd, load_json, load_pickle, save_json, save_pickle
+from pyrcscraper.utils import get_last_updated_date, parse_loc_note, parse_table, parse_tr
 
 # ====================================================================================================================
 """ Change directory """
@@ -45,19 +45,19 @@ def cdd_loc_codes(*directories):
 # Location name modifications
 def create_location_name_mod_dict():
     location_name_mod_dict = {
-        'Location': {re.compile(' And | \+ '): ' & ',
-                     re.compile('-By-'): '-by-',
-                     re.compile('-In-'): '-in-',
-                     re.compile('-En-Le-'): '-en-le-',
-                     re.compile('-La-'): '-la-',
-                     re.compile('-Le-'): '-le-',
-                     re.compile('-On-'): '-on-',
-                     re.compile('-The-'): '-the-',
-                     re.compile(' Of '): ' of ',
-                     re.compile('-Super-'): '-super-',
-                     re.compile('-Upon-'): '-upon-',
-                     re.compile('-Under-'): '-under-',
-                     re.compile('-Y-'): '-y-'}}
+        'Location': {re.compile(r' And | \+ '): ' & ',
+                     re.compile(r'-By-'): '-by-',
+                     re.compile(r'-In-'): '-in-',
+                     re.compile(r'-En-Le-'): '-en-le-',
+                     re.compile(r'-La-'): '-la-',
+                     re.compile(r'-Le-'): '-le-',
+                     re.compile(r'-On-'): '-on-',
+                     re.compile(r'-The-'): '-the-',
+                     re.compile(r' Of '): ' of ',
+                     re.compile(r'-Super-'): '-super-',
+                     re.compile(r'-Upon-'): '-upon-',
+                     re.compile(r'-Under-'): '-under-',
+                     re.compile(r'-Y-'): '-y-'}}
     return location_name_mod_dict
 
 
@@ -83,19 +83,20 @@ def parse_additional_note_page(url, parser='lxml'):
 
 
 # Scrape data of locations including CRS, NLC, TIPLOC, STANME and STANOX codes
-def scrape_location_codes(keyword, update=False):
+def scrape_location_codes(initial_letter, update=False, pickle_it=True):
     """
-    :param keyword: [str] initial letter of station/junction name or certain word for specifying URL
+    :param initial_letter: [str] initial letter of station/junction name or certain word for specifying URL
     :param update: [bool]
+    :param pickle_it: [bool] Whether to save the data as a pickle file
     :return [tuple] ([DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions,
                      [str]} date of when the data was last updated)
     """
-    path_to_file = cdd_loc_codes("A-Z", keyword.title() + ".pickle")
-    if os.path.isfile(path_to_file) and not update:
-        location_codes = load_pickle(path_to_file)
+    path_to_pickle = cdd_loc_codes("A-Z", initial_letter.title() + ".pickle")
+    if os.path.isfile(path_to_pickle) and not update:
+        location_codes = load_pickle(path_to_pickle)
     else:
         # Specify the requested URL
-        url = 'http://www.railwaycodes.org.uk/CRS/CRS{}.shtm'.format(keyword)
+        url = 'http://www.railwaycodes.org.uk/CRS/CRS{}.shtm'.format(initial_letter)
         last_updated_date = get_last_updated_date(url)
         # Request to get connected to the URL
         try:
@@ -106,25 +107,27 @@ def scrape_location_codes(keyword, update=False):
             reps = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
             pattern = re.compile("|".join(reps.keys()))
             tbl_lst = [[pattern.sub(lambda x: reps[x.group(0)], item) for item in record] for record in tbl_lst]
-            data = pd.DataFrame(tbl_lst, columns=header).replace({'\xa0': ''})
+            data = pd.DataFrame(tbl_lst, columns=header)
+            data.replace({'\xa0': ''}, regex=True, inplace=True)
 
             """ Extract additional information as note """
 
-            # Location
             data[['Location', 'Location_Note']] = data.Location.map(parse_loc_note).apply(pd.Series)
 
             # CRS, NLC, TIPLOC, STANME
-            drop_pattern = re.compile('[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
+            drop_pattern = re.compile(r'[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
             idx = [data[data.CRS == x].index[0] for x in data.CRS if re.match(drop_pattern, x)]
             data.drop(labels=idx, axis=0, inplace=True)
 
+            #
             def extract_others_note(x):
-                n = re.search('(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', x)
+                n = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', x)
                 note = n.group() if n is not None else ''
                 return note
 
+            #
             def strip_others_note(x):
-                d = re.search('[\w ,]+(?= [\[(\'])', x)
+                d = re.search(r'[\w ,]+(?= [\[(\'])', x)
                 dat = d.group() if d is not None else x
                 return dat
 
@@ -139,10 +142,10 @@ def scrape_location_codes(keyword, update=False):
                 if x == '-':
                     dat, note = '', ''
                 else:
-                    d = re.search('[\w *,]+(?= [\[(\'])', x)
+                    d = re.search(r'[\w *,]+(?= [\[(\'])', x)
                     dat = d.group() if d is not None else x
                     note = 'Pseudo STANOX' if '*' in dat else ''
-                    n = re.search('(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
+                    n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
                     if n is not None:
                         note = '; '.join(x for x in [note, n.group()] if x != '')
                     if '(' not in note and note.endswith(')'):
@@ -173,13 +176,16 @@ def scrape_location_codes(keyword, update=False):
             data.index = range(len(data))  # Rearrange index
 
         except Exception as e:
-            print("Scraping location data ... failed due to {}.".format(e))
+            print("Failed to scrape location data. {}.".format(e))
             data = None
             additional_note = None
 
-        location_codes_keys = [s + keyword.title() for s in ('Locations_', 'Last_updated_date_', 'Additional_note_')]
+        location_codes_keys = [s + initial_letter.title()
+                               for s in ('Locations_', 'Last_updated_date_', 'Additional_note_')]
         location_codes = dict(zip(location_codes_keys, [data, last_updated_date, additional_note]))
-        save_pickle(location_codes, path_to_file)
+
+        if pickle_it:
+            save_pickle(location_codes, path_to_pickle)
 
     return location_codes
 
@@ -245,6 +251,13 @@ def get_location_codes(update=False):
         # Select DataFrames only
         location_codes_data = (item['Locations_{}'.format(x)] for item, x in zip(data, string.ascii_uppercase))
         location_codes_data_table = pd.concat(location_codes_data, axis=0, ignore_index=True)
+
+        # Likely errors (spotted empirically)
+        idx = location_codes_data_table[location_codes_data_table.Location == 'Selby Melmerby Estates'].index
+        values = location_codes_data_table.loc[idx, 'STANME':'STANOX'].values
+        location_codes_data_table.loc[idx, 'STANME':'STANOX'] = ['', '']
+        idx = location_codes_data_table[location_codes_data_table.Location == 'Selby Potter Group'].index
+        location_codes_data_table.loc[idx, 'STANME':'STANOX'] = values
 
         # Get the latest updated date
         last_updated_dates = (item['Last_updated_date_{}'.format(x)] for item, x in zip(data, string.ascii_uppercase))
