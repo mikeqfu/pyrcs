@@ -91,7 +91,7 @@ def regulate_input_data_dir(data_dir):
     assert isinstance(data_dir, str) or data_dir is None
 
     if not data_dir:  # Use default file directory
-        data_dir = cd_dat()
+        data_dir = cd()
     else:
         data_dir = os.path.realpath(data_dir.lstrip('.\\'))
         assert os.path.isabs(data_dir), "The input 'dat_dir' is invalid."
