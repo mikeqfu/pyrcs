@@ -24,6 +24,7 @@ from pyrcscraper.utils import confirmed, get_cls_catalogue, get_last_updated_dat
 
 class LOR:
     def __init__(self, data_dir=None):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Line of Route (LOR/PRIDE) codes'
         self.URL = 'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
