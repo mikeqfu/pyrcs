@@ -30,17 +30,26 @@ class LOR:
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cdd("Line data", "Line of route codes")
 
-    # Change directory to "...dat\\Line data\\Line of route" and sub-directories
+    # Change directory to "dat\\Line data\\Line of route" and sub-directories
     @staticmethod
-    def cdd_line_of_route(*sub_dir):
+    def cd_lor(*sub_dir):
         path = cd_dat("Line data", "Line of route codes")
+        os.makedirs(path, exist_ok=True)
+        for x in sub_dir:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Line data\\Line of route\\dat" and sub-directories
+    def cdd_lor(self, *sub_dir):
+        path = self.cd_lor("dat")
+        os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
     # Get key to LOR code prefixes
     def get_key_to_prefixes(self, prefixes_only=True, update=False):
-        path_to_pickle = self.cdd_line_of_route("{}prefixes.pickle".format("" if prefixes_only else "key-to-"))
+        path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "key-to-"))
         if os.path.isfile(path_to_pickle) and not update:
             key_to_prefixes = load_pickle(path_to_pickle)
         else:
@@ -59,7 +68,7 @@ class LOR:
 
     # Get the urls to LOR codes with different prefixes
     def get_lor_page_urls(self, update=False):
-        path_to_pickle = self.cdd_line_of_route("urls.pickle")
+        path_to_pickle = self.cdd_lor("urls.pickle")
         if os.path.isfile(path_to_pickle) and not update:
             urls = load_pickle(path_to_pickle)
         else:
@@ -89,7 +98,7 @@ class LOR:
             "\"prefixes\" must be one of {}".format(self.get_key_to_prefixes(prefixes_only=True))
 
         pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
-        path_to_pickle = os.path.join(self.DataDir, pickle_filename)
+        path_to_pickle = os.path.join(self.cd_lor(), pickle_filename)
 
         try:
             prefixes = "NW" if prefixes in ("NW", "NZ") else prefixes
@@ -143,7 +152,7 @@ class LOR:
     # Fetch LOR codes by prefix
     def fetch_lor_codes_by_prefix(self, prefixes, update=False):
         pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
-        path_to_pickle = os.path.join(self.DataDir, pickle_filename)
+        path_to_pickle = os.path.join(self.cd_lor(), pickle_filename)
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_lor_codes_by_prefix(prefixes)
         try:
@@ -167,7 +176,7 @@ class LOR:
 
     # Collect ELR/LOR converter
     def collect_elr_lor_converter(self):
-        path_to_pickle = os.path.join(self.DataDir, "ELR-LOR-converter.pickle")
+        path_to_pickle = os.path.join(self.cd_lor(), "ELR-LOR-converter.pickle")
         url = self.Catalogue['ELR/LOR converter']
         try:
             page_data = pd.read_html(url)
@@ -191,7 +200,7 @@ class LOR:
 
     # Get ELR/LOR converter
     def fetch_elr_lor_converter(self, update=False):
-        path_to_pickle = os.path.join(self.DataDir, "ELR-LOR-converter.pickle")
+        path_to_pickle = os.path.join(self.cd_lor(), "ELR-LOR-converter.pickle")
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_elr_lor_converter()
         try:
