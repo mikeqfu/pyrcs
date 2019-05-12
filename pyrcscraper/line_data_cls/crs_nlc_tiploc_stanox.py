@@ -137,7 +137,8 @@ class LocationCodes:
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
                 other_systems_codes = dict(zip(system_names, codes))
-                save_pickle(other_systems_codes, os.path.join(self.cd_loc_codes(), "Other-systems-location-codes.pickle"))
+                save_pickle(other_systems_codes, os.path.join(self.cd_loc_codes(),
+                                                              "Other-systems-location-codes.pickle"))
             except Exception as e:
                 print("Failed to collect location codes for other systems. {}.".format(e))
                 other_systems_codes = None
@@ -349,10 +350,10 @@ class LocationCodes:
                 else:  # drop_duplicates is False or None
                     location_codes_subset = key_location_codes.drop_duplicates(subset=keys, keep=False)
                     #
-                    duplicated_temp_1 = key_location_codes[key_location_codes.duplicated(['Location'] + keys, keep=False)]
-                    duplicated_temp_2 = key_location_codes[key_location_codes.duplicated(keys, keep=False)]
-                    duplicated_1 = duplicated_temp_2[duplicated_temp_1.eq(duplicated_temp_2)].dropna().drop_duplicates()
-                    duplicated_2 = duplicated_temp_2[~duplicated_temp_1.eq(duplicated_temp_2)].dropna()
+                    dupl_temp_1 = key_location_codes[key_location_codes.duplicated(['Location'] + keys, keep=False)]
+                    dupl_temp_2 = key_location_codes[key_location_codes.duplicated(keys, keep=False)]
+                    duplicated_1 = dupl_temp_2[dupl_temp_1.eq(dupl_temp_2)].dropna().drop_duplicates()
+                    duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
                     duplicated = pd.concat([duplicated_1, duplicated_2], axis=0)
                     location_codes_duplicated = duplicated.groupby(keys).agg(tuple)
                     location_codes_duplicated.Location = location_codes_duplicated.Location.map(
