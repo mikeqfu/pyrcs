@@ -10,7 +10,7 @@ import sqlalchemy_utils
 from pyrcscraper.utils import confirmed
 
 
-class RailwayCodes:
+class RailwayCodesPSQL:
     def __init__(self):
         """
         We need to be connected to the database server in order to execute the "CREATE DATABASE" command. There is a 
