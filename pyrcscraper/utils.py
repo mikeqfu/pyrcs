@@ -371,7 +371,7 @@ def parse_table(source, parser='lxml'):
 
 
 # Parse location note
-def parse_loc_note(x):
+def parse_location_note(x_note):
     # Data
     # d = re.search('[\w ,]+(?=[ \n]\[)', x)
     # if d is not None:
@@ -379,24 +379,24 @@ def parse_loc_note(x):
     # else:
 
     # Location name
-    d = re.search(r'.*(?= \[[\"\']\()', x)
+    d = re.search(r'.*(?= \[[\"\']\()', x_note)
     if d is not None:
         dat = d.group()
-    elif ' [unknown feature, labelled "do not use"]' in x:
-        dat = re.search(r'\w+(?= \[unknown feature, )', x).group()
-    elif ') [formerly' in x:
-        dat = re.search(r'.*(?= \[formerly)', x).group()
+    elif ' [unknown feature, labelled "do not use"]' in x_note:
+        dat = re.search(r'\w+(?= \[unknown feature, )', x_note).group()
+    elif ') [formerly' in x_note:
+        dat = re.search(r'.*(?= \[formerly)', x_note).group()
     else:
         m_pattern = re.compile(
             r'[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at | \(also |'
             r' \(second code |\?|\n| \(\[\'| \(definition unknown\)')
         # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pattern, x) else x
-        x_tmp = re.search(r'(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', x)
-        x_tmp = x_tmp.group() if x_tmp is not None else x
-        dat = ' '.join(x.replace(x_tmp, '').split()) if re.search(m_pattern, x) else x
+        x_tmp = re.search(r'(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', x_note)
+        x_tmp = x_tmp.group() if x_tmp is not None else x_note
+        dat = ' '.join(x_note.replace(x_tmp, '').split()) if re.search(m_pattern, x_note) else x_note
 
     # Note
-    y = x.replace(dat, '').strip()
+    y = x_note.replace(dat, '').strip()
     if y == '':
         note = ''
     else:
@@ -410,9 +410,9 @@ def parse_loc_note(x):
         if note.endswith('\'') or note.endswith('"'):
             note = note[:-1]
 
-    if 'STANOX ' in dat and 'STANOX ' in x and note == '':
-        dat = x[0:x.find('STANOX')].strip()
-        note = x[x.find('STANOX'):]
+    if 'STANOX ' in dat and 'STANOX ' in x_note and note == '':
+        dat = x_note[0:x_note.find('STANOX')].strip()
+        note = x_note[x_note.find('STANOX'):]
 
     return dat, note
 
