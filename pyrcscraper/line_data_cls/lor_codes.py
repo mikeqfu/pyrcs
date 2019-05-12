@@ -18,28 +18,29 @@ import bs4
 import pandas as pd
 import requests
 
-from pyrcscraper import line_data
-from pyrcscraper.utils import get_cls_catalogue, get_last_updated_date, load_pickle, parse_tr, save_pickle
+from pyrcscraper.utils import cd_dat, cdd, load_pickle, parse_tr, regulate_input_data_dir, save_pickle
+from pyrcscraper.utils import confirmed, get_cls_catalogue, get_last_updated_date
 
 
 class LOR:
-    def __init__(self):
+    def __init__(self, data_dir=None):
         self.Name = 'Line of Route (LOR/PRIDE) codes'
         self.URL = 'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cdd("Line data", "Line of route codes")
 
     # Change directory to "...dat\\Line data\\Line of route" and sub-directories
     @staticmethod
     def cdd_line_of_route(*sub_dir):
-        path = line_data.cd_dat("Line data", "Line of route codes")
+        path = cd_dat("Line data", "Line of route codes")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
     # Get key to LOR code prefixes
     def get_key_to_prefixes(self, prefixes_only=True, update=False):
-        path_to_pickle = self.cdd_line_of_route("dat", "{}prefixes.pickle".format("" if prefixes_only else "key-to-"))
+        path_to_pickle = self.cdd_line_of_route("{}prefixes.pickle".format("" if prefixes_only else "key-to-"))
         if os.path.isfile(path_to_pickle) and not update:
             key_to_prefixes = load_pickle(path_to_pickle)
         else:
@@ -58,7 +59,7 @@ class LOR:
 
     # Get the urls to LOR codes with different prefixes
     def get_lor_page_urls(self, update=False):
-        path_to_pickle = self.cdd_line_of_route("dat", "urls.pickle")
+        path_to_pickle = self.cdd_line_of_route("urls.pickle")
         if os.path.isfile(path_to_pickle) and not update:
             urls = load_pickle(path_to_pickle)
         else:
@@ -74,13 +75,21 @@ class LOR:
                 urls = []
         return urls
 
+    # Update catalogue data
+    def __update__(self):
+        if confirmed("To update catalogue?"):
+            self.get_key_to_prefixes(prefixes_only=True, update=True)
+            self.get_key_to_prefixes(prefixes_only=False, update=True)
+            self.get_lor_page_urls(update=True)
+
     # Collect LOR codes by prefix
     def collect_lor_codes_by_prefix(self, prefixes):
 
         assert prefixes in self.get_key_to_prefixes(prefixes_only=True), \
             "\"prefixes\" must be one of {}".format(self.get_key_to_prefixes(prefixes_only=True))
 
-        path_to_pickle = self.cdd_line_of_route("{}.pickle".format("NW-NZ" if prefixes in ("NW", "NZ") else prefixes))
+        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
+        path_to_pickle = os.path.join(self.DataDir, pickle_filename)
 
         try:
             prefixes = "NW" if prefixes in ("NW", "NZ") else prefixes
@@ -123,7 +132,7 @@ class LOR:
                                        for x in zip(*[iter(table_soup)] * 2)]
                 lor_codes_by_initials = dict(zip([x.text for x in h3], code_data_and_notes))
 
-            save_pickle(lor_codes_by_initials, self.cdd_line_of_route(path_to_pickle))
+            save_pickle(lor_codes_by_initials, path_to_pickle)
 
         except Exception as e:
             print("Failed to get LOR codes by prefix \"{}\". {}.".format(prefixes, e))
@@ -133,7 +142,8 @@ class LOR:
 
     # Fetch LOR codes by prefix
     def fetch_lor_codes_by_prefix(self, prefixes, update=False):
-        path_to_pickle = self.cdd_line_of_route("{}.pickle".format("NW-NZ" if prefixes in ("NW", "NZ") else prefixes))
+        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
+        path_to_pickle = os.path.join(self.DataDir, pickle_filename)
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_lor_codes_by_prefix(prefixes)
         try:
@@ -144,7 +154,7 @@ class LOR:
 
     # Fetch all LOR codes either locally or from online
     def fetch_lor_codes(self, update=False):
-        path_to_pickle = self.cdd_line_of_route("LOR-codes.pickle")
+        path_to_pickle = os.path.join(self.DataDir, "LOR-codes.pickle")
         if not os.path.isfile(path_to_pickle) or update:
             prefixes = self.get_key_to_prefixes(prefixes_only=True, update=update)
             lor_codes = [self.fetch_lor_codes_by_prefix(p, update) for p in prefixes if p != 'NZ']
@@ -157,7 +167,7 @@ class LOR:
 
     # Collect ELR/LOR converter
     def collect_elr_lor_converter(self):
-        path_to_pickle = self.cdd_line_of_route("ELR-LOR-converter.pickle")
+        path_to_pickle = os.path.join(self.DataDir, "ELR-LOR-converter.pickle")
         url = self.Catalogue['ELR/LOR converter']
         try:
             page_data = pd.read_html(url)
@@ -181,7 +191,7 @@ class LOR:
 
     # Get ELR/LOR converter
     def fetch_elr_lor_converter(self, update=False):
-        path_to_pickle = self.cdd_line_of_route("ELR-LOR-converter.pickle")
+        path_to_pickle = os.path.join(self.DataDir, "ELR-LOR-converter.pickle")
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_elr_lor_converter()
         try:
