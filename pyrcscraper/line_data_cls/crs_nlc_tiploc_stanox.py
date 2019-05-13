@@ -38,18 +38,18 @@ class LocationCodes:
         self.DataDir = regulate_input_data_dir(data_dir) \
             if data_dir else cdd("Line data", "CRS, NLC, TIPLOC and STANOX codes")
 
-    # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\"
+    # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\" and sub-directories
     @staticmethod
-    def cd_loc_codes(*sub_dir):
+    def cd_lc(*sub_dir):
         path = cd_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
         os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\Line of route\\dat" and sub-directories
-    def cdd_loc_codes(self, *sub_dir):
-        path = self.cd_loc_codes("dat")
+    # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\dat" and sub-directories
+    def cdd_lc(self, *sub_dir):
+        path = self.cd_lc("dat")
         os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
@@ -101,7 +101,7 @@ class LocationCodes:
             try:
                 note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
                 additional_note = self.parse_additional_note_page(note_url)
-                save_pickle(additional_note, os.path.join(self.cd_loc_codes(), "Additional-CRS-note.pickle"))
+                save_pickle(additional_note, os.path.join(self.cd_lc(), "Additional-CRS-note.pickle"))
             except Exception as e:
                 print("Failed to collect additional note for CRS. {}.".format(e))
                 additional_note = None
@@ -109,7 +109,7 @@ class LocationCodes:
 
     # Fetch note about CRS
     def fetch_additional_crs_note(self, update=False):
-        path_to_pickle = os.path.join(self.cd_loc_codes(), "Additional-CRS-note.pickle")
+        path_to_pickle = os.path.join(self.cd_lc(), "Additional-CRS-note.pickle")
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_additional_crs_note(update=True)
         try:
@@ -137,7 +137,7 @@ class LocationCodes:
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
                 other_systems_codes = dict(zip(system_names, codes))
-                save_pickle(other_systems_codes, os.path.join(self.cd_loc_codes(),
+                save_pickle(other_systems_codes, os.path.join(self.cd_lc(),
                                                               "Other-systems-location-codes.pickle"))
             except Exception as e:
                 print("Failed to collect location codes for other systems. {}.".format(e))
@@ -146,7 +146,7 @@ class LocationCodes:
 
     # Fetch the data for other systems
     def fetch_other_systems_codes(self, update=False):
-        path_to_pickle = os.path.join(self.cd_loc_codes(), "Other-systems-location-codes.pickle")
+        path_to_pickle = os.path.join(self.cd_lc(), "Other-systems-location-codes.pickle")
         if not os.path.isfile(path_to_pickle) or update:
             self.collect_other_systems_codes(update=True)
         try:
@@ -166,13 +166,14 @@ class LocationCodes:
         """
         assert initial in string.ascii_letters
 
-        path_to_pickle = os.path.join(self.cd_loc_codes(), "A-Z", initial.title() + ".pickle")
+        path_to_pickle = os.path.join(self.cd_lc(), "A-Z", initial.upper() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
             location_codes = load_pickle(path_to_pickle)
         else:
+            url = self.Catalogue[initial.upper()]
             # Request to get connected to the URL
             try:
-                source = requests.get(self.Catalogue[initial.upper()])
+                source = requests.get(url)
                 tbl_lst, header = parse_table(source, parser='lxml')
 
                 # Get a raw DataFrame
@@ -245,7 +246,7 @@ class LocationCodes:
                 data.index = range(len(data))  # Rearrange index
 
                 # Specify the requested URL
-                last_updated_date = get_last_updated_date(self.Catalogue[initial.upper()])
+                last_updated_date = get_last_updated_date(url)
 
                 location_codes_keys = (initial.upper(), 'Last_updated_date', 'Additional_note')
                 location_codes_vals = (data, last_updated_date, additional_note)
