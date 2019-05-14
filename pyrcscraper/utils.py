@@ -268,7 +268,8 @@ def miles_chains_to_mileage(miles_chains):
     Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
 
     """
-    if not pd.isnull(miles_chains):
+    assert isinstance(miles_chains, str)
+    if '.' in miles_chains:
         miles, chains = str(miles_chains).split('.')
         yards = measurement.measures.Distance(chain=chains).yd
         network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
