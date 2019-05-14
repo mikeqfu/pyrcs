@@ -261,7 +261,7 @@ class LocationCodes:
         return location_codes
 
     # Get all Location data including CRS, NLC, TIPLOC, STANME and STANOX codes either locally or from online
-    def fetch_location_codes(self, update=False, pickle_it=False):
+    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None):
         # Get every data table
         data = [self.collect_location_codes_by_initial(x, update=update) for x in string.ascii_lowercase]
 
@@ -293,14 +293,15 @@ class LocationCodes:
                           'Other_systems': other_systems_codes}
 
         if pickle_it:
-            path_to_pickle = os.path.join(self.DataDir, "CRS-NLC-TIPLOC-STANOX-codes.pickle")
+            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+            path_to_pickle = os.path.join(dat_dir, "CRS-NLC-TIPLOC-STANOX-codes.pickle")
             save_pickle(location_codes, path_to_pickle)
 
         return location_codes
 
     # Get a dict/dataframe for location code data for the given keyword
     def make_location_codes_dictionary(self, keys, initials=None, main_key=None, drop_duplicates=True, as_dict=False,
-                                       pickle_it=True, update=False):
+                                       pickle_it=True, data_dir=None, update=False):
         """
         :param keys: [list] e.g. ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
         :param initials: [str] one of string.ascii_letters
@@ -308,6 +309,7 @@ class LocationCodes:
         :param drop_duplicates: [bool] If drop_duplicates is False, loc_dict will take the last item to be the value
         :param as_dict: [bool]
         :param pickle_it: [bool]
+        :param data_dir: [str; None]
         :param update: [bool]
         :return:
         """
@@ -325,7 +327,8 @@ class LocationCodes:
             assert initials is None
         assert isinstance(main_key, str) or main_key is None
 
-        path_to_file = os.path.join(self.DataDir, "-".join(keys) +
+        dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+        path_to_file = os.path.join(dat_dir, "-".join(keys) +
                                     ("" if initials is None else "-" + "".join(initials)) +
                                     (".json" if as_dict and len(keys) == 1 else ".pickle"))
         if os.path.isfile(path_to_file) and not update:
