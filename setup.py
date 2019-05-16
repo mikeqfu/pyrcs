@@ -20,6 +20,8 @@ setuptools.setup(
     install_requires=[
         'beautifulsoup4',
         'fuzzywuzzy',
+        'html5lib',
+        'lxml',
         'measurement',
         'more-itertools',
         'numpy',

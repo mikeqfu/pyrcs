@@ -14,12 +14,12 @@ import bs4
 import pandas as pd
 import requests
 
-from pyrcscraper import line_data
-from pyrcscraper.utils import get_last_updated_date
+from pyrcscraper.utils import cd_dat, get_last_updated_date
 
 
 class TrackDiagrams:
     def __init__(self):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Railway track diagrams'
         self.URL = 'http://www.railwaycodes.org.uk/track/diagrams0.shtm'
 
@@ -61,8 +61,8 @@ class TrackDiagrams:
 
     # Change directory to "...dat\\Line data\\Electrification" and sub-directories
     @staticmethod
-    def cdd_track_diagrams(*sub_dir):
-        path = line_data.cd_dat("Line data", "Track diagrams")
+    def cdd_td(*sub_dir):
+        path = cd_dat("Line data", "Track diagrams")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
