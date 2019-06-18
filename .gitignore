@@ -16,15 +16,16 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+*.egg-info/
+
 lib64/
 parts/
 sdist/
 var/
 wheels/
-*.egg-info/
+
 .installed.cfg
-*.egg
+
 MANIFEST
 
 # PyInstaller
@@ -105,3 +106,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+.idea/
