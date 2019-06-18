@@ -297,8 +297,8 @@ class LocationIdentifiers:
         return location_codes
 
     # Get a dict/dataframe for location code data for the given keyword
-    def make_location_codes_dictionary(self, keys, initials=None, main_key=None, drop_duplicates=True, as_dict=False,
-                                       pickle_it=True, data_dir=None, update=False):
+    def make_location_codes_dictionary(self, keys, initials=None, main_key=None, drop_duplicates=False, as_dict=False,
+                                       pickle_it=False, data_dir=None, update=False):
         """
         :param keys: [list] e.g. ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
         :param initials: [str] one of string.ascii_letters
