@@ -22,27 +22,26 @@ import bs4
 import more_itertools
 import pandas as pd
 import requests
+from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 
-from pyrcscraper.utils import cd_dat, cdd, load_json, load_pickle, save_json, save_pickle
-from pyrcscraper.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
-from pyrcscraper.utils import parse_location_note, parse_table, parse_tr
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
+from pyrcs.utils import parse_location_note, parse_table, parse_tr
 
 
-class LocationCodes:
+class LocationIdentifiers:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
         self.URL = 'http://www.railwaycodes.org.uk/crs/CRS0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) \
-            if data_dir else cdd("Line data", "CRS, NLC, TIPLOC and STANOX codes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir \
+            else cd_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
 
     # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\" and sub-directories
-    @staticmethod
-    def cd_lc(*sub_dir):
-        path = cd_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
-        os.makedirs(path, exist_ok=True)
+    def cd_lc(self, *sub_dir):
+        path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -50,7 +49,6 @@ class LocationCodes:
     # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\dat" and sub-directories
     def cdd_lc(self, *sub_dir):
         path = self.cd_lc("dat")
-        os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -137,8 +135,7 @@ class LocationCodes:
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
                 other_systems_codes = dict(zip(system_names, codes))
-                save_pickle(other_systems_codes, os.path.join(self.cd_lc(),
-                                                              "Other-systems-location-codes.pickle"))
+                save_pickle(other_systems_codes, os.path.join(self.cd_lc(), "Other-systems-location-codes.pickle"))
             except Exception as e:
                 print("Failed to collect location codes for other systems. {}.".format(e))
                 other_systems_codes = None
@@ -332,7 +329,10 @@ class LocationCodes:
                                     ("" if initials is None else "-" + "".join(initials)) +
                                     (".json" if as_dict and len(keys) == 1 else ".pickle"))
         if os.path.isfile(path_to_file) and not update:
-            location_codes_dictionary = load_json(path_to_file) if as_dict else load_pickle(path_to_file)
+            if as_dict:
+                location_codes_dictionary = load_json(path_to_file)
+            else:
+                location_codes_dictionary = load_pickle(path_to_file)
         else:
             if initials is None:
                 location_codes = self.fetch_location_codes()['Location_codes']
