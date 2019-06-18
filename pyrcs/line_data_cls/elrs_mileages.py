@@ -20,7 +20,7 @@ from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat
 from pyrcs.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
-from pyrcs.utils import is_float, miles_chains_to_mileage, parse_table
+from pyrcs.utils import is_float, mile_chain_to_nr_mileage, parse_table
 
 
 class ELRMileages:
@@ -193,7 +193,7 @@ class ELRMileages:
                                 temp_mileage.append(m.strip(' '))
                                 mileage_note.append('')
                     miles_chains = temp_mileage.copy()
-                    temp_mileage = [miles_chains_to_mileage(m) for m in temp_mileage]
+                    temp_mileage = [mile_chain_to_nr_mileage(m) for m in temp_mileage]
                     parsed_mileage = pd.DataFrame({'Mileage': temp_mileage, 'Mileage_Note': mileage_note,
                                                    'Miles_Chains': miles_chains})
                     return parsed_mileage
@@ -338,6 +338,6 @@ class ELRMileages:
             # Mileage of the end ELR
             mc_col = elr_col.replace('ELR', 'Mile_Chain')
             end_conn_mc = start_mileage_data.loc[idx, mc_col]
-            end_conn_mileage = miles_chains_to_mileage(end_conn_mc)
+            end_conn_mileage = mile_chain_to_nr_mileage(end_conn_mc)
 
             return start_conn_mileage, end_conn_mileage

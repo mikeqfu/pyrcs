@@ -8,6 +8,7 @@ import urllib.parse
 import bs4
 import dateutil.parser
 import measurement.measures
+import numpy as np
 import pandas as pd
 import pkg_resources
 import pyhelpers.dir
@@ -45,26 +46,67 @@ def regulate_input_data_dir(data_dir):
 
 
 # ====================================================================================================================
-""" Converter/parser """
+""" Converter """
 
 
 # Convert "miles.chains" to Network Rail mileages
-def miles_chains_to_mileage(miles_chains):
+def mile_chain_to_nr_mileage(miles_chains):
     """
     :param miles_chains: [str] 'miles.chains'
     :return: [str] 'miles.yards'
 
     Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
-
     """
-    assert isinstance(miles_chains, str)
-    if '.' in miles_chains:
+    if not pd.isnull(miles_chains):
         miles, chains = str(miles_chains).split('.')
         yards = measurement.measures.Distance(chain=chains).yd
-        network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
+        network_rail_mileage = '%.4f'.format(int(miles) + round(yards / (10 ** 4), 4))
     else:
         network_rail_mileage = miles_chains
     return network_rail_mileage
+
+
+# Convert str type mileage to numerical type
+def str_to_num_mileage(str_mileage):
+    return '' if str_mileage == '' else round(float(str_mileage), 4)
+
+
+# Convert mileage to str type
+def nr_mileage_num_to_str(x):
+    return '%.4f' % round(float(x), 4)
+
+
+# Convert yards to Network Rail mileages
+def yards_to_nr_mileage(yards):
+    if not pd.isnull(yards) and yards is not None:
+        yd = measurement.measures.Distance(yd=yards)
+        mileage_mi = np.floor(yd.mi)
+        mileage_yd = int(yards - measurement.measures.Distance(mi=mileage_mi).yd)
+        # Example: "%.2f" % round(2606.89579999999, 2)
+        mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
+        return mileage
+
+
+# Convert Network Rail mileages to yards
+def nr_mileage_to_yards(nr_mileage):
+    if isinstance(nr_mileage, float):
+        nr_mileage = str('%.4f' % nr_mileage)
+    elif isinstance(nr_mileage, str):
+        pass
+    miles = int(nr_mileage.split('.')[0])
+    yards = int(nr_mileage.split('.')[1])
+    yards += measurement.measures.Distance(mi=miles).yd
+    return yards
+
+
+# Convert calendar year to Network Rail financial year
+def year_to_financial_year(date):
+    financial_date = date + pd.DateOffset(months=-3)
+    return financial_date.year
+
+
+# ====================================================================================================================
+""" Parser """
 
 
 # Get a list of parsed HTML tr's
@@ -218,6 +260,10 @@ def parse_date(str_date, as_date_type=False):
     # Or, parsed_date = datetime.strptime(last_update_date[12:], '%d %B %Y')
     parsed_date = parsed_date.date() if as_date_type else str(parsed_date.date())
     return parsed_date
+
+
+# ====================================================================================================================
+"""  """
 
 
 # Get last update date
