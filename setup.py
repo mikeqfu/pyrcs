@@ -20,7 +20,7 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.0.9',
+    version='0.1.0',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
