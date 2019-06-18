@@ -16,10 +16,11 @@ import string
 import bs4
 import pandas as pd
 import requests
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper.utils import cd_dat, cdd, load_pickle, save_pickle
-from pyrcscraper.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
-from pyrcscraper.utils import is_float, miles_chains_to_mileage, parse_table
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
+from pyrcs.utils import is_float, miles_chains_to_mileage, parse_table
 
 
 class ELRMileages:
@@ -29,13 +30,11 @@ class ELRMileages:
         self.URL = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cdd("Line data", "ELRs and mileages")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "ELRs and mileages")
 
     # Change directory to "dat\\Line data\\ELRs and mileages" and sub-directories
-    @staticmethod
-    def cd_em(*sub_dir):
-        path = cd_dat("Line data", "ELRs and mileages")
-        os.makedirs(path, exist_ok=True)
+    def cd_em(self, *sub_dir):
+        path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -43,7 +42,6 @@ class ELRMileages:
     # Change directory to "dat\\Line data\\ELRs and mileages\\dat" and sub-directories
     def cdd_em(self, *sub_dir):
         path = self.cd_em("dat")
-        os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -229,7 +227,8 @@ class ELRMileages:
                     #
                     assert isinstance(conn_node_lst, list)
                     for i in [conn_node_lst.index(c) for c in conn_node_lst if len(c) > 1]:
-                        temp_lst = [x.replace('later ', '').rstrip(',').split(' and ') for x in conn_node_lst[i]]
+                        temp_lst = [x.replace('later ', '').rstrip(',').split(' and ') for x in conn_node_lst[i]
+                                    if isinstance(x, str)]
                         conn_node_lst[i] = [v for lst in temp_lst for v in lst]
                         temp_lst = [x.split(', ') for x in conn_node_lst[i]]
                         conn_node_lst[i] = [v for lst in temp_lst for v in lst]

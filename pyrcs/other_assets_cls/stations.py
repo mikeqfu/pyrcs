@@ -3,6 +3,12 @@
 Data source: http://www.railwaycodes.org.uk
 
 ELRs, mileages, operators, grid references
+Bilingual station names
+Sponsored stations
+Stations not served by their Station Facility Operator (SFO)
+International stations
+Station trivia
+
 Railway station data (Reference: http://www.railwaycodes.org.uk/stations/station0.shtm)
 
 """
@@ -14,21 +20,33 @@ import string
 
 import pandas as pd
 import requests
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper.utils import cdd, load_pickle, save_pickle
-from pyrcscraper.utils import get_last_updated_date, parse_loc_note, parse_table
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_last_updated_date, regulate_input_data_dir
+from pyrcs.utils import parse_location_note, parse_table
 
 
 class Stations:
-    def __init__(self):
-        self.name = 'Line of Route (LOR/PRIDE) codes'
-        self.main_page = 'http://www.railwaycodes.org.uk/pride/pride0.shtm'
+    def __init__(self, data_dir=None):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
+        self.Name = 'Railway station data'
+        self.URL = 'http://www.railwaycodes.org.uk/stations/station0.shtm'
+        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Stations")
 
-    # Change directory to "dat\\Other assets\\Stations\\ELRs, mileages, operators, grid references" and sub-directories
-    def cdd_stn_loc(*directories):
-        path = cdd("Other assets", "Stations", "ELRs, mileages, operators, grid references")
-        for directory in directories:
-            path = os.path.join(path, directory)
+    # Change directory to "dat\\Other assets\\Stations" and sub-directories
+    def cd_stn(self, *sub_dir):
+        path = self.DataDir
+        for x in sub_dir:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Other assets\\Stations\\dat"
+    def cdd_stn(self, *sub_dir):
+        path = self.cd_stn("dat")
+        for x in sub_dir:
+            path = os.path.join(path, x)
         return path
 
     #
@@ -50,7 +68,7 @@ class Stations:
         return operators
 
     # Railway station data by keywords
-    def scrape_station_locations(self, keyword, update=False):
+    def collect_station_locations(self, keyword, update=False):
         """
         :param keyword: [str] station data (including the station name, ELR, mileage, status, owner, operator,
                             degrees of longitude and latitude, and grid reference) for stations whose name start with
@@ -58,7 +76,7 @@ class Stations:
         :return [dict] {keyword: [DataFrame] railway station data,
                         'Last_updated_date': [str] date of when the data was last updated}
         """
-        path_to_file = self.cdd_stn_loc("A-Z", keyword.title() + ".pickle")
+        path_to_file = self.cd_stn("A-Z", keyword.title() + ".pickle")
         if os.path.isfile(path_to_file) and not update:
             station_locations = load_pickle(path_to_file)
         else:
@@ -77,7 +95,7 @@ class Stations:
                         lambda x: pd.np.nan if x == '' else float(x))
 
                 station_locations_data[['Station', 'Station_Note']] = \
-                    station_locations_data.Station.map(parse_loc_note).apply(pd.Series)
+                    station_locations_data.Station.map(parse_location_note).apply(pd.Series)
 
                 # Operator
                 temp = list(station_locations_data.Operator.map(self.parse_current_operator))
@@ -113,33 +131,30 @@ class Stations:
         return station_locations
 
     # Get all railway station data
-    def get_station_locations(self, update=False):
+    def fetch_station_locations(self, update=False, pickle_it=False, data_dir=None):
         """
         :param update: [bool]
+        :param pickle_it: [bool]
+        :param data_dir: [str; None]
         :return [dict] {keyword: [DataFrame] station data, including the station name, ELR, mileage, status, owner,
                                     operator, degrees of longitude and latitude, and grid reference,
                         'Last_updated_date': [str] date of when the data was last updated}
         """
-        path_to_file = self.cdd_stn_loc("ELRs-mileages-operators-grid.pickle")
-        if os.path.isfile(path_to_file) and not update:
-            station_locations = load_pickle(path_to_file)
-        else:
-            try:
-                stn_locs, last_updated_dates = [], []
-                for k in string.ascii_lowercase:
-                    stn_loc, updated_date = self.scrape_station_locations(k, update).values()
-                    if stn_loc is not None:
-                        stn_locs.append(stn_loc)
-                    if updated_date is not None:
-                        last_updated_dates.append(updated_date)
 
-                stn_dat = pd.concat(stn_locs, ignore_index=True, sort=False)
-                station_locations = {'Station': stn_dat, 'Last_updated_date': max(last_updated_dates)}
+        stn_locs, last_updated_dates = [], []
+        for k in string.ascii_lowercase:
+            stn_loc, updated_date = self.collect_station_locations(k, update).values()
+            if stn_loc is not None:
+                stn_locs.append(stn_loc)
+            if updated_date is not None:
+                last_updated_dates.append(updated_date)
 
-                save_pickle(station_locations, path_to_file)
+        stn_dat = pd.concat(stn_locs, ignore_index=True, sort=False)
+        station_locations = {'Station': stn_dat, 'Last_updated_date': max(last_updated_dates)}
 
-            except Exception as e:
-                print("Failed to get \"station data\" due to \"{}\".".format(e))
-                station_locations = {'Station': pd.DataFrame(), 'Last_updated_date': None}
+        if pickle_it:
+            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+            path_to_pickle = os.path.join(dat_dir, "ELRs-mileages-operators-grid.pickle")
+            save_pickle(station_locations, path_to_pickle)
 
         return station_locations

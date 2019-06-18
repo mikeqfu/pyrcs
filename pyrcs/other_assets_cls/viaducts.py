@@ -13,18 +13,30 @@ import bs4
 import fuzzywuzzy.process
 import pandas as pd
 import requests
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper.utils import cdd, get_last_updated_date, load_pickle, parse_tr, save_pickle
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_last_updated_date, parse_tr, regulate_input_data_dir
 
 
 class Viaducts:
-    def __init__(self):
+    def __init__(self, data_dir=None):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Viaducts'
         self.URL = 'http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm'
+        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Viaducts")
 
-    # Change directory to "dat\\Other assets\\Railway viaducts\\"
-    def cdd_viaducts(*sub_dir):
-        path = cdd("Other assets", "Railway viaducts")
+    # Change directory to "dat\\Other assets\\Viaducts\\"
+    def cd_viaducts(self, *sub_dir):
+        path = self.DataDir
+        for x in sub_dir:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Other assets\\Viaducts\\dat"
+    def cdd_viaducts(self, *sub_dir):
+        path = self.cd_viaducts("dat")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -37,7 +49,7 @@ class Viaducts:
         return pages
 
     # Scrape viaducts data by page
-    def scrape_railway_viaducts(self, page_no, update=False):
+    def collect_railway_viaducts(self, page_no, update=False):
         """
         :param page_no: [int] page number; valid values include 1, 2, 3, 4, 5, and 6
         :param update:
@@ -46,7 +58,7 @@ class Viaducts:
         page_headers = self.get_page_titles()
         pickle_filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0] + ".pickle"
 
-        path_to_file = self.cdd_viaducts("Page 1-6", pickle_filename)
+        path_to_file = self.cd_viaducts("Page 1-6", pickle_filename)
 
         if os.path.isfile(path_to_file) and not update:
             viaducts_data = load_pickle(path_to_file)
@@ -81,26 +93,21 @@ class Viaducts:
         return viaducts_data
 
     #
-    def get_railway_viaducts(self, update=False):
-        path_to_file = self.cdd_viaducts("Railway-viaducts.pickle")
-        if os.path.isfile(path_to_file) and not update:
-            viaducts_data = load_pickle(path_to_file)
-        else:
-            try:
-                data = [self.scrape_railway_viaducts(page_no, update) for page_no in range(1, 7)]
+    def fetch_railway_viaducts(self, update=False, pickle_it=False, data_dir=None):
 
-                viaducts_data = [dat[k] for dat in data for k, v in dat.items() if re.match('^Viaducts.*', k)]
-                last_updated_dates = [dat[k] for dat in data for k, v in dat.items()
-                                      if re.match('^Last_updated_date.*', k)]
+        data = [self.collect_railway_viaducts(page_no, update) for page_no in range(1, 7)]
 
-                viaducts = pd.concat(viaducts_data, ignore_index=True, sort=False)
-                viaducts = viaducts[list(viaducts_data[0].columns)]
-                viaducts_data = {'Viaducts': viaducts, 'Last_updated_date': max(last_updated_dates)}
+        viaducts_data = [dat[k] for dat in data for k, v in dat.items() if re.match('^Viaducts.*', k)]
+        last_updated_dates = [dat[k] for dat in data for k, v in dat.items()
+                              if re.match('^Last_updated_date.*', k)]
 
-                save_pickle(viaducts_data, path_to_file)
+        viaducts = pd.concat(viaducts_data, ignore_index=True, sort=False)
+        viaducts = viaducts[list(viaducts_data[0].columns)]
+        viaducts_data = {'Viaducts': viaducts, 'Last_updated_date': max(last_updated_dates)}
 
-            except Exception as e:
-                print("Failed to get \"viaducts\" data due to \"{}\".".format(e))
-                viaducts_data = {'Viaducts': pd.DataFrame(), 'Last_updated_date': None}
+        if pickle_it:
+            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+            path_to_pickle = os.path.join(dat_dir, "Railway-viaducts.pickle")
+            save_pickle(viaducts_data, path_to_pickle)
 
         return viaducts_data

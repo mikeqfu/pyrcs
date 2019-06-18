@@ -11,22 +11,31 @@ import re
 
 import pandas as pd
 import requests
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper import line_data
-from pyrcscraper.utils import get_last_updated_date, load_pickle, parse_table, save_pickle
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_last_updated_date, parse_table, regulate_input_data_dir
 
 
 class LineNames:
-    def __init__(self):
+    def __init__(self, data_dir=None):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Railway line names'
         self.URL = 'http://www.railwaycodes.org.uk/misc/line_names.shtm'
         self.Catalogue = 'A single table.'  # get_cls_contents(self.URL, navigation_bar_exists=False, menu_exists=False)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Line names")
 
     # Change directory to "dat\\Line data\\Line names" and sub-directories
-    @staticmethod
-    def cdd_line_names(*sub_dir):
-        path = line_data.cd_dat("Line data", "Line names")
+    def cd_ln(self, *sub_dir):
+        path = self.DataDir
+        for x in sub_dir:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Line data\\Line names\\dat" and sub-directories
+    def cdd_ln(self, *sub_dir):
+        path = self.cd_ln("dat")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -74,7 +83,7 @@ class LineNames:
 
     # Get the data of line names either locally or from online
     def get_line_names(self, update=False):
-        path_to_pickle = self.cdd_line_names("Line-names.pickle")
+        path_to_pickle = self.cd_ln("Line-names.pickle")
         if os.path.isfile(path_to_pickle) and not update:
             line_names = load_pickle(path_to_pickle)
         else:

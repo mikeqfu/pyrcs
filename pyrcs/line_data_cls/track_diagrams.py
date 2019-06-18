@@ -14,11 +14,12 @@ import bs4
 import pandas as pd
 import requests
 
-from pyrcscraper.utils import cd_dat, get_last_updated_date
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_last_updated_date, regulate_input_data_dir
 
 
 class TrackDiagrams:
-    def __init__(self):
+    def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Railway track diagrams'
         self.URL = 'http://www.railwaycodes.org.uk/track/diagrams0.shtm'
@@ -44,25 +45,25 @@ class TrackDiagrams:
                 while cold_soup:
                     info.append(cold_soup.text)
                     urls.append(urllib.parse.urljoin(os.path.dirname(self.URL), cold_soup['href']))
-                    if h3.text == 'Miscellaneous':
-                        cold_soup = cold_soup.find_next('a')
-                    else:
-                        cold_soup = cold_soup.find_next_sibling('a')
-
+                    cold_soup = cold_soup.find_next('a') if h3.text == 'Miscellaneous' \
+                        else cold_soup.find_next_sibling('a')
             meta = pd.DataFrame(zip(info, urls), columns=['Description', 'FileURL'])
-            # Update
-            items.update({h3.text: (desc, meta)})
-            # Move on
-            h3 = h3.find_next_sibling('h3')
-
+            items.update({h3.text: (desc, meta)})  # Update
+            h3 = h3.find_next_sibling('h3')  # Move on
         self.Catalogue = items
-
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Track diagrams")
 
-    # Change directory to "...dat\\Line data\\Electrification" and sub-directories
-    @staticmethod
-    def cdd_td(*sub_dir):
-        path = cd_dat("Line data", "Track diagrams")
+    # Change directory to "...dat\\Line data\\Track diagrams" and sub-directories
+    def cd_td(self, *sub_dir):
+        path = self.DataDir
+        for x in sub_dir:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Line data\\Track diagrams\\dat" and sub-directories
+    def cdd_td(self, *sub_dir):
+        path = self.cd_td("dat")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path

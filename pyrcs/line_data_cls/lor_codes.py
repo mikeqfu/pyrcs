@@ -17,9 +17,12 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
+from pyhelpers.misc import confirmed
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper.utils import cd_dat, cdd, load_pickle, parse_tr, regulate_input_data_dir, save_pickle
-from pyrcscraper.utils import confirmed, get_cls_catalogue, get_last_updated_date
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_cls_catalogue, get_last_updated_date
+from pyrcs.utils import parse_tr, regulate_input_data_dir
 
 
 class LOR:
@@ -29,13 +32,11 @@ class LOR:
         self.URL = 'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cdd("Line data", "Line of route codes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Line of route codes")
 
     # Change directory to "dat\\Line data\\Line of route" and sub-directories
-    @staticmethod
-    def cd_lor(*sub_dir):
-        path = cd_dat("Line data", "Line of route codes")
-        os.makedirs(path, exist_ok=True)
+    def cd_lor(self, *sub_dir):
+        path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
@@ -43,7 +44,6 @@ class LOR:
     # Change directory to "dat\\Line data\\Line of route\\dat" and sub-directories
     def cdd_lor(self, *sub_dir):
         path = self.cd_lor("dat")
-        os.makedirs(path, exist_ok=True)
         for x in sub_dir:
             path = os.path.join(path, x)
         return path

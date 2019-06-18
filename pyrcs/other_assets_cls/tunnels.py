@@ -10,24 +10,36 @@ import fuzzywuzzy.process
 import measurement.measures
 import pandas as pd
 import requests
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcscraper.utils import cdd, get_last_updated_date, load_pickle, parse_tr, save_pickle
+from pyrcs.utils import cd_dat
+from pyrcs.utils import get_last_updated_date, parse_tr, regulate_input_data_dir
 
 
 class Tunnels:
-    def __init__(self):
+    def __init__(self, data_dir=None):
+        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Tunnels'
         self.URL = 'http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm'
+        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Tunnels")
 
-    # Change directory to "dat\\Other assets\\Railway tunnel lengths"
-    def cdd_tunnels(*directories):
-        path = cdd("Other assets", "Railway tunnel lengths")
-        for directory in directories:
-            path = os.path.join(path, directory)
+    # Change directory to "dat\\Other assets\\Tunnels"
+    def cd_tunnels(self, *directories):
+        path = self.DataDir
+        for x in directories:
+            path = os.path.join(path, x)
+        return path
+
+    # Change directory to "dat\\Other assets\\Tunnels\\dat"
+    def cdd_tunnels(self, *sub_dir):
+        path = self.cd_tunnels("dat")
+        for x in sub_dir:
+            path = os.path.join(path, x)
         return path
 
     # Scrape page headers
-    def scrape_page_headers(self):
+    def find_page_headers(self):
         intro_page = requests.get(self.URL)
         pages = [x.text for x in bs4.BeautifulSoup(intro_page.text, 'lxml').find_all('a', text=re.compile('^Page.*'))]
         return pages[:int(len(pages)/2)]
@@ -84,7 +96,7 @@ class Tunnels:
         return length, add_info
 
     # Railway tunnel lengths (by page)
-    def scrape_railway_tunnel_lengths(self, page_no, update=False):
+    def collect_railway_tunnel_lengths(self, page_no, update=False):
         """
         :param page_no: [int] page number; valid values include 1, 2, and 3
         :param update: [bool] indicate whether to re-scrape the tunnel lengths data for the given page_no
@@ -92,10 +104,10 @@ class Tunnels:
                     [DataFrame] tunnel lengths data of the given 'page'
                     [str] date of when the data was last updated
         """
-        page_headers = self.scrape_page_headers()
+        page_headers = self.find_page_headers()
         filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0]
 
-        path_to_file = self.cdd_tunnels("Page 1-4", filename + ".pickle")
+        path_to_file = self.cd_tunnels("Page 1-4", filename + ".pickle")
 
         if os.path.isfile(path_to_file) and not update:
             tunnels_data = load_pickle(path_to_file)
@@ -138,13 +150,13 @@ class Tunnels:
         return tunnels_data
 
     # Minor lines and other odds and ends
-    def scrape_page4_others(self, update=False):
+    def collect_page4_others(self, update=False):
         """
         Page 4 (others) contains more than one table on the web page
         """
-        page_headers = self.scrape_page_headers()
+        page_headers = self.find_page_headers()
         filename = fuzzywuzzy.process.extractOne('others', page_headers)[0]
-        path_to_file = self.cdd_tunnels("Page 1-4", filename + ".pickle")
+        path_to_file = self.cd_tunnels("Page 1-4", filename + ".pickle")
 
         if os.path.isfile(path_to_file) and not update:
             tunnels = load_pickle(path_to_file)
@@ -191,40 +203,35 @@ class Tunnels:
         return tunnels
 
     # All available data of railway tunnel lengths
-    def get_railway_tunnel_lengths(self, update=False):
+    def fetch_railway_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None):
         """
-        :param update: [str] ext of file which the acquired DataFrame is saved as
-        :return [tuple] containing:
+        :param update: [bool]
+        :param pickle_it: [bool]
+        :param data_dir: [str; None]
+        :return [dict] containing:
                     [DataFrame] railway tunnel lengths data, including the name,
                                 length, owner and relative location
                     [str] date of when the data was last updated
         """
-        #
-        pickle_filename = "Railway-tunnel-lengths.pickle"
-        path_to_pickle = self.cdd_tunnels(pickle_filename)
+        data = [self.collect_railway_tunnel_lengths(page_no, update) for page_no in range(1, 4)]
+        others = self.collect_page4_others(update)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            tunnel_lengths = load_pickle(path_to_pickle)
-        else:
-            try:
-                data = [self.scrape_railway_tunnel_lengths(page_no, update) for page_no in range(1, 4)]
-                others = self.scrape_page4_others(update)
+        tunnel_data = [dat[k] for dat in data for k, v in dat.items() if re.match('^Tunnels.*', k)]
+        other_data = [v for k, v in others.items() if not k.startswith('Last_updated_date')]
+        tunnel_data += other_data
 
-                tunnel_data = [dat[k] for dat in data for k, v in dat.items() if re.match('^Tunnels.*', k)]
-                other_data = [v for k, v in others.items() if not k.startswith('Last_updated_date')]
-                tunnel_data += other_data
+        last_updated_dates = [dat[k] for dat in data for k, v in dat.items()
+                              if re.match('^Last_updated_date.*', k)]
+        other_last_updated_date = others['Last_updated_date_4']
+        last_updated_dates.append(other_last_updated_date)
 
-                last_updated_dates = [dat[k] for dat in data for k, v in dat.items()
-                                      if re.match('^Last_updated_date.*', k)]
-                other_last_updated_date = others['Last_updated_date_4']
-                last_updated_dates.append(other_last_updated_date)
+        tunnel_lengths_dat = pd.concat(tunnel_data, ignore_index=True, sort=False)[list(tunnel_data[0].columns)]
 
-                tunnel_lengths = pd.concat(tunnel_data, ignore_index=True, sort=False)[list(tunnel_data[0].columns)]
+        tunnel_lengths = {'Tunnels': tunnel_lengths_dat, 'Last_updated_date': max(last_updated_dates)}
 
-                save_pickle({'Tunnels': tunnel_lengths, 'Last_updated_date': max(last_updated_dates)}, path_to_pickle)
-
-            except Exception as e:
-                print("Getting railway tunnel lengths ... failed due to '{}'.".format(e))
-                tunnel_lengths = None
+        if pickle_it:
+            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+            path_to_pickle = os.path.join(dat_dir, "Railway-tunnel-lengths.pickle")
+            save_pickle(tunnel_lengths, path_to_pickle)
 
         return tunnel_lengths
