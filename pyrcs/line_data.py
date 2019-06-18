@@ -1,8 +1,8 @@
 """ Line data """
 
-from pyrcscraper.line_data_cls import crs_nlc_tiploc_stanox, elrs_mileages, line_names, lor_codes
-from pyrcscraper.line_data_cls import electrification, track_diagrams
-from pyrcscraper.utils import get_cls_catalogue, get_last_updated_date
+from pyrcs.line_data_cls import crs_nlc_tiploc_stanox, elrs_mileages, line_names, lor_codes
+from pyrcs.line_data_cls import electrification, track_diagrams
+from pyrcs.utils import get_cls_catalogue, get_last_updated_date
 
 
 class LineData:
@@ -15,7 +15,7 @@ class LineData:
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         # Classes
         self.ELRMileages = elrs_mileages.ELRMileages()
-        self.LocationIdentifiers = crs_nlc_tiploc_stanox.LocationCodes()
+        self.LocationIdentifiers = crs_nlc_tiploc_stanox.LocationIdentifiers()
         self.LOR = lor_codes.LOR()
         self.LineNames = line_names.LineNames()
         self.Electrification = electrification.Electrification()

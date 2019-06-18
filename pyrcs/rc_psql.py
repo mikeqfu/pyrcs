@@ -6,8 +6,7 @@ import sqlalchemy
 import sqlalchemy.engine.reflection
 import sqlalchemy.engine.url
 import sqlalchemy_utils
-
-from pyrcscraper.utils import confirmed
+from pyhelpers.misc import confirmed
 
 
 class RailwayCodesPSQL:

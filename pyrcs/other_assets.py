@@ -5,7 +5,7 @@ import urllib.parse
 import bs4
 import requests
 
-from pyrcscraper.other_assets_cls import signal_boxes, stations, tunnels, viaducts
+from pyrcs.other_assets_cls import signal_boxes, stations, tunnels, viaducts
 
 
 class OtherAssets:
