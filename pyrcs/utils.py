@@ -11,7 +11,6 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
-import pyhelpers.dir
 import requests
 
 # ====================================================================================================================
@@ -19,30 +18,13 @@ import requests
 
 
 # Change directory to "dat" and sub-directories
-def cd_dat(*sub_dir):
-    path = pkg_resources.resource_filename(__name__, "dat")
+def cd_dat(*sub_dir, dat_dir="dat", mkdir=False):
+    path = pkg_resources.resource_filename(__name__, dat_dir)
     for x in sub_dir:
         path = os.path.join(path, x)
+    if mkdir:
+        os.makedirs(path, exist_ok=True)
     return path
-
-
-# Regulate the input data directory
-def regulate_input_data_dir(data_dir):
-    """
-    :param data_dir: [str] data directory as input
-    :return: [str] regulated data directory
-    """
-    assert isinstance(data_dir, str) or data_dir is None
-
-    if data_dir is None:
-        data_dir = cd_dat()
-    elif not os.path.isabs(data_dir):  # Use default file directory
-        data_dir = pyhelpers.dir.cd(data_dir.strip('.\\.'))
-    else:
-        data_dir = os.path.realpath(data_dir.lstrip('.\\.'))
-        assert os.path.isabs(data_dir), "The input 'dat_dir' is invalid."
-
-    return data_dir
 
 
 # ====================================================================================================================
