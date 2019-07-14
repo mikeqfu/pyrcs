@@ -20,7 +20,7 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.2',
+    version='0.1.3',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
@@ -33,15 +33,14 @@ setuptools.setup(
 
     install_requires=[
         'beautifulsoup4',
+        'fuzzywuzzy',
         'html5lib',
         'lxml',
         'measurement',
         'more-itertools',
         'pandas',
         'pyhelpers',
-        'python-dateutil',
-        'python-Levenshtein',
-        'python-rapidjson',
+        # 'python-Levenshtein',
         'requests',
         'sqlalchemy',
         'sqlalchemy-utils'
