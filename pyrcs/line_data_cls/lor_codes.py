@@ -17,12 +17,11 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
+from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.misc import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat
-from pyrcs.utils import get_cls_catalogue, get_last_updated_date
-from pyrcs.utils import parse_tr, regulate_input_data_dir
+from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_tr
 
 
 class LOR:

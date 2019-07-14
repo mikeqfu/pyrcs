@@ -20,11 +20,10 @@ import string
 
 import pandas as pd
 import requests
+from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat
-from pyrcs.utils import get_last_updated_date, regulate_input_data_dir
-from pyrcs.utils import parse_location_note, parse_table
+from pyrcs.utils import cd_dat, get_last_updated_date, parse_location_note, parse_table
 
 
 class Stations:

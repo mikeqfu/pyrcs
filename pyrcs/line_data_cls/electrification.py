@@ -9,8 +9,9 @@ Section codes for overhead line electrification (OLE) installations
 
 import os
 
-from pyrcs.utils import cd_dat
-from pyrcs.utils import get_cls_catalogue, get_last_updated_date, regulate_input_data_dir
+from pyhelpers.dir import regulate_input_data_dir
+
+from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date
 
 
 class Electrification:

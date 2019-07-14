@@ -2,58 +2,62 @@
 
 import time
 
+from pyhelpers.misc import confirmed
+
 from pyrcs.line_data import LineData
 from pyrcs.other_assets import OtherAssets
 
 
 def update_package_data():
 
-    line_dat = LineData()
+    if confirmed("To update resources?"):
 
-    # ELR and mileages
-    _ = line_dat.ELRMileages.fetch_elr(update=True)
+        line_dat = LineData()
 
-    time.sleep(10)
+        # ELR and mileages
+        _ = line_dat.ELRMileages.fetch_elr(update=True)
 
-    # Location
-    _ = line_dat.LocationIdentifiers.fetch_location_codes(update=True)
-    _ = line_dat.LocationIdentifiers.fetch_additional_crs_note(update=True)
-    _ = line_dat.LocationIdentifiers.fetch_other_systems_codes(update=True)
+        time.sleep(10)
 
-    time.sleep(10)
+        # Location
+        _ = line_dat.LocationIdentifiers.fetch_location_codes(update=True)
+        _ = line_dat.LocationIdentifiers.fetch_additional_crs_note(update=True)
+        _ = line_dat.LocationIdentifiers.fetch_other_systems_codes(update=True)
 
-    # Line of routes
-    _ = line_dat.LOR.fetch_lor_codes(update=True)
-    _ = line_dat.LOR.fetch_elr_lor_converter(update=True)
+        time.sleep(10)
 
-    time.sleep(10)
+        # Line of routes
+        _ = line_dat.LOR.fetch_lor_codes(update=True)
+        _ = line_dat.LOR.fetch_elr_lor_converter(update=True)
 
-    """
-    # Line names
-    # Electrification
-    # Track diagrams
-    """
+        time.sleep(10)
 
-    other_assets = OtherAssets()
+        """
+        # Line names
+        # Electrification
+        # Track diagrams
+        """
 
-    # Signal boxes
-    _ = other_assets.SignalBoxes.fetch_signal_box_prefix_codes(update=True)
-    _ = other_assets.SignalBoxes.fetch_non_national_rail_codes(update=True)
+        other_assets = OtherAssets()
 
-    time.sleep(10)
+        # Signal boxes
+        _ = other_assets.SignalBoxes.fetch_signal_box_prefix_codes(update=True)
+        _ = other_assets.SignalBoxes.fetch_non_national_rail_codes(update=True)
 
-    # Stations
-    _ = other_assets.Stations.fetch_station_locations(update=True)
+        time.sleep(10)
 
-    time.sleep(10)
+        # Stations
+        _ = other_assets.Stations.fetch_station_locations(update=True)
 
-    # Tunnels
-    _ = other_assets.Tunnels.fetch_railway_tunnel_lengths(update=True)
+        time.sleep(10)
 
-    time.sleep(10)
+        # Tunnels
+        _ = other_assets.Tunnels.fetch_railway_tunnel_lengths(update=True)
 
-    # Viaducts
-    _ = other_assets.Viaducts.fetch_railway_viaducts(update=True)
+        time.sleep(10)
+
+        # Viaducts
+        _ = other_assets.Viaducts.fetch_railway_viaducts(update=True)
 
 
 update_package_data()

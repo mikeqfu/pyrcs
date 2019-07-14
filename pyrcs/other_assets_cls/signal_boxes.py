@@ -6,10 +6,10 @@ import string
 import bs4
 import pandas as pd
 import requests
+from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat
-from pyrcs.utils import get_cls_catalogue, get_last_updated_date, parse_table, parse_tr, regulate_input_data_dir
+from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_table, parse_tr
 
 
 class SignalBoxes:
@@ -103,31 +103,32 @@ class SignalBoxes:
         url = 'http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm'
         source = requests.get(url)
         web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
-        non_national_rail = [k.text for k in web_page_text.find_all('h3')]
+        non_national_rail, non_national_rail_codes = [], {}
 
-        non_national_rail_codes = {}
-        for n in non_national_rail:
-            sub_source = web_page_text.find(text=n)
+        for h in web_page_text.find_all('h3'):
+            # Get the name of the non-national rail
+            non_national_rail_name = h.text
 
             # Find text descriptions
-            desc = sub_source.find_next('p')
-            desc_text = desc.text
-            while desc.find_next('p').text != '\xa0' and ' | ' not in desc.find_next('p').text:
-                desc_text = ' '.join([desc_text, desc.find_next('p').text])
-                desc = desc.find_next('p')
+            desc = h.find_next('p')
+            desc_text, more_desc = desc.text.replace('\xa0', ''), desc.find_next('p')
+            while more_desc.find_previous('h3') == h:
+                desc_text = '\n'.join([desc_text, more_desc.text.replace('\xa0', '')])
+                more_desc = more_desc.find_next('p')
+                if more_desc is None:
+                    break
 
             # Get table data
-            tbl = sub_source.find_next('table')
-            if tbl.find_previous('h3').text == n:
-                # header, dat = [th.text for th in tbl.find_all('th')], [td.text for td in tbl.find_all('td')[2:]]
-                # data = pd.DataFrame([dat[x:x + len(header)] for x in range(0, len(dat), len(header))], columns=header)
-                header = [th.text for th in tbl.find_all('th')]
-                dat = parse_tr(header, tbl.find_all('tr')[3:])
-                data = pd.DataFrame(dat, columns=header)
+            tbl_dat = desc.find_next('table')
+            if tbl_dat.find_previous('h3').text == non_national_rail_name:
+                header = [th.text for th in tbl_dat.find_all('th')]  # header
+                data = pd.DataFrame(parse_tr(header, tbl_dat.find_next('table').find_all('tr')), columns=header)
             else:
                 data = None
 
-            non_national_rail_codes.update({n: {'Codes': data, 'Description': desc_text.replace('\xa0', '')}})
+            # Update data dict
+            non_national_rail_codes.update(
+                {non_national_rail_name: {'Codes': data, 'Note': desc_text.replace('\xa0', '')}})
 
         return non_national_rail_codes
 
