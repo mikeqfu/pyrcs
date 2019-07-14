@@ -106,4 +106,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Misc
 .idea/
+pyrcs/dat/
