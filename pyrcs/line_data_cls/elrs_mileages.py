@@ -148,14 +148,20 @@ class ELRMileages:
                 parsed_content = source_text.find('pre').text.splitlines()
                 parsed_content = [x.strip().split('\t') for x in parsed_content if x != '']
                 parsed_content = [[''] + x if len(x) == 1 and 'Note that' not in x[0] else x for x in parsed_content]
+
                 #
                 note_temp = min(parsed_content, key=len)
                 note = note_temp[0] if len(note_temp) == 1 else ''
                 if note:
                     parsed_content.remove(note_temp)
-                note_dat = {'Note': note}
+
                 #
                 mileage_data = pd.DataFrame(parsed_content, columns=['Mileage', 'Node'])
+                if mileage_data.iloc[-1].Mileage == '':
+                    note = mileage_data.iloc[-1].Node if not note else note
+                    mileage_data = mileage_data[:-1]
+
+                note_dat = {'Note': note}
 
                 def identify_multiple_measures(mileage_dat):
                     node = mileage_dat.Node.tolist()
