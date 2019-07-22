@@ -42,8 +42,9 @@ def save_pickle(pickle_data, path_to_pickle):
     """
     pickle_filename = os.path.basename(path_to_pickle)
     pickle_dir = os.path.basename(os.path.dirname(path_to_pickle))
+    pickle_dir_parent = os.path.basename(os.path.dirname(os.path.dirname(path_to_pickle)))
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving",
-                                  " - ".join([pickle_dir, pickle_filename])), end="")
+                                  " - ".join([pickle_dir_parent, pickle_dir, pickle_filename])), end="")
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path_to_pickle)), exist_ok=True)
         pickle_out = open(path_to_pickle, 'wb')
@@ -62,9 +63,10 @@ def save_json(json_data, path_to_json):
     :return: whether the data has been successfully saved
     """
     json_filename = os.path.basename(path_to_json)
-    json_dir = os.path.basename(os.path.dirname(json_filename))
+    json_dir = os.path.basename(os.path.dirname(path_to_json))
+    json_dir_parent = os.path.basename(os.path.dirname(os.path.dirname(path_to_json)))
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_json) else "Saving",
-                                  " - ".join([json_dir, json_filename])), end="")
+                                  " - ".join([json_dir_parent, json_dir, json_filename])), end="")
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path_to_json)), exist_ok=True)
         json_out = open(path_to_json, 'w')
