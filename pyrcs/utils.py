@@ -42,7 +42,7 @@ def mile_chain_to_nr_mileage(miles_chains):
     if not pd.isnull(miles_chains):
         miles, chains = str(miles_chains).split('.')
         yards = measurement.measures.Distance(chain=chains).yd
-        network_rail_mileage = '%.4f'.format(int(miles) + round(yards / (10 ** 4), 4))
+        network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
     else:
         network_rail_mileage = miles_chains
     return network_rail_mileage
