@@ -2,6 +2,7 @@
 
 import collections
 import os
+import pickle
 import re
 import urllib.parse
 
@@ -11,6 +12,7 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
+import rapidjson
 import requests
 
 # ====================================================================================================================
@@ -25,6 +27,52 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False):
     if mkdir:
         os.makedirs(path, exist_ok=True)
     return path
+
+
+# ====================================================================================================================
+""" Save """
+
+
+# Save Pickle file
+def save_pickle(pickle_data, path_to_pickle):
+    """
+    :param pickle_data: any object that could be dumped by the 'pickle' package
+    :param path_to_pickle: [str] local file path
+    :return: whether the data has been successfully saved
+    """
+    pickle_filename = os.path.basename(path_to_pickle)
+    pickle_dir = os.path.basename(os.path.dirname(path_to_pickle))
+    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving",
+                                  " - ".join([pickle_dir, pickle_filename])), end="")
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(path_to_pickle)), exist_ok=True)
+        pickle_out = open(path_to_pickle, 'wb')
+        pickle.dump(pickle_data, pickle_out)
+        pickle_out.close()
+        print("Successfully.")
+    except Exception as e:
+        print("Failed. {}.".format(e))
+
+
+# Save JSON file
+def save_json(json_data, path_to_json):
+    """
+    :param json_data: any object that could be dumped by the 'json' package
+    :param path_to_json: [str] local file path
+    :return: whether the data has been successfully saved
+    """
+    json_filename = os.path.basename(path_to_json)
+    json_dir = os.path.basename(os.path.dirname(json_filename))
+    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_json) else "Saving",
+                                  " - ".join([json_dir, json_filename])), end="")
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(path_to_json)), exist_ok=True)
+        json_out = open(path_to_json, 'w')
+        rapidjson.dump(json_data, json_out)
+        json_out.close()
+        print("Successfully.")
+    except Exception as e:
+        print("Failed. {}.".format(e))
 
 
 # ====================================================================================================================

@@ -17,10 +17,11 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_table
 from pyrcs.utils import is_float, mile_chain_to_nr_mileage
+from pyrcs.utils import save_pickle
 
 
 class ELRMileages:
