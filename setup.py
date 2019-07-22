@@ -20,7 +20,7 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.3',
+    version='0.1.4',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
@@ -40,7 +40,7 @@ setuptools.setup(
         'more-itertools',
         'pandas',
         'pyhelpers',
-        # 'python-Levenshtein',
+        'python-Levenshtein',
         'requests',
         'sqlalchemy',
         'sqlalchemy-utils'
