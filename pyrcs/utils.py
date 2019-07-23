@@ -89,13 +89,32 @@ def mile_chain_to_nr_mileage(miles_chains):
 
     Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
     """
-    if not pd.isnull(miles_chains):
+
+    if pd.notna(miles_chains) and miles_chains != '':
         miles, chains = str(miles_chains).split('.')
         yards = measurement.measures.Distance(chain=chains).yd
         network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
     else:
         network_rail_mileage = miles_chains
     return network_rail_mileage
+
+
+# Convert Network Rail mileages to "miles.chains"
+def nr_mileage_to_mile_chain(str_mileage):
+    """
+    :param str_mileage: [str] 'miles.yards'
+    :return: [str] 'miles.chains'
+
+    Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
+    """
+
+    if pd.notna(str_mileage) and str_mileage != '':
+        miles, yards = str(str_mileage).split('.')
+        chains = measurement.measures.Distance(yard=yards).chain
+        miles_chains = '%.2f' % (int(miles) + round(chains / (10 ** 2), 2))
+    else:
+        miles_chains = str_mileage
+    return miles_chains
 
 
 # Convert str type mileage to numerical type
@@ -111,8 +130,7 @@ def nr_mileage_num_to_str(x):
 # Convert yards to Network Rail mileages
 def yards_to_nr_mileage(yards):
     if not pd.isnull(yards) and yards is not None:
-        yd = measurement.measures.Distance(yd=yards)
-        mileage_mi = np.floor(yd.mi)
+        mileage_mi = np.floor(measurement.measures.Distance(yd=yards).mi)
         mileage_yd = int(yards - measurement.measures.Distance(mi=mileage_mi).yd)
         # Example: "%.2f" % round(2606.89579999999, 2)
         mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
