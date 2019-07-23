@@ -1,6 +1,6 @@
 # pyrcs
 
-**(Version 0.1.5)**
+**(Version 0.1.6)**
 
 This is a small tool for collecting GB's railway codes and relevant data from http://www.railwaycodes.org.uk/
 
