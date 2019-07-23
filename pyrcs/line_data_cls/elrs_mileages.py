@@ -14,13 +14,14 @@ import re
 import string
 
 import bs4
+import measurement.measures
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_table
-from pyrcs.utils import is_float, mile_chain_to_nr_mileage
+from pyrcs.utils import is_float, mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, yards_to_nr_mileage
 from pyrcs.utils import save_pickle
 
 
@@ -181,27 +182,35 @@ class ELRMileages:
                 mileage_data = identify_multiple_measures(mileage_data)
 
                 def parse_mileage_col(mileage):
-                    if all(mileage.map(is_float)):
-                        temp_mileage = mileage
-                        mileage_note = [''] * len(temp_mileage)
+                    if any(mileage.str.match('.*km')):
+                        temp_mileage = mileage.str.replace('km', '').astype(float)
+                        temp_mileage = temp_mileage.map(
+                            lambda x: yards_to_nr_mileage(measurement.measures.Distance(km=x).british_yd))
+                        miles_chains = temp_mileage.map(lambda x: nr_mileage_to_mile_chain(x))  # Might be wrong!
+                        mileage_note = list(mileage)
                     else:
-                        temp_mileage, mileage_note = [], []
-                        for m in mileage:
-                            if m == '':
-                                temp_mileage.append(m)
-                                mileage_note.append('Unknown')
-                            elif m.startswith('(') and m.endswith(')'):
-                                temp_mileage.append(m[m.find('(') + 1:m.find(')')])
-                                mileage_note.append('Not on this route but given for reference')
-                            elif m.startswith('≈'):
-                                temp_mileage.append(m.strip('≈'))
-                                mileage_note.append('Approximate')
-                            else:
-                                temp_mileage.append(m.strip(' '))
-                                mileage_note.append('')
-                    miles_chains = temp_mileage.copy()
-                    temp_mileage = [mile_chain_to_nr_mileage(m) for m in temp_mileage]
-                    parsed_mileage = pd.DataFrame({'Mileage': temp_mileage, 'Mileage_Note': mileage_note,
+                        if all(mileage.map(is_float)):
+                            temp_mileage = mileage
+                            mileage_note = [''] * len(temp_mileage)
+                        else:
+                            temp_mileage, mileage_note = [], []
+                            for m in mileage:
+                                if m == '':
+                                    temp_mileage.append(m)
+                                    mileage_note.append('Unknown')
+                                elif m.startswith('(') and m.endswith(')'):
+                                    temp_mileage.append(m[m.find('(') + 1:m.find(')')])
+                                    mileage_note.append('Not on this route but given for reference')
+                                elif m.startswith('≈'):
+                                    temp_mileage.append(m.strip('≈'))
+                                    mileage_note.append('Approximate')
+                                else:
+                                    temp_mileage.append(m.strip(' '))
+                                    mileage_note.append('')
+                        miles_chains = temp_mileage.copy()
+                        temp_mileage = [mile_chain_to_nr_mileage(m) for m in temp_mileage]
+                    parsed_mileage = pd.DataFrame({'Mileage': temp_mileage,
+                                                   'Mileage_Note': mileage_note,
                                                    'Miles_Chains': miles_chains})
                     return parsed_mileage
 
@@ -245,19 +254,31 @@ class ELRMileages:
 
                 def uncouple_elr_mileage(node_x):
                     # e.g. x = 'ECM5 (44.64)' or x = 'DNT'
+                    pat0 = re.compile(r'\w+.*( lines)$')
                     pat1 = re.compile(r'([A-Z]{3}(\d)?$)|(\w+ ?)*$')
                     pat2 = re.compile(r'([A-Z]{3}(\d)?$)|([\w\s&]?)*( \(\d+.\d+\))?$')
                     pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
+                    pat4 = re.compile(r'[A-Z]{3}(\d)? \(\d+\.\d+km\)')
                     if node_x is None:
+                        y = ['', '']
+                    elif re.match(pat0, node_x):
                         y = ['', '']
                     elif re.match(pat1, node_x):
                         y = [node_x, '']
                     elif re.match(pat2, node_x):
                         y = [z[:-1] if re.match(r'\d+.\d+\)', z) else z.strip() for z in node_x.split('(')]
+                        y[0] = '' if len(y[0]) > 4 else y[0]
                     elif re.match(pat3, node_x):
-                        y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), re.search(r'\d+.\d+', node_x).group(0)]
+                        try:
+                            y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), re.search(r'\d+.\d+', node_x).group(0)]
+                        except AttributeError:
+                            y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
+                    elif re.match(pat4, node_x):
+                        y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
+                             nr_mileage_to_mile_chain(yards_to_nr_mileage(
+                                 measurement.measures.Distance(km=re.search(r'\d+\.\d+', node_x).group(0)).yd))]
                     else:
-                        y = [node_x, 'Unknown']
+                        y = [node_x, ''] if len(node_x) <= 4 else ['', '']
                     return y
 
                 def parse_node_col(node):
@@ -267,7 +288,7 @@ class ELRMileages:
                     conn_nodes = parse_nodes(prep_node)
                     #
                     link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
-                    link_nodes = conn_nodes[link_cols].applymap(uncouple_elr_mileage)
+                    link_nodes = conn_nodes[link_cols].applymap(lambda x: uncouple_elr_mileage(x))
                     link_elr_mileage = pd.concat([pd.DataFrame(link_nodes[col].values.tolist(),
                                                                columns=[col + '_ELR', col + '_Mile_Chain'])
                                                   for col in link_cols], axis=1)
@@ -313,38 +334,83 @@ class ELRMileages:
             mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, update=update)
         return mileage_file
 
-    # Get to end and start mileages for StartELR and EndELR, respectively, for the connection point
-    def get_conn_end_start_mileages(self, start_elr, end_elr, update=False):
+    @staticmethod
+    def search_conn(start_elr, start_em, end_elr, end_em):
         """
-        :param start_elr: [str] e.g. start_elr = 'ECM5'
-        :param end_elr: [str] e.g. end_elr = 'KBF'
-        :param update: [bool]
-        :return: [iterable]
+        :param start_elr: start_elr
+        :param start_em: start_em=conn_em.copy()
+        :param end_elr: end_elr=conn_elr
+        :param end_em:
+        :return:
         """
-        start_mileage_file, end_mileage_file = \
-            self.fetch_mileage_file(start_elr, update), self.fetch_mileage_file(end_elr, update)
-        start_mileage_data, end_mileage_data = start_mileage_file[start_elr], end_mileage_file[end_elr]
-
-        def justify_mileage_data(mileage_data):
-            if isinstance(mileage_data, dict):
-                for key in mileage_data.keys():
-                    if re.match('^(Usual)|^(New)|^(Current)', key):
-                        mileage_data = mileage_data[key]
-            mileage_data.dropna(subset=['Connection'], inplace=True)
-
-        justify_mileage_data(start_mileage_data)
-        justify_mileage_data(end_mileage_data)
-
-        temp = start_mileage_data.where(start_mileage_data == end_elr).dropna(how='all', axis=1)
-        if not temp.empty:
+        start_mask = start_em.apply(lambda x: x.str.contains(end_elr, case=False).any(), axis=1)
+        start_temp = start_em[start_mask]
+        assert isinstance(start_temp, pd.DataFrame)
+        if not start_temp.empty:
             # Get exact location
-            temp = temp.where(temp == end_elr).dropna(how='all')
-            idx, elr_col = temp.index[0], temp.columns[0]
-            # Mileage of the start ELR
-            start_conn_mileage = start_mileage_data.Mileage[idx]
-            # Mileage of the end ELR
-            mc_col = elr_col.replace('ELR', 'Mile_Chain')
-            end_conn_mc = start_mileage_data.loc[idx, mc_col]
-            end_conn_mileage = mile_chain_to_nr_mileage(end_conn_mc)
+            key_idx = start_temp.index[0]
+            mile_chain_col = [x for x in start_temp.columns if re.match(r'.*_Mile_Chain', x)][0]
+            # Mileage of the Start ELR
+            start_dest_mileage = start_em.loc[key_idx, 'Mileage']
+            # Mileage of the End ELR
+            end_orig_mile_chain = start_temp.loc[key_idx, mile_chain_col]
+            if end_orig_mile_chain and end_orig_mile_chain != 'Unknown':
+                end_orig_mileage = mile_chain_to_nr_mileage(end_orig_mile_chain)
+            else:  # end_conn_mile_chain == '':
+                end_mask = end_em.apply(lambda x: x.str.contains(start_elr, case=False).any(), axis=1)
+                end_temp = end_em[end_mask]
+                if not end_temp.empty:
+                    end_orig_mileage = end_temp.Mileage.iloc[0]
+                else:
+                    end_orig_mileage = start_dest_mileage
+        else:
+            start_dest_mileage, end_orig_mileage = '', ''
+        return start_dest_mileage, end_orig_mileage
 
-            return start_conn_mileage, end_conn_mileage
+    # Get to end and start mileages for StartELR and EndELR, respectively, for the connection point
+    def get_conn_mileages(self, start_elr, end_elr, update=False):
+        """
+        start_elr, end_elr, update = 'NAY', 'LTN2', False
+
+        """
+        start_file, end_file = self.fetch_mileage_file(start_elr, update), self.fetch_mileage_file(end_elr, update)
+        start_em, end_em = start_file[start_elr], end_file[end_elr]
+        #
+        start_dest_mileage, end_orig_mileage = self.search_conn(start_elr, start_em, end_elr, end_em)
+
+        conn_elr, conn_orig_mileage, conn_dest_mileage = '', '', ''
+
+        if not start_dest_mileage and not end_orig_mileage:
+            link_cols = [x for x in start_em.columns if re.match(r'Link_\d_ELR.?', x)]
+            conn_elrs = start_em[link_cols]
+
+            i = 0
+            while i < len(link_cols):
+                link_col = link_cols[i]
+                conn_temp = conn_elrs[conn_elrs.astype(bool)].dropna(how='all')[link_col]
+
+                j = 0
+                while j < len(conn_temp):
+                    conn_elr = conn_temp.iloc[j]
+                    conn_em = self.fetch_mileage_file(conn_elr, update=update)[conn_elr]
+                    #
+                    start_dest_mileage, conn_orig_mileage = self.search_conn(start_elr, start_em, conn_elr, conn_em)
+                    #
+                    conn_dest_mileage, end_orig_mileage = self.search_conn(conn_elr, conn_em, end_elr, end_em)
+
+                    if conn_dest_mileage and end_orig_mileage:
+                        if not start_dest_mileage:
+                            start_dest_mileage = start_em[start_em[link_col] == conn_elr].Mileage.values[0]
+                        if not conn_orig_mileage:
+                            link_col_conn = conn_em.where(conn_em == start_elr).dropna(axis=1, how='all').columns[0]
+                            conn_orig_mileage = conn_em[conn_em[link_col_conn] == start_elr].Mileage.values[0]
+                        break
+                    else:
+                        conn_elr = ''
+                        j += 1
+                if conn_elr != '':
+                    break
+                else:
+                    i += 1
+
+        return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage
