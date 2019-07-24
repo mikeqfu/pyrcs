@@ -150,10 +150,10 @@ def parse_node_col(node):
             y = ['', '']
         else:
             # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
-            pat1 = re.compile(r'([A-Z]{3}(\d)?$)|(\w+ ?)*$')
-            pat2 = re.compile(r'([A-Z]{3}(\d)?$)|([\w\s&]?)*( \(\d+.\d+\))?$')
+            pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
+            pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+.\d+\))?$)')
             pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
-            pat4 = re.compile(r'[A-Z]{3}(\d)? \(\d+\.\d+km\)')
+            pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
             # if re.match(pat0, node_x):
             #     y = ['', '']
             if re.match(pat1, node_x):
@@ -172,7 +172,7 @@ def parse_node_col(node):
                          measurement.measures.Distance(km=re.search(r'\d+\.\d+', node_x).group(0)).yd))]
             else:
                 y = [node_x, ''] if len(node_x) <= 4 else ['', '']
-            y[0] = '' if len(y[0]) > 4 else y[0]
+            y[0] = y[0] if len(y[0]) <= 4 else ''
         return y
 
     #
