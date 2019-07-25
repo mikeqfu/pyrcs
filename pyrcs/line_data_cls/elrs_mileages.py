@@ -37,25 +37,54 @@ def identify_multiple_measures(mileage_data):
     test_temp = mileage_data[~mileage_data.Mileage.astype(bool)]
     if not test_temp.empty:
         test_temp_node, sep_rows_idx = test_temp.Node.tolist(), test_temp.index[-1]
-        test_temp_text = itertools.product(*(('Current', 'Original', 'Former'), ('measure', 'route')))
-        num_of_measures = sum(x in test_temp_node for x in (' '.join(x) for x in test_temp_text))
-        if num_of_measures == 1:
+        if '1949 measure' in test_temp_node:
+            mileage_data.Node = mileage_data.Node.str.replace('1949 measure', 'Current measure')
+            test_temp_node = [re.sub(r'1949 ', 'Current ', x) for x in test_temp_node]
+        if 'Distances in km' in test_temp_node:
+            temp_mileage_data = mileage_data[~mileage_data.Node.str.contains('Distances in km')]
+            temp_mileages = temp_mileage_data.Mileage.map(
+                lambda x: nr_mileage_to_mile_chain(yards_to_nr_mileage(measurement.measures.Distance(km=x).yd)))
+            temp_mileage_data.Mileage = temp_mileages.tolist()
+            checked_mileage_data = temp_mileage_data
+        elif 'One measure' in test_temp_node:
+            sep_rows_idx = mileage_data[mileage_data.Node.str.contains('Alternative measure')].index[0]
             mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
-            if re.match(r'(Original)|(Former)', test_temp_node[0]):
-                measure_ = re.sub(r'(Original)|(Former)', r'Current', test_temp_node[0])
-            else:
-                measure_ = re.sub(r'Current', r'Previous', test_temp_node[0])
-            checked_mileage_data = {measure_: mileage_data_1.loc[0:sep_rows_idx, :],
-                                    test_temp_node[0]: mileage_data_2.loc[sep_rows_idx + 1:, :]}
-        elif num_of_measures == 2:
-            mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
-            mileage_data_1 = mileage_data_1[~mileage_data_1.Node.str.contains(test_temp_node[0])]
-            mileage_data_2 = mileage_data_2[~mileage_data_2.Node.str.contains(test_temp_node[1])]
-            checked_mileage_data = dict(zip(test_temp_node, [mileage_data_1, mileage_data_2]))
+            checked_mileage_data = {
+                'One measure': mileage_data_1[~mileage_data_1.Node.str.contains('One measure')],
+                'Alternative measure': mileage_data_2[~mileage_data_2.Node.str.contains('Alternative measure')]}
+        elif 'This line has two \'legs\':' in test_temp_node:
+            temp_mileage_data = mileage_data.iloc[1:].drop_duplicates()
+            temp_mileage_data.index = range(len(temp_mileage_data))
+            checked_mileage_data = temp_mileage_data
         else:
-            if mileage_data.loc[sep_rows_idx, 'Mileage'] == '':
-                mileage_data.loc[sep_rows_idx, 'Mileage'] = mileage_data.loc[sep_rows_idx - 1, 'Mileage']
-            checked_mileage_data = mileage_data
+            test_temp_text = [' '.join(x) for x in itertools.product(
+                *(('Current', 'Later', 'One', 'Original', 'Former', 'Alternative', 'Usual', 'Earlier'),
+                  ('measure', 'route')))]
+            alt_sep_rows_idx = [x in test_temp_node for x in test_temp_text]
+            num_of_measures = sum(alt_sep_rows_idx)
+            if num_of_measures == 1:  #
+                mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
+                if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', test_temp_node[0]):
+                    measure_ = re.sub(r'(Original)|(Former)|(Alternative)|(Usual)', r'Current',
+                                      test_temp_node[0])
+                else:
+                    measure_ = re.sub(r'(Current)|(Later)|(One)', r'Previous', test_temp_node[0])
+                checked_mileage_data = {measure_: mileage_data_1.loc[0:sep_rows_idx, :],
+                                        test_temp_node[0]: mileage_data_2.loc[sep_rows_idx + 1:, :]}
+            elif num_of_measures == 2:  # e.g. elr='BTJ'
+                sep_rows_idx_items = [test_temp_text[x] for x in pd.np.where(alt_sep_rows_idx)[0]]
+                sep_rows_idx = mileage_data[mileage_data.Node.isin(sep_rows_idx_items)].index[-1]
+                mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
+                sep_rows_idx_items_checked = [
+                    mileage_data_1[mileage_data_1.Node.isin(sep_rows_idx_items)].Node.iloc[0],
+                    mileage_data_2[mileage_data_2.Node.isin(sep_rows_idx_items)].Node.iloc[0]]
+                mileage_data_1 = mileage_data_1[~mileage_data_1.Node.isin(sep_rows_idx_items)]
+                mileage_data_2 = mileage_data_2[~mileage_data_2.Node.isin(sep_rows_idx_items)]
+                checked_mileage_data = dict(zip(sep_rows_idx_items_checked, [mileage_data_1, mileage_data_2]))
+            else:
+                if mileage_data.loc[sep_rows_idx, 'Mileage'] == '':
+                    mileage_data.loc[sep_rows_idx, 'Mileage'] = mileage_data.loc[sep_rows_idx - 1, 'Mileage']
+                checked_mileage_data = mileage_data
     else:
         checked_mileage_data = mileage_data
     return checked_mileage_data
@@ -65,11 +94,14 @@ def identify_multiple_measures(mileage_data):
 def parse_mileage_col(mileage):
     mileage.index = range(len(mileage))
     if any(mileage.str.match('.*km')):
-        temp_mileage = mileage.str.replace('km', '').astype(float)
-        temp_mileage = temp_mileage.map(
-            lambda x: yards_to_nr_mileage(measurement.measures.Distance(km=x).british_yd))
-        miles_chains = temp_mileage.map(lambda x: nr_mileage_to_mile_chain(x))  # Might be wrong!
-        mileage_note = list(mileage)
+        if all(mileage.str.match('.*km')):
+            temp_mileage = mileage.str.replace('km', '').map(
+                lambda x: yards_to_nr_mileage(measurement.measures.Distance(km=x.replace('≈', '')).british_yd))
+            miles_chains = temp_mileage.map(lambda x: nr_mileage_to_mile_chain(x))  # Might be wrong!
+        else:
+            miles_chains = mileage.map(lambda x: re.sub(r'/?\d+\.\d+km/?', '', x))
+            temp_mileage = miles_chains.map(lambda x: mile_chain_to_nr_mileage(x))
+        mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
     else:
         if all(mileage.map(is_float)):
             temp_mileage = mileage
@@ -81,13 +113,17 @@ def parse_mileage_col(mileage):
                     temp_mileage.append(m)
                     mileage_note.append('Unknown')
                 elif m.startswith('(') and m.endswith(')'):
-                    temp_mileage.append(m[m.find('(') + 1:m.find(')')])
+                    temp_mileage.append(re.search(r'\d+\.\d+', m).group(0))
                     mileage_note.append('Not on this route but given for reference')
-                elif m.startswith('≈'):
-                    temp_mileage.append(m.strip('≈'))
+                elif m.startswith('≈') or m.endswith('?'):
+                    temp_mileage.append(m.strip('≈').strip('?'))
                     mileage_note.append('Approximate')
+                elif re.match(r'\d+\.\d+/\s?\d+\.\d+', m):
+                    m1, m2 = m.split('/')
+                    temp_mileage.append(m1)
+                    mileage_note.append(m2.strip() + ' (Alternative)')
                 else:
-                    temp_mileage.append(m.strip(' '))
+                    temp_mileage.append(m.strip(' ').replace(' ', '.'))
                     mileage_note.append('')
         miles_chains = temp_mileage.copy()
         temp_mileage = [mile_chain_to_nr_mileage(m) for m in temp_mileage]
@@ -151,7 +187,7 @@ def parse_node_col(node):
         else:
             # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
             pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
-            pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+.\d+\))?$)')
+            pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+\.\d+\))?$)')
             pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
             pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
             # if re.match(pat0, node_x):
@@ -163,7 +199,7 @@ def parse_node_col(node):
                 y[0] = '' if len(y[0]) > 4 else y[0]
             elif re.match(pat3, node_x):
                 try:
-                    y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), re.search(r'\d+.\d+', node_x).group(0)]
+                    y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), re.search(r'\d+\.\d+', node_x).group(0)]
                 except AttributeError:
                     y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
             elif re.match(pat4, node_x):
@@ -281,7 +317,7 @@ class ELRMileages:
     # Read (from online) the mileage file for the given ELR
     def collect_mileage_file_by_elr(self, elr, parsed=True, update=False):
         """
-        :param elr: [str]
+        :param elr: [str] e.g. elr='CJD'
         :param parsed: [bool]
         :param update: [bool]
         :return: [dict]
@@ -294,6 +330,9 @@ class ELRMileages:
 
         """
         path_to_pickle = self.cd_em("mileage_files", elr[0].upper(), elr.upper() + ".pickle")
+        if os.path.basename(path_to_pickle) == "PRN.pickle":
+            path_to_pickle = path_to_pickle.replace("PRN.pickle", "PRNx.pickle")
+
         if os.path.isfile(path_to_pickle) and not update:
             mileage_file = load_pickle(path_to_pickle)
         else:
@@ -311,18 +350,19 @@ class ELRMileages:
                     line_name = line_name.split('\t')
                 if sub_line_name:
                     sub_headers = sub_line_name.text.split('\t')
-                    assert sub_headers[0] == elr
+                    # assert sub_headers[0] == elr
                 else:
                     sub_headers = ['', '']
-                    assert line_name[0] == elr
+                    # assert line_name[0] == elr
 
                 # Make a dict of line information
                 line_info = {'ELR': elr, 'Line': line_name[1], 'Sub-Line': sub_headers[1]}
 
                 # Parse the main texts ------------------------------------------------------------------------------
                 parsed_content = source_text.find('pre').text.splitlines()
-                parsed_content = [x.strip().split('\t') for x in parsed_content if x != '']
-                parsed_content = [[''] + x if len(x) == 1 and 'Note that' not in x[0] else x for x in parsed_content]
+                parsed_content = [x.strip().split('\t', 1) for x in parsed_content if x != '']
+                parsed_content = [[y.replace('  ', ' ').replace('\t', ' ') for y in x] for x in parsed_content]
+                parsed_content = [[''] + x if (len(x) == 1) & ('Note that' not in x[0]) else x for x in parsed_content]
 
                 # Search for note
                 note_temp = min(parsed_content, key=len)
@@ -337,7 +377,9 @@ class ELRMileages:
                 if mileage_data.iloc[-1].Mileage == '':
                     note = [note, mileage_data.iloc[-1].Node] if note else mileage_data.iloc[-1].Node
                     mileage_data = mileage_data[:-1]
-
+                if len(mileage_data.iloc[-1].Mileage) > 6:
+                    note = [note, mileage_data.iloc[-1].Mileage] if note else mileage_data.iloc[-1].Mileage
+                    mileage_data = mileage_data[:-1]
                 # Make a dict of note
                 note_dat = {'Note': note}
 
@@ -416,50 +458,64 @@ class ELRMileages:
 
         """
         start_file, end_file = self.fetch_mileage_file(start_elr, update), self.fetch_mileage_file(end_elr, update)
-        start_em, end_em = start_file[start_elr], end_file[end_elr]
-        if isinstance(start_em, dict):
-            start_em = start_em[[k for k in start_em.keys() if re.match(r'Current ', k)][0]]
-        if isinstance(end_em, dict):
-            end_em = end_em[[k for k in end_em.keys() if re.match(r'Current ', k)][0]]
-        #
-        start_dest_mileage, end_orig_mileage = self.search_conn(start_elr, start_em, end_elr, end_em)
 
-        conn_elr, conn_orig_mileage, conn_dest_mileage = '', '', ''
+        if start_file is not None and end_file is not None:
+            start_em, end_em = start_file[start_elr], end_file[end_elr]
+            if isinstance(start_em, dict):
+                start_em = start_em[[k for k in start_em.keys()
+                                     if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
+            if isinstance(end_em, dict):
+                end_em = end_em[[k for k in end_em.keys() if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
+            #
+            start_dest_mileage, end_orig_mileage = self.search_conn(start_elr, start_em, end_elr, end_em)
 
-        if not start_dest_mileage and not end_orig_mileage:
-            link_cols = [x for x in start_em.columns if re.match(r'Link_\d_ELR.?', x)]
-            conn_elrs = start_em[link_cols]
+            conn_elr, conn_orig_mileage, conn_dest_mileage = '', '', ''
 
-            i = 0
-            while i < len(link_cols):
-                link_col = link_cols[i]
-                conn_temp = conn_elrs[conn_elrs.astype(bool)].dropna(how='all')[link_col].dropna()
+            if not start_dest_mileage and not end_orig_mileage:
+                link_cols = [x for x in start_em.columns if re.match(r'Link_\d_ELR.?', x)]
+                conn_elrs = start_em[link_cols]
 
-                j = 0
-                while j < len(conn_temp):
-                    conn_elr = conn_temp.iloc[j]
-                    conn_em = self.fetch_mileage_file(conn_elr, update=update)[conn_elr]
-                    #
-                    start_dest_mileage, conn_orig_mileage = self.search_conn(start_elr, start_em, conn_elr, conn_em)
-                    #
-                    conn_dest_mileage, end_orig_mileage = self.search_conn(conn_elr, conn_em, end_elr, end_em)
+                i = 0
+                while i < len(link_cols):
+                    link_col = link_cols[i]
+                    conn_temp = conn_elrs[conn_elrs.astype(bool)].dropna(how='all')[link_col].dropna()
 
-                    if conn_dest_mileage and end_orig_mileage:
-                        if not start_dest_mileage:
-                            start_dest_mileage = start_em[start_em[link_col] == conn_elr].Mileage.values[0]
-                        if not conn_orig_mileage:
-                            link_col_conn = conn_em.where(conn_em == start_elr).dropna(axis=1, how='all').columns[0]
-                            conn_orig_mileage = conn_em[conn_em[link_col_conn] == start_elr].Mileage.values[0]
+                    j = 0
+                    while j < len(conn_temp):
+                        conn_elr = conn_temp.iloc[j]
+                        conn_em = self.fetch_mileage_file(conn_elr, update=update)
+                        if conn_em is not None:
+                            conn_em = conn_em[conn_elr]
+                            if isinstance(conn_em, dict):
+                                conn_em = conn_em[[k for k in conn_em.keys()
+                                                   if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
+                            #
+                            start_dest_mileage, conn_orig_mileage = self.search_conn(start_elr, start_em, conn_elr, conn_em)
+                            #
+                            conn_dest_mileage, end_orig_mileage = self.search_conn(conn_elr, conn_em, end_elr, end_em)
+
+                            if conn_dest_mileage and end_orig_mileage:
+                                if not start_dest_mileage:
+                                    start_dest_mileage = start_em[start_em[link_col] == conn_elr].Mileage.values[0]
+                                if not conn_orig_mileage:
+                                    link_col_conn = conn_em.where(conn_em == start_elr).dropna(axis=1, how='all').columns[0]
+                                    conn_orig_mileage = conn_em[conn_em[link_col_conn] == start_elr].Mileage.values[0]
+                                break
+                            else:
+                                conn_elr = ''
+                                j += 1
+                        else:
+                            j += 1
+
+                    if conn_elr != '':
                         break
                     else:
-                        conn_elr = ''
-                        j += 1
-                if conn_elr != '':
-                    break
-                else:
-                    i += 1
+                        i += 1
 
-        if conn_orig_mileage and not conn_elr:
-            start_dest_mileage, conn_orig_mileage = '', ''
+            if conn_orig_mileage and not conn_elr:
+                start_dest_mileage, conn_orig_mileage = '', ''
+
+        else:
+            start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage = [''] * 5
 
         return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage
