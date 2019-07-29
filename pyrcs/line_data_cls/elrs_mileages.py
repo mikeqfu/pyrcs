@@ -1,12 +1,10 @@
 """
-
 Data source: http://www.railwaycodes.org.uk
 
 Engineer's Line References (ELRs) (Reference: http://www.railwaycodes.org.uk/elrs/elr0.shtm)
 
 "Mileages are given in the form miles.chains. Figures prefixed with a tilde (~) are approximate, items in parentheses
 are not on this route but are given for reference."
-
 """
 
 import itertools
@@ -368,7 +366,11 @@ class ELRMileages:
                 note_temp = min(parsed_content, key=len)
                 note = note_temp[0] if len(note_temp) == 1 else ''
                 if note:
-                    parsed_content.remove(note_temp)
+                    if ' Revised distances are thus:' in note:
+                        parsed_content[parsed_content.index(note_temp)] = ['', 'Current measure']
+                        note = note.replace(' Revised distances are thus:', '')
+                    else:
+                        parsed_content.remove(note_temp)
 
                 # Create a table of the mileage data
                 mileage_data = pd.DataFrame(parsed_content, columns=['Mileage', 'Node'])
@@ -465,7 +467,8 @@ class ELRMileages:
                 start_em = start_em[[k for k in start_em.keys()
                                      if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
             if isinstance(end_em, dict):
-                end_em = end_em[[k for k in end_em.keys() if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
+                end_em = end_em[[k for k in end_em.keys()
+                                 if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
             #
             start_dest_mileage, end_orig_mileage = self.search_conn(start_elr, start_em, end_elr, end_em)
 
@@ -490,7 +493,8 @@ class ELRMileages:
                                 conn_em = conn_em[[k for k in conn_em.keys()
                                                    if re.match(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)', k)][0]]
                             #
-                            start_dest_mileage, conn_orig_mileage = self.search_conn(start_elr, start_em, conn_elr, conn_em)
+                            start_dest_mileage, conn_orig_mileage = self.search_conn(start_elr, start_em, conn_elr,
+                                                                                     conn_em)
                             #
                             conn_dest_mileage, end_orig_mileage = self.search_conn(conn_elr, conn_em, end_elr, end_em)
 
@@ -498,7 +502,8 @@ class ELRMileages:
                                 if not start_dest_mileage:
                                     start_dest_mileage = start_em[start_em[link_col] == conn_elr].Mileage.values[0]
                                 if not conn_orig_mileage:
-                                    link_col_conn = conn_em.where(conn_em == start_elr).dropna(axis=1, how='all').columns[0]
+                                    link_col_conn = \
+                                        conn_em.where(conn_em == start_elr).dropna(axis=1, how='all').columns[0]
                                     conn_orig_mileage = conn_em[conn_em[link_col_conn] == start_elr].Mileage.values[0]
                                 break
                             else:
