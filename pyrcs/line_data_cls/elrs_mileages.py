@@ -301,9 +301,9 @@ class ELRMileages:
 
         # Get the latest updated date
         last_updated_dates = (item['Last_updated_date'] for item, _ in zip(data, string.ascii_uppercase))
-        last_updated_date = max(d for d in last_updated_dates if d is not None)
+        latest_updated_date = max(d for d in last_updated_dates if d is not None)
 
-        elrs_data = {'ELRs_mileages': elrs_data_table, 'Last_updated_date': last_updated_date}
+        elrs_data = {'ELRs_mileages': elrs_data_table, 'Latest_updated_date': latest_updated_date}
 
         if pickle_it:
             dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
