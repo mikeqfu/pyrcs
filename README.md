@@ -16,13 +16,13 @@ A web-scrapper for collecting GB's railway codes. (*Work still in progress*)
 
 * [Installation](#installation)
 * [Examples - A quick start](#examples-a-quick-start)
-  - [1 - CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
-    - [1.1 Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
-    - [1.2 All available location codes](#all-available-location-codes)
-  - [2. Engineer's Line References (ELRs)](#elr)
-    - [2.1 ELR codes](#elr-codes)
-    - [2.2 Mileage files](#mileage-files)
-  - [3. Railway stations data](#railway-stations-data)
+  - [1.  CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
+    - [1.1  Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
+    - [1.2  All available location codes](#all-available-location-codes)
+  - [2.  Engineer's Line References (ELRs)](#elr)
+    - [2.1  ELR codes](#elr-codes)
+    - [2.2  Mileage files](#mileage-files)
+  - [3.  Railway stations data](#railway-stations-data)
 * [Acknowledgement](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm)
 * [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
@@ -60,7 +60,7 @@ The following examples provide a quick guide to how the package works.
 
 
 
-### 1. CRS, NLC, TIPLOC and STANOX Codes <a name="crs-nlc-tiploc-and-stanox-codes"></a>
+### 1.  CRS, NLC, TIPLOC and STANOX Codes <a name="crs-nlc-tiploc-and-stanox-codes"></a>
 
 If your preferred import style is `from <module> import <name>`:
 
@@ -101,7 +101,7 @@ location_codes = line_data_cls.LocationIdentifiers
 
 
 
-#### 1.1 Locations beginning with a given letter <a name="locations-beginning-with-a-given-letter"></a>
+#### 1.1  Locations beginning with a given letter <a name="locations-beginning-with-a-given-letter"></a>
 
 You can get the location codes starting with a specific letter, say 'A' or 'a', by using the method`collect_location_codes_by_initial`, which returns a `dict`. 
 
@@ -124,7 +124,7 @@ The corresponding values are:
 
 
 
-#### 1.2 All available location codes in this category <a name="all-available-location-codes"></a>
+#### 1.2  All available location codes in this category <a name="all-available-location-codes"></a>
 
 You can also get all available location codes in this category as a whole , using the method `fetch_location_codes`, which also returns a `dict`:
 
@@ -148,7 +148,7 @@ The corresponding values are:
 
 
 
-### 2. Engineer's Line References (ELRs) <a name="elr"></a>
+### 2.  Engineer's Line References (ELRs) <a name="elr"></a>
 
 ```python
 em = line_data_cls.ELRMileages
@@ -156,7 +156,7 @@ em = line_data_cls.ELRMileages
 
 
 
-#### 2.1 ELR codes <a name="elr-codes"></a>
+#### 2.1  ELR codes <a name="elr-codes"></a>
 
 To get ELR codes starting with a specific letter, say `'A'`, by using the method `collect_elr_by_initial`, which returns a `dict`. 
 
@@ -192,7 +192,7 @@ The corresponding values are:
 
 
 
-#### 2.2 Mileage files <a name="mileage-files"></a>
+#### 2.2  Mileage files <a name="mileage-files"></a>
 
 To collect more detailed mileage data for a given ELR, say `'AAM'`, by using the method `fetch_mileage_file`, which returns a `dict`:
 
@@ -216,7 +216,7 @@ The corresponding values are:
 
 
 
-### 3. Railway stations data <a name="railway-stations-data"></a>
+### 3.  Railway stations data <a name="railway-stations-data"></a>
 
 The data of railway stations belongs to another category, '[Other assets](http://www.railwaycodes.org.uk/otherassetsmenu.shtm)'
 
