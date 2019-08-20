@@ -180,19 +180,25 @@ class LOR:
         path_to_pickle = os.path.join(self.cd_lor(), "ELR-LOR-converter.pickle")
         url = self.Catalogue['ELR/LOR converter']
         try:
-            page_data = pd.read_html(url)
-            headers, elr_lor_dat = page_data
+            headers, elr_lor_dat = pd.read_html(url)
             elr_lor_dat.columns = list(headers)
             #
             source = requests.get(url)
             soup = bs4.BeautifulSoup(source.text, 'lxml')
             tds = soup.find_all('td')
             links = [x.get('href') for x in [x.find('a', href=True) for x in tds] if x is not None]
-            main_url = 'http://www.railwaycodes.org.uk/'
             elr_links, lor_links = [x for x in links[::2]], [x for x in links[1::2]]
             #
-            elr_lor_dat['ELR_URL'] = [urllib.parse.urljoin(main_url, x) for x in elr_links]
-            elr_lor_dat['LOR_URL'] = [main_url + 'pride/' + x for x in lor_links]
+            if len(elr_links) != len(elr_lor_dat):
+                duplicates = elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
+                for i in duplicates.index:
+                    if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+                        elr_links.insert(i, elr_links[i - 1])
+                    if not lor_links[i].endswith(duplicates['LOR code'].loc[i].lower()):
+                        lor_links.insert(i, lor_links[i - 1])
+            #
+            elr_lor_dat['ELR_URL'] = [urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
+            elr_lor_dat['LOR_URL'] = [self.HomeURL + 'pride/' + x for x in lor_links]
             #
             elr_lor_converter = {'ELR_LOR_converter': elr_lor_dat, 'Last_updated_date': get_last_updated_date(url)}
             save_pickle(elr_lor_converter, path_to_pickle)
