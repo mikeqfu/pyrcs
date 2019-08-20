@@ -1,16 +1,15 @@
 # PyRCS
 
-**Author**: Qian Fu [![Twitter Follow](https://img.shields.io/twitter/follow/Qian_Fu?label=Follow&style=social)]()
+**Author**: Qian Fu [![Twitter URL](https://img.shields.io/twitter/url/https/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu)
 
 [![PyPI](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
+
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs)]()
 [![PyPI - License](https://img.shields.io/pypi/l/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
 [![GitHub repo size](https://img.shields.io/github/repo-size/mikeqfu/pyrcs?color=yellowgreen)]()
 [![Website](https://img.shields.io/website/http/www.railwaycodes.org.uk?down_color=lightgrey&down_message=offline&label=railwaycodes.org.uk&up_color=9cf&up_message=online)](http://www.railwaycodes.org.uk/)
 
 A web-scrapper for collecting GB's railway codes. (*Work still in progress*)
-
-
 
 
 
