@@ -8,7 +8,7 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/mikeqfu/pyrcs?color=yellowgreen)
 [![Website](https://img.shields.io/website/http/www.railwaycodes.org.uk?down_color=lightgrey&down_message=offline&label=railwaycodes.org.uk&up_color=9cf&up_message=online)](http://www.railwaycodes.org.uk/)
 
-A web-scrapper for collecting GB's railway codes. (*Work still in progress*)
+A small web scraper for collecting the railway codes used in Great Britain. (*Work still in progress*)
 
 
 
