@@ -1,11 +1,11 @@
 # PyRCS
 
-**Author**: Qian Fu [![Twitter URL](https://img.shields.io/twitter/url/https/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu)
+**Author**: Qian Fu [![Twitter Follow](https://img.shields.io/twitter/follow/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu)
 
 [![PyPI](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs)]()
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs)
 [![PyPI - License](https://img.shields.io/pypi/l/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-[![GitHub repo size](https://img.shields.io/github/repo-size/mikeqfu/pyrcs?color=yellowgreen)]()
+![GitHub repo size](https://img.shields.io/github/repo-size/mikeqfu/pyrcs?color=yellowgreen)
 [![Website](https://img.shields.io/website/http/www.railwaycodes.org.uk?down_color=lightgrey&down_message=offline&label=railwaycodes.org.uk&up_color=9cf&up_message=online)](http://www.railwaycodes.org.uk/)
 
 A web-scrapper for collecting GB's railway codes. (*Work still in progress*)
@@ -47,7 +47,7 @@ $ pip install --upgrade pyrcs
 * `Python-Levenshtein`, one of the dependencies of this package, may fail to be installed on a Windows OS without VC2015 (or above). A workaround is to download and install its [Windows binaries](https://www.lfd.uci.edu/~gohlke/pythonlibs/#python-levenshtein) from the [Unofficial Windows Binaries for Python Extension Packages](https://www.lfd.uci.edu/~gohlke/pythonlibs/). In this case, you should go for `python_Levenshtein‑0.12.0‑cp37‑cp37m‑win_amd64.whl` if you're using Python 3.7 on 64-bit OS: 
 
   ```bash
-  $ pip install full\path\to\python_Levenshtein‑0.12.0‑cp37‑cp37m‑win_amd64.whl
+  $ pip install \path\to\python_Levenshtein‑0.12.0‑cp37‑cp37m‑win_amd64.whl
   ```
 
 
