@@ -20,12 +20,12 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.20',
+    version='0.1.21',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
 
-    description=" A small toolkit for collecting railway codes used in GB.",
+    description="A web-scraper for collecting the railway codes used in Great Britain",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
@@ -53,14 +53,10 @@ setuptools.setup(
 
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Operating System :: Microsoft :: Windows :: Windows 7',
-        'Operating System :: Microsoft :: Windows :: Windows 8',
-        'Operating System :: Microsoft :: Windows :: Windows 8.1',
         'Operating System :: Microsoft :: Windows :: Windows 10',
     ],
 )
