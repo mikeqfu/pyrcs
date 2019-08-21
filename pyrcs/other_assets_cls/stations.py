@@ -31,7 +31,7 @@ class Stations:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Railway station data'
-        self.URL = 'http://www.railwaycodes.org.uk/stations/station0.shtm'
+        self.URL = self.HomeURL + '/stations/station0.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Stations")
 
@@ -49,7 +49,7 @@ class Stations:
             path = os.path.join(path, x)
         return path
 
-    #
+    # Parse 'Operator' column
     @staticmethod
     def parse_current_operator(x):
         contents = re.split(r'\\r| \[\'|\\\\r| {2}\'\]|\', \'|\\n',
@@ -67,7 +67,7 @@ class Stations:
             operators.append((operator_name, start_date))
         return operators
 
-    # Railway station data by keywords
+    # Collect railway station data for a given 'keyword'
     def collect_station_locations(self, keyword, update=False):
         """
         :param keyword: [str] station data (including the station name, ELR, mileage, status, owner, operator,
@@ -80,7 +80,7 @@ class Stations:
         if os.path.isfile(path_to_file) and not update:
             station_locations = load_pickle(path_to_file)
         else:
-            url = 'http://www.railwaycodes.org.uk/stations/station{}.shtm'.format(keyword.lower())
+            url = self.URL.replace('station0', 'station{}'.format(keyword.lower()))
             last_updated_date = get_last_updated_date(url)
             try:
                 source = requests.get(url)  # Request to get connected to the url
@@ -124,13 +124,13 @@ class Stations:
 
             except Exception as e:
                 if keyword not in ['x', 'X', 'z', 'Z']:
-                    print("Failed to scrape station locations for the keyword \"{}\" due to '{}'".format(keyword, e))
+                    print("Failed to collect station locations for the keyword \"{}.\" {}".format(keyword, e))
                 station_locations = {'Station_{}'.format(keyword.upper()): pd.DataFrame(),
                                      'Last_updated_date': last_updated_date}
 
         return station_locations
 
-    # Get all railway station data
+    # Fetch all of the collected railway station data
     def fetch_station_locations(self, update=False, pickle_it=False, data_dir=None):
         """
         :param update: [bool]
@@ -150,7 +150,7 @@ class Stations:
                 last_updated_dates.append(updated_date)
 
         stn_dat = pd.concat(stn_locs, ignore_index=True, sort=False)
-        station_locations = {'Station': stn_dat, 'Last_updated_date': max(last_updated_dates)}
+        station_locations = {'Station': stn_dat, 'Latest_update_date': max(last_updated_dates)}
 
         if pickle_it:
             dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
