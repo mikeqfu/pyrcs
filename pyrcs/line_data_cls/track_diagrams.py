@@ -22,7 +22,7 @@ class TrackDiagrams:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Railway track diagrams'
-        self.URL = 'http://www.railwaycodes.org.uk/track/diagrams0.shtm'
+        self.URL = self.HomeURL + '/track/diagrams0.shtm'
 
         # Get contents
         source = requests.get(self.URL)
