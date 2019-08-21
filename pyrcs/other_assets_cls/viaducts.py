@@ -24,7 +24,7 @@ class Viaducts:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Viaducts'
-        self.URL = 'http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm'
+        self.URL = self.HomeURL + '/viaducts/viaducts0.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Viaducts")
 
@@ -49,7 +49,7 @@ class Viaducts:
         pages = pages[0:int(len(pages) / 2)]
         return pages
 
-    # Scrape viaducts data by page
+    # Collect viaducts data for a given page number
     def collect_railway_viaducts(self, page_no, update=False):
         """
         :param page_no: [int] page number; valid values include 1, 2, 3, 4, 5, and 6
@@ -64,7 +64,7 @@ class Viaducts:
         if os.path.isfile(path_to_file) and not update:
             viaducts_data = load_pickle(path_to_file)
         else:
-            url = 'http://www.railwaycodes.org.uk/viaducts/viaducts{}.shtm'.format(page_no)
+            url = self.URL.replace('viaducts0', 'viaducts{}'.format(page_no))
             last_updated_date = get_last_updated_date(url)
             source = requests.get(url)
 
@@ -83,7 +83,7 @@ class Viaducts:
                 viaducts = pd.DataFrame(data=tbl_lst, columns=header)
 
             except Exception as e:
-                print("Scraping viaducts data for Page {} ... failed due to '{}'".format(page_no, e))
+                print("Failed to collect viaducts data for Page \"{}.\" {}".format(page_no, e))
                 viaducts = None
 
             viaducts_keys = [s + str(page_no) for s in ('Viaducts_', 'Last_updated_date_')]
@@ -93,7 +93,7 @@ class Viaducts:
 
         return viaducts_data
 
-    #
+    # Fetch all of the collected viaducts data
     def fetch_railway_viaducts(self, update=False, pickle_it=False, data_dir=None):
 
         data = [self.collect_railway_viaducts(page_no, update) for page_no in range(1, 7)]
@@ -104,7 +104,7 @@ class Viaducts:
 
         viaducts = pd.concat(viaducts_data, ignore_index=True, sort=False)
         viaducts = viaducts[list(viaducts_data[0].columns)]
-        viaducts_data = {'Viaducts': viaducts, 'Last_updated_date': max(last_updated_dates)}
+        viaducts_data = {'Viaducts': viaducts, 'Latest_update_date': max(last_updated_dates)}
 
         if pickle_it:
             dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
