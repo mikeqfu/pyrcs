@@ -21,14 +21,14 @@ class Depots:
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Depots")
 
-    # Change directory to "dat\\Other assets\\Signal Boxes\\"
+    # Change directory to "dat\\Other assets\\Depots\\"
     def cd_depots(self, *directories):
         path = self.DataDir
         for x in directories:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Other assets\\Signal Boxes\\dat"
+    # Change directory to "dat\\Other assets\\Depots\\dat"
     def cdd_sigbox(self, *sub_dir):
         path = self.cd_depots("dat")
         for x in sub_dir:
@@ -100,7 +100,7 @@ class Depots:
 
             except Exception as e:
                 print("Failed to collect \"{}.\" {}".format(title_name, e))
-                region_names, four_digit_pre_tops_codes_list = [], []
+                region_names, four_digit_pre_tops_codes_list = ['None'], [None]
 
             four_digit_pre_tops_codes_data = {
                 title_name.replace(' ', '_').replace('-', '_'): dict(zip(region_names, four_digit_pre_tops_codes_list)),
