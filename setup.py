@@ -20,7 +20,7 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.23',
+    version='0.1.24',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
@@ -29,7 +29,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
 
-    url='https://github.com/mikeqfu/pyrcscraper',
+    url='https://github.com/mikeqfu/pyrcs',
 
     install_requires=[
         'beautifulsoup4',
