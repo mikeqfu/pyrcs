@@ -21,11 +21,11 @@ from pyrcs.utils import save_pickle
 class LineNames:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
-        self.Name = 'Railway line names'
-        self.URL = 'http://www.railwaycodes.org.uk/misc/line_names.shtm'
+        self.Name = 'Line names'
+        self.URL = self.HomeURL + '/misc/line_names.shtm'
         self.Catalogue = 'A single table.'  # get_cls_contents(self.URL, navigation_bar_exists=False, menu_exists=False)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Line names")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", self.Name)
 
     # Change directory to "dat\\Line data\\Line names" and sub-directories
     def cd_ln(self, *sub_dir):
