@@ -17,7 +17,7 @@ class SignalBoxes:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Signal box prefix codes'
-        self.URL = 'http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm'
+        self.URL = self.HomeURL + '/signal/signal_boxes0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Signal boxes")
@@ -36,7 +36,7 @@ class SignalBoxes:
             path = os.path.join(path, x)
         return path
 
-    # Scrape signal box prefix codes for the given 'key word' (e.g. a starting letter)
+    # Collect signal box prefix codes for the given 'keyword' (a starting letter)
     def collect_signal_box_prefix_codes(self, keyword, update=False):
         """
         :param keyword: [str]
@@ -67,7 +67,7 @@ class SignalBoxes:
 
         return signal_box_prefix_codes
 
-    # Get all of the available signal box prefix codes
+    # Fetch all of the collected signal box prefix codes
     def fetch_signal_box_prefix_codes(self, update=False, pickle_it=False, data_dir=None):
         """
         :param update: [bool]
@@ -98,7 +98,7 @@ class SignalBoxes:
 
         return signal_box_prefix_codes
 
-    #
+    # Collect non-national rail codes
     @staticmethod
     def collect_non_national_rail_codes():
         url = 'http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm'
@@ -133,7 +133,7 @@ class SignalBoxes:
 
         return non_national_rail_codes
 
-    #
+    # Fetch the collected non-national rail codes
     def fetch_non_national_rail_codes(self, update=False):
         pickle_filename = "Non-national-rail-signals.pickle"
         path_to_pickle = self.cd_sigbox(pickle_filename)
