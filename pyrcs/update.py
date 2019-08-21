@@ -46,11 +46,6 @@ def update_package_data():
 
         time.sleep(10)
 
-        # Stations
-        _ = other_assets.Stations.fetch_station_locations(update=True)
-
-        time.sleep(10)
-
         # Tunnels
         _ = other_assets.Tunnels.fetch_railway_tunnel_lengths(update=True)
 
@@ -58,6 +53,16 @@ def update_package_data():
 
         # Viaducts
         _ = other_assets.Viaducts.fetch_railway_viaducts(update=True)
+
+        time.sleep(10)
+
+        # Stations
+        _ = other_assets.Stations.fetch_station_locations(update=True)
+
+        time.sleep(10)
+
+        # Depots
+        _ = other_assets.Depots.fetch_depot_codes(update=True)
 
 
 update_package_data()
