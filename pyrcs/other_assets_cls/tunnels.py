@@ -23,7 +23,7 @@ class Tunnels:
         self.Name = 'Tunnels'
         self.URL = self.HomeURL + '/tunnels/tunnels0.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Tunnels")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", self.Name)
 
     # Change directory to "dat\\Other assets\\Tunnels"
     def cd_tunnels(self, *directories):
