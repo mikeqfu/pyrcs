@@ -33,11 +33,10 @@ class LocationIdentifiers:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
-        self.URL = 'http://www.railwaycodes.org.uk/crs/CRS0.shtm'
+        self.URL = self.HomeURL + '/crs/CRS0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("Line data", "CRS, NLC, TIPLOC and STANOX codes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", self.Name)
 
     # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\" and sub-directories
     def cd_lc(self, *sub_dir):
