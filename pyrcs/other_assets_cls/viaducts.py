@@ -26,7 +26,7 @@ class Viaducts:
         self.Name = 'Viaducts'
         self.URL = self.HomeURL + '/viaducts/viaducts0.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Viaducts")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", self.Name)
 
     # Change directory to "dat\\Other assets\\Viaducts\\"
     def cd_viaducts(self, *sub_dir):
