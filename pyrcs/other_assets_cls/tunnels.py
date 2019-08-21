@@ -21,7 +21,7 @@ class Tunnels:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Tunnels'
-        self.URL = 'http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm'
+        self.URL = self.HomeURL + '/tunnels/tunnels0.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", "Tunnels")
 
@@ -39,13 +39,13 @@ class Tunnels:
             path = os.path.join(path, x)
         return path
 
-    # Scrape page headers
+    # Find page headers
     def find_page_headers(self):
         intro_page = requests.get(self.URL)
         pages = [x.text for x in bs4.BeautifulSoup(intro_page.text, 'lxml').find_all('a', text=re.compile('^Page.*'))]
         return pages[:int(len(pages)/2)]
 
-    # Parse the Length column - convert miles/yards to metres
+    # Parse data in 'Length' column, i.e. convert miles/yards to metres
     @staticmethod
     def parse_tunnel_length(x):
         """
@@ -60,7 +60,6 @@ class Tunnels:
             0.325km (0m 356y); 0.060km ['(0m 66y)']
             0m 48yd- (['0m 58yd'])
         """
-
         if re.match(r'[Uu]nknown', x):
             length = pd.np.nan
             add_info = 'Unknown'
@@ -96,7 +95,7 @@ class Tunnels:
             length = measurement.measures.Distance(mi=miles).m + measurement.measures.Distance(yd=yards).m
         return length, add_info
 
-    # Railway tunnel lengths (by page)
+    # Collect the data of railway tunnel lengths for a given page number
     def collect_railway_tunnel_lengths(self, page_no, update=False):
         """
         :param page_no: [int] page number; valid values include 1, 2, and 3
@@ -113,7 +112,7 @@ class Tunnels:
         if os.path.isfile(path_to_file) and not update:
             tunnels_data = load_pickle(path_to_file)
         else:
-            url = 'http://www.railwaycodes.org.uk/tunnels/tunnels{}.shtm'.format(page_no)
+            url = self.URL.replace('tunnels0', 'tunnels{}'.format(page_no))
             last_updated_date = get_last_updated_date(url)
             source = requests.get(url)
             try:
@@ -145,12 +144,12 @@ class Tunnels:
                 save_pickle(tunnels_data, path_to_file)
 
             except Exception as e:
-                print("Scraping tunnel lengths data for Page {} ... failed due to '{}'".format(page_no, e))
+                print("Failed to collect tunnel lengths data for Page \"{}\". {}".format(page_no, e))
                 tunnels_data = None
 
         return tunnels_data
 
-    # Minor lines and other odds and ends
+    # Collect the data of minor lines and other odds / ends
     def collect_page4_others(self, update=False):
         """
         Page 4 (others) contains more than one table on the web page
@@ -162,7 +161,7 @@ class Tunnels:
         if os.path.isfile(path_to_file) and not update:
             tunnels = load_pickle(path_to_file)
         else:
-            url = 'http://www.railwaycodes.org.uk/tunnels/tunnels4.shtm'
+            url = self.HomeURL + '/tunnels/tunnels4.shtm'
             last_updated_date = get_last_updated_date(url)
             source = requests.get(url)
             try:
@@ -203,7 +202,7 @@ class Tunnels:
 
         return tunnels
 
-    # All available data of railway tunnel lengths
+    # Fetch all the collected data of railway tunnel lengths
     def fetch_railway_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None):
         """
         :param update: [bool]
@@ -228,7 +227,7 @@ class Tunnels:
 
         tunnel_lengths_dat = pd.concat(tunnel_data, ignore_index=True, sort=False)[list(tunnel_data[0].columns)]
 
-        tunnel_lengths = {'Tunnels': tunnel_lengths_dat, 'Last_updated_date': max(last_updated_dates)}
+        tunnel_lengths = {'Tunnels': tunnel_lengths_dat, 'Latest_update_date': max(last_updated_dates)}
 
         if pickle_it:
             dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
