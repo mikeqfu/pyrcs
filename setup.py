@@ -20,12 +20,12 @@ with open("README.md", 'r') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.21',
+    version='0.1.22',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
 
-    description="A web-scraper for collecting the railway codes used in Great Britain",
+    description="A small web scraper for collecting the railway codes used in Great Britain",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
