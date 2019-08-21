@@ -28,8 +28,7 @@ A small web scraper for collecting the railway codes used in Great Britain.
     - [2.1  ELR codes](#elr-codes)
     - [2.2  Mileage files](#mileage-files)
   - [3.  Railway stations data](#railway-stations-data)
-* [Acknowledgement](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm)
-* [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
+* [Data sources](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
 
 
