@@ -5,7 +5,7 @@ import urllib.parse
 import bs4
 import requests
 
-from pyrcs.other_assets_cls import signal_boxes, stations, tunnels, viaducts
+from pyrcs.other_assets_cls import depots, signal_boxes, stations, tunnels, viaducts
 
 
 class OtherAssets:
@@ -21,5 +21,6 @@ class OtherAssets:
 
         self.SignalBoxes = signal_boxes.SignalBoxes()
         self.Tunnels = tunnels.Tunnels()
-        self.Stations = stations.Stations()
         self.Viaducts = viaducts.Viaducts()
+        self.Stations = stations.Stations()
+        self.Depots = depots.Depots()
