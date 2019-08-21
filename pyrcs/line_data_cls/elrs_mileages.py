@@ -233,10 +233,10 @@ class ELRMileages:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'ELRs and mileages'
-        self.URL = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
+        self.URL = self.HomeURL + '/elrs/elr0.shtm'
         self.Catalogue = get_cls_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "ELRs and mileages")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", self.Name)
 
     # Change directory to "dat\\Line data\\ELRs and mileages" and sub-directories
     def cd_em(self, *sub_dir):
