@@ -1,7 +1,7 @@
 """ 
 Data source: http://www.railwaycodes.org.uk
 
-CRS, NLC, TIPLOC and STANOX Codes (Reference: http://www.railwaycodes.org.uk/crs/CRS0.shtm)
+CRS, NLC, TIPLOC and STANOX Codes (http://www.railwaycodes.org.uk/crs/CRS0.shtm)
 
 This links to a four-way listing of railway codes:
 
@@ -13,6 +13,7 @@ This links to a four-way listing of railway codes:
     - Station numbers (STANOX)
 """
 
+import copy
 import os
 import re
 import string
@@ -23,10 +24,12 @@ import more_itertools
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.misc import confirmed
 from pyhelpers.store import load_json, load_pickle
 
-from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_location_note, parse_table, parse_tr
-from pyrcs.utils import save_json, save_pickle
+from pyrcs.utils import cd_dat, save_json, save_pickle
+from pyrcs.utils import get_catalogue, get_last_updated_date
+from pyrcs.utils import parse_date, parse_location_note, parse_table, parse_tr
 
 
 class LocationIdentifiers:
@@ -34,9 +37,10 @@ class LocationIdentifiers:
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
         self.URL = self.HomeURL + '/crs/CRS0.shtm'
-        self.Catalogue = get_cls_catalogue(self.URL)
+        self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", self.Name)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "crs_nlc_tiploc_stanox")
+        self.CurrentDataDir = copy.copy(self.DataDir)
 
     # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\" and sub-directories
     def cd_lc(self, *sub_dir):
@@ -54,8 +58,8 @@ class LocationIdentifiers:
 
     # Location name modifications
     @staticmethod
-    def location_name_errata():
-        location_name_mod_dict = {
+    def amendment_to_location_names():
+        location_name_amendment_dict = {
             'Location': {re.compile(r' And | \+ '): ' & ',
                          re.compile(r'-By-'): '-by-',
                          re.compile(r'-In-'): '-in-',
@@ -69,7 +73,7 @@ class LocationIdentifiers:
                          re.compile(r'-Upon-'): '-upon-',
                          re.compile(r'-Under-'): '-under-',
                          re.compile(r'-Y-'): '-y-'}}
-        return location_name_mod_dict
+        return location_name_amendment_dict
 
     # Parse addition note page
     @staticmethod
@@ -93,32 +97,57 @@ class LocationIdentifiers:
         return parsed_texts
 
     # Collect note about CRS
-    def collect_additional_crs_note(self, update=False):
-        if update:
+    def collect_additional_crs_note(self, confirmation_required=True, verbose=False):
+        if confirmed("To collect additional CRS note?", confirmation_required=confirmation_required):
+
             try:
-                note_url = 'http://www.railwaycodes.org.uk/crs/CRS2.shtm'
+                note_url = self.HomeURL + '/crs/CRS2.shtm'
                 additional_note = self.parse_additional_note_page(note_url)
-                save_pickle(additional_note, os.path.join(self.cd_lc(), "Additional-CRS-note.pickle"))
+                additional_crs_note, notes = {}, []
+                for x in additional_note:
+                    if isinstance(x, str):
+                        if 'Last update' in x:
+                            additional_crs_note.update({'Last_updated_date': parse_date(x, as_date_type=False)})
+                        else:
+                            notes.append(x)
+                    else:
+                        additional_crs_note.update({'Alternative_CRS': x})
+                additional_crs_note.update({'Note': notes})
+                save_pickle(additional_crs_note, self.cd_lc("additional_crs_note.pickle"), verbose)
+
             except Exception as e:
-                print("Failed to collect additional note for CRS. {}.".format(e))
-                additional_note = None
-            return additional_note
+                print("Failed to collect/update additional note for CRS. {}.".format(e))
+                additional_crs_note = None
+
+            return additional_crs_note
 
     # Fetch note about CRS
-    def fetch_additional_crs_note(self, update=False):
-        path_to_pickle = os.path.join(self.cd_lc(), "Additional-CRS-note.pickle")
-        if not os.path.isfile(path_to_pickle) or update:
-            self.collect_additional_crs_note(update=True)
-        try:
-            additional_note = load_pickle(path_to_pickle)
-        except Exception as e:
-            print("Failed to fetch additional note for CRS. {}.".format(e))
-            additional_note = None
+    def fetch_additional_crs_note(self, update=False, pickle_it=False, data_dir=None):
+        pickle_filename = "additional_crs_note.pickle"
+
+        if not data_dir:
+            self.CurrentDataDir = self.DataDir
+            path_to_pickle = self.cd_lc(pickle_filename)
+        else:
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+
+        if os.path.isfile(path_to_pickle) and not update:
+            additional_note = load_pickle(self.cd_lc(pickle_filename))
+        else:
+            additional_note = self.collect_additional_crs_note(confirmation_required=False,
+                                                               verbose=False if data_dir else True)
+            if additional_note:  # additional_note is not None
+                if pickle_it and data_dir:
+                    save_pickle(additional_note, path_to_pickle, verbose=True)
+            else:
+                print("No data of additional note for CRS has been collected.")
         return additional_note
 
     # Collect data for other systems
-    def collect_other_systems_codes(self, update=False):
-        if update:
+    def collect_other_systems_codes(self, confirmation_required=True, verbose=False):
+        if confirmed("To collect other systems codes?", confirmation_required=confirmation_required):
+
             try:
                 source = requests.get(self.Catalogue['Other systems'])
                 web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
@@ -128,83 +157,108 @@ class LocationIdentifiers:
                 # Get column names for the other systems table
                 headers = list(more_itertools.unique_everseen([h.text for h in web_page_text.find_all('th')]))
                 # Parse table data for each system
-                table_data = web_page_text.find_all('table', {'width': '1100px'})
-                tables = [pd.DataFrame(parse_tr(headers, table.find_all('tr')), columns=headers)
-                          for table in table_data]
+                tbl_data = web_page_text.find_all('table', {'width': '1100px'})
+                tables = [pd.DataFrame(parse_tr(headers, table.find_all('tr')), columns=headers) for table in tbl_data]
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
                 other_systems_codes = dict(zip(system_names, codes))
-                save_pickle(other_systems_codes, os.path.join(self.cd_lc(), "Other-systems-location-codes.pickle"))
+                save_pickle(other_systems_codes, self.cd_lc("other_systems_codes.pickle"), verbose)
+
             except Exception as e:
                 print("Failed to collect location codes for other systems. {}.".format(e))
                 other_systems_codes = None
+
             return other_systems_codes
 
     # Fetch the data for other systems
-    def fetch_other_systems_codes(self, update=False):
-        path_to_pickle = os.path.join(self.cd_lc(), "Other-systems-location-codes.pickle")
-        if not os.path.isfile(path_to_pickle) or update:
-            self.collect_other_systems_codes(update=True)
-        try:
+    def fetch_other_systems_codes(self, update=False, pickle_it=False, data_dir=None):
+        pickle_filename = "other_systems_codes.pickle"
+
+        if not data_dir:
+            self.CurrentDataDir = self.DataDir
+            path_to_pickle = self.cd_lc(pickle_filename)
+        else:
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+
+        if os.path.isfile(path_to_pickle) and not update:
             other_systems_codes = load_pickle(path_to_pickle)
-        except Exception as e:
-            print("Failed to fetch the data for other systems. {}".format(e))
-            other_systems_codes = None
+
+        else:
+            other_systems_codes = self.collect_other_systems_codes(confirmation_required=False,
+                                                                   verbose=False if data_dir else True)
+            if other_systems_codes:  # other_systems_codes is not None
+                if pickle_it and data_dir:
+                    save_pickle(other_systems_codes, path_to_pickle, verbose=True)
+            else:
+                print("No data of other systems codes has been collected.")
+
         return other_systems_codes
 
-    # Scrape data of locations including CRS, NLC, TIPLOC, STANME and STANOX codes
-    def collect_location_codes_by_initial(self, initial, update=False):
+    # Collect data of locations including CRS, NLC, TIPLOC, STANME and STANOX codes
+    def collect_location_codes_by_initial(self, initial, update=False, verbose=False):
         """
         :param initial: [str] initial letter of station/junction name or certain word for specifying URL
         :param update: [bool]
+        :param verbose: [bool]
         :return [tuple] ([DataFrame] CRS, NLC, TIPLOC and STANOX data of (almost) all stations/junctions,
                          [str]} date of when the data was last updated)
         """
         assert initial in string.ascii_letters
+        path_to_pickle = self.cd_lc("a_z", initial.lower() + ".pickle")
 
-        path_to_pickle = os.path.join(self.cd_lc(), "A-Z", initial.upper() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
-            location_codes = load_pickle(path_to_pickle)
+            location_codes_data = load_pickle(path_to_pickle)
+
         else:
             url = self.Catalogue[initial.upper()]
-            # Request to get connected to the URL
+
             try:
-                source = requests.get(url)
+                last_updated_date = get_last_updated_date(url)
+            except Exception as e:
+                print("Failed to find the last update date for codes starting with \"{}.\" {}".format(
+                    initial.upper(), e))
+                last_updated_date = ''
+
+            try:
+                source = requests.get(url)  # Request to get connected to the URL
                 tbl_lst, header = parse_table(source, parser='lxml')
 
                 # Get a raw DataFrame
                 reps = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
                 pattern = re.compile("|".join(reps.keys()))
                 tbl_lst = [[pattern.sub(lambda x: reps[x.group(0)], item) for item in record] for record in tbl_lst]
-                data = pd.DataFrame(tbl_lst, columns=header)
-                data.replace({'\xa0': ''}, regex=True, inplace=True)
+                location_codes = pd.DataFrame(tbl_lst, columns=header)
+                location_codes.replace({'\xa0': ''}, regex=True, inplace=True)
 
                 # Collect additional information as note
-                data[['Location', 'Location_Note']] = data.Location.map(parse_location_note).apply(pd.Series)
+                location_codes[['Location', 'Location_Note']] = location_codes.Location.map(
+                    parse_location_note).apply(pd.Series)
 
                 # CRS, NLC, TIPLOC, STANME
                 drop_pattern = re.compile(r'[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
-                idx = [data[data.CRS == x].index[0] for x in data.CRS if re.match(drop_pattern, x)]
-                data.drop(labels=idx, axis=0, inplace=True)
+                idx = [location_codes[location_codes.CRS == x].index[0]
+                       for x in location_codes.CRS if re.match(drop_pattern, x)]
+                location_codes.drop(labels=idx, axis=0, inplace=True)
 
-                #
+                # Collect others note
                 def collect_others_note(other_note_x):
                     n = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', other_note_x)
                     note = n.group() if n is not None else ''
                     return note
 
-                #
+                # Strip others note
                 def strip_others_note(other_note_x):
                     d = re.search(r'[\w ,]+(?= [\[(\'])', other_note_x)
                     dat = d.group() if d is not None else other_note_x
                     return dat
 
-                other_codes_col = data.columns[1:-1]
+                other_codes_col = location_codes.columns[1:-1]
                 other_notes_col = [x + '_Note' for x in other_codes_col]
-                data[other_notes_col] = data[other_codes_col].applymap(collect_others_note)
-                data[other_codes_col] = data[other_codes_col].applymap(strip_others_note)
+                location_codes[other_notes_col] = location_codes[other_codes_col].applymap(collect_others_note)
+                location_codes[other_codes_col] = location_codes[other_codes_col].applymap(strip_others_note)
 
-                # STANOX
+                # Parse STANOX note
                 def parse_stanox_note(x):
                     if x == '-':
                         dat, note = '', ''
@@ -220,46 +274,43 @@ class LocationIdentifiers:
                         dat = dat.rstrip('*') if '*' in dat else dat
                     return dat, note
 
-                if not data.empty:
-                    data[['STANOX', 'STANOX_Note']] = data.STANOX.map(parse_stanox_note).apply(pd.Series)
+                if not location_codes.empty:
+                    location_codes[['STANOX', 'STANOX_Note']] = location_codes.STANOX.map(
+                        parse_stanox_note).apply(pd.Series)
                 else:  # It is likely that no data is available on the web page for the given 'key_word'
-                    data['STANOX_Note'] = data.STANOX
+                    location_codes['STANOX_Note'] = location_codes.STANOX
 
-                if any('see note' in crs_note for crs_note in data.CRS_Note):
-                    loc_idx = [i for i, crs_note in enumerate(data.CRS_Note) if 'see note' in crs_note]
+                if any('see note' in crs_note for crs_note in location_codes.CRS_Note):
+                    loc_idx = [i for i, crs_note in enumerate(location_codes.CRS_Note) if 'see note' in crs_note]
                     web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
                     note_urls = [urllib.parse.urljoin(self.Catalogue[initial.upper()], l['href'])
                                  for l in web_page_text.find_all('a', href=True, text='note')]
                     additional_notes = [self.parse_additional_note_page(note_url) for note_url in note_urls]
-                    additional_note = dict(zip(data.CRS.iloc[loc_idx], additional_notes))
+                    additional_note = dict(zip(location_codes.CRS.iloc[loc_idx], additional_notes))
                 else:
                     additional_note = None
 
-                data = data.replace(self.location_name_errata(), regex=True)
+                location_codes = location_codes.replace(self.amendment_to_location_names(), regex=True)
 
-                data.STANOX = data.STANOX.replace({'-': ''})
+                location_codes.STANOX = location_codes.STANOX.replace({'-': ''})
 
-                data.index = range(len(data))  # Rearrange index
-
-                # Specify the requested URL
-                last_updated_date = get_last_updated_date(url)
-
-                location_codes_keys = (initial.upper(), 'Last_updated_date', 'Additional_note')
-                location_codes_vals = (data, last_updated_date, additional_note)
-                location_codes = dict(zip(location_codes_keys, location_codes_vals))
-
-                save_pickle(location_codes, path_to_pickle)
+                location_codes.index = range(len(location_codes))  # Rearrange index
 
             except Exception as e:
-                print("Failed to collect location data. {}.".format(e))
-                location_codes = None
+                print("Failed to collect the codes of locations starting with \"{}\". {}.".format(initial.upper(), e))
+                location_codes, additional_note = pd.DataFrame(), None
 
-        return location_codes
+            location_codes_data = dict(zip([initial.upper(), 'Additional_note', 'Last_updated_date'],
+                                           [location_codes, additional_note, last_updated_date]))
 
-    # Get all Location data including CRS, NLC, TIPLOC, STANME and STANOX codes either locally or from online
-    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None):
+            save_pickle(location_codes_data, self.cd_lc("a_z", initial.lower() + ".pickle"), verbose)
+
+        return location_codes_data
+
+    # Fetch all Location data including CRS, NLC, TIPLOC, STANME and STANOX codes either locally or from online
+    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         # Get every data table
-        data = [self.collect_location_codes_by_initial(x, update=update) for x in string.ascii_lowercase]
+        data = [self.collect_location_codes_by_initial(x, update, verbose) for x in string.ascii_lowercase]
 
         # Select DataFrames only
         location_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
@@ -288,14 +339,15 @@ class LocationIdentifiers:
                           'Additional_note': additional_note,
                           'Other_systems': other_systems_codes}
 
-        if pickle_it:
-            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-            path_to_pickle = os.path.join(dat_dir, "CRS-NLC-TIPLOC-STANOX-codes.pickle")
-            save_pickle(location_codes, path_to_pickle)
+        if pickle_it and data_dir:
+            pickle_filename = "crs_nlc_tiploc_stanox_codes.pickle"
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+            save_pickle(location_codes, path_to_pickle, verbose=True)
 
         return location_codes
 
-    # Get a dict/dataframe for location code data for the given keyword
+    # Make a dict/dataframe for location code data for the given keyword
     def make_location_codes_dictionary(self, keys, initials=None, main_key=None, drop_duplicates=False, as_dict=False,
                                        pickle_it=False, data_dir=None, update=False):
         """
@@ -327,11 +379,13 @@ class LocationIdentifiers:
         path_to_file = os.path.join(dat_dir, "-".join(keys) +
                                     ("" if initials is None else "-" + "".join(initials)) +
                                     (".json" if as_dict and len(keys) == 1 else ".pickle"))
+
         if os.path.isfile(path_to_file) and not update:
             if as_dict:
                 location_codes_dictionary = load_json(path_to_file)
             else:
                 location_codes_dictionary = load_pickle(path_to_file)
+
         else:
             if initials is None:
                 location_codes = self.fetch_location_codes()['Location_codes']
