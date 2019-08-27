@@ -122,7 +122,7 @@ class LocationIdentifiers:
             return additional_crs_note
 
     # Fetch note about CRS
-    def fetch_additional_crs_note(self, update=False, pickle_it=False, data_dir=None):
+    def fetch_additional_crs_note(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "additional_crs_note.pickle"
 
         if not data_dir:
@@ -136,7 +136,7 @@ class LocationIdentifiers:
             additional_note = load_pickle(self.cd_lc(pickle_filename))
         else:
             additional_note = self.collect_additional_crs_note(confirmation_required=False,
-                                                               verbose=False if data_dir else True)
+                                                               verbose=False if data_dir or not verbose else True)
             if additional_note:  # additional_note is not None
                 if pickle_it and data_dir:
                     save_pickle(additional_note, path_to_pickle, verbose=True)
@@ -171,7 +171,7 @@ class LocationIdentifiers:
             return other_systems_codes
 
     # Fetch the data for other systems
-    def fetch_other_systems_codes(self, update=False, pickle_it=False, data_dir=None):
+    def fetch_other_systems_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "other_systems_codes.pickle"
 
         if not data_dir:
@@ -186,7 +186,7 @@ class LocationIdentifiers:
 
         else:
             other_systems_codes = self.collect_other_systems_codes(confirmation_required=False,
-                                                                   verbose=False if data_dir else True)
+                                                                   verbose=False if data_dir or not verbose else True)
             if other_systems_codes:  # other_systems_codes is not None
                 if pickle_it and data_dir:
                     save_pickle(other_systems_codes, path_to_pickle, verbose=True)
