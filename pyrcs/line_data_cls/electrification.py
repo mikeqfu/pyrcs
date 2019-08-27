@@ -110,7 +110,7 @@ class Electrification:
         self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
         path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
         if os.path.isfile(path_to_pickle) and not update:
-            codes_for_ole = load_pickle(self.cd_elec(pickle_filename))
+            codes_for_ole = load_pickle(path_to_pickle)
         else:
             codes_for_ole = self.collect_codes_for_national_network(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
@@ -205,7 +205,7 @@ class Electrification:
         self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
         path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
         if os.path.isfile(path_to_pickle) and not update:
-            codes_for_independent_lines = load_pickle(self.cd_elec(pickle_filename))
+            codes_for_independent_lines = load_pickle(path_to_pickle)
         else:
             codes_for_independent_lines = self.collect_codes_for_independent_lines(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
@@ -245,7 +245,7 @@ class Electrification:
         self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
         path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
         if os.path.isfile(path_to_pickle) and not update:
-            ohns = load_pickle(self.cd_elec(pickle_filename))
+            ohns = load_pickle(path_to_pickle)
         else:
             ohns = self.collect_codes_for_ohns(confirmation_required=False,
                                                verbose=False if data_dir or not verbose else True)
@@ -314,7 +314,7 @@ class Electrification:
         self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
         path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
         if os.path.isfile(path_to_pickle) and not update:
-            codes_for_energy_tariff_zones = load_pickle(self.cd_elec(pickle_filename))
+            codes_for_energy_tariff_zones = load_pickle(path_to_pickle)
         else:
             codes_for_energy_tariff_zones = self.collect_codes_for_energy_tariff_zones(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
