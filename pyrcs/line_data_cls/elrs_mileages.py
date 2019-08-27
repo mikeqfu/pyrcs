@@ -7,6 +7,7 @@ Engineer's Line References (ELRs) (Reference: http://www.railwaycodes.org.uk/elr
 are not on this route but are given for reference."
 """
 
+import copy
 import itertools
 import os
 import re
@@ -19,7 +20,7 @@ import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle
 
-from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_table
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_table
 from pyrcs.utils import is_float, mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, yards_to_nr_mileage
 from pyrcs.utils import save_pickle
 
@@ -232,11 +233,12 @@ def parse_mileage_data(mileage_data):
 class ELRMileages:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
-        self.Name = 'ELRs and mileages'
+        self.Name = "Engineer's Line References (ELRs)"
         self.URL = self.HomeURL + '/elrs/elr0.shtm'
-        self.Catalogue = get_cls_catalogue(self.URL)
+        self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", self.Name)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "elrs_and_mileages")
+        self.CurrentDataDir = copy.copy(self.DataDir)
 
     # Change directory to "dat\\Line data\\ELRs and mileages" and sub-directories
     def cd_em(self, *sub_dir):
@@ -253,10 +255,11 @@ class ELRMileages:
         return path
 
     # Scrape Engineer's Line References (ELRs)
-    def collect_elr_by_initial(self, initial, update=False):
+    def collect_elr_by_initial(self, initial, update=False, verbose=False):
         """
         :param initial: [str] initial letter of ELR, e.g. 'a', ..., 'z'
         :param update: [bool] whether to re-collect the data
+        :param verbose: [bool]
         :return: [dict] {'initial': [pandas.DataFrame], 'Last_updated_date': [str]}
                     [pandas.DataFrame] data of ELRs whose names start with the given 'initial', incl. ELR names,
                     line name, mileages, datum and some notes
@@ -265,12 +268,11 @@ class ELRMileages:
         assert initial in string.ascii_letters
         beginning_with = initial.upper()
 
-        path_to_pickle = self.cd_em("A-Z", beginning_with + ".pickle")
+        path_to_pickle = self.cd_em("a_z", beginning_with.lower() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
             elrs = load_pickle(path_to_pickle)
         else:
-            # Specify the requested URL
-            url = self.Catalogue[beginning_with]
+            url = self.Catalogue[beginning_with]  # Specify the requested URL
             try:
                 source = requests.get(url)  # Request to get connected to the url
                 records, header = parse_table(source, parser='lxml')
@@ -278,24 +280,25 @@ class ELRMileages:
                 data = pd.DataFrame([[x.replace('=', 'See').strip('\xa0') for x in i] for i in records], columns=header)
                 # Return a dictionary containing both the DataFrame and its last updated date
                 elrs = {beginning_with: data, 'Last_updated_date': get_last_updated_date(url)}
-                save_pickle(elrs, path_to_pickle)
+                save_pickle(elrs, path_to_pickle, verbose)
             except Exception as e:  # e.g the requested URL is not available:
-                print("Failed to scrape data of ELR beginning with \"{}\". {}.".format(beginning_with, e))
+                print("Failed to collect data of ELR beginning with \"{}\". {}".format(beginning_with.upper(), e))
                 elrs = {beginning_with: pd.DataFrame(), 'Last_updated_date': ''}
         return elrs
 
     # Get all ELRs and mileages
-    def fetch_elr(self, update=False, pickle_it=False, data_dir=None):
+    def fetch_elr(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         :param update: [bool] whether to re-collect the data by initial letter
         :param pickle_it: [bool] whether to save the data as a .pickle file
         :param data_dir: [str; None] directory where the data will be stored
+        :param verbose: [bool]
         :return [dict] {'ELRs_mileages': [DataFrame], 'Last_updated_date': [str]}
                     [DataFrame] data of (almost all) ELRs beginning with the given 'keyword', including ELR names,
                     line name, mileages, datum and some notes
                     [str] date of when the data was last updated
         """
-        data = [self.collect_elr_by_initial(x, update) for x in string.ascii_lowercase]
+        data = [self.collect_elr_by_initial(x, update, verbose) for x in string.ascii_lowercase]
         elrs_data = (item[x] for item, x in zip(data, string.ascii_uppercase))  # Select DataFrames only
         elrs_data_table = pd.concat(elrs_data, axis=0, ignore_index=True, sort=False)
 
@@ -305,19 +308,22 @@ class ELRMileages:
 
         elrs_data = {'ELRs_mileages': elrs_data_table, 'Latest_updated_date': latest_updated_date}
 
-        if pickle_it:
-            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-            path_to_pickle = os.path.join(dat_dir, "ELRs_mileages.pickle")
-            save_pickle(elrs_data, path_to_pickle)
+        if pickle_it and data_dir:
+            pickle_filename = "elrs_and_mileages.pickle"
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+            save_pickle(elrs_data, path_to_pickle, verbose=True)
 
         return elrs_data
 
     # Read (from online) the mileage file for the given ELR
-    def collect_mileage_file_by_elr(self, elr, parsed=True, update=False):
+    def collect_mileage_file_by_elr(self, elr, parsed=True, update=False, pickle_it=False, verbose=False):
         """
         :param elr: [str] e.g. elr='CJD'
         :param parsed: [bool]
         :param update: [bool]
+        :param pickle_it: [bool]
+        :param verbose: [bool]
         :return: [dict]
 
         Note:
@@ -327,16 +333,16 @@ class ELRMileages:
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
 
         """
-        path_to_pickle = self.cd_em("mileage_files", elr[0].upper(), elr.upper() + ".pickle")
-        if os.path.basename(path_to_pickle) == "PRN.pickle":
-            path_to_pickle = path_to_pickle.replace("PRN.pickle", "PRNx.pickle")
+        path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr.lower() + ".pickle")
+        if os.path.basename(path_to_pickle) == "prn.pickle":
+            path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             mileage_file = load_pickle(path_to_pickle)
         else:
             try:
                 # The URL of the mileage file for the ELR
-                url = 'http://www.railwaycodes.org.uk/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
+                url = self.HomeURL + '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
                 source = requests.get(url)
                 source_text = bs4.BeautifulSoup(source.text, 'lxml')
 
@@ -396,28 +402,45 @@ class ELRMileages:
 
                 mileage_file = dict(pair for x in [line_info, {elr: mileage_data}, note_dat] for pair in x.items())
 
-                save_pickle(mileage_file, path_to_pickle)
+                if pickle_it:
+                    save_pickle(mileage_file, path_to_pickle, verbose)
 
             except Exception as e:
-                print("Failed to collect the mileage file for \"{}\". {}.".format(elr, e))
+                print("Failed to collect the mileage file for \"{}.\" {}.".format(elr, e))
                 mileage_file = None
 
         return mileage_file
 
     # Get the mileage file for the given ELR (firstly try to load the local data file if available)
-    def fetch_mileage_file(self, elr, update=False):
+    def fetch_mileage_file(self, elr, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         :param elr: [str]
         :param update: [bool] indicate whether to re-scrape the data from online
+        :param pickle_it: [bool]
+        :param data_dir: [str; None]
+        :param verbose: [bool]
         :return: [dict] {elr: [DataFrame] mileage file data,
                         'Line': [str] line name,
                         'Note': [str] additional information/notes, or None}
         """
-        path_to_file = self.cd_em("mileage_files", elr[0].upper(), elr + ".pickle")
-        if os.path.isfile(path_to_file) and not update:
-            mileage_file = load_pickle(path_to_file)
+        path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr + ".pickle")
+        if os.path.basename(path_to_pickle) == "prn.pickle":
+            path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
+
+        if os.path.isfile(path_to_pickle) and not update:
+            mileage_file = load_pickle(path_to_pickle)
         else:
-            mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, update=update)
+            mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, update=update, pickle_it=pickle_it,
+                                                            verbose=False if data_dir or not verbose else True)
+
+            if mileage_file:
+                if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
+                    save_pickle(mileage_file, path_to_pickle, verbose=True)
+            else:
+                print("No mileage file has been collected for \"{}\".".format(elr.upper()))
+
         return mileage_file
 
     @staticmethod
@@ -454,12 +477,14 @@ class ELRMileages:
         return start_dest_mileage, end_orig_mileage
 
     # Get to end and start mileages for StartELR and EndELR, respectively, for the connection point
-    def get_conn_mileages(self, start_elr, end_elr, update=False):
+    def get_conn_mileages(self, start_elr, end_elr, update=False, pickle_mileage_file=False, data_dir=None,
+                          verbose=False):
         """
         start_elr, end_elr, update = 'NAY', 'LTN2', False
 
         """
-        start_file, end_file = self.fetch_mileage_file(start_elr, update), self.fetch_mileage_file(end_elr, update)
+        start_file = self.fetch_mileage_file(start_elr, update, pickle_mileage_file, data_dir, verbose=verbose)
+        end_file = self.fetch_mileage_file(end_elr, update, pickle_mileage_file, data_dir, verbose=verbose)
 
         if start_file is not None and end_file is not None:
             start_em, end_em = start_file[start_elr], end_file[end_elr]
