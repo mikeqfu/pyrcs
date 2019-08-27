@@ -18,6 +18,7 @@ import measurement.measures
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.misc import confirmed
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_table
@@ -317,11 +318,11 @@ class ELRMileages:
         return elrs_data
 
     # Read (from online) the mileage file for the given ELR
-    def collect_mileage_file_by_elr(self, elr, parsed=True, update=False, pickle_it=False, verbose=False):
+    def collect_mileage_file_by_elr(self, elr, parsed=True, confirmation_required=True, pickle_it=False, verbose=False):
         """
         :param elr: [str] e.g. elr='CJD'
         :param parsed: [bool]
-        :param update: [bool]
+        :param confirmation_required: [bool]
         :param pickle_it: [bool]
         :param verbose: [bool]
         :return: [dict]
@@ -331,15 +332,9 @@ class ELRMileages:
             - Mileages in parentheses are not on that ELR, but are included for reference,
               e.g. ANL, (8.67) NORTHOLT [London Underground]
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
-
         """
-        path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr.lower() + ".pickle")
-        if os.path.basename(path_to_pickle) == "prn.pickle":
-            path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
-
-        if os.path.isfile(path_to_pickle) and not update:
-            mileage_file = load_pickle(path_to_pickle)
-        else:
+        if confirmed("To collect mileage file for \"{}\"?".format(elr.upper()),
+                     confirmation_required=confirmation_required):
             try:
                 # The URL of the mileage file for the ELR
                 url = self.HomeURL + '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
@@ -403,13 +398,16 @@ class ELRMileages:
                 mileage_file = dict(pair for x in [line_info, {elr: mileage_data}, note_dat] for pair in x.items())
 
                 if pickle_it:
+                    path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr + ".pickle")
+                    if os.path.basename(path_to_pickle) == "prn.pickle":
+                        path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
                     save_pickle(mileage_file, path_to_pickle, verbose)
 
             except Exception as e:
                 print("Failed to collect the mileage file for \"{}.\" {}.".format(elr, e))
                 mileage_file = None
 
-        return mileage_file
+            return mileage_file
 
     # Get the mileage file for the given ELR (firstly try to load the local data file if available)
     def fetch_mileage_file(self, elr, update=False, pickle_it=False, data_dir=None, verbose=False):
@@ -430,7 +428,8 @@ class ELRMileages:
         if os.path.isfile(path_to_pickle) and not update:
             mileage_file = load_pickle(path_to_pickle)
         else:
-            mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, update=update, pickle_it=pickle_it,
+            mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, confirmation_required=False,
+                                                            pickle_it=pickle_it,
                                                             verbose=False if data_dir or not verbose else True)
 
             if mileage_file:
