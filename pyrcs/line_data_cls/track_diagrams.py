@@ -2,11 +2,11 @@
 
 Data source: http://www.railwaycodes.org.uk
 
-Railway track diagrams
-(Reference: http://www.railwaycodes.org.uk/track/diagrams0.shtm)
+Railway track diagrams (http://www.railwaycodes.org.uk/track/diagrams0.shtm)
 
 """
 
+import copy
 import os
 import urllib.parse
 
@@ -52,16 +52,17 @@ class TrackDiagrams:
             h3 = h3.find_next_sibling('h3')  # Move on
         self.Catalogue = items
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Track diagrams")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "track_diagrams")
+        self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "...dat\\Line data\\Track diagrams" and sub-directories
+    # Change directory to "...dat\\line_data\\track_diagrams\\" and sub-directories
     def cd_td(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\Track diagrams\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\track_diagrams\\dat" and sub-directories
     def cdd_td(self, *sub_dir):
         path = self.cd_td("dat")
         for x in sub_dir:
