@@ -3,7 +3,7 @@
 Data source: http://www.railwaycodes.org.uk
 
 Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes
-(Reference: http://www.railwaycodes.org.uk/pride/pride0.shtm)
+(http://www.railwaycodes.org.uk/pride/pride0.shtm)
 
 PRIDE numbers are now known as line of route (LOR) numbers.  The name has changed, but the codes are unchanged.
 
@@ -36,14 +36,14 @@ class LOR:
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "lor_codes")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Line data\\Line of route" and sub-directories
+    # Change directory to "dat\\line_data\\lor_codes" and sub-directories
     def cd_lor(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\Line of route\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\lor_codes\\dat" and sub-directories
     def cdd_lor(self, *sub_dir):
         path = self.cd_lor("dat")
         for x in sub_dir:
@@ -132,7 +132,7 @@ class LOR:
                     code_dat = pd.DataFrame(parse_tr(header_text, code.find_all('tr')), columns=header_text)
                     line_name_info = code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
                     line_name_info.columns = ['Line Name', 'Line Name Note']
-                    code_dat = pd.concat([code_dat, line_name_info], axis=1)
+                    code_dat = pd.concat([code_dat, line_name_info], axis=1, sort=False)
                     try:
                         note_dat = dict([(x['name'].title(), x.text) for x in soup.find('ol').findChildren('a')])
                     except AttributeError:
@@ -171,9 +171,9 @@ class LOR:
 
         # Get the latest updated date
         last_updated_dates = (item['Last_updated_date'] for item, _ in zip(lor_codes, prefixes))
-        latest_updated_date = max(d for d in last_updated_dates if d is not None)
+        latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        lor_codes_data.update({'Latest_updated_date': latest_updated_date})
+        lor_codes_data.update({'Latest_update_date': latest_update_date})
 
         if pickle_it and data_dir:
             pickle_filename = "lor_codes.pickle"
@@ -221,8 +221,7 @@ class LOR:
     # Fetch ELR/LOR converter
     def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "elr_lor_converter.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_lor(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             elr_lor_converter = load_pickle(path_to_pickle)
@@ -232,6 +231,8 @@ class LOR:
                                                                verbose=False if data_dir or not verbose else True)
             if elr_lor_converter:  # codes_for_ole is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(elr_lor_converter, path_to_pickle, verbose=True)
             else:
                 print("No data of \"ELR/LOR converter\" has been collected for national network OLE installations.")
