@@ -2,7 +2,7 @@
 
 Data source: http://www.railwaycodes.org.uk
 
-Railway line names (Reference: http://www.railwaycodes.org.uk/misc/line_names.shtm)
+Railway line names (http://www.railwaycodes.org.uk/misc/line_names.shtm)
 
 """
 
@@ -28,14 +28,14 @@ class LineNames:
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "line_names")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Line data\\Line names" and sub-directories
+    # Change directory to "dat\\line_data\\line_names" and sub-directories
     def cd_ln(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\Line names\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\line_names\\dat" and sub-directories
     def cdd_ln(self, *sub_dir):
         path = self.cd_ln("dat")
         for x in sub_dir:
@@ -97,8 +97,7 @@ class LineNames:
     # Get the data of line names either locally or from online
     def fetch_line_names(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "line_names.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_ln(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             line_names_data = load_pickle(path_to_pickle)
@@ -108,6 +107,8 @@ class LineNames:
                                                       verbose=False if data_dir or not verbose else True)
             if line_names_data:  # line_names is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(line_names_data, path_to_pickle, verbose=True)
             else:
                 print("No data of the railway line names has been collected.")
