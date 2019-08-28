@@ -10,6 +10,7 @@ PRIDE numbers are now known as line of route (LOR) numbers.  The name has change
 """
 
 
+import copy
 import os
 import re
 import urllib.parse
@@ -21,7 +22,7 @@ from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.misc import confirmed
 from pyhelpers.store import load_pickle
 
-from pyrcs.utils import cd_dat, get_cls_catalogue, get_last_updated_date, parse_tr
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_tr
 from pyrcs.utils import save_pickle
 
 
@@ -30,9 +31,10 @@ class LOR:
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Line of Route (LOR/PRIDE) codes'
         self.URL = self.HomeURL + '/pride/pride0.shtm'
-        self.Catalogue = get_cls_catalogue(self.URL)
+        self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Line data", "Line of route codes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "lor_codes")
+        self.CurrentDataDir = copy.copy(self.DataDir)
 
     # Change directory to "dat\\Line data\\Line of route" and sub-directories
     def cd_lor(self, *sub_dir):
@@ -50,7 +52,7 @@ class LOR:
 
     # Get key to LOR code prefixes
     def get_key_to_prefixes(self, prefixes_only=True, update=False):
-        path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "key-to-"))
+        path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "key_to_"))
         if os.path.isfile(path_to_pickle) and not update:
             key_to_prefixes = load_pickle(path_to_pickle)
         else:
@@ -86,133 +88,152 @@ class LOR:
         return urls
 
     # Update catalogue data
-    def __update__(self):
+    def update_catalogue(self):
         if confirmed("To update catalogue?"):
             self.get_key_to_prefixes(prefixes_only=True, update=True)
             self.get_key_to_prefixes(prefixes_only=False, update=True)
             self.get_lor_page_urls(update=True)
 
     # Collect LOR codes by prefix
-    def collect_lor_codes_by_prefix(self, prefixes):
+    def collect_lor_codes_by_prefix(self, prefixes, update=False, verbose=False):
 
         assert prefixes in self.get_key_to_prefixes(prefixes_only=True), \
             "\"prefixes\" must be one of {}".format(self.get_key_to_prefixes(prefixes_only=True))
 
-        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
-        path_to_pickle = os.path.join(self.cd_lor(), pickle_filename)
+        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW_NZ").lower()
+        path_to_pickle = self.cd_lor("prefixes", pickle_filename)
 
-        try:
-            prefixes = "NW" if prefixes in ("NW", "NZ") else prefixes
-            url = 'http://www.railwaycodes.org.uk/pride/pride{}.shtm'.format(prefixes.lower())
-            source = requests.get(url)
-            source_text = source.text
-            source.close()
+        if os.path.isfile(path_to_pickle) and not update:
+            lor_codes_by_initials = load_pickle(path_to_pickle)
 
-            soup = bs4.BeautifulSoup(source_text, 'lxml')
+        else:
+            try:
+                prefixes = "NW" if prefixes in ("NW", "NZ") else prefixes
+                url = self.HomeURL + '/pride/pride{}.shtm'.format(prefixes.lower())
+                source = requests.get(url)
+                source_text = source.text
+                source.close()
 
-            # Parse the column of Line Name
-            def parse_line_name(x):
-                # re.search('\w+.*(?= \(\[\')', x).group(), re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
-                try:
-                    line_name, line_name_note = x.split(' ([\'')
-                    line_name_note = line_name_note.strip('\'])')
-                except ValueError:
-                    line_name, line_name_note = x, None
-                return line_name, line_name_note
+                soup = bs4.BeautifulSoup(source_text, 'lxml')
 
-            def parse_h3_table(tbl_soup):
-                header, code = tbl_soup
-                header_text = [h.text.replace('\n', ' ') for h in header.find_all('th')]
-                code_dat = pd.DataFrame(parse_tr(header_text, code.find_all('tr')), columns=header_text)
-                line_name_info = code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
-                line_name_info.columns = ['Line Name', 'Line Name Note']
-                code_dat = pd.concat([code_dat, line_name_info], axis=1)
-                try:
-                    note_dat = dict([(x['name'].title(), x.text) for x in soup.find('ol').findChildren('a')])
-                except AttributeError:
-                    note_dat = dict([('Note', None)])
-                return code_dat, note_dat
+                # Parse the column of Line Name
+                def parse_line_name(x):
+                    # re.search('\w+.*(?= \(\[\')', x).group(), re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
+                    try:
+                        line_name, line_name_note = x.split(' ([\'')
+                        line_name_note = line_name_note.strip('\'])')
+                    except ValueError:
+                        line_name, line_name_note = x, None
+                    return line_name, line_name_note
 
-            h3, table_soup = soup.find_all('h3'), soup.find_all('table', {'width': '1100px'})
-            if len(h3) == 0:
-                code_data, code_data_notes = parse_h3_table(table_soup)
-                lor_codes_by_initials = {'Code': code_data, 'Note': code_data_notes}
-            else:
-                code_data_and_notes = [dict(zip(['Code', 'Note'], parse_h3_table(x)))
-                                       for x in zip(*[iter(table_soup)] * 2)]
-                lor_codes_by_initials = dict(zip([x.text for x in h3], code_data_and_notes))
+                def parse_h3_table(tbl_soup):
+                    header, code = tbl_soup
+                    header_text = [h.text.replace('\n', ' ') for h in header.find_all('th')]
+                    code_dat = pd.DataFrame(parse_tr(header_text, code.find_all('tr')), columns=header_text)
+                    line_name_info = code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
+                    line_name_info.columns = ['Line Name', 'Line Name Note']
+                    code_dat = pd.concat([code_dat, line_name_info], axis=1)
+                    try:
+                        note_dat = dict([(x['name'].title(), x.text) for x in soup.find('ol').findChildren('a')])
+                    except AttributeError:
+                        note_dat = dict([('Note', None)])
+                    return code_dat, note_dat
 
-            save_pickle(lor_codes_by_initials, path_to_pickle)
+                h3, table_soup = soup.find_all('h3'), soup.find_all('table', {'width': '1100px'})
+                if len(h3) == 0:
+                    code_data, code_data_notes = parse_h3_table(table_soup)
+                    lor_codes_by_initials = {'Code': code_data, 'Note': code_data_notes}
+                else:
+                    code_data_and_notes = [dict(zip(['Code', 'Note'], parse_h3_table(x)))
+                                           for x in zip(*[iter(table_soup)] * 2)]
+                    lor_codes_by_initials = dict(zip([x.text for x in h3], code_data_and_notes))
 
-        except Exception as e:
-            print("Failed to get LOR codes by prefix \"{}\". {}.".format(prefixes, e))
-            lor_codes_by_initials = {}
+                last_updated_date = get_last_updated_date(url)
+                lor_codes_by_initials.update({'Last_updated_date': last_updated_date})
+
+                save_pickle(lor_codes_by_initials, path_to_pickle, verbose)
+
+            except Exception as e:
+                print("Failed to collect LOR codes with prefix \"{}\". {}".format(prefixes.upper(), e))
+                lor_codes_by_initials = None
 
         return lor_codes_by_initials
 
-    # Fetch LOR codes by prefix
-    def fetch_lor_codes_by_prefix(self, prefixes, update=False):
-        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ")
-        path_to_pickle = os.path.join(self.cd_lor(), pickle_filename)
-        if not os.path.isfile(path_to_pickle) or update:
-            self.collect_lor_codes_by_prefix(prefixes)
-        try:
-            lor_codes_by_initials = load_pickle(path_to_pickle)
-            return lor_codes_by_initials
-        except Exception as e:
-            print(e)
-
     # Fetch all LOR codes either locally or from online
-    def fetch_lor_codes(self, update=False):
-        path_to_pickle = os.path.join(self.DataDir, "LOR-codes.pickle")
-        if not os.path.isfile(path_to_pickle) or update:
-            prefixes = self.get_key_to_prefixes(prefixes_only=True, update=update)
-            lor_codes = [self.fetch_lor_codes_by_prefix(p, update) for p in prefixes if p != 'NZ']
-            save_pickle(lor_codes, path_to_pickle)
-        try:
-            lor_codes = load_pickle(path_to_pickle)
-            return lor_codes
-        except Exception as e:
-            print(e)
+    def fetch_lor_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        prefixes = self.get_key_to_prefixes(prefixes_only=True, update=update)
+        lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose) for p in prefixes if p != 'NZ']
+
+        prefixes[prefixes.index('NW')] = 'NW_NZ'
+        prefixes.remove('NZ')
+
+        lor_codes_data = dict(zip(prefixes, lor_codes))
+
+        # Get the latest updated date
+        last_updated_dates = (item['Last_updated_date'] for item, _ in zip(lor_codes, prefixes))
+        latest_updated_date = max(d for d in last_updated_dates if d is not None)
+
+        lor_codes_data.update({'Latest_updated_date': latest_updated_date})
+
+        if pickle_it and data_dir:
+            pickle_filename = "lor_codes.pickle"
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+            save_pickle(lor_codes_data, path_to_pickle, verbose)
+
+        return lor_codes_data
 
     # Collect ELR/LOR converter
-    def collect_elr_lor_converter(self):
-        path_to_pickle = os.path.join(self.cd_lor(), "ELR-LOR-converter.pickle")
-        url = self.Catalogue['ELR/LOR converter']
-        try:
-            headers, elr_lor_dat = pd.read_html(url)
-            elr_lor_dat.columns = list(headers)
-            #
-            source = requests.get(url)
-            soup = bs4.BeautifulSoup(source.text, 'lxml')
-            tds = soup.find_all('td')
-            links = [x.get('href') for x in [x.find('a', href=True) for x in tds] if x is not None]
-            elr_links, lor_links = [x for x in links[::2]], [x for x in links[1::2]]
-            #
-            if len(elr_links) != len(elr_lor_dat):
-                duplicates = elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
-                for i in duplicates.index:
-                    if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
-                        elr_links.insert(i, elr_links[i - 1])
-                    if not lor_links[i].endswith(duplicates['LOR code'].loc[i].lower()):
-                        lor_links.insert(i, lor_links[i - 1])
-            #
-            elr_lor_dat['ELR_URL'] = [urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
-            elr_lor_dat['LOR_URL'] = [self.HomeURL + 'pride/' + x for x in lor_links]
-            #
-            elr_lor_converter = {'ELR_LOR_converter': elr_lor_dat, 'Last_updated_date': get_last_updated_date(url)}
-            save_pickle(elr_lor_converter, path_to_pickle)
-        except Exception as e:
-            print("Failed to collect \"ELR/LOR converter\". {}.".format(e))
+    def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
+        if confirmed("To collect ELR/LOR converter?", confirmation_required=confirmation_required):
+            url = self.Catalogue['ELR/LOR converter']
+            try:
+                headers, elr_lor_dat = pd.read_html(url)
+                elr_lor_dat.columns = list(headers)
+                #
+                source = requests.get(url)
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                tds = soup.find_all('td')
+                links = [x.get('href') for x in [x.find('a', href=True) for x in tds] if x is not None]
+                elr_links, lor_links = [x for x in links[::2]], [x for x in links[1::2]]
+                #
+                if len(elr_links) != len(elr_lor_dat):
+                    duplicates = elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
+                    for i in duplicates.index:
+                        if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+                            elr_links.insert(i, elr_links[i - 1])
+                        if not lor_links[i].endswith(duplicates['LOR code'].loc[i].lower()):
+                            lor_links.insert(i, lor_links[i - 1])
+                #
+                elr_lor_dat['ELR_URL'] = [urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
+                elr_lor_dat['LOR_URL'] = [self.HomeURL + 'pride/' + x for x in lor_links]
+                #
+                elr_lor_converter = {'ELR_LOR_converter': elr_lor_dat, 'Last_updated_date': get_last_updated_date(url)}
 
-    # Get ELR/LOR converter
-    def fetch_elr_lor_converter(self, update=False):
-        path_to_pickle = os.path.join(self.cd_lor(), "ELR-LOR-converter.pickle")
-        if not os.path.isfile(path_to_pickle) or update:
-            self.collect_elr_lor_converter()
-        try:
+                save_pickle(elr_lor_converter, self.cd_lor("elr_lor_converter.pickle"), verbose)
+
+            except Exception as e:
+                print("Failed to collect \"ELR/LOR converter\". {}".format(e))
+                elr_lor_converter = None
+
+            return elr_lor_converter
+
+    # Fetch ELR/LOR converter
+    def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        pickle_filename = "elr_lor_converter.pickle"
+        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+
+        if os.path.isfile(path_to_pickle) and not update:
             elr_lor_converter = load_pickle(path_to_pickle)
-        except Exception as e:
-            elr_lor_converter = {}
-            print("Failed to get \"ELR/LOR converter\". {}.".format(e))
+
+        else:
+            elr_lor_converter = self.collect_elr_lor_converter(confirmation_required=False,
+                                                               verbose=False if data_dir or not verbose else True)
+            if elr_lor_converter:  # codes_for_ole is not None
+                if pickle_it and data_dir:
+                    save_pickle(elr_lor_converter, path_to_pickle, verbose=True)
+            else:
+                print("No data of \"ELR/LOR converter\" has been collected for national network OLE installations.")
+
         return elr_lor_converter
