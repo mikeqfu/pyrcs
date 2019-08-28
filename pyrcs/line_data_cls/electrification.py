@@ -3,7 +3,7 @@
 Data source: http://www.railwaycodes.org.uk
 
 Section codes for overhead line electrification (OLE) installations
-(Source: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm)
+(http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm)
 
 """
 
@@ -31,14 +31,14 @@ class Electrification:
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", 'electrification')
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Line data\\Electrification" and sub-directories
+    # Change directory to "dat\\line_data\\electrification" and sub-directories
     def cd_elec(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\Electrification\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\electrification\\dat" and sub-directories
     def cdd_elec(self, *sub_dir):
         path = self.cd_elec("dat")
         for x in sub_dir:
@@ -107,18 +107,23 @@ class Electrification:
     # Fetch codes for national network
     def fetch_codes_for_national_network(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "national_network.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_elec(pickle_filename)
+
         if os.path.isfile(path_to_pickle) and not update:
             codes_for_ole = load_pickle(path_to_pickle)
+
         else:
             codes_for_ole = self.collect_codes_for_national_network(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if codes_for_ole:  # codes_for_ole is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(codes_for_ole, path_to_pickle, verbose=True)
             else:
                 print("No data of section codes has been collected for national network OLE installations.")
+
         return codes_for_ole
 
     # Get names of independent lines
@@ -202,18 +207,23 @@ class Electrification:
     # Fetch codes for independent lines
     def fetch_codes_for_independent_lines(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "independent_lines.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_elec(pickle_filename)
+
         if os.path.isfile(path_to_pickle) and not update:
             codes_for_independent_lines = load_pickle(path_to_pickle)
+
         else:
             codes_for_independent_lines = self.collect_codes_for_independent_lines(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if codes_for_independent_lines:  # codes_for_independent_lines is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(codes_for_independent_lines, path_to_pickle, verbose=True)
             else:
                 print("No data of section codes has been collected for independent lines OLE installations.")
+
         return codes_for_independent_lines
 
     # National network neutral sections
@@ -242,18 +252,23 @@ class Electrification:
     # Fetch codes for Overhead line electrification neutral sections (OHNS)
     def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "national_network_neutral_sections.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_elec(pickle_filename)
+
         if os.path.isfile(path_to_pickle) and not update:
             ohns = load_pickle(path_to_pickle)
+
         else:
             ohns = self.collect_codes_for_ohns(confirmation_required=False,
                                                verbose=False if data_dir or not verbose else True)
+
             if ohns:  # ohns is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(ohns, path_to_pickle, verbose=True)
             else:
                 print("No data of section codes for OHNS has been collected.")
+
         return ohns
 
     # National network energy tariff zones
@@ -311,18 +326,23 @@ class Electrification:
     # Fetch codes for Overhead line electrification neutral sections (OHNS)
     def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "national_network_energy_tariff_zones.pickle"
-        self.CurrentDataDir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-        path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_elec(pickle_filename)
+
         if os.path.isfile(path_to_pickle) and not update:
             codes_for_energy_tariff_zones = load_pickle(path_to_pickle)
+
         else:
             codes_for_energy_tariff_zones = self.collect_codes_for_energy_tariff_zones(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if codes_for_energy_tariff_zones:  # codes_for_energy_tariff_zones is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(codes_for_energy_tariff_zones, path_to_pickle, verbose=True)
             else:
                 print("No data of section codes has been collected for the UK railway electrification tariff zones.")
+
         return codes_for_energy_tariff_zones
 
     # Fetch codes in the electrification catalogue
