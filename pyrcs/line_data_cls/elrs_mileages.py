@@ -1,7 +1,7 @@
 """
 Data source: http://www.railwaycodes.org.uk
 
-Engineer's Line References (ELRs) (Reference: http://www.railwaycodes.org.uk/elrs/elr0.shtm)
+Engineer's Line References (ELRs) (http://www.railwaycodes.org.uk/elrs/elr0.shtm)
 
 "Mileages are given in the form miles.chains. Figures prefixed with a tilde (~) are approximate, items in parentheses
 are not on this route but are given for reference."
@@ -215,9 +215,9 @@ def parse_node_col(node):
     link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
     link_nodes = conn_nodes[link_cols].applymap(lambda x: uncouple_elr_mileage(x))
     link_elr_mileage = pd.concat([pd.DataFrame(link_nodes[col].values.tolist(),
-                                               columns=[col + '_ELR', col + '_Mile_Chain'])
+                                               columns=[col + '_ELR', col + '_Mile_Chain'], sort=False)
                                   for col in link_cols], axis=1)
-    parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1)
+    parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1, sort=False)
 
     return parsed_node_and_conn
 
@@ -226,7 +226,7 @@ def parse_node_col(node):
 def parse_mileage_data(mileage_data):
     mileage, node = mileage_data.iloc[:, 0], mileage_data.iloc[:, 1]
     parsed_mileage, parsed_node_and_conn = parse_mileage_col(mileage), parse_node_col(node)
-    parsed_dat = pd.concat([parsed_mileage, parsed_node_and_conn], axis=1)
+    parsed_dat = pd.concat([parsed_mileage, parsed_node_and_conn], axis=1, sort=False)
     return parsed_dat
 
 
@@ -241,14 +241,14 @@ class ELRMileages:
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "elrs_and_mileages")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Line data\\ELRs and mileages" and sub-directories
+    # Change directory to "dat\\line_data\\elrs_and_mileages" and sub-directories
     def cd_em(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\ELRs and mileages\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\elrs_and_mileages\\dat" and sub-directories
     def cdd_em(self, *sub_dir):
         path = self.cd_em("dat")
         for x in sub_dir:
@@ -294,20 +294,21 @@ class ELRMileages:
         :param pickle_it: [bool] whether to save the data as a .pickle file
         :param data_dir: [str; None] directory where the data will be stored
         :param verbose: [bool]
-        :return [dict] {'ELRs_mileages': [DataFrame], 'Last_updated_date': [str]}
+        :return [dict] {'ELRs_mileages': [DataFrame], 'Latest_update_date': [str]}
                     [DataFrame] data of (almost all) ELRs beginning with the given 'keyword', including ELR names,
                     line name, mileages, datum and some notes
                     [str] date of when the data was last updated
         """
-        data = [self.collect_elr_by_initial(x, update, verbose) for x in string.ascii_lowercase]
+        data = [self.collect_elr_by_initial(x, update, verbose=False if data_dir or not verbose else True)
+                for x in string.ascii_lowercase]
         elrs_data = (item[x] for item, x in zip(data, string.ascii_uppercase))  # Select DataFrames only
         elrs_data_table = pd.concat(elrs_data, axis=0, ignore_index=True, sort=False)
 
         # Get the latest updated date
         last_updated_dates = (item['Last_updated_date'] for item, _ in zip(data, string.ascii_uppercase))
-        latest_updated_date = max(d for d in last_updated_dates if d is not None)
+        latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        elrs_data = {'ELRs_mileages': elrs_data_table, 'Latest_updated_date': latest_updated_date}
+        elrs_data = {'ELRs_mileages': elrs_data_table, 'Latest_update_date': latest_update_date}
 
         if pickle_it and data_dir:
             pickle_filename = "elrs_and_mileages.pickle"
