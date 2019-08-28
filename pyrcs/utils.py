@@ -30,49 +30,55 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False):
 
 
 # ====================================================================================================================
-""" Save """
+""" Save data """
 
 
 # Save Pickle file
-def save_pickle(pickle_data, path_to_pickle):
+def save_pickle(pickle_data, path_to_pickle, verbose=True):
     """
     :param pickle_data: any object that could be dumped by the 'pickle' package
     :param path_to_pickle: [str] local file path
+    :param verbose: [bool]
     :return: whether the data has been successfully saved
     """
     pickle_filename = os.path.basename(path_to_pickle)
     pickle_dir = os.path.basename(os.path.dirname(path_to_pickle))
     pickle_dir_parent = os.path.basename(os.path.dirname(os.path.dirname(path_to_pickle)))
-    print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving",
-                                  " - ".join([pickle_dir_parent, pickle_dir, pickle_filename])), end="")
+
+    if verbose:
+        print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_pickle) else "Saving",
+                                      " - ".join([pickle_dir_parent, pickle_dir, pickle_filename])), end="")
+
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path_to_pickle)), exist_ok=True)
         pickle_out = open(path_to_pickle, 'wb')
         pickle.dump(pickle_data, pickle_out)
         pickle_out.close()
-        print("Successfully.")
+        print("Successfully.") if verbose else None
     except Exception as e:
         print("Failed. {}.".format(e))
 
 
 # Save JSON file
-def save_json(json_data, path_to_json):
+def save_json(json_data, path_to_json, verbose=True):
     """
     :param json_data: any object that could be dumped by the 'json' package
     :param path_to_json: [str] local file path
+    :param verbose: [bool]
     :return: whether the data has been successfully saved
     """
     json_filename = os.path.basename(path_to_json)
     json_dir = os.path.basename(os.path.dirname(path_to_json))
     json_dir_parent = os.path.basename(os.path.dirname(os.path.dirname(path_to_json)))
+
     print("{} \"{}\" ... ".format("Updating" if os.path.isfile(path_to_json) else "Saving",
-                                  " - ".join([json_dir_parent, json_dir, json_filename])), end="")
+                                  " - ".join([json_dir_parent, json_dir, json_filename])), end="") if verbose else None
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path_to_json)), exist_ok=True)
         json_out = open(path_to_json, 'w')
         rapidjson.dump(json_data, json_out)
         json_out.close()
-        print("Successfully.")
+        print("Successfully.") if verbose else None
     except Exception as e:
         print("Failed. {}.".format(e))
 
@@ -313,7 +319,7 @@ def parse_date(str_date, as_date_type=False):
 
 
 # ====================================================================================================================
-"""  """
+""" Get useful information """
 
 
 # Get last update date
@@ -358,7 +364,7 @@ def get_navigation_elements(lst):
 
 
 #
-def get_cls_catalogue(url, navigation_bar_exists=True, menu_exists=True):
+def get_catalogue(url, navigation_bar_exists=True, menu_exists=True):
     """
     :param url: [str]
     :param navigation_bar_exists: [bool]
@@ -384,6 +390,42 @@ def get_cls_catalogue(url, navigation_bar_exists=True, menu_exists=True):
     contents = dict(e for d in raw_contents for e in d.items())
 
     return contents
+
+
+#
+def get_cls_menu(cls_url):
+    source = requests.get(cls_url)
+
+    soup = bs4.BeautifulSoup(source.text, 'lxml')
+    h1, h2s = soup.find('h1'), soup.find_all('h2')
+
+    cls_name = h1.text.replace(' menu', '')
+
+    if len(h2s) == 0:
+        cls_elem = dict((x.text, urllib.parse.urljoin(cls_url, x.get('href'))) for x in h1.find_all_next('a'))
+
+    else:
+        all_next = [x.replace(':', '') for x in h1.find_all_next(string=True) if x != '\n' and x != '\xa0'][2:]
+        h2s_list = [x.text.replace(':', '') for x in h2s]
+        all_next_a = [(x.text, urllib.parse.urljoin(cls_url, x.get('href'))) for x in h1.find_all_next('a', href=True)]
+
+        idx = [all_next.index(x) for x in h2s_list]
+        for i in idx:
+            all_next_a.insert(i, all_next[i])
+
+        cls_elem, i = {}, 0
+        while i <= len(idx):
+            if i == 0:
+                d = dict(all_next_a[i:idx[i]])
+            elif i < len(idx):
+                d = {h2s_list[i-1]: dict(all_next_a[idx[i-1]+1:idx[i]])}
+            else:
+                d = {h2s_list[i-1]: dict(all_next_a[idx[i-1]+1:])}
+            i += 1
+            cls_elem.update(d)
+
+    cls_menu = {cls_name: cls_elem}
+    return cls_menu
 
 
 # ====================================================================================================================
