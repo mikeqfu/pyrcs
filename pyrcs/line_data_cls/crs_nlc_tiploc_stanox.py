@@ -42,14 +42,14 @@ class LocationIdentifiers:
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "crs_nlc_tiploc_stanox")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\" and sub-directories
+    # Change directory to "dat\\line_data\\crs_nlc_tiploc_stanox\\" and sub-directories
     def cd_lc(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Line data\\CRS, NLC, TIPLOC and STANOX codes\\dat" and sub-directories
+    # Change directory to "dat\\line_data\\crs_nlc_tiploc_stanox\\dat" and sub-directories
     def cdd_lc(self, *sub_dir):
         path = self.cd_lc("dat")
         for x in sub_dir:
@@ -124,21 +124,17 @@ class LocationIdentifiers:
     # Fetch note about CRS
     def fetch_additional_crs_note(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "additional_crs_note.pickle"
-
-        if not data_dir:
-            self.CurrentDataDir = self.DataDir
-            path_to_pickle = self.cd_lc(pickle_filename)
-        else:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_lc(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            additional_note = load_pickle(self.cd_lc(pickle_filename))
+            additional_note = load_pickle(path_to_pickle)
         else:
             additional_note = self.collect_additional_crs_note(confirmation_required=False,
                                                                verbose=False if data_dir or not verbose else True)
             if additional_note:  # additional_note is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(additional_note, path_to_pickle, verbose=True)
             else:
                 print("No data of additional note for CRS has been collected.")
@@ -173,13 +169,7 @@ class LocationIdentifiers:
     # Fetch the data for other systems
     def fetch_other_systems_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         pickle_filename = "other_systems_codes.pickle"
-
-        if not data_dir:
-            self.CurrentDataDir = self.DataDir
-            path_to_pickle = self.cd_lc(pickle_filename)
-        else:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+        path_to_pickle = self.cd_lc(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             other_systems_codes = load_pickle(path_to_pickle)
@@ -189,6 +179,8 @@ class LocationIdentifiers:
                                                                    verbose=False if data_dir or not verbose else True)
             if other_systems_codes:  # other_systems_codes is not None
                 if pickle_it and data_dir:
+                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(other_systems_codes, path_to_pickle, verbose=True)
             else:
                 print("No data of other systems codes has been collected.")
@@ -303,18 +295,19 @@ class LocationIdentifiers:
             location_codes_data = dict(zip([initial.upper(), 'Additional_note', 'Last_updated_date'],
                                            [location_codes, additional_note, last_updated_date]))
 
-            save_pickle(location_codes_data, self.cd_lc("a_z", initial.lower() + ".pickle"), verbose)
+            save_pickle(location_codes_data, path_to_pickle, verbose)
 
         return location_codes_data
 
     # Fetch all Location data including CRS, NLC, TIPLOC, STANME and STANOX codes either locally or from online
     def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         # Get every data table
-        data = [self.collect_location_codes_by_initial(x, update, verbose) for x in string.ascii_lowercase]
+        data = [self.collect_location_codes_by_initial(x, update, verbose=False if data_dir or not verbose else True)
+                for x in string.ascii_lowercase]
 
         # Select DataFrames only
         location_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
-        location_codes_data_table = pd.concat(location_codes_data, axis=0, ignore_index=True)
+        location_codes_data_table = pd.concat(location_codes_data, axis=0, ignore_index=True, sort=False)
 
         # Likely errors (spotted occasionally)
         idx = location_codes_data_table[location_codes_data_table.Location == 'Selby Melmerby Estates'].index
@@ -325,7 +318,7 @@ class LocationIdentifiers:
 
         # Get the latest updated date
         last_updated_dates = (item['Last_updated_date'] for item, _ in zip(data, string.ascii_uppercase))
-        last_updated_date = max(d for d in last_updated_dates if d is not None)
+        latest_update_date = max(d for d in last_updated_dates if d is not None)
 
         # Get additional note
         additional_note = self.fetch_additional_crs_note()
@@ -335,14 +328,13 @@ class LocationIdentifiers:
 
         # Create a dict to include all information
         location_codes = {'Location_codes': location_codes_data_table,
-                          'Latest_updated_date': last_updated_date,
+                          'Latest_update_date': latest_update_date,
                           'Additional_note': additional_note,
                           'Other_systems': other_systems_codes}
 
         if pickle_it and data_dir:
-            pickle_filename = "crs_nlc_tiploc_stanox_codes.pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+            path_to_pickle = os.path.join(self.CurrentDataDir, "crs_nlc_tiploc_stanox_codes.pickle")
             save_pickle(location_codes, path_to_pickle, verbose=True)
 
         return location_codes
@@ -391,7 +383,7 @@ class LocationIdentifiers:
                 location_codes = self.fetch_location_codes()['Location_codes']
             else:
                 temp = [self.collect_location_codes_by_initial(initial)[initial.upper()] for initial in initials]
-                location_codes = pd.concat(temp, axis=0, ignore_index=True)
+                location_codes = pd.concat(temp, axis=0, ignore_index=True, sort=False)
             assert isinstance(location_codes, pd.DataFrame)
 
             # Deep cleansing location_code
@@ -411,7 +403,7 @@ class LocationIdentifiers:
                     dupl_temp_2 = key_location_codes[key_location_codes.duplicated(keys, keep=False)]
                     duplicated_1 = dupl_temp_2[dupl_temp_1.eq(dupl_temp_2)].dropna().drop_duplicates()
                     duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
-                    duplicated = pd.concat([duplicated_1, duplicated_2], axis=0)
+                    duplicated = pd.concat([duplicated_1, duplicated_2], axis=0, sort=False)
                     location_codes_duplicated = duplicated.groupby(keys).agg(tuple)
                     location_codes_duplicated.Location = location_codes_duplicated.Location.map(
                         lambda x: x[0] if len(set(x)) == 1 else x)
