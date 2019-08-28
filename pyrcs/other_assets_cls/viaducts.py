@@ -2,10 +2,11 @@
 
 Data source: http://www.railwaycodes.org.uk
 
-Railway viaducts (Reference: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm)
+Railway viaducts (http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm)
 
 """
 
+import copy
 import os
 import re
 
@@ -16,7 +17,7 @@ import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle
 
-from pyrcs.utils import cd_dat, get_last_updated_date, parse_tr
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date
 from pyrcs.utils import save_pickle
 
 
@@ -25,17 +26,19 @@ class Viaducts:
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Viaducts'
         self.URL = self.HomeURL + '/viaducts/viaducts0.shtm'
+        self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("Other assets", self.Name)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "viaducts")
+        self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\Other assets\\Viaducts\\"
+    # Change directory to "dat\\other_assets\\viaducts\\" and sub-directories
     def cd_viaducts(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\Other assets\\Viaducts\\dat"
+    # Change directory to "dat\\other_assets\\viaducts\\dat" and sub-directories
     def cdd_viaducts(self, *sub_dir):
         path = self.cd_viaducts("dat")
         for x in sub_dir:
@@ -50,65 +53,64 @@ class Viaducts:
         return pages
 
     # Collect viaducts data for a given page number
-    def collect_railway_viaducts(self, page_no, update=False):
+    def collect_railway_viaducts(self, page_no, update=False, verbose=False):
         """
         :param page_no: [int] page number; valid values include 1, 2, 3, 4, 5, and 6
-        :param update:
-        :return:
+        :param update: [bool]
+        :param verbose: [bool]
+        :return: [dict]
         """
+        assert page_no in range(1, 7), "Valid \"page_no\" must be one of 1, 2, 3, 4, 5, and 6."
         page_headers = self.get_page_titles()
-        pickle_filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0] + ".pickle"
+        filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0]
+        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "_", filename)).lower() + ".pickle"
 
-        path_to_file = self.cd_viaducts("Page 1-6", pickle_filename)
+        path_to_pickle = self.cd_viaducts(pickle_filename)
 
-        if os.path.isfile(path_to_file) and not update:
-            viaducts_data = load_pickle(path_to_file)
+        if os.path.isfile(path_to_pickle) and not update:
+            viaducts_codes = load_pickle(path_to_pickle)
+
         else:
             url = self.URL.replace('viaducts0', 'viaducts{}'.format(page_no))
-            last_updated_date = get_last_updated_date(url)
-            source = requests.get(url)
 
             try:
-                parsed_text = bs4.BeautifulSoup(source.text, 'lxml')  # Optional parsers:, 'html5lib', 'html.parser'
-
-                # Column names
-                header = [x.text for x in parsed_text.find_all('th')]
-
-                # Table data
-                temp_tables = parsed_text.find_all('table', attrs={'width': '1100px'})
-                tbl_lst = parse_tr(header, trs=temp_tables[1].find_all('tr'))
-                tbl_lst = [[item.replace('\r', ' ').replace('\xa0', '') for item in record] for record in tbl_lst]
-
-                # Create a DataFrame
-                viaducts = pd.DataFrame(data=tbl_lst, columns=header)
-
+                last_updated_date = get_last_updated_date(url)
             except Exception as e:
-                print("Failed to collect viaducts data for Page \"{}.\" {}".format(page_no, e))
-                viaducts = None
+                print("Failed to find the last updated date for viaducts codes on \"{}\". {}".format(filename, e))
+                last_updated_date = ''
 
-            viaducts_keys = [s + str(page_no) for s in ('Viaducts_', 'Last_updated_date_')]
-            viaducts_data = dict(zip(viaducts_keys, [viaducts, last_updated_date]))
+            try:
+                header, viaducts_table = pd.read_html(url, na_values=[''], keep_default_na=False)
+                viaducts_table.columns = header.columns.to_list()
+                viaducts_table.fillna('', inplace=True)
+            except Exception as e:
+                print("Failed to collect viaducts data for Page \"{}\". {}".format(page_no, e))
+                viaducts_table = pd.DataFrame()
 
-            save_pickle(viaducts_data, path_to_file)
+            viaducts_codes = {re.search(r'(?<=\()\w.*(?=\))', filename).group(0).replace('-', '_'): viaducts_table}
+            viaducts_codes.update({'Last_updated_date': last_updated_date})
 
-        return viaducts_data
+            save_pickle(viaducts_codes, path_to_pickle, verbose)
+
+        return viaducts_codes
 
     # Fetch all of the collected viaducts data
-    def fetch_railway_viaducts(self, update=False, pickle_it=False, data_dir=None):
+    def fetch_railway_viaducts(self, update=False, pickle_it=False, data_dir=None, verbose=False):
 
-        data = [self.collect_railway_viaducts(page_no, update) for page_no in range(1, 7)]
+        data_sets = [self.collect_railway_viaducts(page_no, update, verbose=False if data_dir or not verbose else True)
+                     for page_no in range(1, 7)]
 
-        viaducts_data = [dat[k] for dat in data for k, v in dat.items() if re.match('^Viaducts.*', k)]
-        last_updated_dates = [dat[k] for dat in data for k, v in dat.items()
-                              if re.match('^Last_updated_date.*', k)]
+        viaducts_codes_tables = [dat[k] for dat in data_sets for k, v in dat.items() if k != 'Last_updated_date']
+        viaducts_codes = pd.concat(viaducts_codes_tables, axis=0, ignore_index=True, sort=False)
 
-        viaducts = pd.concat(viaducts_data, ignore_index=True, sort=False)
-        viaducts = viaducts[list(viaducts_data[0].columns)]
-        viaducts_data = {'Viaducts': viaducts, 'Latest_update_date': max(last_updated_dates)}
+        last_updated_dates = [dat[k] for dat in data_sets for k, v in dat.items() if k == 'Last_updated_date']
+        latest_update_date = max(last_updated_dates)
 
-        if pickle_it:
-            dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
-            path_to_pickle = os.path.join(dat_dir, "Railway-viaducts.pickle")
-            save_pickle(viaducts_data, path_to_pickle)
+        viaducts_codes = {'Viaducts': viaducts_codes, 'Latest_update_date': latest_update_date}
 
-        return viaducts_data
+        if pickle_it and data_dir:
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, "railway_viaducts.pickle")
+            save_pickle(viaducts_codes, path_to_pickle, verbose=True)
+
+        return viaducts_codes
