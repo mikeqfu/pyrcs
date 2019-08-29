@@ -2,6 +2,8 @@ import os
 
 import setuptools
 
+ver = '0.2.0'
+
 
 def find_all_pkg_dat_files(directory):
     paths = []
@@ -20,7 +22,7 @@ with open("README.md", 'r', encoding='utf-8') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.26',
+    version=ver,
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
@@ -52,7 +54,7 @@ setuptools.setup(
     include_package_data=True,
 
     classifiers=[
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
