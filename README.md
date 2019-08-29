@@ -15,8 +15,6 @@ A small web scraper for collecting railway codes and other data used in the UK r
 
 
 
-## Contents
-
 - [Installation](#installation)
 - [Examples - A quick start](#quick-start-examples)
   - [1.  CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
@@ -82,7 +80,7 @@ location_codes = ldlc.LocationIdentifiers()
 
 
 
-***Given different preferences, there are several alternative ways of importing the module.* **
+***Given different preferences, there are several alternative ways of importing the module.***
 
 ***Alternative 1***: 
 
