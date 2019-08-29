@@ -17,7 +17,7 @@ A small web scraper for collecting railway codes and other data used in the UK r
 **<span style="font-size:larger;">Contents</span>**
 
 - [Installation](#installation)
-- [Examples - A quick start](#quick-start-examples)
+- [Quick start (Examples)](#quick-start-examples)
   - [CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
     - [Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
     - [All available location codes](#all-available-location-codes)
