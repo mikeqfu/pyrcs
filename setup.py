@@ -14,18 +14,18 @@ def find_all_pkg_dat_files(directory):
 dat_files = find_all_pkg_dat_files('pyrcs\\dat')
 
 
-with open("README.md", 'r') as readme:
+with open("README.md", 'r', encoding='utf-8') as readme:
     long_description = readme.read()
 
 setuptools.setup(
 
     name='pyrcs',
-    version='0.1.24',
+    version='0.1.26',
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
 
-    description="A small web scraper for collecting the railway codes used in Great Britain",
+    description="A small web scraper for collecting the railway codes used in the UK rail industry",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
@@ -53,10 +53,9 @@ setuptools.setup(
 
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Operating System :: Microsoft :: Windows :: Windows 7',
-        'Operating System :: Microsoft :: Windows :: Windows 10',
+        'Operating System :: Microsoft :: Windows',
     ],
 )
