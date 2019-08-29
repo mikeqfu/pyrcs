@@ -1,4 +1,4 @@
-# PyRCS
+# pyrcs
 
 **Author**: Qian Fu [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu) 
 
@@ -8,8 +8,8 @@
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellowgreen&label=Code%20size)](https://github.com/mikeqfu/pyrcs/tree/master/pyrcs)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads)
 
-
 A small web scraper for collecting railway codes and other data used in the UK rail industry. 
+
 
 
 ---
@@ -28,6 +28,7 @@ A small web scraper for collecting railway codes and other data used in the UK r
 - [Data source](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
 ---
+
 
 
 ## Installation
@@ -235,5 +236,5 @@ To get all available stations data:
 stations = other_assets_cls.Stations.fetch_station_locations()
 ```
 
-The data type of both `stations_a` and `stations` are `dict` .
+The data type of both `stations_a` and `stations` are `dict`.
 
