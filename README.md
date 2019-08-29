@@ -4,30 +4,30 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pyrcs?color=important&label=PyPI)](https://pypi.org/project/pyrcs/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs?color=informational&label=Python)](https://www.python.org/downloads/)
-[![GitHub](https://img.shields.io/github/license/mikeqfu/pyrcs?color=green&label=License)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellow&label=Code%20size)](https://github.com/mikeqfu/pyrcs/tree/master/pyrcs)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellowgreen&label=Downloads)
-[![Website](https://img.shields.io/website/http/railwaycodes.org.uk?label=Data%20source&up_color=9cf&up_message=http%3A%2F%2Fwww.railwaycodes.org.uk)](http://www.railwaycodes.org.uk/)
-
+[![GitHub](https://img.shields.io/pypi/l/pyrcs?color=green&label=License)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellowgreen&label=Code%20size)](https://github.com/mikeqfu/pyrcs/tree/master/pyrcs)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads)
 
 
 A small web scraper for collecting railway codes and other data used in the UK rail industry. 
 
 
+---
+
+**<span style="font-size:larger;">Contents</span>**
 
 - [Installation](#installation)
 - [Examples - A quick start](#quick-start-examples)
-  - [1.  CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
-    - [1.1  Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
-    - [1.2  All available location codes](#all-available-location-codes)
-  - [2.  Engineer's Line References (ELRs)](#elr)
-    - [2.1  ELR codes](#elr-codes)
-    - [2.2  Mileage files](#mileage-files)
-  - [3.  Railway stations data](#railway-stations-data)
-- [Data sources](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
+  - [CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
+    - [Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
+    - [All available location codes](#all-available-location-codes)
+  - [Engineer's Line References (ELRs)](#elr)
+    - [ELR codes](#elr-codes)
+    - [Mileage files](#mileage-files)
+  - [Railway stations data](#railway-stations-data)
+- [Data source](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
-
-
+---
 
 
 ## Installation
