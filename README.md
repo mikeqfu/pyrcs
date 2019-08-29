@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pyrcs?color=important&label=PyPI)](https://pypi.org/project/pyrcs/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs?color=informational&label=Python)](https://www.python.org/downloads/)
 [![GitHub](https://img.shields.io/github/license/mikeqfu/pyrcs?color=green&label=License)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellow&label=Code%20size)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellow&label=Code%20size)](https://github.com/mikeqfu/pyrcs/tree/master/pyrcs)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellowgreen&label=Downloads)
 [![Website](https://img.shields.io/website/http/railwaycodes.org.uk?label=Data%20source&up_color=9cf&up_message=http%3A%2F%2Fwww.railwaycodes.org.uk)](http://www.railwaycodes.org.uk/)
 
