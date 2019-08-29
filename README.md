@@ -1,26 +1,24 @@
 # PyRCS
 
-**Author**: Qian Fu [![Twitter Follow](https://img.shields.io/twitter/follow/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu) 
+**Author**: Qian Fu [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/Qian_Fu?label=Follow&style=social)](https://twitter.com/Qian_Fu) 
 
-[![PyPI](https://img.shields.io/pypi/v/pyrcs?color=important)](https://pypi.org/project/pyrcs/)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs?color=lightgrey)
-[![PyPI - License](https://img.shields.io/pypi/l/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-![GitHub repo size](https://img.shields.io/github/repo-size/mikeqfu/pyrcs?color=yellowgreen)
-[![Downloads](https://pepy.tech/badge/pyrcs)](https://pepy.tech/project/pyrcs)
-[![Website](https://img.shields.io/website/http/www.railwaycodes.org.uk?down_color=lightgrey&down_message=offline&label=railwaycodes.org.uk&up_color=9cf&up_message=online)](http://www.railwaycodes.org.uk/)
+[![PyPI](https://img.shields.io/pypi/v/pyrcs?color=important&label=PyPI)](https://pypi.org/project/pyrcs/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs?color=informational&label=Python)
+[![PyPI - License](https://img.shields.io/pypi/l/pyrcs?label=License)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellow&label=Code%20size)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellowgreen&label=Downloads)
+[![Website](https://img.shields.io/website/http/railwaycodes.org.uk?label=Data%20source&up_color=9cf&up_message=http%3A%2F%2Fwww.railwaycodes.org.uk)](http://www.railwaycodes.org.uk/)
 
 
 
-A small web scraper for collecting the railway codes used in Great Britain. 
-
-(*Work still in progress*)
+A small web scraper for collecting railway codes and other data used in the UK rail industry. 
 
 
 
 ## Contents
 
-* [Installation](#installation)
-* [Examples - A quick start](#quick-start-examples)
+- [Installation](#installation)
+- [Examples - A quick start](#quick-start-examples)
   - [1.  CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
     - [1.1  Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
     - [1.2  All available location codes](#all-available-location-codes)
@@ -28,7 +26,7 @@ A small web scraper for collecting the railway codes used in Great Britain.
     - [2.1  ELR codes](#elr-codes)
     - [2.2  Mileage files](#mileage-files)
   - [3.  Railway stations data](#railway-stations-data)
-* [Data sources](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
+- [Data sources](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
 
 
@@ -54,7 +52,7 @@ pip install --upgrade pyrcs
 
 
 
-## Quick start - Examples <a name="quick-start-examples"></a>
+## Quick start (Examples) <a name="quick-start-examples"></a>
 
 The following examples may provide a quick guide to the usage of the package.
 
