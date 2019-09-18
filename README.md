@@ -6,7 +6,7 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs?color=informational&label=Python)](https://www.python.org/downloads/)
 [![GitHub](https://img.shields.io/pypi/l/pyrcs?color=green&label=License)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mikeqfu/pyrcs?color=yellowgreen&label=Code%20size)](https://github.com/mikeqfu/pyrcs/tree/master/pyrcs)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads)](https://pypistats.org/packages/pyrcs)
 
 A small web scraper for collecting railway codes and other data used in the UK rail industry. 
 
