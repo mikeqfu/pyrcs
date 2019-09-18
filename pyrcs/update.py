@@ -72,5 +72,8 @@ def update_package_data(verbose=False):
         # Depots
         _ = other_assets.Depots.fetch_depot_codes(update=True, verbose=verbose)
 
+        if verbose:
+            print("\nUpdate finished.")
+
 
 update_package_data(verbose=True)
