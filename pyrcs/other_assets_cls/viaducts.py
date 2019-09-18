@@ -28,17 +28,17 @@ class Viaducts:
         self.URL = self.HomeURL + '/viaducts/viaducts0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "viaducts")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "viaducts")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other_assets\\viaducts\\" and sub-directories
+    # Change directory to "dat\\other-assets\\viaducts\\" and sub-directories
     def cd_viaducts(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\viaducts\\dat" and sub-directories
+    # Change directory to "dat\\other-assets\\viaducts\\dat" and sub-directories
     def cdd_viaducts(self, *sub_dir):
         path = self.cd_viaducts("dat")
         for x in sub_dir:
@@ -63,7 +63,7 @@ class Viaducts:
         assert page_no in range(1, 7), "Valid \"page_no\" must be one of 1, 2, 3, 4, 5, and 6."
         page_headers = self.get_page_titles()
         filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0]
-        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "_", filename)).lower() + ".pickle"
+        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "-", filename)).lower() + ".pickle"
 
         path_to_pickle = self.cd_viaducts(pickle_filename)
 
@@ -110,7 +110,7 @@ class Viaducts:
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, "railway_viaducts.pickle")
+            path_to_pickle = os.path.join(self.CurrentDataDir, "railway-viaducts.pickle")
             save_pickle(viaducts_codes, path_to_pickle, verbose=True)
 
         return viaducts_codes

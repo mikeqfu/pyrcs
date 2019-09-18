@@ -28,17 +28,17 @@ class Electrification:
         self.URL = self.HomeURL + '/electrification/mast_prefix0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", 'electrification')
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", 'electrification')
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\line_data\\electrification" and sub-directories
+    # Change directory to "dat\\line-data\\electrification" and sub-directories
     def cd_elec(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line_data\\electrification\\dat" and sub-directories
+    # Change directory to "dat\\line-data\\electrification\\dat" and sub-directories
     def cdd_elec(self, *sub_dir):
         path = self.cd_elec("dat")
         for x in sub_dir:
@@ -95,7 +95,7 @@ class Electrification:
                 last_updated_date = get_last_updated_date(url)
                 codes_for_ole.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(codes_for_ole, path_to_pickle, verbose)
 
             except Exception as e:
@@ -106,7 +106,7 @@ class Electrification:
 
     # Fetch codes for national network
     def fetch_codes_for_national_network(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "national_network.pickle"
+        pickle_filename = "national-network.pickle"
         path_to_pickle = self.cd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -195,7 +195,7 @@ class Electrification:
                 last_updated_date = get_last_updated_date(url)
                 codes_for_independent_lines.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(codes_for_independent_lines, path_to_pickle, verbose)
 
             except Exception as e:
@@ -206,7 +206,7 @@ class Electrification:
 
     # Fetch codes for independent lines
     def fetch_codes_for_independent_lines(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "independent_lines.pickle"
+        pickle_filename = "independent-lines.pickle"
         path_to_pickle = self.cd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -240,7 +240,7 @@ class Electrification:
                 last_updated_date = get_last_updated_date(url)
                 ohns = {'Codes': neutral_sections_data, 'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(ohns, path_to_pickle, verbose)
 
             except Exception as e:
@@ -251,7 +251,7 @@ class Electrification:
 
     # Fetch codes for Overhead line electrification neutral sections (OHNS)
     def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "national_network_neutral_sections.pickle"
+        pickle_filename = "national-network-neutral-sections.pickle"
         path_to_pickle = self.cd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -314,7 +314,7 @@ class Electrification:
                 last_updated_date = get_last_updated_date(url)
                 codes_for_energy_tariff_zones.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_elec(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(codes_for_energy_tariff_zones, path_to_pickle, verbose)
 
             except Exception as e:
@@ -325,7 +325,7 @@ class Electrification:
 
     # Fetch codes for Overhead line electrification neutral sections (OHNS)
     def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "national_network_energy_tariff_zones.pickle"
+        pickle_filename = "national-network-energy-tariff-zones.pickle"
         path_to_pickle = self.cd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -358,7 +358,7 @@ class Electrification:
         electrification_codes = dict(zip(items, [national_network, independent_lines, ohns, energy_tariff_zones]))
 
         if pickle_it and data_dir:
-            pickle_filename = "electrification_codes.pickle"
+            pickle_filename = "electrification-codes.pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(electrification_codes, path_to_pickle, verbose=True)

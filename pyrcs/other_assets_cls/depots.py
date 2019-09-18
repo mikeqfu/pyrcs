@@ -21,17 +21,17 @@ class Depots:
         self.URL = self.HomeURL + '/depots/depots0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "depots")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "depots")
         self.CurrentDataDir = self.DataDir
 
-    # Change directory to "dat\\other_assets\\depots\\"
+    # Change directory to "dat\\other-assets\\depots\\"
     def cd_depots(self, *directories):
         path = self.DataDir
         for x in directories:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\depots\\dat"
+    # Change directory to "dat\\other-assets\\depots\\dat"
     def cdd_sigbox(self, *sub_dir):
         path = self.cd_depots("dat")
         for x in sub_dir:
@@ -54,7 +54,7 @@ class Depots:
                 two_char_tops_codes_data = {title_name.replace(' ', '_'): two_char_tops_codes,
                                             'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_depots(title_name.replace(" ", "_").lower() + ".pickle")
+                path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
                 save_pickle(two_char_tops_codes_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -66,7 +66,7 @@ class Depots:
     # Fetch 'Two character TOPS codes'
     def fetch_two_char_tops_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = list(self.Catalogue.keys())[1]
-        path_to_pickle = self.cd_depots(title_name.replace(" ", "_").lower() + ".pickle")
+        path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             two_char_tops_codes_data = load_pickle(path_to_pickle)
@@ -87,7 +87,7 @@ class Depots:
     def collect_four_digit_pre_tops_codes(self, confirmation_required=True, verbose=False):
         if confirmed("To collect four digit pre-TOPS codes?", confirmation_required=confirmation_required):
             title_name = list(self.Catalogue.keys())[2]
-            path_to_pickle = self.cd_depots(re.sub(r'[ -]', '_', title_name).lower() + ".pickle")
+            path_to_pickle = self.cd_depots(re.sub(r'[ -]', '-', title_name).lower() + ".pickle")
 
             url = self.Catalogue[title_name]
 
@@ -121,7 +121,7 @@ class Depots:
     # Fetch 'Four digit pre-TOPS codes'
     def fetch_four_digit_pre_tops_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = list(self.Catalogue.keys())[2]
-        path_to_pickle = self.cd_depots(re.sub(r'[ -]', '_', title_name).lower() + ".pickle")
+        path_to_pickle = self.cd_depots(re.sub(r'[ -]', '-', title_name).lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
@@ -150,7 +150,7 @@ class Depots:
                 system_1950_codes.columns = header.columns.to_list()
 
                 title_name_ = re.sub(r'[ -]', '_', re.sub(r'[()]', '', title_name))
-                path_to_pickle = self.cd_depots(title_name_.lower() + ".pickle")
+                path_to_pickle = self.cd_depots(title_name_.replace("_", "-").lower() + ".pickle")
 
                 last_updated_date = get_last_updated_date(url)
 
@@ -199,7 +199,7 @@ class Depots:
                 last_updated_date = get_last_updated_date(url)
                 gwr_codes_data = {title_name.replace(' ', '_'): gwr_codes, 'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_depots(title_name.replace(" ", "_").lower() + ".pickle")
+                path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
                 save_pickle(gwr_codes_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -211,7 +211,7 @@ class Depots:
     #
     def fetch_gwr_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = list(self.Catalogue.keys())[4]
-        path_to_pickle = self.cd_depots(title_name.replace(" ", "_").lower() + ".pickle")
+        path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             gwr_codes_data = load_pickle(path_to_pickle)
@@ -244,7 +244,7 @@ class Depots:
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, "depot_codes.pickle")
+            path_to_pickle = os.path.join(self.CurrentDataDir, "depot-codes.pickle")
             save_pickle(depot_codes, path_to_pickle)
 
         return depot_codes

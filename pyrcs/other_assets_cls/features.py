@@ -50,17 +50,17 @@ class Features:
     def __init__(self, data_dir=None):
         self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Infrastructure features'
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "features")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "features")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other_assets\\features\\"
+    # Change directory to "dat\\other-assets\\features\\"
     def cd_features(self, *directories):
         path = self.DataDir
         for x in directories:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\features\\dat"
+    # Change directory to "dat\\other-assets\\features\\dat"
     def cdd_features(self, *sub_dir):
         path = self.cd_features("dat")
         for x in sub_dir:

@@ -39,17 +39,17 @@ class LocationIdentifiers:
         self.URL = self.HomeURL + '/crs/CRS0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "crs_nlc_tiploc_stanox")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "crs-nlc-tiploc-stanox")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\line_data\\crs_nlc_tiploc_stanox\\" and sub-directories
+    # Change directory to "dat\\line-data\\crs-nlc-tiploc-stanox\\" and sub-directories
     def cd_lc(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line_data\\crs_nlc_tiploc_stanox\\dat" and sub-directories
+    # Change directory to "dat\\line-data\\crs-nlc-tiploc-stanox\\dat" and sub-directories
     def cdd_lc(self, *sub_dir):
         path = self.cd_lc("dat")
         for x in sub_dir:
@@ -113,7 +113,7 @@ class LocationIdentifiers:
                     else:
                         additional_crs_note.update({'Alternative_CRS': x})
                 additional_crs_note.update({'Note': notes})
-                save_pickle(additional_crs_note, self.cd_lc("additional_crs_note.pickle"), verbose)
+                save_pickle(additional_crs_note, self.cd_lc("additional-crs-note.pickle"), verbose)
 
             except Exception as e:
                 print("Failed to collect/update additional note for CRS. {}.".format(e))
@@ -123,7 +123,7 @@ class LocationIdentifiers:
 
     # Fetch note about CRS
     def fetch_additional_crs_note(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "additional_crs_note.pickle"
+        pickle_filename = "additional-crs-note.pickle"
         path_to_pickle = self.cd_lc(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -158,7 +158,7 @@ class LocationIdentifiers:
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
                 other_systems_codes = dict(zip(system_names, codes))
-                save_pickle(other_systems_codes, self.cd_lc("other_systems_codes.pickle"), verbose)
+                save_pickle(other_systems_codes, self.cd_lc("other-systems-codes.pickle"), verbose)
 
             except Exception as e:
                 print("Failed to collect location codes for other systems. {}.".format(e))
@@ -168,7 +168,7 @@ class LocationIdentifiers:
 
     # Fetch the data for other systems
     def fetch_other_systems_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "other_systems_codes.pickle"
+        pickle_filename = "other-systems-codes.pickle"
         path_to_pickle = self.cd_lc(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -197,7 +197,7 @@ class LocationIdentifiers:
                          [str]} date of when the data was last updated)
         """
         assert initial in string.ascii_letters
-        path_to_pickle = self.cd_lc("a_z", initial.lower() + ".pickle")
+        path_to_pickle = self.cd_lc("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             location_codes_data = load_pickle(path_to_pickle)
@@ -334,7 +334,7 @@ class LocationIdentifiers:
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, "crs_nlc_tiploc_stanox_codes.pickle")
+            path_to_pickle = os.path.join(self.CurrentDataDir, "crs-nlc-tiploc-stanox-codes.pickle")
             save_pickle(location_codes, path_to_pickle, verbose=True)
 
         return location_codes

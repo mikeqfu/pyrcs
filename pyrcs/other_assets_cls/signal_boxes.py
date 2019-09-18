@@ -22,17 +22,17 @@ class SignalBoxes:
         self.URL = self.HomeURL + '/signal/signal_boxes0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "signal_boxes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "signal-boxes")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other_assets\\signal_boxes\\"
+    # Change directory to "dat\\other-assets\\signal-boxes\\"
     def cd_sigbox(self, *directories):
         path = self.DataDir
         for x in directories:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\signal_boxes\\dat"
+    # Change directory to "dat\\other-assets\\signal-boxes\\dat"
     def cdd_sigbox(self, *sub_dir):
         path = self.cd_sigbox("dat")
         for x in sub_dir:
@@ -47,7 +47,7 @@ class SignalBoxes:
         :param verbose: [bool]
         :return: [dict; None]
         """
-        path_to_pickle = self.cd_sigbox("a_z", initial.lower() + ".pickle")
+        path_to_pickle = self.cd_sigbox("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             signal_box_prefix_codes = load_pickle(path_to_pickle)
@@ -153,7 +153,7 @@ class SignalBoxes:
                     non_national_rail_codes.update(
                         {non_national_rail_name: {'Codes': data, 'Note': desc_text.replace('\xa0', '')}})
 
-                save_pickle(non_national_rail_codes, self.cd_sigbox("non_national_rail_signals.pickle"), verbose)
+                save_pickle(non_national_rail_codes, self.cd_sigbox("non-national-rail-signals.pickle"), verbose)
 
             except Exception as e:
                 print("Failed to collect non-national rail codes. {}".format(e))
@@ -163,7 +163,7 @@ class SignalBoxes:
 
     # Fetch the collected non-national rail codes
     def fetch_non_national_rail_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "non_national_rail_signals.pickle"
+        pickle_filename = "non-national-rail-signals.pickle"
         path_to_pickle = self.cd_sigbox(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:

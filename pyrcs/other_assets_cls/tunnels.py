@@ -25,17 +25,17 @@ class Tunnels:
         self.URL = self.HomeURL + '/tunnels/tunnels0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", 'tunnels')
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", 'tunnels')
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other_assets\\tunnels" and sub-directories
+    # Change directory to "dat\\other-assets\\tunnels" and sub-directories
     def cd_tunnels(self, *directories):
         path = self.DataDir
         for x in directories:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\tunnels\\dat" and sub-directories
+    # Change directory to "dat\\other-assets\\tunnels\\dat" and sub-directories
     def cdd_tunnels(self, *sub_dir):
         path = self.cd_tunnels("dat")
         for x in sub_dir:
@@ -111,7 +111,7 @@ class Tunnels:
         assert page_no in range(1, 4)
         page_headers = self.find_page_headers()
         filename = fuzzywuzzy.process.extractOne(str(page_no), page_headers)[0]
-        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "_", filename)).lower() + ".pickle"
+        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "-", filename)).lower() + ".pickle"
 
         path_to_pickle = self.cd_tunnels(pickle_filename)
 
@@ -168,7 +168,7 @@ class Tunnels:
         """
         page_headers = self.find_page_headers()
         filename = fuzzywuzzy.process.extractOne('others', page_headers)[0]
-        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "_", filename)).lower() + ".pickle"
+        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "-", filename)).lower() + ".pickle"
         path_to_pickle = self.cd_tunnels(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:

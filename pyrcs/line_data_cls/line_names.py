@@ -25,17 +25,17 @@ class LineNames:
         self.Name = 'Railway line names'
         self.URL = self.HomeURL + '/misc/line_names.shtm'
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "line_names")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "line-names")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\line_data\\line_names" and sub-directories
+    # Change directory to "dat\\line-data\\line-names" and sub-directories
     def cd_ln(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line_data\\line_names\\dat" and sub-directories
+    # Change directory to "dat\\line-data\\line-names\\dat" and sub-directories
     def cdd_ln(self, *sub_dir):
         path = self.cd_ln("dat")
         for x in sub_dir:
@@ -86,7 +86,7 @@ class LineNames:
 
                 line_names_data = {'Line_names': line_names, 'Last_updated_date': last_updated_date}
 
-                save_pickle(line_names_data, self.cd_ln("line_names.pickle"), verbose)
+                save_pickle(line_names_data, self.cd_ln("line-names.pickle"), verbose)
 
             except Exception as e:
                 print("Failed to collect line names. {}".format(e))
@@ -96,7 +96,7 @@ class LineNames:
 
     # Get the data of line names either locally or from online
     def fetch_line_names(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "line_names.pickle"
+        pickle_filename = "line-names.pickle"
         path_to_pickle = self.cd_ln(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -105,11 +105,12 @@ class LineNames:
         else:
             line_names_data = self.collect_line_names(confirmation_required=False,
                                                       verbose=False if data_dir or not verbose else True)
-            if line_names_data:  # line_names is not None
+            if line_names_data:  # line-names is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(line_names_data, path_to_pickle, verbose=True)
             else:
                 print("No data of the railway line names has been collected.")
+
         return line_names_data

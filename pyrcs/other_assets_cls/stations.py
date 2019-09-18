@@ -43,17 +43,17 @@ class Stations:
                                  for x in [x for x in soup if x.text in string.ascii_uppercase][2:])
 
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other_assets", "stations")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "stations")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other_assets\\stations" and sub-directories
+    # Change directory to "dat\\other-assets\\stations" and sub-directories
     def cd_stn(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other_assets\\stations\\dat"
+    # Change directory to "dat\\other-assets\\stations\\dat"
     def cdd_stn(self, *sub_dir):
         path = self.cd_stn("dat")
         for x in sub_dir:
@@ -88,7 +88,7 @@ class Stations:
         :return [dict] {keyword: [DataFrame] railway station data,
                         'Last_updated_date': [str] date of when the data was last updated}
         """
-        path_to_pickle = self.cd_stn("a_z", initial.lower() + ".pickle")
+        path_to_pickle = self.cd_stn("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             station_location_codes = load_pickle(path_to_pickle)

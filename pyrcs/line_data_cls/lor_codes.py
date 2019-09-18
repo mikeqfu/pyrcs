@@ -33,17 +33,17 @@ class LOR:
         self.URL = self.HomeURL + '/pride/pride0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "lor_codes")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "lor-codes")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\line_data\\lor_codes" and sub-directories
+    # Change directory to "dat\\line-data\\lor-codes" and sub-directories
     def cd_lor(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line_data\\lor_codes\\dat" and sub-directories
+    # Change directory to "dat\\line-data\\lor-codes\\dat" and sub-directories
     def cdd_lor(self, *sub_dir):
         path = self.cd_lor("dat")
         for x in sub_dir:
@@ -176,7 +176,7 @@ class LOR:
         lor_codes_data.update({'Latest_update_date': latest_update_date})
 
         if pickle_it and data_dir:
-            pickle_filename = "lor_codes.pickle"
+            pickle_filename = "lor-codes.pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(lor_codes_data, path_to_pickle, verbose)
@@ -210,7 +210,7 @@ class LOR:
                 #
                 elr_lor_converter = {'ELR_LOR_converter': elr_lor_dat, 'Last_updated_date': get_last_updated_date(url)}
 
-                save_pickle(elr_lor_converter, self.cd_lor("elr_lor_converter.pickle"), verbose)
+                save_pickle(elr_lor_converter, self.cd_lor("elr-lor-converter.pickle"), verbose)
 
             except Exception as e:
                 print("Failed to collect \"ELR/LOR converter\". {}".format(e))
@@ -220,7 +220,7 @@ class LOR:
 
     # Fetch ELR/LOR converter
     def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "elr_lor_converter.pickle"
+        pickle_filename = "elr-lor-converter.pickle"
         path_to_pickle = self.cd_lor(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
