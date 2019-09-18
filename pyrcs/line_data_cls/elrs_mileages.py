@@ -22,11 +22,21 @@ from pyhelpers.misc import confirmed
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_table
-from pyrcs.utils import is_float, mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, yards_to_nr_mileage
+from pyrcs.utils import mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, yards_to_nr_mileage
 from pyrcs.utils import save_pickle
 
 # ====================================================================================================================
 """ Utilities """
+
+
+# Check if a str expresses a float
+def is_str_float(str_val):
+    try:
+        float(str_val)  # float(re.sub('[()~]', '', text))
+        test_res = True
+    except ValueError:
+        test_res = False
+    return test_res
 
 
 #
@@ -103,7 +113,7 @@ def parse_mileage_col(mileage):
             temp_mileage = miles_chains.map(lambda x: mile_chain_to_nr_mileage(x))
         mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
     else:
-        if all(mileage.map(is_float)):
+        if all(mileage.map(is_str_float)):
             temp_mileage = mileage
             mileage_note = [''] * len(temp_mileage)
         else:
@@ -214,9 +224,9 @@ def parse_node_col(node):
     #
     link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
     link_nodes = conn_nodes[link_cols].applymap(lambda x: uncouple_elr_mileage(x))
-    link_elr_mileage = pd.concat([pd.DataFrame(link_nodes[col].values.tolist(),
-                                               columns=[col + '_ELR', col + '_Mile_Chain'], sort=False)
-                                  for col in link_cols], axis=1)
+    link_elr_mileage = pd.concat(
+        [pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
+         for col in link_cols], axis=1, sort=False)
     parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1, sort=False)
 
     return parsed_node_and_conn
@@ -238,17 +248,17 @@ class ELRMileages:
         self.URL = self.HomeURL + '/elrs/elr0.shtm'
         self.Catalogue = get_catalogue(self.URL)
         self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line_data", "elrs_and_mileages")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "elrs-and-mileages")
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\line_data\\elrs_and_mileages" and sub-directories
+    # Change directory to "dat\\line-data\\elrs-and-mileages" and sub-directories
     def cd_em(self, *sub_dir):
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line_data\\elrs_and_mileages\\dat" and sub-directories
+    # Change directory to "dat\\line-data\\elrs-and-mileages\\dat" and sub-directories
     def cdd_em(self, *sub_dir):
         path = self.cd_em("dat")
         for x in sub_dir:
@@ -269,7 +279,7 @@ class ELRMileages:
         assert initial in string.ascii_letters
         beginning_with = initial.upper()
 
-        path_to_pickle = self.cd_em("a_z", beginning_with.lower() + ".pickle")
+        path_to_pickle = self.cd_em("a-z", beginning_with.lower() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
             elrs = load_pickle(path_to_pickle)
         else:
@@ -311,7 +321,7 @@ class ELRMileages:
         elrs_data = {'ELRs_mileages': elrs_data_table, 'Latest_update_date': latest_update_date}
 
         if pickle_it and data_dir:
-            pickle_filename = "elrs_and_mileages.pickle"
+            pickle_filename = "elrs-and-mileages.pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(elrs_data, path_to_pickle, verbose=True)
@@ -399,7 +409,7 @@ class ELRMileages:
                 mileage_file = dict(pair for x in [line_info, {elr: mileage_data}, note_dat] for pair in x.items())
 
                 if pickle_it:
-                    path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr + ".pickle")
+                    path_to_pickle = self.cd_em("mileage-files", elr[0].lower(), elr + ".pickle")
                     if os.path.basename(path_to_pickle) == "prn.pickle":
                         path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
                     save_pickle(mileage_file, path_to_pickle, verbose)
@@ -422,12 +432,13 @@ class ELRMileages:
                         'Line': [str] line name,
                         'Note': [str] additional information/notes, or None}
         """
-        path_to_pickle = self.cd_em("mileage_files", elr[0].lower(), elr + ".pickle")
+        path_to_pickle = self.cd_em("mileage-files", elr[0].lower(), elr + ".pickle")
         if os.path.basename(path_to_pickle) == "prn.pickle":
             path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             mileage_file = load_pickle(path_to_pickle)
+
         else:
             mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, confirmation_required=False,
                                                             pickle_it=pickle_it,
