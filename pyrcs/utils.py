@@ -14,6 +14,8 @@ import pandas as pd
 import pkg_resources
 import rapidjson
 import requests
+from pyhelpers.misc import confirmed
+from pyhelpers.store import load_json
 
 # ====================================================================================================================
 """ Change directory """
@@ -135,12 +137,14 @@ def nr_mileage_num_to_str(x):
 
 # Convert yards to Network Rail mileages
 def yards_to_nr_mileage(yards):
-    if not pd.isnull(yards) and yards is not None:
+    if yards:
         mileage_mi = np.floor(measurement.measures.Distance(yd=yards).mi)
         mileage_yd = int(yards - measurement.measures.Distance(mi=mileage_mi).yd)
         # Example: "%.2f" % round(2606.89579999999, 2)
         mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
-        return mileage
+    else:  # pd.isnull(yards) or yards is None
+        mileage = ''
+    return mileage
 
 
 # Convert Network Rail mileages to yards
@@ -432,11 +436,56 @@ def get_cls_menu(cls_url):
 """ Misc """
 
 
+# Create a dict for replace location names
+def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
+    """
+    :param k: [str; None (default)]
+    :param regex: [bool] (default: False)
+    :param as_dataframe: [bool] (default: False)
+    :return: [dict]
+    """
+    json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
+    location_name_repl_dict = load_json(cd_dat(json_filename))
+
+    if regex:
+        location_name_repl_dict = {re.compile(k): v for k, v in location_name_repl_dict.items()}
+
+    if k:
+        replacement_dict = {k: location_name_repl_dict}
+    else:
+        replacement_dict = location_name_repl_dict
+
+    if as_dataframe:
+        replacement_dict = pd.DataFrame.from_dict(replacement_dict)
+
+    return replacement_dict
+
+
 #
-def is_float(text):
-    try:
-        float(text)  # float(re.sub('[()~]', '', text))
-        test_res = True
-    except ValueError:
-        test_res = False
-    return test_res
+def update_location_name_repl_dict(new_items, regex, verbose=False):
+    """
+    :param new_items: [dict]
+    :param regex: [bool]
+    :param verbose: [bool] (default: False)
+
+    Testing e.g.
+        new_items = information
+        regex = False
+        verbose = True
+
+        update_location_name_repl_dict(new_items, regex, verbose)
+    """
+    json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
+
+    new_items_keys = list(new_items.keys())
+
+    if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
+        path_to_json = cd_dat(json_filename)
+        location_name_repl_dict = load_json(path_to_json)
+
+        if any(isinstance(k, re.Pattern) for k in new_items_keys):
+            new_items = {k.pattern: v for k, v in new_items.items() if isinstance(k, re.Pattern)}
+
+        location_name_repl_dict.update(new_items)
+
+        save_json(location_name_repl_dict, path_to_json, verbose=verbose)
