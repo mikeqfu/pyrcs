@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-ver = '0.2.0'
+ver_no = '0.2.1'
 
 
 def find_all_pkg_dat_files(directory):
@@ -22,7 +22,7 @@ with open("README.md", 'r', encoding='utf-8') as readme:
 setuptools.setup(
 
     name='pyrcs',
-    version=ver,
+    version=ver_no,
 
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
