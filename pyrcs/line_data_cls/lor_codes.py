@@ -100,7 +100,7 @@ class LOR:
         assert prefixes in self.get_key_to_prefixes(prefixes_only=True), \
             "\"prefixes\" must be one of {}".format(self.get_key_to_prefixes(prefixes_only=True))
 
-        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW_NZ").lower()
+        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ").lower()
         path_to_pickle = self.cd_lor("prefixes", pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -164,7 +164,7 @@ class LOR:
         prefixes = self.get_key_to_prefixes(prefixes_only=True, update=update)
         lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose) for p in prefixes if p != 'NZ']
 
-        prefixes[prefixes.index('NW')] = 'NW_NZ'
+        prefixes[prefixes.index('NW')] = 'NW-NZ'
         prefixes.remove('NZ')
 
         lor_codes_data = dict(zip(prefixes, lor_codes))
