@@ -96,7 +96,7 @@ class Features:
                 last_updated_date = get_last_updated_date(url)
                 habds_and_wilds_codes_data.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_features("habds_and_wilds.pickle")
+                path_to_pickle = self.cd_features("habds-and-wilds.pickle")
                 save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -107,7 +107,7 @@ class Features:
 
     # Fetch HABDs and WILDs
     def fetch_habds_and_wilds(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "habds_and_wilds.pickle"
+        pickle_filename = "habds-and-wilds.pickle"
         path_to_pickle = self.cd_features(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -147,7 +147,7 @@ class Features:
                 water_troughs_data = {title_name.replace(' ', '_'): water_troughs,
                                       'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(water_troughs_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -159,7 +159,7 @@ class Features:
     # Fetch 'Water troughs'
     def fetch_water_troughs(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = 'Water trough'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             water_troughs_data = load_pickle(path_to_pickle)
@@ -204,7 +204,7 @@ class Features:
                 last_updated_date = get_last_updated_date(url)
                 telegraph_codes_data.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(telegraph_codes_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -216,7 +216,7 @@ class Features:
     # Fetch 'Telegraph code words'
     def fetch_telegraph_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = 'Telegraph code words'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             telegraph_codes_data = load_pickle(path_to_pickle)
@@ -253,7 +253,7 @@ class Features:
 
                 buzzer_codes_data = {'Codes': buzzer_codes, 'Last_updated_data': last_updated_date}
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
                 save_pickle(buzzer_codes_data, path_to_pickle, verbose)
 
             except Exception as e:
@@ -265,7 +265,7 @@ class Features:
     # Fetch 'Buzzer codes'
     def fetch_buzzer_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         title_name = 'Buzzer codes'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "_") + ".pickle")
+        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             buzzer_codes_data = load_pickle(path_to_pickle)
