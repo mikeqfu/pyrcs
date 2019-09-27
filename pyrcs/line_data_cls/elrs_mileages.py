@@ -426,7 +426,7 @@ class ELRMileages:
                 sub_headers = sub_line_name.text.split('\t')[1] if sub_line_name else ''
 
                 # Make a dict of line information
-                line_info = {'ELR': elr, 'Line': line_name, 'Sub-Line': sub_headers}
+                line_info = {'ELR_code': elr, 'Line': line_name, 'Sub-Line': sub_headers}
 
                 # Search for note
                 note_temp = min(parsed_content, key=len)
@@ -471,7 +471,7 @@ class ELRMileages:
                     save_pickle(mileage_file, path_to_pickle, verbose)
 
             except Exception as e:
-                print("Failed to collect the mileage file for \"{}\". {}.".format(elr, e))
+                print("Failed to collect the mileage file for \"{}\". {}.".format(elr, e)) if verbose else None
                 mileage_file = None
 
             return mileage_file
@@ -506,7 +506,7 @@ class ELRMileages:
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(mileage_file, path_to_pickle, verbose=True)
             else:
-                print("No mileage file has been collected for \"{}\".".format(elr.upper()))
+                print("No mileage file has been collected for \"{}\".".format(elr.upper())) if verbose else None
 
         return mileage_file
 
@@ -566,6 +566,7 @@ class ELRMileages:
         end_file = self.fetch_mileage_file(end_elr, update, pickle_mileage_file, data_dir, verbose=verbose)
 
         if start_file is not None and end_file is not None:
+            start_elr, end_elr = start_file['ELR_code'], end_file['ELR_code']
             start_em, end_em = start_file[start_elr], end_file[end_elr]
             key_pat = re.compile(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)')
             if isinstance(start_em, dict):
@@ -591,7 +592,7 @@ class ELRMileages:
                         conn_elr = conn_temp.iloc[j]
                         conn_em = self.fetch_mileage_file(conn_elr, update=update)
                         if conn_em is not None:
-                            conn_elr = conn_em['ELR']
+                            conn_elr = conn_em['ELR_code']
                             conn_em = conn_em[conn_elr]
                             if isinstance(conn_em, dict):
                                 conn_em = conn_em[[k for k in conn_em.keys() if re.match(key_pat, k)][0]]
