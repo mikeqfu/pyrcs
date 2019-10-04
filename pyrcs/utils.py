@@ -1,6 +1,7 @@
 """ Utilities - Helper functions """
 
 import collections
+import datetime
 import os
 import pickle
 import re
@@ -12,17 +13,23 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
+import pyhelpers.misc
+import pyhelpers.store
 import rapidjson
 import requests
-from pyhelpers.misc import confirmed
-from pyhelpers.store import load_json
 
 # ====================================================================================================================
 """ Change directory """
 
 
 # Change directory to "dat" and sub-directories
-def cd_dat(*sub_dir, dat_dir="dat", mkdir=False):
+def cd_dat(*sub_dir, dat_dir="dat", mkdir=False) -> str:
+    """
+    :param sub_dir: [str]
+    :param dat_dir: [str] (default: "dat")
+    :param mkdir: [bool] (default: False)
+    :return: [str]
+    """
     path = pkg_resources.resource_filename(__name__, dat_dir)
     for x in sub_dir:
         path = os.path.join(path, x)
@@ -40,7 +47,7 @@ def save_pickle(pickle_data, path_to_pickle, verbose=True):
     """
     :param pickle_data: any object that could be dumped by the 'pickle' package
     :param path_to_pickle: [str] local file path
-    :param verbose: [bool]
+    :param verbose: [bool] (default: True)
     :return: whether the data has been successfully saved
     """
     pickle_filename = os.path.basename(path_to_pickle)
@@ -66,7 +73,7 @@ def save_json(json_data, path_to_json, verbose=True):
     """
     :param json_data: any object that could be dumped by the 'json' package
     :param path_to_json: [str] local file path
-    :param verbose: [bool]
+    :param verbose: [bool] (default: True)
     :return: whether the data has been successfully saved
     """
     json_filename = os.path.basename(path_to_json)
@@ -90,77 +97,142 @@ def save_json(json_data, path_to_json, verbose=True):
 
 
 # Convert "miles.chains" to Network Rail mileages
-def mile_chain_to_nr_mileage(miles_chains):
+def mile_chain_to_nr_mileage(miles_chains) -> str:
     """
-    :param miles_chains: [str] 'miles.chains'
+    :param miles_chains: [str; np.nan; None] 'miles.chains'
     :return: [str] 'miles.yards'
 
     Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
-    """
 
+    Testing e.g.
+        miles_chains = '0.18'  # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
+        mile_chain_to_nr_mileage(miles_chains)  # '0.0396'
+        miles_chains = ''  # np.nan  # None
+        mile_chain_to_nr_mileage(miles_chains)  # ''
+    """
     if pd.notna(miles_chains) and miles_chains != '':
         miles, chains = str(miles_chains).split('.')
         yards = measurement.measures.Distance(chain=chains).yd
         network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
     else:
-        network_rail_mileage = miles_chains
+        network_rail_mileage = ''
     return network_rail_mileage
 
 
 # Convert Network Rail mileages to "miles.chains"
-def nr_mileage_to_mile_chain(str_mileage):
+def nr_mileage_to_mile_chain(str_mileage) -> str:
     """
-    :param str_mileage: [str] 'miles.yards'
+    :param str_mileage: [str; np.nan; None] 'miles.yards'
     :return: [str] 'miles.chains'
 
     Note on the 'ELRs and mileages' web page that 'mileages' are given in the form 'miles.chains'.
-    """
 
+    Testing e.g.
+        str_mileage = '0.0396'
+        nr_mileage_to_mile_chain(str_mileage)  # '0.18'
+        str_mileage = ''  # np.nan  # None
+        nr_mileage_to_mile_chain(str_mileage)  # ''
+    """
     if pd.notna(str_mileage) and str_mileage != '':
         miles, yards = str(str_mileage).split('.')
         chains = measurement.measures.Distance(yard=yards).chain
         miles_chains = '%.2f' % (int(miles) + round(chains / (10 ** 2), 2))
     else:
-        miles_chains = str_mileage
+        miles_chains = ''
     return miles_chains
 
 
-# Convert str type mileage to numerical type
-def str_to_num_mileage(str_mileage):
-    return '' if str_mileage == '' else round(float(str_mileage), 4)
+# Convert str type Network Rail mileage to numerical type
+def nr_mileage_str_to_num(str_mileage: str) -> float:
+    """
+    Testing e.g.
+        str_mileage = '0.0396'
+        nr_mileage_str_to_num(str_mileage)  # 0.0396
+        str_mileage = ''
+        nr_mileage_str_to_num(str_mileage)  # np.nan
+    """
+    num_mileage = np.nan if str_mileage == '' else round(float(str_mileage), 4)
+    return num_mileage
 
 
-# Convert mileage to str type
-def nr_mileage_num_to_str(x):
-    return '%.4f' % round(float(x), 4)
+# Convert Network Rail mileage to str type
+def nr_mileage_num_to_str(num_mileage: float) -> str:
+    """
+    Testing e.g.
+        num_mileage = 0.0396
+        nr_mileage_num_to_str(num_mileage)  # '0.0396'
+        num_mileage = np.nan
+        nr_mileage_num_to_str(num_mileage)  # ''
+    """
+    nr_mileage = '%.4f' % round(float(num_mileage), 4) if num_mileage and pd.notna(num_mileage) else ''
+    return nr_mileage
+
+
+# Convert Network Rail mileages to yards
+def nr_mileage_to_yards(nr_mileage: (float, str)) -> int:
+    """
+    Testing e.g.
+        nr_mileage = '0.0396'
+        nr_mileage_to_yards(nr_mileage)  # 396
+        nr_mileage = 0.0396
+        nr_mileage_to_yards(nr_mileage)  # 396
+    """
+    if isinstance(nr_mileage, (float, np.float, int, np.integer)):
+        nr_mileage = nr_mileage_num_to_str(nr_mileage)
+    else:
+        pass
+    miles = int(nr_mileage.split('.')[0])
+    yards = int(nr_mileage.split('.')[1])
+    yards += int(measurement.measures.Distance(mi=miles).yd)
+    return yards
 
 
 # Convert yards to Network Rail mileages
-def yards_to_nr_mileage(yards):
-    if yards:
+def yards_to_nr_mileage(yards: (int, float, np.nan)) -> str:
+    """
+    Testing e.g.
+        yards = 396
+        yards_to_nr_mileage(yards)  # '0.0396'
+        yards = 396.0
+        yards_to_nr_mileage(yards)  # '0.0396'
+        yards = None  # np.nan
+        yards_to_nr_mileage(yards)  # ''
+    """
+    if pd.notnull(yards) and yards != '':
         mileage_mi = np.floor(measurement.measures.Distance(yd=yards).mi)
-        mileage_yd = int(yards - measurement.measures.Distance(mi=mileage_mi).yd)
+        mileage_yd = yards - int(measurement.measures.Distance(mi=mileage_mi).yd)
         # Example: "%.2f" % round(2606.89579999999, 2)
         mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
-    else:  # pd.isnull(yards) or yards is None
+    else:
         mileage = ''
     return mileage
 
 
-# Convert Network Rail mileages to yards
-def nr_mileage_to_yards(nr_mileage):
-    if isinstance(nr_mileage, float):
-        nr_mileage = str('%.4f' % nr_mileage)
-    elif isinstance(nr_mileage, str):
-        pass
-    miles = int(nr_mileage.split('.')[0])
-    yards = int(nr_mileage.split('.')[1])
-    yards += measurement.measures.Distance(mi=miles).yd
-    return yards
+# For a location x where (start_mileage_num == end_mileage_num), consider a section [x - shift_yards, x + shift_yards]
+def shift_num_nr_mileage(nr_mileage: (float, int, str), shift_yards: (int, float)) -> float:
+    """
+    :param nr_mileage: [float]
+    :param shift_yards: [int]
+    :return: [float]
+
+    Testing e.g.
+        nr_mileage  = '0.0396'  # 0.0396  # 10
+        shift_yards = 220  # 220.99
+        shift_num_mileage(nr_mileage, shift_yards)  # 0.0616  # 0.0617
+    """
+    yards = nr_mileage_to_yards(nr_mileage) + shift_yards
+    shifted_nr_mileage = yards_to_nr_mileage(yards)
+    shifted_num_mileage = nr_mileage_str_to_num(shifted_nr_mileage)
+    return shifted_num_mileage
 
 
 # Convert calendar year to Network Rail financial year
-def year_to_financial_year(date):
+def year_to_financial_year(date: datetime.datetime) -> int:
+    """
+    Testing e.g.
+        date = datetime.datetime.now()
+        year_to_financial_year(date)
+    """
     financial_date = date + pd.DateOffset(months=-3)
     return financial_date.year
 
@@ -170,16 +242,21 @@ def year_to_financial_year(date):
 
 
 # Get a list of parsed HTML tr's
-def parse_tr(header, trs):
+def parse_tr(header, trs) -> list:
     """
     :param header: [list] list of column names of a requested table
-    :param trs: [list] contents under tr tags of the web page
+    :param trs: [bs4.ResultSet - list of bs4.Tag] contents under 'tr' tags of the web page
     :return: [list] list of lists each comprising a row of the requested table
 
     Get a list of parsed contents of tr-tag's, each of which corresponds to a piece of record
-    *This is a key function to drive its following functions
-    Reference: stackoverflow.com/questions/28763891/what-should-i-do-when-tr-has-rowspan
+    Reference: https://stackoverflow.com/questions/28763891/
 
+    Testing e.g.
+        source = requests.get('http://www.railwaycodes.org.uk/tunnels/tunnels1.shtm')
+        parsed_text = bs4.BeautifulSoup(source.text, 'lxml')
+        header = [x.text for x in parsed_text.find_all('th')]  # Column names
+        trs = parsed_text.find_all('table', attrs={'width': '1100px'})[1].find_all('tr')
+        parse_tr(header, trs)
     """
     tbl_lst = []
     for row in trs:
@@ -239,16 +316,20 @@ def parse_tr(header, trs):
 
 
 # Parse the acquired list to make it be ready for creating the DataFrame
-def parse_table(source, parser='lxml'):
+def parse_table(source, parser='lxml') -> tuple:
     """
-    :param source: response object to connecting a URL to request a table
-    :param parser: [str] Optional parsers: 'lxml', 'html5lib', 'html.parser'
+    :param source: [requests.Response] response object to connecting a URL to request a table
+    :param parser: [str] (default: 'lxml'; alternatives: 'html5lib', 'html.parser')
     :return [tuple] ([list] of lists each comprising a row of the requested table - (see also parse_trs())
                      [list] of column names of the requested table)
+
+    Testing e.g.
+        source = requests.get('http://www.railwaycodes.org.uk/tunnels/tunnels1.shtm')
+        parser = 'lxml'
+        parse_table(source, parser='lxml')
     """
-    # (If source.status_code == 200, the requested URL is available.)
     # Get plain text from the source URL
-    web_page_text = source.text
+    web_page_text = source.text  # (If source.status_code == 200, the requested URL is available.)
     # Parse the text
     parsed_text = bs4.BeautifulSoup(web_page_text, parser)
     # Get all data under the HTML label 'tr'
@@ -263,37 +344,43 @@ def parse_table(source, parser='lxml'):
 
 
 # Parse location note
-def parse_location_note(x_note):
-    # Data
-    # d = re.search('[\w ,]+(?=[ \n]\[)', x)
-    # if d is not None:
-    #     dat = d.group()
-    # else:
+def parse_location_note(location_dat) -> tuple:
+    """
+    :param location_dat: [str; None]
+    :return: [tuple] ([str] - Location name, [str] - Note)
 
+    Testing e.g.
+        location_dat = 'Abbey Wood'
+        parse_location_note(location_dat)
+        location_dat = 'Abercynon (formerly Abercynon South)'
+        parse_location_note(location_dat)
+        location_dat = 'Allerton (reopened as Liverpool South Parkway)'
+        parse_location_note(location_dat)
+        location_dat = 'Ashford International [domestic portion]'
+        parse_location_note(location_dat)
+    """
     # Location name
-    d = re.search(r'.*(?= \[[\"\']\()', x_note)
+    d = re.search(r'.*(?= \[[\"\']\()', location_dat)
     if d is not None:
         dat = d.group()
-    elif ' [unknown feature, labelled "do not use"]' in x_note:
-        dat = re.search(r'\w+(?= \[unknown feature, )', x_note).group()
-    elif ') [formerly' in x_note:
-        dat = re.search(r'.*(?= \[formerly)', x_note).group()
+    elif ' [unknown feature, labelled "do not use"]' in location_dat:
+        dat = re.search(r'\w+(?= \[unknown feature, )', location_dat).group()
+    elif ') [formerly' in location_dat:
+        dat = re.search(r'.*(?= \[formerly)', location_dat).group()
     else:
         m_pattern = re.compile(
             r'[Oo]riginally |[Ff]ormerly |[Ll]ater |[Pp]resumed | \(was | \(in | \(at | \(also |'
-            r' \(second code |\?|\n| \(\[\'| \(definition unknown\)')
-        # dat = re.search('["\w ,]+(?= [[(?\'])|["\w ,]+', x).group(0) if re.search(m_pattern, x) else x
-        x_tmp = re.search(r'(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', x_note)
-        x_tmp = x_tmp.group() if x_tmp is not None else x_note
-        dat = ' '.join(x_note.replace(x_tmp, '').split()) if re.search(m_pattern, x_note) else x_note
+            r' \(second code |\?|\n| \(\[\'| \(definition unknown\)| \(reopened |( portion])$')
+        x_tmp = re.search(r'(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', location_dat)
+        x_tmp = x_tmp.group() if x_tmp is not None else location_dat
+        dat = ' '.join(location_dat.replace(x_tmp, '').split()) if re.search(m_pattern, location_dat) else location_dat
 
     # Note
-    y = x_note.replace(dat, '').strip()
+    y = location_dat.replace(dat, '', 1).strip()
     if y == '':
         note = ''
     else:
         n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', y)
-        # n = re.search('(?<=[\n ]((\[\'\()|(\(\[\')))[\w ,\'\"/?]+', y)
         if n is None:
             n = re.search(r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*(?=(\)[\'\"]\])|(\][\'\"]\))|\])', y)
         elif '"now deleted"' in y and y.startswith('(') and y.endswith(')'):
@@ -302,23 +389,27 @@ def parse_location_note(x_note):
         if note.endswith('\'') or note.endswith('"'):
             note = note[:-1]
 
-    if 'STANOX ' in dat and 'STANOX ' in x_note and note == '':
-        dat = x_note[0:x_note.find('STANOX')].strip()
-        note = x_note[x_note.find('STANOX'):]
+    if 'STANOX ' in dat and 'STANOX ' in location_dat and note == '':
+        dat = location_dat[0:location_dat.find('STANOX')].strip()
+        note = location_dat[location_dat.find('STANOX'):]
 
     return dat, note
 
 
 # Parse date string
-def parse_date(str_date, as_date_type=False):
+def parse_date(str_date, as_date_type=False) -> (str, datetime.date):
     """
     :param str_date: [str]
-    :param as_date_type: [bool]
-    :return: the date formatted as requested
+    :param as_date_type: [bool] (default: False)
+    :return: [str; datetime.date] the date formatted as needed
+
+    Testing e.g.
+        str_date     = '2019-01-01'
+        as_date_type = True
+        parse_date(str_date, as_date_type)
     """
-    parsed_date = dateutil.parser.parse(str_date, fuzzy=True)
-    # Or, parsed_date = datetime.strptime(last_update_date[12:], '%d %B %Y')
-    parsed_date = parsed_date.date() if as_date_type else str(parsed_date.date())
+    temp_date = dateutil.parser.parse(str_date, fuzzy=True)  # datetime.strptime(last_update_date[12:], '%d %B %Y')
+    parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
     return parsed_date
 
 
@@ -327,19 +418,26 @@ def parse_date(str_date, as_date_type=False):
 
 
 # Get last update date
-def get_last_updated_date(url, parsed=True, date_type=False):
+def get_last_updated_date(url, parsed=True, date_type=False) -> (str, None):
     """
     :param url: [str] URL link of a requested web page
-    :param parsed: [bool] indicator of whether to reformat the date
-    :param date_type: [bool]
-    :return:[str] date of when the specified web page was last updated
+    :param parsed: [bool] (default: True) indicator of whether to reformat the date
+    :param date_type: [bool] (default: False)
+    :return:[str; None] date of when the specified web page was last updated
+
+    Testing e.g.
+        url       = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+        url_      = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+        parsed    = True
+        date_type = False
+        get_last_updated_date(url, parsed, date_type)
+        get_last_updated_date(url_, parsed, date_type)  # None
     """
     # Request to get connected to the given url
     source = requests.get(url)
     web_page_text = source.text
     # Parse the text scraped from the requested web page
-    # (Optional parsers: 'lxml', 'html5lib' and 'html.parser')
-    parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')
+    parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')  # (Alternative parsers: 'html5lib', 'html.parser')
     # Find 'Last update date'
     update_tag = parsed_text.find('p', {'class': 'update'})
     if update_tag is not None:
@@ -353,51 +451,51 @@ def get_last_updated_date(url, parsed=True, date_type=False):
     return last_update_date
 
 
-#
-def get_navigation_elements(lst):
+# Get the catalogue for a class
+def get_catalogue(cls_url, navigation_bar_exists=True, menu_exists=True) -> dict:
     """
-    :param lst: [list]
-    :return:
-    """
-    assert isinstance(lst, list)
-    lst_reversed = list(reversed(lst))
-    for x in lst_reversed:
-        if x.text == 'Introduction':
-            starting_idx = len(lst) - lst_reversed.index(x) - 1
-            return lst[starting_idx:]
+    :param cls_url: [str]
+    :param navigation_bar_exists: [bool] (default: True)
+    :param menu_exists: [bool] (default: True)
+    :return: [dict] {[str] - title: [str] - URL}
 
-
-#
-def get_catalogue(url, navigation_bar_exists=True, menu_exists=True):
+    Testing e.g.
+        url                   = 'http://www.railwaycodes.org.uk/crs/CRS0.shtm'
+        navigation_bar_exists = True
+        menu_exists           = True
+        get_catalogue(url, navigation_bar_exists, menu_exists)
     """
-    :param url: [str]
-    :param navigation_bar_exists: [bool]
-    :param menu_exists: [bool]
-    :return:
-    """
-
-    source = requests.get(url)
+    source = requests.get(cls_url)
 
     if navigation_bar_exists:
         cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', text=True, attrs={'class': None})
-        hot_soup = get_navigation_elements(cold_soup)
+        lst_reversed = list(reversed(cold_soup))
+        hot_soup = []
+        for x in lst_reversed:
+            if x.text == 'Introduction':
+                starting_idx = len(cold_soup) - lst_reversed.index(x) - 1
+                hot_soup = cold_soup[starting_idx:]
+                break
     else:
-        if menu_exists:
-            hot_soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', text=True, attrs={'class': None})[-6:]
-        else:
-            hot_soup = []
+        hot_soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', text=True, attrs={'class': None})[-6:] \
+            if menu_exists else []
 
     source.close()
 
-    raw_contents = [{x.text: urllib.parse.urljoin(os.path.dirname(url) + '/', x['href'])} for x in hot_soup]
+    raw_contents = [{x.text: urllib.parse.urljoin(os.path.dirname(cls_url) + '/', x['href'])} for x in hot_soup]
 
     contents = dict(e for d in raw_contents for e in d.items())
 
     return contents
 
 
-#
-def get_cls_menu(cls_url):
+# Get a menu of the available classes
+def get_cls_menu(cls_url: str) -> dict:
+    """
+    Testing e.g.
+        cls_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+        get_cls_menu(cls_url)
+    """
     source = requests.get(cls_url)
 
     soup = bs4.BeautifulSoup(source.text, 'lxml')
@@ -433,27 +531,30 @@ def get_cls_menu(cls_url):
 
 
 # ====================================================================================================================
-""" Misc """
+""" Rectification of location names """
 
 
 # Create a dict for replace location names
-def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
+def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False) -> dict:
     """
     :param k: [str; None (default)]
     :param regex: [bool] (default: False)
     :param as_dataframe: [bool] (default: False)
     :return: [dict]
+
+    Testing e.g.
+        k            = None
+        regex        = False
+        as_dataframe = True
+        fetch_location_names_repl_dict(k, regex, as_dataframe)
     """
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
-    location_name_repl_dict = load_json(cd_dat(json_filename))
+    location_name_repl_dict = pyhelpers.store.load_json(cd_dat(json_filename))
 
     if regex:
         location_name_repl_dict = {re.compile(k): v for k, v in location_name_repl_dict.items()}
 
-    if k:
-        replacement_dict = {k: location_name_repl_dict}
-    else:
-        replacement_dict = location_name_repl_dict
+    replacement_dict = {k: location_name_repl_dict} if k else location_name_repl_dict
 
     if as_dataframe:
         replacement_dict = pd.DataFrame.from_dict(replacement_dict)
@@ -461,7 +562,7 @@ def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
     return replacement_dict
 
 
-#
+# Rectify location names
 def update_location_name_repl_dict(new_items, regex, verbose=False):
     """
     :param new_items: [dict]
@@ -469,19 +570,18 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
     :param verbose: [bool] (default: False)
 
     Testing e.g.
-        new_items = information
-        regex = False
-        verbose = True
-
+        new_items = {}
+        regex     = False
+        verbose   = True
         update_location_name_repl_dict(new_items, regex, verbose)
     """
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
 
     new_items_keys = list(new_items.keys())
 
-    if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
+    if pyhelpers.misc.confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
         path_to_json = cd_dat(json_filename)
-        location_name_repl_dict = load_json(path_to_json)
+        location_name_repl_dict = pyhelpers.store.load_json(path_to_json)
 
         if any(isinstance(k, re.Pattern) for k in new_items_keys):
             new_items = {k.pattern: v for k, v in new_items.items() if isinstance(k, re.Pattern)}
