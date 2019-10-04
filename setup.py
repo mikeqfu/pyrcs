@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-ver_no = '0.2.1'
+ver_no = '0.2.3'
 
 
 def find_all_pkg_dat_files(directory):
