@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-ver_no = '0.2.3'
+ver_no = '0.2.4'
 
 
 def find_all_pkg_dat_files(directory):
@@ -19,6 +19,10 @@ dat_files = find_all_pkg_dat_files('pyrcs\\dat')
 with open("README.md", 'r', encoding='utf-8') as readme:
     long_description = readme.read()
 
+with open('requirements.txt') as f:
+    requirements = f.readlines()
+requirements_ = [r.strip() for r in requirements]
+
 setuptools.setup(
 
     name='pyrcs',
@@ -27,26 +31,13 @@ setuptools.setup(
     author='Qian Fu',
     author_email='qian.fu@outlook.com',
 
-    description="A small web scraper for collecting the railway codes used in the UK rail industry",
+    description="A data scraping tool for collection and storage of the railway codes used in the UK rail industry",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
     url='https://github.com/mikeqfu/pyrcs',
 
-    install_requires=[
-        'beautifulsoup4',
-        'fuzzywuzzy',
-        'html5lib',
-        'lxml',
-        'measurement',
-        'more-itertools',
-        'pandas',
-        'pyhelpers',
-        'python-Levenshtein',
-        'requests',
-        'sqlalchemy',
-        'sqlalchemy-utils'
-    ],
+    install_requires=requirements_,
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
 
@@ -59,5 +50,6 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux'
     ],
 )
