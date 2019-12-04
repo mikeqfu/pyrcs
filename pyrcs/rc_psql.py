@@ -6,22 +6,22 @@ import sqlalchemy
 import sqlalchemy.engine.reflection
 import sqlalchemy.engine.url
 import sqlalchemy_utils
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 
 
 class RailwayCodesPSQL:
-    def __init__(self):
+    def __init__(self, username='postgres', password=None, host='localhost', port=5432, database_name='postgres'):
         """
         We need to be connected to the database server in order to execute the "CREATE DATABASE" command. There is a 
         database called "postgres" created by the "initdb" command when the data storage area is initialised. If we 
         need to create the first of our own database, we can set up a connection to "postgres" in the first instance.
         """
         self.database_info = {'drivername': 'postgresql+psycopg2',
-                              'username': input('PostgreSQL username: '),
-                              'password': getpass.getpass('PostgreSQL password: '),
-                              'host': input('Host name: '),
-                              'port': 5432,  # default by installation
-                              'database': input('Database name: ')}
+                              'username': username,
+                              'password': password if password else getpass.getpass('PostgreSQL password: '),
+                              'host': host,  # default: localhost
+                              'port': port,  # 5432 (default by installation)
+                              'database': database_name}
 
         # The typical form of a database URL is: url = backend+driver://username:password@host:port/database_name
         self.url = sqlalchemy.engine.url.URL(**self.database_info)
@@ -37,9 +37,9 @@ class RailwayCodesPSQL:
         self.connection = self.engine.connect()
 
     # Establish a connection to the specified database (named e.g. 'osm_extracts')
-    def connect_db(self, database_name='Railway Codes and other data'):
+    def connect_db(self, database_name='Railway_Codes'):
         """
-        :param database_name: [str, 'Railway Codes and other data' (default)] name of a database
+        :param database_name: [str] (default: 'Railway_Codes') name of a database
         """
         self.database_name = database_name
         self.database_info['database'] = self.database_name
@@ -79,7 +79,7 @@ class RailwayCodesPSQL:
     # Get size of a database
     def get_db_size(self, database_name=None):
         """
-        :param database_name: [str; None(default)] name of database
+        :param database_name: [str; None (default)] name of database
         :return:
         """
         db_name = '\'{}\''.format(database_name) if database_name else 'current_database()'
@@ -115,7 +115,7 @@ class RailwayCodesPSQL:
     # Drop the specified database
     def drop(self, database_name=None):
         """
-        :param database_name: [str] name of database to disconnect from, or None (default) to disconnect the current one
+        :param database_name: [str; None (default)] database to be disconnected; None: to disconnect the current one
         """
         db_name = self.database_name if database_name is None else database_name
         if confirmed("Confirmed to drop the database \"{}\"?".format(db_name)):

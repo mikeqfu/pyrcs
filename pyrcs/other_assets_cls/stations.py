@@ -106,12 +106,20 @@ class Stations:
                     records, header = parse_table(source, parser='lxml')
                     # Create a DataFrame of the requested table
                     dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
-                    col = [h.replace('\r\n', ' ').replace('\r', ' ') for h in header]
+                    col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
                     station_locations_table = pd.DataFrame(dat, columns=col)
 
+                    def parse_degrees(x):
+                        if x == '':
+                            y = pd.np.nan
+                        else:
+                            y = float(x.replace('c.', '') if x.startswith('c.') else x)
+                        return y
+
                     station_locations_table[['Degrees Longitude', 'Degrees Latitude']] = \
-                        station_locations_table[['Degrees Longitude', 'Degrees Latitude']].applymap(
-                            lambda x: pd.np.nan if x == '' else float(x))
+                        station_locations_table[['Degrees Longitude', 'Degrees Latitude']].applymap(parse_degrees)
+                    station_locations_table['Grid Reference'] = station_locations_table['Grid Reference'].map(
+                        lambda x: x.replace('c.', '') if x.startswith('c.') else x)
 
                     station_locations_table[['Station', 'Station_Note']] = \
                         station_locations_table.Station.map(parse_location_note).apply(pd.Series)

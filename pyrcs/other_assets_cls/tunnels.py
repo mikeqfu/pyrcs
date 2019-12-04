@@ -141,7 +141,7 @@ class Tunnels:
                     header[idx[0]:idx[0]] = ['Station_O', 'Station_D']
 
                 # Table data
-                temp_tables = parsed_text.find_all('table', attrs={'width': '1100px'})
+                temp_tables = parsed_text.find_all('table')
                 tbl_lst = parse_tr(header, trs=temp_tables[1].find_all('tr'))
                 tbl_lst = [[item.replace('\r', ' ').replace('\xa0', '') for item in record] for record in tbl_lst]
 
@@ -200,7 +200,7 @@ class Tunnels:
                         headers.append(header)
                     temp_header = temp_header.find_next('table')
 
-                tbl_lst = parsed_text.find_all('table', attrs={'width': '1100px'})
+                tbl_lst = parsed_text.find_all('table')
                 tbl_lst = operator.itemgetter(1, 3)(tbl_lst)
                 tbl_lst = [parse_tr(header, x.find_all('tr')) for header, x in zip(headers, tbl_lst)]
                 tbl_lst = [[[item.replace('\xa0', '') for item in record] for record in tbl] for tbl in tbl_lst]

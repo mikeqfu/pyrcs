@@ -15,7 +15,7 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_tr, save_pickle
@@ -78,7 +78,7 @@ class Electrification:
 
                     note_tag = h3.find_next('h4')
                     if note_tag and note_tag.text == 'Notes':
-                        notes_ = dict((x.find('a').get('name').title(), x.text.replace('\xa0', ''))
+                        notes_ = dict((x.find('a').get('id').title(), x.text.replace('\xa0', ''))
                                       for x in soup.find('ol') if x != '\n')
                         if notes['Notes'] is None:
                             notes['Notes'] = notes_
@@ -164,7 +164,7 @@ class Electrification:
                     if h4:
                         previous_h3 = h4.find_previous('h3')
                         if previous_h3 == h3 and h4.text == 'Notes':
-                            notes_ = dict((x.find('a').get('name').title(), x.text.replace('\xa0', ''))
+                            notes_ = dict((x.find('a').get('id').title(), x.text.replace('\xa0', ''))
                                           for x in h4.find_next('ol') if x != '\n')
                             if notes['Notes'] is None:
                                 notes['Notes'] = notes_

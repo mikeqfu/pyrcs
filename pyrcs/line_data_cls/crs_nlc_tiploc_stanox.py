@@ -24,7 +24,7 @@ import more_itertools
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 from pyhelpers.store import load_json, load_pickle
 
 from pyrcs.utils import cd_dat, save_json, save_pickle
@@ -153,7 +153,7 @@ class LocationIdentifiers:
                 # Get column names for the other systems table
                 headers = list(more_itertools.unique_everseen([h.text for h in web_page_text.find_all('th')]))
                 # Parse table data for each system
-                tbl_data = web_page_text.find_all('table', {'width': '1100px'})
+                tbl_data = web_page_text.find_all('table')
                 tables = [pd.DataFrame(parse_tr(headers, table.find_all('tr')), columns=headers) for table in tbl_data]
                 codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
                 # Make a dict
@@ -275,8 +275,8 @@ class LocationIdentifiers:
                 if any('see note' in crs_note for crs_note in location_codes.CRS_Note):
                     loc_idx = [i for i, crs_note in enumerate(location_codes.CRS_Note) if 'see note' in crs_note]
                     web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
-                    note_urls = [urllib.parse.urljoin(self.Catalogue[initial.upper()], l['href'])
-                                 for l in web_page_text.find_all('a', href=True, text='note')]
+                    note_urls = [urllib.parse.urljoin(self.Catalogue[initial.upper()], x['href'])
+                                 for x in web_page_text.find_all('a', href=True, text='note')]
                     additional_notes = [self.parse_additional_note_page(note_url) for note_url in note_urls]
                     additional_note = dict(zip(location_codes.CRS.iloc[loc_idx], additional_notes))
                 else:

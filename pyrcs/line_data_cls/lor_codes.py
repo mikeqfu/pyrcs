@@ -19,7 +19,7 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_tr
@@ -80,7 +80,7 @@ class LOR:
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
                 links = soup.find_all('a', href=re.compile('^pride|elrmapping'),
                                       text=re.compile('.*(codes|converter|Historical)'))
-                urls = list(dict.fromkeys([self.URL.replace(os.path.basename(self.URL), l['href']) for l in links]))
+                urls = list(dict.fromkeys([self.URL.replace(os.path.basename(self.URL), x['href']) for x in links]))
                 save_pickle(urls, path_to_pickle)
             except Exception as e:
                 print("Failed to get the \"urls\" to LOR codes web pages. {}.".format(e))
@@ -134,12 +134,12 @@ class LOR:
                     line_name_info.columns = ['Line Name', 'Line Name Note']
                     code_dat = pd.concat([code_dat, line_name_info], axis=1, sort=False)
                     try:
-                        note_dat = dict([(x['name'].title(), x.text) for x in soup.find('ol').findChildren('a')])
+                        note_dat = dict([(x['id'].title(), x.text) for x in soup.find('ol').findChildren('a')])
                     except AttributeError:
                         note_dat = dict([('Note', None)])
                     return code_dat, note_dat
 
-                h3, table_soup = soup.find_all('h3'), soup.find_all('table', {'width': '1100px'})
+                h3, table_soup = soup.find_all('h3'), soup.find_all('table')
                 if len(h3) == 0:
                     code_data, code_data_notes = parse_h3_table(table_soup)
                     lor_codes_by_initials = {'Code': code_data, 'Note': code_data_notes}
