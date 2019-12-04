@@ -2,7 +2,7 @@
 
 import time
 
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 
 from pyrcs.line_data import LineData
 from pyrcs.other_assets import OtherAssets

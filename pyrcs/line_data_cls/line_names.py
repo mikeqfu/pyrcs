@@ -13,7 +13,7 @@ import re
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.misc import confirmed
+from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle
 
 from pyrcs.utils import cd_dat, get_last_updated_date, parse_table, save_pickle

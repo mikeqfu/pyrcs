@@ -13,7 +13,7 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
-import pyhelpers.misc
+import pyhelpers.ops
 import pyhelpers.store
 import rapidjson
 import requests
@@ -579,7 +579,7 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
 
     new_items_keys = list(new_items.keys())
 
-    if pyhelpers.misc.confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
+    if pyhelpers.ops.confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
         path_to_json = cd_dat(json_filename)
         location_name_repl_dict = pyhelpers.store.load_json(path_to_json)
 
