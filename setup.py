@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-ver_no = '0.2.4'
+ver_no = '0.2.5'
 
 
 def find_all_pkg_dat_files(directory):
@@ -46,9 +46,7 @@ setuptools.setup(
 
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux'
     ],
