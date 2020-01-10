@@ -8,7 +8,7 @@ from pyrcs.line_data import LineData
 from pyrcs.other_assets import OtherAssets
 
 
-def update_package_data(verbose=False):
+def update_pkg_metadata(verbose=False):
 
     if confirmed("To update resources?"):
 
@@ -76,4 +76,4 @@ def update_package_data(verbose=False):
             print("\nUpdate finished.")
 
 
-update_package_data(verbose=True)
+# update_pkg_metadata(verbose=True)
