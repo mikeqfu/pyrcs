@@ -18,13 +18,13 @@ A small web scraper for collecting railway codes and other data used in the UK r
 
 - [Installation](#installation)
 - [Quick start (Examples)](#quick-start-examples)
-  - [CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
-    - [Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
-    - [All available location codes](#all-available-location-codes)
-  - [Engineer's Line References (ELRs)](#elr)
-    - [ELR codes](#elr-codes)
-    - [Mileage files](#mileage-files)
-  - [Railway stations data](#railway-stations-data)
+  - [1. CRS, NLC, TIPLOC and STANOX Codes](#crs-nlc-tiploc-and-stanox-codes)
+    - [1.1  Location codes for a given initial letter](#locations-beginning-with-a-given-letter)
+    - [1.2  All available location codes](#all-available-location-codes)
+  - [2. Engineer's Line References (ELRs)](#elr)
+    - [2.1  ELR codes](#elr-codes)
+    - [2.2  Mileage files](#mileage-files)
+  - [3. Railway stations data](#railway-stations-data)
 - [Data source](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) & [Note](http://www.railwaycodes.org.uk/misc/contributing.shtm)
 
 ---
@@ -34,7 +34,7 @@ A small web scraper for collecting railway codes and other data used in the UK r
 ## Installation
 
 ```
-pip install --upgrade pyrcs
+pip3 install pyrcs
 ```
 
 **Note**: 
@@ -42,24 +42,28 @@ pip install --upgrade pyrcs
 * Make sure you have the most up-to-date version of `pip` installed.
 
   ```
-  python -m pip install --upgrade pip
+  python -m pip3 install --upgrade pip
   ```
 
-* `Python-Levenshtein`, one of the dependencies of this package, may fail to be installed on a Windows OS without VC2015 (or above). A workaround is to download and install its [.whl](https://www.lfd.uci.edu/~gohlke/pythonlibs/#python-levenshtein) file. In this case, you should go for `python_Levenshtein-0.12.0-cp37-cp37m-win_amd64.whl` if you're using Python 3.7 on 64-bit OS: 
+* The installation of one of the dependencies, `Python-Levenshtein`, requires VC2015 (or above). A workaround is to download and install its [.whl](https://www.lfd.uci.edu/~gohlke/pythonlibs/#python-levenshtein) file. For example, if you're using Python 3.8 on 64-bit OS, you can download and install "python_Levenshtein-0.12.0-cp38-cp38-win_amd64.whl" manually: 
 
   ```
-  pip install --upgrade \path\to\python_Levenshtein-0.12.0-cp37-cp37m-win_amd64.whl
+  pip3 install \path\to\python_Levenshtein-0.12.0-cp38-cp38-win_amd64.whl
   ```
 
 
 
 ## Quick start (Examples) <a name="quick-start-examples"></a>
 
-The following examples may provide a quick guide to the usage of the package.
+The following examples provide a quick guide to the use of the package.
 
 
 
-### 1.  CRS, NLC, TIPLOC and STANOX Codes <a name="crs-nlc-tiploc-and-stanox-codes"></a>
+### 1.  Get "CRS, NLC, TIPLOC and STANOX Codes" <a name="crs-nlc-tiploc-and-stanox-codes"></a>
+
+###### There are several ways of importing the module/class. 
+
+***Alternative 1***: 
 
 If your preferred import style is `from <module> import <name>`:
 
@@ -67,7 +71,13 @@ If your preferred import style is `from <module> import <name>`:
 from pyrcs.line_data_cls import crs_nlc_tiploc_stanox as ldlc
 ```
 
-If your preferred import style is `import <module>.<name>`:
+Or
+
+```python
+from pyrcs.line_data import crs_nlc_tiploc_stanox as ldlc
+```
+
+If your prefer `import <module>.<name>`:
 
 ```python
 import pyrcs.line_data_cls.crs_nlc_tiploc_stanox as ldlc
@@ -79,47 +89,41 @@ After importing the module, you can create a 'class' for the location codes (inc
 location_codes = ldlc.LocationIdentifiers()
 ```
 
-
-
-***Given different preferences, there are several alternative ways of importing the module.***
-
-***Alternative 1***: 
-
-```python
-from pyrcs.line_data import crs_nlc_tiploc_stanox as ldlc
-location_codes = ldlc.LocationIdentifiers()
-```
-
-***Alternative 2*** (*Preferred and used for the following examples*):
+***Alternative 2*** (*Used for the following examples*):
 
 ```python
 from pyrcs.line_data import LineData
-line_data_cls = LineData()  # contains all classes under the category of 'Line data'
-location_codes = line_data_cls.LocationIdentifiers
+line_data = LineData()
+```
+
+`line_data` contains all classes under the category of "[Line data](http://www.railwaycodes.org.uk/linedatamenu.shtm)". That way, `location_codes` is equivalent to `line_data.LocationIdentifiers`.
+
+```python
+location_codes = line_data.LocationIdentifiers
 ```
 
 
 
 #### 1.1  Locations beginning with a given letter <a name="locations-beginning-with-a-given-letter"></a>
 
-You can get the location codes starting with a specific letter, say 'A' or 'a', by using the method`collect_location_codes_by_initial`, which returns a `dict`. 
+By using the method `collect_location_codes_by_initial`, you can get the location codes, which start with a specific letter, say `'A'` or `'a'`: 
 
 ```python
 # The input is case-insensitive
-location_codes_a = location_codes.collect_location_codes_by_initial('A')
+location_codes_a = line_data.LocationIdentifiers.collect_location_codes_by_initial('A')
 ```
 
-The keys of `location_codes_a` include: 
+`location_codes_a` is a `dict`, with the keys being: 
 
 * `'A'`
-* `'Last_updated_date'`
 * `'Additional_note'`
+* `'Last_updated_date'`
 
-The corresponding values are:
+Their corresponding values are:
 
-* `location_codes_a['A']`  is a `pandas.DataFrame` that contains the table data. You may compare it with the table on the web page: http://www.railwaycodes.org.uk/crs/CRSa.shtm
-* `location_codes_a['Last_updated_date']` is the date (in `str`) when the web page was last updated
-* `location_codes_a['Additional_note']` is some important additional information on the web page (if available)
+* `location_codes_a['A']`  is a `pandas.DataFrame` that contains the table data. You may compare it with the table on the [web page](http://www.railwaycodes.org.uk/crs/CRSa.shtm).
+* `location_codes_a['Additional_note']` is some additional information on the web page (if available).
+* `location_codes_a['Last_updated_date']` is the date (`str`) when the web page was last updated.
 
 
 
@@ -128,7 +132,7 @@ The corresponding values are:
 You can also get all available location codes in this category as a whole , using the method `fetch_location_codes`, which also returns a `dict`:
 
 ```python
-location_codes_data = location_codes.fetch_location_codes()
+location_codes_data = line_data.LocationIdentifiers.fetch_location_codes()
 ```
 
 The keys of `location_codes_a` include: 
@@ -138,29 +142,32 @@ The keys of `location_codes_a` include:
 - `'Additional_note'`
 - `'Other_systems'`
 
-The corresponding values are:
+Their corresponding values are:
 
-- `location_codes_data['Location_codes']`  is a `pandas.DataFrame` that contains all table data (from 'A' to 'Z')
-- `location_codes_data['Latest_updated_date']` is the latest 'Last_updated_date' (in `str`) among all initial-specific table data
-- `location_codes_data['Additional_note']` is some important additional information on the web page (if available)
-- `location_codes_data['Other_systems']` is a `dict` for [Other systems](http://www.railwaycodes.org.uk/crs/CRS1.shtm)
+- `location_codes_data['Location_codes']`  is a `pandas.DataFrame` that contains all table data (from 'A' to 'Z').
+- `location_codes_data['Latest_updated_date']` is the latest 'Last_updated_date' (in `str`) among all initial-specific table data.
+- `location_codes_data['Additional_note']` is some important additional information on the web page (if available).
+- `location_codes_data['Other_systems']` is a `dict` for "[Other systems](http://www.railwaycodes.org.uk/crs/CRS1.shtm)".
 
 
 
-### 2.  Engineer's Line References (ELRs) <a name="elr"></a>
+### 2.  Get "Engineer's Line References (ELRs)" <a name="elr"></a>
+
+Now you need to use the class`line_data.ELRMileages`, which could just be assigned to any simpler variable, e.g.`em`
 
 ```python
-em = line_data_cls.ELRMileages
+em = line_data.ELRMileages
 ```
 
 
 
 #### 2.1  ELR codes <a name="elr-codes"></a>
 
-To get ELR codes starting with a specific letter, say `'A'`, by using the method `collect_elr_by_initial`, which returns a `dict`. 
+To get ELR codes starting with a specific letter, say `'A'`, you can use the method `collect_elr_by_initial`, which returns a `dict`. 
 
 ```python
-elr_a = em.collect_elr_by_initial('A')  # em.collect_elr_by_initial('a')
+elr_a = em.collect_elr_by_initial('A')  
+# Or elr_a = line_data.ELRMileages.collect_elr_by_initial('a')
 ```
 
 The keys of `elr_a` include: 
@@ -168,12 +175,12 @@ The keys of `elr_a` include:
 - `'A'`
 - `'Last_updated_date'`
 
-The corresponding values are:
+Their corresponding values are:
 
-- `elr_a['A']`  is a `pandas.DataFrame` that contains the table data. You may compare it with the table on the web page: http://www.railwaycodes.org.uk/elrs/elra.shtm
-- `elr_a['Last_updated_date']` is the date (in `str`) when the web page was last updated
+- `elr_a['A']`  is a `pandas.DataFrame` that contains the table data. You may compare it with the table on the [web page](http://www.railwaycodes.org.uk/elrs/elra.shtm).
+- `elr_a['Last_updated_date']` is the date (in `str`) when the web page was last updated.
 
-To get all available ELR codes, by using the method `fetch_elr`, which returns a `dict`:
+To get all available ELR codes, by using the method `fetch_elr`, which also returns a `dict`:
 
 ```python
 elr_codes = em.fetch_elr()
@@ -182,18 +189,18 @@ elr_codes = em.fetch_elr()
 The keys of `elr_codes` include: 
 
 - `'ELRs_mileages'`
-- `'Latest_updated_date'`
+- `'Latest_update_date'`
 
-The corresponding values are:
+Their corresponding values are:
 
-- `elr_codes['ELRs_mileages']`  is a `pandas.DataFrame` that contains all table data (from 'A' to 'Z')
-- `elr_codes['Latest_updated_date']` is the latest 'Last_updated_date' (in `str`) among all initial-specific table data
+- `elr_codes['ELRs_mileages']`  is a `pandas.DataFrame` that contains all table data (from 'A' to 'Z').
+- `elr_codes['Latest_updated_date']` is the latest 'Last_updated_date' (in `str`) among all initial-specific table data.
 
 
 
 #### 2.2  Mileage files <a name="mileage-files"></a>
 
-To collect more detailed mileage data for a given ELR, say `'AAM'`, by using the method `fetch_mileage_file`, which returns a `dict`:
+To collect more detailed mileage data for a given ELR, for example, `'AAM'`, you can use the method `fetch_mileage_file`, which returns a `dict`:
 
 ```python
 em_amm = em.fetch_mileage_file('AAM')
@@ -205,8 +212,9 @@ The keys of `em_amm` include:
 - `'Line'`
 - `'Sub-Line'`
 - `'AAM'`
+- `'Note'`
 
-The corresponding values are:
+Their corresponding values are:
 
 - `em_amm['ELR']`  is the name (in `str`) of the given ELR
 - `em_amm['Line']` is associated line name (in `str`) 
@@ -215,26 +223,26 @@ The corresponding values are:
 
 
 
-### 3.  Railway stations data <a name="railway-stations-data"></a>
+### 3.  Get "Railway stations data" <a name="railway-stations-data"></a>
 
-The data of railway stations belongs to another category, '[Other assets](http://www.railwaycodes.org.uk/otherassetsmenu.shtm)'
+The data of railway stations belongs to another category - "[Other assets](http://www.railwaycodes.org.uk/otherassetsmenu.shtm)"
 
 ```python
 from pyrcs.other_assets import OtherAssets
-other_assets_cls = OtherAssets()
+other_assets = OtherAssets()
 ```
 
-Similar to getting 'CRS, NLC, TIPLOC and STANOX Codes' above, to get stations data by a given initial letter (say 'A'):
+Similarly to **Sections** [**1.1**](#locations-beginning-with-a-given-letter) and [**2.1**](#elr-codes), to get stations data by a given initial letter (say `'A'`):
 
 ```python
-stations_a = other_assets_cls.Stations.collect_station_locations('A')
+stations_a = other_assets.Stations.collect_station_locations('A')
 ```
 
 To get all available stations data:
 
 ```python
-stations = other_assets_cls.Stations.fetch_station_locations()
+stations_data = other_assets.Stations.fetch_station_locations()
 ```
 
-The data type of both `stations_a` and `stations` are `dict`.
+Both the data types of `stations_a` and `stations_data` are `dict`. 
 
