@@ -53,7 +53,7 @@ class SignalBoxes:
             signal_box_prefix_codes = load_pickle(path_to_pickle)
 
         else:
-            sig_keys = [s + initial.upper() for s in ('Signal_boxes_', 'Last_updated_date_')]
+            sig_keys = [initial.upper(), 'Last_updated_date']
 
             if initial.upper() not in list(self.Catalogue.keys()):
                 print("No data is available for signal box codes beginning with \"{}\".".format(initial.upper()))
@@ -102,11 +102,11 @@ class SignalBoxes:
                 for x in string.ascii_lowercase]
 
         # Select DataFrames only
-        signal_boxes_data = (item['Signal_boxes_{}'.format(x)] for item, x in zip(data, string.ascii_uppercase))
+        signal_boxes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
         signal_boxes_data_table = pd.concat(signal_boxes_data, axis=0, ignore_index=True, sort=False)
 
         # Get the latest updated date
-        last_updated_dates = (item['Last_updated_date_{}'.format(x)] for item, x in zip(data, string.ascii_uppercase))
+        last_updated_dates = (item['Last_updated_date'] for item in data)
         latest_update_date = max(d for d in last_updated_dates if d != '')
 
         # Create a dict to include all information
