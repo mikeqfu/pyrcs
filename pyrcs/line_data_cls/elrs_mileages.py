@@ -15,6 +15,7 @@ import string
 
 import bs4
 import measurement.measures
+import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
@@ -58,7 +59,7 @@ def identify_multiple_measures(mileage_data):
             checked_mileage_data = temp_mileage_data
         elif 'One measure' in test_temp_node:
             sep_rows_idx = mileage_data[mileage_data.Node.str.contains('Alternative measure')].index[0]
-            mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
+            mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
             checked_mileage_data = {
                 'One measure': mileage_data_1[~mileage_data_1.Node.str.contains('One measure')],
                 'Alternative measure': mileage_data_2[~mileage_data_2.Node.str.contains('Alternative measure')]}
@@ -73,7 +74,7 @@ def identify_multiple_measures(mileage_data):
             alt_sep_rows_idx = [x in test_temp_node for x in test_temp_text]
             num_of_measures = sum(alt_sep_rows_idx)
             if num_of_measures == 1:  #
-                mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
+                mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
                 if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', test_temp_node[0]):
                     measure_ = re.sub(r'(Original)|(Former)|(Alternative)|(Usual)', r'Current',
                                       test_temp_node[0])
@@ -82,9 +83,9 @@ def identify_multiple_measures(mileage_data):
                 checked_mileage_data = {measure_: mileage_data_1.loc[0:sep_rows_idx, :],
                                         test_temp_node[0]: mileage_data_2.loc[sep_rows_idx + 1:, :]}
             elif num_of_measures == 2:  # e.g. elr='BTJ'
-                sep_rows_idx_items = [test_temp_text[x] for x in pd.np.where(alt_sep_rows_idx)[0]]
+                sep_rows_idx_items = [test_temp_text[x] for x in np.where(alt_sep_rows_idx)[0]]
                 sep_rows_idx = mileage_data[mileage_data.Node.isin(sep_rows_idx_items)].index[-1]
-                mileage_data_1, mileage_data_2 = pd.np.split(mileage_data, [sep_rows_idx], axis=0)
+                mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
                 sep_rows_idx_items_checked = [
                     mileage_data_1[mileage_data_1.Node.isin(sep_rows_idx_items)].Node.iloc[0],
                     mileage_data_2[mileage_data_2.Node.isin(sep_rows_idx_items)].Node.iloc[0]]

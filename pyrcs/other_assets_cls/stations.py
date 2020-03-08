@@ -21,6 +21,7 @@ import string
 import urllib.parse
 
 import bs4
+import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
@@ -111,7 +112,7 @@ class Stations:
 
                     def parse_degrees(x):
                         if x == '':
-                            y = pd.np.nan
+                            y = np.nan
                         else:
                             y = float(x.replace('c.', '') if x.startswith('c.') else x)
                         return y

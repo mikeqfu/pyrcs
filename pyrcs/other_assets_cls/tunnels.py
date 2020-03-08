@@ -9,6 +9,7 @@ import re
 import bs4
 import fuzzywuzzy.process
 import measurement.measures
+import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
@@ -64,10 +65,10 @@ class Tunnels:
             0m 48yd- (['0m 58yd'])
         """
         if re.match(r'[Uu]nknown', x):
-            length = pd.np.nan
+            length = np.nan
             add_info = 'Unknown'
         elif x == '':
-            length = pd.np.nan
+            length = np.nan
             add_info = 'Unavailable'
         elif re.match(r'\d+m \d+yd-.*\d+m \d+yd.*', x):
             miles_a, yards_a, miles_b, yards_b = re.findall(r'\d+', x)

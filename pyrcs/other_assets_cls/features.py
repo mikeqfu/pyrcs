@@ -7,6 +7,7 @@ import unicodedata
 import urllib.parse
 
 import bs4
+import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
@@ -35,7 +36,7 @@ def decode_vulgar_fraction(string):
 # Parse 'VULGAR FRACTION'
 def parse_vulgar_fraction_in_length(x):
     if x == '':
-        yd = pd.np.nan
+        yd = np.nan
     elif re.match(r'\d+yd', x):  # e.g. '620yd'
         yd = int(re.search(r'\d+(?=yd)', x).group(0))
     elif re.match(r'\d+&frac\d+;yd', x):  # e.g. '506&frac23;yd'
