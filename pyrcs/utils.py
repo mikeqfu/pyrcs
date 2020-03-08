@@ -2,6 +2,7 @@
 
 import collections
 import datetime
+import numbers
 import os
 import pickle
 import re
@@ -289,7 +290,7 @@ def parse_tr(header, trs) -> list:
             for y in to_repeat:
                 for j in range(1, y[0]):
                     if y[2] in tbl_lst[i] and y[2] != '\xa0':
-                        y[1] += pd.np.abs(tbl_lst[i].index(y[2]) - y[1])
+                        y[1] += np.abs(tbl_lst[i].index(y[2]) - y[1])
                     tbl_lst[i + j].insert(y[1], y[2])
 
     # if row_spanned:
@@ -589,3 +590,19 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
         location_name_repl_dict.update(new_items)
 
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
+
+
+# ====================================================================================================================
+""" Fixers """
+
+
+# Fix 'STANOX' if it is loaded as numbers
+def fix_num_stanox(stanox_x):
+
+    if isinstance(stanox_x, numbers.Number):
+        stanox_x = '' if pd.isna(stanox_x) else str(int(stanox_x))
+
+    if len(stanox_x) < 5 and stanox_x != '':
+        stanox_x = '0' * (5 - len(stanox_x)) + stanox_x
+
+    return stanox_x
