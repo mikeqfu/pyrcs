@@ -8,7 +8,19 @@ from pyrcs.line_data import LineData
 from pyrcs.other_assets import OtherAssets
 
 
-def update_pkg_backup_data(verbose=False):
+def update_package_data(verbose=False):
+    """
+    Update package data.
+
+    :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+    :type verbose: bool
+
+    **Example**::
+
+        verbose = True
+
+        update_package_data(verbose)
+    """
 
     if confirmed("To update resources?"):
 
@@ -74,6 +86,3 @@ def update_pkg_backup_data(verbose=False):
 
         if verbose:
             print("\nUpdate finished.")
-
-
-# update_pkg_metadata(verbose=True)
