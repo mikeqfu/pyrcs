@@ -1,16 +1,16 @@
 """ Other assets """
 
-from pyrcs.other_assets_cls import depots, features, signal_boxes, stations, tunnels, viaducts
-from pyrcs.utils import get_cls_menu
+from pyrcs.other_assets import *
+from utils import get_category_menu, homepage_url
 
 
 class OtherAssets:
     def __init__(self):
         # Basic info
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Other assets'
+        self.HomeURL = homepage_url()
         self.URL = self.HomeURL + '/otherassetsmenu.shtm'
-        self.Catalogue = get_cls_menu(self.URL)
+        self.Catalogue = get_category_menu(self.URL)
         # Classes
         self.SignalBoxes = signal_boxes.SignalBoxes()
         self.Tunnels = tunnels.Tunnels()
