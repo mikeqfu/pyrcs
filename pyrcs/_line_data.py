@@ -1,17 +1,16 @@
-""" Line data """
+""" A class for collecting line data """
 
-from pyrcs.line_data_cls import crs_nlc_tiploc_stanox, electrification, elrs_mileages, lor_codes
-from pyrcs.line_data_cls import line_names, track_diagrams
-from pyrcs.utils import get_cls_menu
+from pyrcs.line_data import *
+from utils import get_category_menu, homepage_url
 
 
 class LineData:
     def __init__(self):
         # Basic info
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
         self.Name = 'Line data'
-        self.URL = self.HomeURL + '/linedatamenu.shtm'
-        self.Catalogue = get_cls_menu(self.URL)
+        self.SourceURL = homepage_url()
+        self.URL = self.SourceURL + '/linedatamenu.shtm'
+        self.Catalogue = get_category_menu(self.URL)
         # Classes
         self.ELRMileages = elrs_mileages.ELRMileages()
         self.Electrification = electrification.Electrification()
