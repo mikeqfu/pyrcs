@@ -1,14 +1,7 @@
+""" A class for collecting Line Of Route (LOR) codes.
+
+Data source: http://www.railwaycodes.org.uk/pride/pride0.shtm
 """
-
-Data source: http://www.railwaycodes.org.uk
-
-Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes
-(http://www.railwaycodes.org.uk/pride/pride0.shtm)
-
-PRIDE numbers are now known as line of route (LOR) numbers.  The name has changed, but the codes are unchanged.
-
-"""
-
 
 import copy
 import os
@@ -20,97 +13,242 @@ import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.ops import confirmed
-from pyhelpers.store import load_pickle
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_tr
-from pyrcs.utils import save_pickle
+from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url, parse_tr
 
 
 class LOR:
+    """
+    A class for collecting `Line Of Route (LOR) codes`_.
+
+    .. _`Line Of Route (LOR) codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
+
+    :param data_dir: name of data directory, defaults to ``None``
+    :type data_dir: str, None
+
+    **Example**::
+
+        from pyrcs.line_data import LOR
+
+        lor = LOR()
+
+        print(lor.Name)
+        # Line of Route (LOR/PRIDE) codes
+
+        print(lor.SourceURL)
+        # http://www.railwaycodes.org.uk/pride/pride0.shtm
+    """
+
     def __init__(self, data_dir=None):
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
+        """
+        Constructor method.
+        """
         self.Name = 'Line of Route (LOR/PRIDE) codes'
-        self.URL = self.HomeURL + '/pride/pride0.shtm'
-        self.Catalogue = get_catalogue(self.URL)
-        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
+        self.HomeURL = homepage_url()
+        self.SourceURL = self.HomeURL + '/pride/pride0.shtm'
+        self.Catalogue = get_catalogue(self.SourceURL)
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "lor-codes")
         self.CurrentDataDir = copy.copy(self.DataDir)
+        self.Key = 'LOR'
+        self.LUDKey = 'Last_updated_date'
+        self.PKey = 'Key_to_prefixes'
+        self.ELCKey = 'ELR_LOR_converter'
 
-    # Change directory to "dat\\line-data\\lor-codes" and sub-directories
-    def cd_lor(self, *sub_dir):
+    def cdd_lor(self, *sub_dir):
+        """
+        Change directory to "dat\\line-data\\lor-codes" and sub-directories (and/or a file)
+
+        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :type sub_dir: str
+        :return: path to the backup data directory for ``LOR``
+        :rtype: str
+
+        :meta private:
+        """
+
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\line-data\\lor-codes\\dat" and sub-directories
-    def cdd_lor(self, *sub_dir):
-        path = self.cd_lor("dat")
-        for x in sub_dir:
-            path = os.path.join(path, x)
-        return path
+    def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
+        """
+        Get key to LOR code prefixes.
 
-    # Get key to LOR code prefixes
-    def get_key_to_prefixes(self, prefixes_only=True, update=False):
-        path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "key_to_"))
+        :param prefixes_only: whether to get only prefixes, defaults to ``True``
+        :type prefixes_only: bool
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: keys to LOR code prefixes
+        :rtype: list, dict
+
+        **Examples**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            update = False
+            verbose = True
+
+            prefixes_only = True
+            keys_to_prefixes = lor.get_keys_to_prefixes(prefixes_only, update, verbose)
+            print(keys_to_prefixes)
+            # ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
+
+            prefixes_only = False
+            keys_to_prefixes = lor.get_keys_to_prefixes(prefixes_only, update, verbose)
+            print(keys_to_prefixes)
+            # {'Key_to_prefixes': <data frame of keys to prefixes>,
+            #  'Last_update_date': <date>}
+        """
+
+        path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "keys-to-"))
         if os.path.isfile(path_to_pickle) and not update:
-            key_to_prefixes = load_pickle(path_to_pickle)
+            keys_to_prefixes = load_pickle(path_to_pickle, verbose=verbose)
+
         else:
             try:
-                lor_pref = pd.read_html(self.URL)[0].loc[:, [0, 2]]
+                lor_pref = pd.read_html(self.SourceURL)[0].loc[:, [0, 2]]
                 lor_pref.columns = ['Prefixes', 'Name']
-                if prefixes_only:
-                    key_to_prefixes = lor_pref.Prefixes.tolist()
-                else:
-                    key_to_prefixes = {'Key_to_prefixes': lor_pref, 'Last_update_date': self.Date}
-                save_pickle(key_to_prefixes, path_to_pickle)
-            except Exception as e:
-                print("Failed to get the \"key to prefixes\". {}.".format(e))
-                key_to_prefixes = [] if prefixes_only else {'Key_to_prefixes': None, 'Last_update_date': None}
-        return key_to_prefixes
 
-    # Get the urls to LOR codes with different prefixes
-    def get_lor_page_urls(self, update=False):
-        path_to_pickle = self.cdd_lor("urls.pickle")
+                if prefixes_only:
+                    keys_to_prefixes = lor_pref.Prefixes.tolist()
+                else:
+                    keys_to_prefixes = {self.PKey: lor_pref, self.LUDKey: self.Date}
+
+                save_pickle(keys_to_prefixes, path_to_pickle, verbose=verbose)
+
+            except Exception as e:
+                print("Failed to get the keys to LOR prefixes. {}.".format(e))
+                keys_to_prefixes = [] if prefixes_only else {self.PKey: None, self.LUDKey: None}
+
+        return keys_to_prefixes
+
+    def get_lor_page_urls(self, update=False, verbose=False):
+        """
+        Get URLs to LOR codes with different prefixes.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: a list of URLs of web pages hosting LOR codes for each prefix
+        :rtype: list
+
+        **Example**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            update = False
+            verbose = True
+
+            lor_page_urls = lor.get_lor_page_urls(update, verbose)
+            print(lor_page_urls)
+            # <a list urls>
+        """
+
+        path_to_pickle = self.cdd_lor("prefix-page-urls.pickle")
         if os.path.isfile(path_to_pickle) and not update:
-            urls = load_pickle(path_to_pickle)
+            lor_page_urls = load_pickle(path_to_pickle, verbose=verbose)
+
         else:
             try:
-                source = requests.get(self.URL)
+                source = requests.get(self.SourceURL, headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
+
                 links = soup.find_all('a', href=re.compile('^pride|elrmapping'),
                                       text=re.compile('.*(codes|converter|Historical)'))
-                urls = list(dict.fromkeys([self.URL.replace(os.path.basename(self.URL), x['href']) for x in links]))
-                save_pickle(urls, path_to_pickle)
+
+                lor_page_urls = list(dict.fromkeys([self.SourceURL.replace(os.path.basename(self.SourceURL), x['href'])
+                                                    for x in links]))
+
+                save_pickle(lor_page_urls, path_to_pickle, verbose=verbose)
+
             except Exception as e:
-                print("Failed to get the \"urls\" to LOR codes web pages. {}.".format(e))
-                urls = []
-        return urls
+                print("Failed to get the URLs to LOR codes web pages. {}.".format(e))
+                lor_page_urls = []
 
-    # Update catalogue data
-    def update_catalogue(self):
-        if confirmed("To update catalogue?"):
-            self.get_key_to_prefixes(prefixes_only=True, update=True)
-            self.get_key_to_prefixes(prefixes_only=False, update=True)
-            self.get_lor_page_urls(update=True)
+        return lor_page_urls
 
-    # Collect LOR codes by prefix
-    def collect_lor_codes_by_prefix(self, prefixes, update=False, verbose=False):
+    def update_catalogue(self, confirmation_required=True, verbose=False):
+        """
+        Update catalogue data including keys to prefixes and LOR page URLs.
 
-        assert prefixes in self.get_key_to_prefixes(prefixes_only=True), \
-            "\"prefixes\" must be one of {}".format(self.get_key_to_prefixes(prefixes_only=True))
+        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        """
 
-        pickle_filename = "{}.pickle".format(prefixes if prefixes not in ("NW", "NZ") else "NW-NZ").lower()
-        path_to_pickle = self.cd_lor("prefixes", pickle_filename)
+        if confirmed("To update catalogue? ", confirmation_required=confirmation_required):
+            self.get_keys_to_prefixes(prefixes_only=True, update=True, verbose=verbose)
+            self.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=verbose)
+            self.get_lor_page_urls(update=True, verbose=verbose)
+
+    def collect_lor_codes_by_prefix(self, prefix, update=False, verbose=False):
+        """
+        Collect LOR codes by a given prefix. 
+
+        :param prefix: prefix of LOR codes
+        :type prefix: str
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: LOR codes for the given ``prefix``
+        :rtype: dict, None
+
+        **Examples**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            verbose = True
+
+            prefix = 'CY'
+            update = False
+            lor_codes_cy = lor.collect_lor_codes_by_prefix(prefix, update, verbose)
+
+            print(lor_codes_by_initials)
+            # {'Code': <codes>,
+            #  'Note': <note>,
+            #  'Last_updated_date': <date>}
+
+            prefix = 'EA'
+            update = True
+            lor_codes_ea = lor.collect_lor_codes_by_prefix(prefix, update, verbose)
+
+            print(lor_codes_ea)
+            # {'Current system': <codes>,
+            #  'Original system': <codes>,
+            #  'Last_updated_date': <date>}
+        """
+
+        available_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
+        assert prefix in available_prefixes, "`prefix` must be one of {}".format(", ".join(available_prefixes))
+
+        pickle_filename = "{}.pickle".format(prefix if prefix not in ("NW", "NZ") else "NW-NZ").lower()
+        path_to_pickle = self.cdd_lor("prefixes", pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            lor_codes_by_initials = load_pickle(path_to_pickle)
+            lor_codes_by_initials = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
+            if verbose:
+                print("To collect LOR codes for the prefix \"{}\". ".format(prefix.upper()), end=" ... ")
+
             try:
-                prefixes = "NW" if prefixes in ("NW", "NZ") else prefixes
-                url = self.HomeURL + '/pride/pride{}.shtm'.format(prefixes.lower())
-                source = requests.get(url)
+                prefix = "NW" if prefix in ("NW", "NZ") else prefix
+                url = self.HomeURL + '/pride/pride{}.shtm'.format(prefix.lower())
+                source = requests.get(url, headers=fake_requests_headers())
                 source_text = source.text
                 source.close()
 
@@ -149,49 +287,111 @@ class LOR:
                     lor_codes_by_initials = dict(zip([x.text for x in h3], code_data_and_notes))
 
                 last_updated_date = get_last_updated_date(url)
-                lor_codes_by_initials.update({'Last_updated_date': last_updated_date})
+                lor_codes_by_initials.update({self.LUDKey: last_updated_date})
 
-                save_pickle(lor_codes_by_initials, path_to_pickle, verbose)
+                print("Done. ") if verbose else ""
+
+                save_pickle(lor_codes_by_initials, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect LOR codes with prefix \"{}\". {}".format(prefixes.upper(), e))
+                print("Failed. {}".format(prefix.upper(), e))
                 lor_codes_by_initials = None
 
         return lor_codes_by_initials
 
-    # Fetch all LOR codes either locally or from online
     def fetch_lor_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        prefixes = self.get_key_to_prefixes(prefixes_only=True, update=update)
+        """
+        Fetch LOR codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: LOR codes
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            lor_codes_data = lor.fetch_lor_codes(update, pickle_it, data_dir, verbose)
+
+            print(lor_codes_data)
+            # {'LOR': <codes>,
+            #  'Last_updated_date': <date>}
+        """
+
+        prefixes = self.get_keys_to_prefixes(prefixes_only=True, update=update, verbose=verbose)
         lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose) for p in prefixes if p != 'NZ']
 
         prefixes[prefixes.index('NW')] = 'NW-NZ'
         prefixes.remove('NZ')
 
-        lor_codes_data = dict(zip(prefixes, lor_codes))
+        lor_codes_data = {self.Key: dict(zip(prefixes, lor_codes))}
 
         # Get the latest updated date
-        last_updated_dates = (item['Last_updated_date'] for item, _ in zip(lor_codes, prefixes))
+        last_updated_dates = (item[self.LUDKey] for item, _ in zip(lor_codes, prefixes))
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        lor_codes_data.update({'Latest_update_date': latest_update_date})
+        lor_codes_data.update({self.LUDKey: latest_update_date})
 
         if pickle_it and data_dir:
             pickle_filename = "lor-codes.pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
-            save_pickle(lor_codes_data, path_to_pickle, verbose)
+            save_pickle(lor_codes_data, path_to_pickle, verbose=verbose)
 
         return lor_codes_data
 
-    # Collect ELR/LOR converter
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
-        if confirmed("To collect ELR/LOR converter?", confirmation_required=confirmation_required):
+        """
+        Collect ELR/LOR converter from source web page.
+
+        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of ELR/LOR converter
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            confirmation_required = True
+            verbose = True
+
+            elr_lor_converter = lor.collect_elr_lor_converter(confirmation_required, verbose)
+
+            print(elr_lor_converter)
+            # {'ELR_LOR_converter': <codes>,
+            #  'Last_updated_date': <date>}
+        """
+
+        if confirmed("To collect \"ELR/LOR converter\"? ", confirmation_required=confirmation_required):
             url = self.Catalogue['ELR/LOR converter']
+
+            if verbose:
+                print("Collecting \"ELR/LOR converter\"", end=" ... ")
+
             try:
                 headers, elr_lor_dat = pd.read_html(url)
                 elr_lor_dat.columns = list(headers)
                 #
-                source = requests.get(url)
+                source = requests.get(url, headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
                 tds = soup.find_all('td')
                 links = [x.get('href') for x in [x.find('a', href=True) for x in tds] if x is not None]
@@ -208,23 +408,56 @@ class LOR:
                 elr_lor_dat['ELR_URL'] = [urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
                 elr_lor_dat['LOR_URL'] = [self.HomeURL + 'pride/' + x for x in lor_links]
                 #
-                elr_lor_converter = {'ELR_LOR_converter': elr_lor_dat, 'Last_updated_date': get_last_updated_date(url)}
+                elr_lor_converter = {self.ELCKey: elr_lor_dat, self.LUDKey: get_last_updated_date(url)}
 
-                save_pickle(elr_lor_converter, self.cd_lor("elr-lor-converter.pickle"), verbose)
+                print("Done. ") if verbose else ""
+
+                save_pickle(elr_lor_converter, self.cdd_lor("elr-lor-converter.pickle"), verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect \"ELR/LOR converter\". {}".format(e))
+                print("Failed. {}".format(e))
                 elr_lor_converter = None
 
             return elr_lor_converter
 
-    # Fetch ELR/LOR converter
     def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        """
+        Fetch ELR/LOR converter from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of ELR/LOR converter
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.line_data import LOR
+
+            lor = LOR()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            elr_lor_converter = lor.fetch_elr_lor_converter(update, pickle_it, data_dir, verbose)
+
+            print(elr_lor_converter)
+            # {'ELR_LOR_converter': <codes>,
+            #  'Last_updated_date': <date>}
+        """
+
         pickle_filename = "elr-lor-converter.pickle"
-        path_to_pickle = self.cd_lor(pickle_filename)
+        path_to_pickle = self.cdd_lor(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            elr_lor_converter = load_pickle(path_to_pickle)
+            elr_lor_converter = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             elr_lor_converter = self.collect_elr_lor_converter(confirmation_required=False,
@@ -233,7 +466,7 @@ class LOR:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
-                    save_pickle(elr_lor_converter, path_to_pickle, verbose=True)
+                    save_pickle(elr_lor_converter, path_to_pickle, verbose=verbose)
             else:
                 print("No data of \"ELR/LOR converter\" has been collected for national network OLE installations.")
 
