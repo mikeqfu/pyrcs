@@ -190,10 +190,11 @@ class LocationIdentifiers:
             #  'Notes': <notes>}
         """
 
-        if confirmed("To collect {}?".format(self.MSCENKey.lower()), confirmation_required=confirmation_required):
+        if confirmed("To collect data of {}?".format(self.MSCENKey.lower()),
+                     confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting {}".format(self.MSCENKey.lower()), end=" ... ")
+                print("Collecting data of {}".format(self.MSCENKey.lower()), end=" ... ")
 
             try:
                 note_url = self.HomeURL + '/crs/CRS2.shtm'
@@ -304,10 +305,10 @@ class LocationIdentifiers:
             #  ...}
         """
 
-        if confirmed("To collect other systems codes?", confirmation_required=confirmation_required):
+        if confirmed("To collect data of {}?".format(self.OSKey.lower()), confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("To collect location codes for other systems", end=" ... ")
+                print("To collect data of {}".format(self.OSKey.lower()), end=" ... ")
 
             try:
                 source = requests.get(self.Catalogue['Other systems'], headers=fake_requests_headers())
@@ -377,7 +378,7 @@ class LocationIdentifiers:
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.OSPickle + ".pickle")
                     save_pickle(other_systems_codes, path_to_pickle, verbose=True)
             else:
-                print("No data of other systems codes has been collected.")
+                print("No data of {} has been collected.".format(self.OSKey.lower()))
 
         return other_systems_codes
 
