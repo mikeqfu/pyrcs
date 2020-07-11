@@ -4,8 +4,10 @@ Data source: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 """
 
 import copy
+import itertools
 import os
 import re
+import urllib.parse
 
 import bs4
 import pandas as pd
@@ -41,15 +43,23 @@ class Electrification:
         """
         Constructor method.
         """
-        self.Name = 'Electrification'
+        self.Name = 'Electrification masts and related features'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/electrification/mast_prefix0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", 'electrification')
-        self.CurrentDataDir = copy.copy(self.DataDir)
         self.Key = 'Electrification'
-        self.LUDKey = 'Last_updated_date'  # key to last updated date
+        self.LUDKey = 'Last updated date'  # key to last updated date
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
+        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.NationalNetworkKey = 'National network'
+        self.NationalNetworkPickle = self.NationalNetworkKey.lower().replace(" ", "-")
+        self.IndependentLinesKey = 'Independent lines'
+        self.IndependentLinesPickle = self.IndependentLinesKey.lower().replace(" ", "-")
+        self.OhnsKey = 'National network neutral sections'
+        self.OhnsPickle = self.OhnsKey.lower().replace(" ", "-")
+        self.TariffZonesKey = 'National network energy tariff zones'
+        self.TariffZonesPickle = self.TariffZonesKey.lower().replace(" ", "-")
 
     def cdd_elec(self, *sub_dir):
         """
@@ -75,8 +85,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
-        :return: OLE section codes for National network, in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
+        :type verbose: bool, int
+        :return: OLE section codes for National network
         :rtype: dict, None
 
         **Example**::
@@ -89,26 +99,24 @@ class Electrification:
             verbose = True
 
             national_network_ole = elec.collect_codes_for_national_network(confirmation_required, verbose)
+            # To collect section codes for OLE installations: national network? [No]|Yes: >? yes
 
             print(national_network_ole)
-            # {<name>: <code>,
-            #  ...,
+            # {'National network': <code>,
             #  'Last_updated_date': <date>}
         """
 
-        if confirmed("To collect section codes for OLE installations: national network? ",
+        if confirmed("To collect section codes for OLE installations: {}?".format(self.NationalNetworkKey.lower()),
                      confirmation_required=confirmation_required):
 
-            title_name = 'National network'
-            url = self.Catalogue[title_name]
+            if verbose == 2:
+                print("Collecting the codes for {}".format(self.NationalNetworkKey.lower()), end=" ... ")
 
-            if verbose:
-                print("Collecting the section codes for OLE installations: national network", end=" ... ")
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(self.Catalogue[self.NationalNetworkKey], headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                national_network_ole, h3 = {}, soup.find('h3')
+                national_network_ole_, h3 = {}, soup.find('h3')
                 while h3:
                     header_tag = h3.find_next('table')
                     if header_tag:
@@ -138,18 +146,18 @@ class Electrification:
                             notes['Notes'] = [notes['Notes'], notes_]
 
                     data_key = re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0)
-                    national_network_ole.update({data_key.strip(): {'Codes': table, **notes}})
+                    national_network_ole_.update({data_key.strip(): table, **notes})
 
                     h3 = h3.find_next_sibling('h3')
 
                 source.close()
 
-                last_updated_date = get_last_updated_date(url)
-                national_network_ole.update({self.LUDKey: last_updated_date})
+                last_updated_date = get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
+                national_network_ole = {self.NationalNetworkKey: national_network_ole_, self.LUDKey: last_updated_date}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(title_name.lower().replace(" ", "-") + ".pickle")
+                path_to_pickle = self.cdd_elec(self.NationalNetworkPickle + ".pickle")
                 save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -169,7 +177,7 @@ class Electrification:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OLE section codes for National network, in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict, None
 
@@ -193,8 +201,7 @@ class Electrification:
             #  'Last_updated_date': <date>}
         """
 
-        pickle_filename = "national-network.pickle"
-        path_to_pickle = self.cdd_elec(pickle_filename)
+        path_to_pickle = self.cdd_elec(self.NationalNetworkPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             national_network_ole = load_pickle(path_to_pickle, verbose=verbose)
@@ -206,10 +213,10 @@ class Electrification:
             if national_network_ole:  # codes_for_ole is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.NationalNetworkPickle + ".pickle")
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes has been collected for national network OLE installations.")
+                print("No data of {} has been collected.".format(self.NationalNetworkKey.lower()))
 
         return national_network_ole
 
@@ -232,8 +239,7 @@ class Electrification:
             # a list of independent line names
         """
 
-        url = self.Catalogue['Independent lines']
-        source = requests.get(url, headers=fake_requests_headers())
+        source = requests.get(self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
         soup = bs4.BeautifulSoup(source.text, 'lxml')
         for x in soup.find_all('p'):
             if re.match(r'^Jump to: ', x.text):
@@ -247,8 +253,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
-        :return: OLE section codes for independent lines, in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
+        :type verbose: bool, int
+        :return: OLE section codes for independent lines
         :rtype: dict, None
 
         **Example**::
@@ -261,21 +267,24 @@ class Electrification:
             verbose = True
 
             independent_lines_ole = elec.collect_codes_for_independent_lines(confirmation_required, verbose)
+            # To collect section codes for OLE installations: independent lines? [No]|Yes: >? yes
+
+            print(independent_lines_ole)
+            # {'Independent lines': <codes>,
+            #  'Last updated date': <date>}
         """
 
-        if confirmed("To collect section codes for OLE installations: independent lines?",
+        if confirmed("To collect section codes for OLE installations: {}?".format(self.IndependentLinesKey.lower()),
                      confirmation_required=confirmation_required):
 
-            title_name = 'Independent lines'
-            url = self.Catalogue[title_name]
+            if verbose == 2:
+                print("Collecting the codes for {}".format(self.IndependentLinesKey.lower()), end=" ... ")
 
-            if verbose:
-                print("Collecting the section codes for OLE installations: independent lines", end=" ... ")
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                independent_lines_ole = {}
+                independent_lines_ole_ = {}
                 h3 = soup.find('h3')
                 while h3:
                     header_tag, table = h3.find_next('table'), None
@@ -316,18 +325,20 @@ class Electrification:
                                                    for x in ex_note_tag.find_all('li')), columns=['Initial', 'Code'])
                             notes.update({'Section codes known at present': li})
 
-                    independent_lines_ole.update({h3.text: {'Codes': table, **notes}})
+                    independent_lines_ole_.update({h3.text: table, **notes})
 
                     h3 = h3.find_next_sibling('h3')
 
                 source.close()
 
-                last_updated_date = get_last_updated_date(url)
-                independent_lines_ole.update({self.LUDKey: last_updated_date})
+                last_updated_date = get_last_updated_date(self.Catalogue[self.IndependentLinesKey])
+                independent_lines_ole = {self.IndependentLinesKey: independent_lines_ole_,
+                                         self.LUDKey: last_updated_date}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(title_name.lower().replace(" ", "-") + ".pickle")
+                pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
+                path_to_pickle = self.cdd_elec(pickle_filename)
                 save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -347,7 +358,7 @@ class Electrification:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OLE section codes for independent lines, in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict
 
@@ -366,7 +377,7 @@ class Electrification:
                                                                            verbose)
         """
 
-        pickle_filename = "independent-lines.pickle"
+        pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
         path_to_pickle = self.cdd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -382,7 +393,7 @@ class Electrification:
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes has been collected for independent lines OLE installations.")
+                print("No data of {} has been collected.".format(self.IndependentLinesKey.lower()))
 
         return independent_lines_ole
 
@@ -393,7 +404,7 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OHNS codes in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict, None
 
@@ -407,26 +418,31 @@ class Electrification:
             verbose = True
 
             ohns_codes = elec.collect_codes_for_ohns(confirmation_required, verbose)
+            # To collect section codes for OLE installations: national network neutral sections? [No]|Yes:
+            # >? yes
+
+            print(ohns_codes)
+            # {'National network neutral sections': <codes>,
+            #  'Last updated date': <date>}
         """
 
-        if confirmed("To collect codes for OLE neutral sections (OHNS)?", confirmation_required=confirmation_required):
+        if confirmed("To collect section codes for OLE installations: {}?".format(self.OhnsKey.lower()),
+                     confirmation_required=confirmation_required):
 
-            title_name = 'National network neutral sections'
-            url = self.Catalogue[title_name]
+            if verbose == 2:
+                print("Collecting data of {}".format(self.OhnsKey.lower()), end=" ... ")
 
-            if verbose:
-                print("Collecting OHNS codes", end=" ... ")
             try:
-                header, neutral_sections_data = pd.read_html(url)
+                header, neutral_sections_data = pd.read_html(self.Catalogue[self.OhnsKey])
                 neutral_sections_data.columns = header.columns.to_list()
                 neutral_sections_data.fillna('', inplace=True)
 
-                last_updated_date = get_last_updated_date(url)
-                ohns_codes = {'Codes': neutral_sections_data, self.LUDKey: last_updated_date}
+                ohns_codes = {self.OhnsKey: neutral_sections_data,
+                              self.LUDKey: get_last_updated_date(self.Catalogue[self.OhnsKey])}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(title_name.lower().replace(" ", "-") + ".pickle")
+                path_to_pickle = self.cdd_elec(self.OhnsPickle + ".pickle")
                 save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -446,7 +462,7 @@ class Electrification:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OHNS codes in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict
 
@@ -464,8 +480,7 @@ class Electrification:
             ohns_codes = elec.fetch_codes_for_ohns(update, pickle_it, data_dir, verbose)
         """
 
-        pickle_filename = "national-network-neutral-sections.pickle"
-        path_to_pickle = self.cdd_elec(pickle_filename)
+        path_to_pickle = self.cdd_elec(self.OhnsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             ohns_codes = load_pickle(path_to_pickle, verbose=verbose)
@@ -477,10 +492,10 @@ class Electrification:
             if ohns_codes:  # ohns is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes for OHNS has been collected.")
+                print("No data of section codes for {} has been collected.".format(self.OhnsKey.lower()))
 
         return ohns_codes
 
@@ -491,7 +506,7 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OLE section codes for national network energy tariff zones,
             in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict, None
@@ -506,21 +521,25 @@ class Electrification:
             verbose = True
 
             etz_ole = elec.collect_codes_for_energy_tariff_zones(confirmation_required, verbose)
+            # To collect section codes for OLE installations: national network energy tariff zones? [No]|Yes:
+            # >? yes
+
+            print(etz_ole)
+            # {'National network energy tariff zones': <codes>,
+            #  'Last updated date': <date>}
         """
 
-        if confirmed("To collect codes for the UK railway electrification tariff zones?",
+        if confirmed("To collect section codes for OLE installations: {}?".format(self.TariffZonesKey.lower()),
                      confirmation_required=confirmation_required):
 
-            title_name = 'National network energy tariff zones'
-            url = self.Catalogue[title_name]
+            if verbose == 2:
+                print("Collecting the codes for {}".format(self.TariffZonesKey.lower()), end=" ... ")
 
-            if verbose:
-                print("Collecting OLE sections codes for the UK railway electrification tariff zones", end=" ... ")
             try:
-                source = requests.get(url)
+                source = requests.get(self.Catalogue[self.TariffZonesKey], headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                etz_ole = {}
+                etz_ole_ = {}
                 h3 = soup.find('h3')
                 while h3:
                     header_tag, table = h3.find_next('table'), None
@@ -544,18 +563,18 @@ class Electrification:
                             break
                     notes = ' '.join(notes).strip()
 
-                    etz_ole.update({h3.text: {'Codes': table, 'Notes': notes}})
+                    etz_ole_.update({h3.text: table, 'Notes': notes})
 
                     h3 = h3.find_next_sibling('h3')
 
                 source.close()
 
-                last_updated_date = get_last_updated_date(url)
-                etz_ole.update({self.LUDKey: last_updated_date})
+                etz_ole = {self.TariffZonesKey: etz_ole_,
+                           self.LUDKey: get_last_updated_date(self.Catalogue[self.TariffZonesKey])}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(title_name.lower().replace(" ", "-") + ".pickle")
+                path_to_pickle = self.cdd_elec(self.TariffZonesPickle + ".pickle")
                 save_pickle(etz_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -575,7 +594,7 @@ class Electrification:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: OLE section codes for national network energy tariff zones,
             in the form {<name>: <code>, ..., 'Last_updated_date': <date>}
         :rtype: dict
@@ -594,8 +613,7 @@ class Electrification:
             etz_ole = elec.fetch_codes_for_energy_tariff_zones(update, pickle_it, data_dir, verbose)
         """
 
-        pickle_filename = "national-network-energy-tariff-zones.pickle"
-        path_to_pickle = self.cdd_elec(pickle_filename)
+        path_to_pickle = self.cdd_elec(self.TariffZonesPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             etz_ole = load_pickle(path_to_pickle, verbose=verbose)
@@ -607,10 +625,10 @@ class Electrification:
             if etz_ole:  # codes_for_energy_tariff_zones is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.TariffZonesPickle + ".pickle")
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes has been collected for the UK railway electrification tariff zones.")
+                print("No data of {} has been collected.".format(self.TariffZonesKey.lower()))
 
         return etz_ole
 
@@ -625,7 +643,7 @@ class Electrification:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
 
@@ -638,24 +656,25 @@ class Electrification:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
+            verbose = False
 
             ole_section_codes = elec.fetch_electrification_codes(update, pickle_it, data_dir, verbose)
+
+            print(ole_section_codes)
+            # {'Electrification': <codes>,
+            #  'Latest update date': <date>}
         """
 
-        national_network = self.fetch_codes_for_national_network(update, verbose=verbose)
-        independent_lines = self.fetch_codes_for_independent_lines(update, verbose=verbose)
-        ohns = self.fetch_codes_for_ohns(update, verbose=verbose)
-        energy_tariff_zones = self.fetch_codes_for_energy_tariff_zones(update, verbose=verbose)
+        codes = []
+        for func in dir(self):
+            if func.startswith('fetch_codes_for_'):
+                codes.append(getattr(self, func)(update=update, verbose=verbose))
 
-        keys = list(self.Catalogue.keys())
-        keys.remove('Introduction')
-
-        ole_section_codes = {
-            self.Key: dict(zip(keys, [national_network, independent_lines, ohns, energy_tariff_zones]))}
+        ole_section_codes = {self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
+                             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
 
         if pickle_it and data_dir:
-            pickle_filename = "electrification-codes.pickle"
+            pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(ole_section_codes, path_to_pickle, verbose=verbose)
