@@ -47,14 +47,14 @@ class LOR:
         self.Name = 'Line of Route (LOR/PRIDE) codes'
         self.HomeURL = homepage_url()
         self.SourceURL = self.HomeURL + '/pride/pride0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL)
+        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "lor-codes")
-        self.CurrentDataDir = copy.copy(self.DataDir)
         self.Key = 'LOR'
-        self.LUDKey = 'Last_updated_date'
-        self.PKey = 'Key_to_prefixes'
-        self.ELCKey = 'ELR_LOR_converter'
+        self.LUDKey = 'Last updated date'
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
+        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.PKey = 'Key to prefixes'
+        self.ELCKey = 'ELR/LOR converter'
 
     def cdd_lor(self, *sub_dir):
         """
@@ -103,11 +103,12 @@ class LOR:
             prefixes_only = False
             keys_to_prefixes = lor.get_keys_to_prefixes(prefixes_only, update, verbose)
             print(keys_to_prefixes)
-            # {'Key_to_prefixes': <data frame of keys to prefixes>,
-            #  'Last_update_date': <date>}
+            # {'Key to prefixes': <data frame of keys to prefixes>,
+            #  'Last update date': <date>}
         """
 
         path_to_pickle = self.cdd_lor("{}prefixes.pickle".format("" if prefixes_only else "keys-to-"))
+
         if os.path.isfile(path_to_pickle) and not update:
             keys_to_prefixes = load_pickle(path_to_pickle, verbose=verbose)
 
@@ -216,38 +217,46 @@ class LOR:
             prefix = 'CY'
             update = False
             lor_codes_cy = lor.collect_lor_codes_by_prefix(prefix, update, verbose)
+            print(lor_codes_cy)
+            # {'CY': <codes>,
+            #  'Notes': <notes>,
+            #  'Last updated date': <date>}
 
-            print(lor_codes_by_initials)
-            # {'Code': <codes>,
-            #  'Note': <note>,
-            #  'Last_updated_date': <date>}
+            prefix = 'NW'
+            update = False
+            lor_codes_nw = lor.collect_lor_codes_by_prefix(prefix, update, verbose)
+            print(lor_codes_nw)
+            # {'NW/NZ': <codes>,
+            #  'Notes': <codes>,
+            #  'Last updated date': <date>}
 
             prefix = 'EA'
             update = True
             lor_codes_ea = lor.collect_lor_codes_by_prefix(prefix, update, verbose)
-
             print(lor_codes_ea)
-            # {'Current system': <codes>,
-            #  'Original system': <codes>,
-            #  'Last_updated_date': <date>}
+            # {'EA': <codes>,
+            #  'Last updated date': <date>}
         """
 
         available_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
         assert prefix in available_prefixes, "`prefix` must be one of {}".format(", ".join(available_prefixes))
 
-        pickle_filename = "{}.pickle".format(prefix if prefix not in ("NW", "NZ") else "NW-NZ").lower()
+        pickle_filename = "{}.pickle".format("nw-nz" if prefix.upper() in ("NW", "NZ") else prefix.lower())
         path_to_pickle = self.cdd_lor("prefixes", pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             lor_codes_by_initials = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
-            if verbose:
+            if verbose == 2:
                 print("To collect LOR codes for the prefix \"{}\". ".format(prefix.upper()), end=" ... ")
 
             try:
-                prefix = "NW" if prefix in ("NW", "NZ") else prefix
-                url = self.HomeURL + '/pride/pride{}.shtm'.format(prefix.lower())
+                if prefix in ("NW", "NZ"):
+                    url = self.HomeURL + '/pride/pridenw.shtm'
+                    prefix = "NW/NZ"
+                else:
+                    url = self.HomeURL + '/pride/pride{}.shtm'.format(prefix.lower())
                 source = requests.get(url, headers=fake_requests_headers())
                 source_text = source.text
                 source.close()
@@ -280,16 +289,16 @@ class LOR:
                 h3, table_soup = soup.find_all('h3'), soup.find_all('table')
                 if len(h3) == 0:
                     code_data, code_data_notes = parse_h3_table(table_soup)
-                    lor_codes_by_initials = {'Code': code_data, 'Note': code_data_notes}
+                    lor_codes_by_initials = {prefix: code_data, 'Notes': code_data_notes}
                 else:
-                    code_data_and_notes = [dict(zip(['Code', 'Note'], parse_h3_table(x)))
+                    code_data_and_notes = [dict(zip([prefix, 'Notes'], parse_h3_table(x)))
                                            for x in zip(*[iter(table_soup)] * 2)]
-                    lor_codes_by_initials = dict(zip([x.text for x in h3], code_data_and_notes))
+                    lor_codes_by_initials = {prefix: dict(zip([x.text for x in h3], code_data_and_notes))}
 
                 last_updated_date = get_last_updated_date(url)
                 lor_codes_by_initials.update({self.LUDKey: last_updated_date})
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
                 save_pickle(lor_codes_by_initials, path_to_pickle, verbose=verbose)
 
@@ -335,7 +344,7 @@ class LOR:
         prefixes = self.get_keys_to_prefixes(prefixes_only=True, update=update, verbose=verbose)
         lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose) for p in prefixes if p != 'NZ']
 
-        prefixes[prefixes.index('NW')] = 'NW-NZ'
+        prefixes[prefixes.index('NW')] = 'NW/NZ'
         prefixes.remove('NZ')
 
         lor_codes_data = {self.Key: dict(zip(prefixes, lor_codes))}
@@ -375,17 +384,19 @@ class LOR:
             verbose = True
 
             elr_lor_converter = lor.collect_elr_lor_converter(confirmation_required, verbose)
+            # To collect "ELR/LOR converter"?  [No]|Yes: >? yes
 
             print(elr_lor_converter)
-            # {'ELR_LOR_converter': <codes>,
-            #  'Last_updated_date': <date>}
+            # {'ELR/LOR converter': <codes>,
+            #  'Last updated date': <date>}
         """
 
-        if confirmed("To collect \"ELR/LOR converter\"? ", confirmation_required=confirmation_required):
-            url = self.Catalogue['ELR/LOR converter']
+        if confirmed("To collect data of {}?".format(self.ELCKey), confirmation_required=confirmation_required):
 
-            if verbose:
-                print("Collecting \"ELR/LOR converter\"", end=" ... ")
+            url = self.Catalogue[self.ELCKey]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.ELCKey), end=" ... ")
 
             try:
                 headers, elr_lor_dat = pd.read_html(url)
@@ -410,9 +421,10 @@ class LOR:
                 #
                 elr_lor_converter = {self.ELCKey: elr_lor_dat, self.LUDKey: get_last_updated_date(url)}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                save_pickle(elr_lor_converter, self.cdd_lor("elr-lor-converter.pickle"), verbose=verbose)
+                pickle_filename = re.sub(r"[/ ]", "-", self.ELCKey.lower()) + ".pickle"
+                save_pickle(elr_lor_converter, self.cdd_lor(pickle_filename), verbose=verbose)
 
             except Exception as e:
                 print("Failed. {}".format(e))
@@ -449,11 +461,11 @@ class LOR:
             elr_lor_converter = lor.fetch_elr_lor_converter(update, pickle_it, data_dir, verbose)
 
             print(elr_lor_converter)
-            # {'ELR_LOR_converter': <codes>,
-            #  'Last_updated_date': <date>}
+            # {'ELR/LOR converter': <codes>,
+            #  'Last updated date': <date>}
         """
 
-        pickle_filename = "elr-lor-converter.pickle"
+        pickle_filename = re.sub(r"[/ ]", "-", self.ELCKey.lower()) + ".pickle"
         path_to_pickle = self.cdd_lor(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -468,6 +480,6 @@ class LOR:
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(elr_lor_converter, path_to_pickle, verbose=verbose)
             else:
-                print("No data of \"ELR/LOR converter\" has been collected for national network OLE installations.")
+                print("No data of {} has been collected.".format(self.ELCKey))
 
         return elr_lor_converter
