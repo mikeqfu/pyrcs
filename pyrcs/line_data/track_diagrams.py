@@ -1,6 +1,10 @@
 """ A class for collecting British railway track diagrams.
 
 Data source: http://www.railwaycodes.org.uk/track/diagrams0.shtm
+
+.. todo::
+
+   All.
 """
 
 import copy
@@ -56,7 +60,8 @@ class TrackDiagrams:
             cold_soup = h3.find_next('div', attrs={'class': 'columns'})
             if cold_soup:
                 info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
-                urls = [urllib.parse.urljoin(os.path.dirname(self.SourceURL), x['href']) for x in cold_soup.find_all('a')]
+                urls = [urllib.parse.urljoin(os.path.dirname(self.SourceURL), a.get('href'))
+                        for a in cold_soup.find_all('a')]
             else:
                 cold_soup = h3.find_next('a', attrs={'target': '_blank'})
                 info, urls = [], []
@@ -71,10 +76,14 @@ class TrackDiagrams:
 
         self.Catalogue = items
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "track_diagrams")
+        self.Key = 'Track diagrams'
+        self.LUDKey = 'Last updated date'
+        if data_dir:
+            self.DataDir = regulate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "...dat\\line-data\\track_diagrams\\" and sub-directories
     def cdd_td(self, *sub_dir):
         """
         Change directory to "dat\\line-data\\track-diagrams" and sub-directories (and/or a file)
