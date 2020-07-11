@@ -1,5 +1,9 @@
-""" Depots """
+""" A class for collecting depots codes.
 
+Data source: http://www.railwaycodes.org.uk/depots/depots0.shtm
+"""
+
+import copy
 import os
 import re
 
@@ -8,41 +12,105 @@ import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.ops import confirmed
-from pyhelpers.store import load_pickle
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date
-from pyrcs.utils import save_pickle
+from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url
 
 
 class Depots:
+    """
+    A class for collecting `depot codes`_.
+
+    .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
+
+    :param data_dir: name of data directory, defaults to ``None``
+    :type data_dir: str, None
+
+    **Example**::
+
+        from pyrcs.other_assets import Depots
+
+        depots = Depots()
+
+        print(depots.Name)
+        # Depot codes
+
+        print(depots.SourceURL)
+        # http://www.railwaycodes.org.uk/depots/depots0.shtm
+    """
+
     def __init__(self, data_dir=None):
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
+        """
+        Constructor method.
+        """
         self.Name = 'Depot codes'
-        self.URL = self.HomeURL + '/depots/depots0.shtm'
-        self.Catalogue = get_catalogue(self.URL)
-        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "depots")
-        self.CurrentDataDir = self.DataDir
+        self.HomeURL = homepage_url()
+        self.SourceURL = self.HomeURL + '/depots/depots0.shtm'
+        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+        self.Key = 'Depots'
+        self.LUDKey = 'Last updated date'  # key to last updated date
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
+        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = list(self.Catalogue.keys())[1:]
+        self.TCTPickle = self.TCTKey.replace(" ", "-").lower()
+        self.FDPTPickle = re.sub(r'[ -]', '-', self.FDPTKey).lower()
+        self.S1950Pickle = re.sub(r' \(|\) | ', '-', self.S1950Key).lower()
+        self.GWRPickle = self.GWRKey.replace(" ", "-").lower()
 
-    # Change directory to "dat\\other-assets\\depots\\"
-    def cd_depots(self, *directories):
+    def cdd_depots(self, *sub_dir):
+        """
+        Change directory to "dat\\other-assets\\depots\\" and sub-directories (and/or a file)
+
+        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :type sub_dir: str
+        :return: path to the backup data directory for ``Depots``
+        :rtype: str
+
+        :meta private:
+        """
+
         path = self.DataDir
-        for x in directories:
-            path = os.path.join(path, x)
-        return path
-
-    # Change directory to "dat\\other-assets\\depots\\dat"
-    def cdd_sigbox(self, *sub_dir):
-        path = self.cd_depots("dat")
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Collect 'Two character TOPS codes'
     def collect_two_char_tops_codes(self, confirmation_required=True, verbose=False):
-        if confirmed("To collect two character TOPS codes?", confirmation_required=confirmation_required):
-            title_name = list(self.Catalogue.keys())[1]
-            url = self.Catalogue[title_name]
+        """
+        Collect two-character TOPS codes from source web page.
+
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of two-character TOPS codes and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            confirmation_required = True
+            verbose = True
+
+            two_char_tops_codes_data = depots.collect_two_char_tops_codes(confirmation_required, verbose)
+            # To collect two character TOPS codes? [No]|Yes:
+            # >? yes
+
+            print(two_char_tops_codes_data)
+            # {'Two character TOPS codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        if confirmed("To collect data of {}?".format(self.TCTKey[:1].lower() + self.TCTKey[1:]),
+                     confirmation_required=confirmation_required):
+
+            url = self.Catalogue[self.TCTKey]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.TCTKey[:1].lower() + self.TCTKey[1:]), end=" ... ")
 
             try:
                 header, two_char_tops_codes = pd.read_html(url, na_values=[''], keep_default_na=False)
@@ -51,48 +119,114 @@ class Depots:
 
                 last_updated_date = get_last_updated_date(url)
 
-                two_char_tops_codes_data = {title_name.replace(' ', '_'): two_char_tops_codes,
-                                            'Last_updated_date': last_updated_date}
+                two_char_tops_codes_data = {self.TCTKey: two_char_tops_codes, self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
-                save_pickle(two_char_tops_codes_data, path_to_pickle, verbose)
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_depots(self.TCTPickle + ".pickle")
+                save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect \"{}\". {}".format(title_name, e))
+                print("Failed. {}".format(e))
                 two_char_tops_codes_data = None
 
             return two_char_tops_codes_data
 
-    # Fetch 'Two character TOPS codes'
     def fetch_two_char_tops_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = list(self.Catalogue.keys())[1]
-        path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
+        """
+        Fetch two-character TOPS codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of two-character TOPS codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            two_char_tops_codes_data = depots.fetch_two_char_tops_codes(update, pickle_it, data_dir,
+                                                                        verbose)
+
+            print(two_char_tops_codes_data)
+            # {'Two character TOPS codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_depots(self.TCTPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            two_char_tops_codes_data = load_pickle(path_to_pickle)
+            two_char_tops_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             two_char_tops_codes_data = self.collect_two_char_tops_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if two_char_tops_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=True)
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.TCTPickle + ".pickle")
+                    save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of \"{}\" has been collected.".format(title_name))
+                print("No data of {} has been collected.".format(self.TCTKey[:1].lower() + self.TCTKey[1:]))
+
         return two_char_tops_codes_data
 
-    # Collect 'Four digit pre-TOPS codes'
     def collect_four_digit_pre_tops_codes(self, confirmation_required=True, verbose=False):
-        if confirmed("To collect four digit pre-TOPS codes?", confirmation_required=confirmation_required):
-            title_name = list(self.Catalogue.keys())[2]
-            path_to_pickle = self.cd_depots(re.sub(r'[ -]', '-', title_name).lower() + ".pickle")
+        """
+        Collect four-digit pre-TOPS codes from source web page.
 
-            url = self.Catalogue[title_name]
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of two-character TOPS codes and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            confirmation_required = True
+            verbose = True
+
+            four_digit_pre_tops_codes_data = depots.collect_four_digit_pre_tops_codes(
+                confirmation_required, verbose)
+            # To collect four digit pre-TOPS codes? [No]|Yes:
+            # >? yes
+
+            print(four_digit_pre_tops_codes_data)
+            # {'Four digit pre-TOPS codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        if confirmed("To collect data of {}?".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]),
+                     confirmation_required=confirmation_required):
+
+            path_to_pickle = self.cdd_depots(self.FDPTPickle + ".pickle")
+
+            url = self.Catalogue[self.FDPTKey]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]), end=" ... ")
 
             try:
-                source = requests.get(url)
+                source = requests.get(url, headers=fake_requests_headers())
                 p_tags = bs4.BeautifulSoup(source.text, 'lxml').find_all('p')
                 region_names = [x.text.replace('Jump to: ', '').strip().split(' | ')
                                 for x in p_tags if x.text.startswith('Jump to: ')][0]
@@ -107,144 +241,346 @@ class Depots:
 
                 last_updated_date = get_last_updated_date(url)
 
-                four_digit_pre_tops_codes_data = {
-                    re.sub(r'[ \-]', '_', title_name): dict(zip(region_names, four_digit_pre_tops_codes_list)),
-                    'Last_updated_date': last_updated_date}
-                save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose)
+                four_digit_pre_tops_codes_data = {self.FDPTKey: dict(zip(region_names, four_digit_pre_tops_codes_list)),
+                                                  self.LUDKey: last_updated_date}
+
+                print("Done. ") if verbose == 2 else ""
+
+                save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect \"{}\". {}".format(title_name, e))
+                print("Failed. {}".format(e))
                 four_digit_pre_tops_codes_data = None
 
             return four_digit_pre_tops_codes_data
 
-    # Fetch 'Four digit pre-TOPS codes'
     def fetch_four_digit_pre_tops_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = list(self.Catalogue.keys())[2]
-        path_to_pickle = self.cd_depots(re.sub(r'[ -]', '-', title_name).lower() + ".pickle")
+        """
+        Fetch four-digit pre-TOPS codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of two-character TOPS codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            four_digit_pre_tops_codes_data = depots.fetch_four_digit_pre_tops_codes(update, pickle_it,
+                                                                                    data_dir, verbose)
+
+            print(four_digit_pre_tops_codes_data)
+            # {'Four_digit_pre_TOPS_codes': <codes>,
+            #  'Last_updated_date': <date>}
+        """
+
+        path_to_pickle = self.cdd_depots(self.FDPTPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
+            four_digit_pre_tops_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             four_digit_pre_tops_codes_data = self.collect_four_digit_pre_tops_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if four_digit_pre_tops_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of \"{}\" has been collected.".format(title_name))
+                print("No data of {} has been collected.".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]))
 
         return four_digit_pre_tops_codes_data
 
-    # Collect '1950 system (pre-TOPS) codes'
     def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
-        if confirmed("To collect 1950 system (pre-TOPS) codes?", confirmation_required=confirmation_required):
-            title_name = list(self.Catalogue.keys())[3]
-            url = self.Catalogue[title_name]
+        """
+        Collect 1950 system (pre-TOPS) codes from source web page.
+
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            confirmation_required = True
+            verbose = True
+
+            system_1950_codes_data = depots.collect_1950_system_codes(confirmation_required, verbose)
+            # To collect 1950 system (pre-TOPS) codes? [No]|Yes:
+            # >? yes
+
+            print(system_1950_codes_data)
+            # {'1950 system (pre-TOPS) codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        if confirmed("To collect data of {}?".format(self.S1950Key), confirmation_required=confirmation_required):
+
+            url = self.Catalogue[self.S1950Key]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.S1950Key), end=" ... ")
 
             try:
                 header, system_1950_codes = pd.read_html(url, na_values=[''], keep_default_na=False)
                 system_1950_codes.columns = header.columns.to_list()
 
-                title_name_ = re.sub(r'[ -]', '_', re.sub(r'[()]', '', title_name))
-                path_to_pickle = self.cd_depots(title_name_.replace("_", "-").lower() + ".pickle")
-
                 last_updated_date = get_last_updated_date(url)
 
-                system_1950_codes_data = {title_name_: system_1950_codes, 'Last_updated_date': last_updated_date}
+                system_1950_codes_data = {self.S1950Key: system_1950_codes, self.LUDKey: last_updated_date}
 
-                save_pickle(system_1950_codes_data, path_to_pickle, verbose)
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_depots(self.S1950Pickle + ".pickle")
+                save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}\". {}".format(title_name, e))
+                print("Failed. {}".format(e))
                 system_1950_codes_data = None
 
             return system_1950_codes_data
 
-    # Fetch '1950 system (pre-TOPS) codes'
     def fetch_1950_system_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = list(self.Catalogue.keys())[3]
-        title_name_ = re.sub(r'[ -]', '_', re.sub(r'[()]', '', title_name))
-        path_to_pickle = self.cd_depots(title_name_.lower() + ".pickle")
+        """
+        Fetch 1950 system (pre-TOPS) codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            system_1950_codes_data = depots.fetch_1950_system_codes(update, pickle_it, data_dir, verbose)
+
+            print(system_1950_codes_data)
+            # {'1950 system (pre-TOPS) codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_depots(self.S1950Pickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            system_1950_codes_data = load_pickle(path_to_pickle)
+            system_1950_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             system_1950_codes_data = self.collect_1950_system_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if system_1950_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(system_1950_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of \"{}\" has been collected.".format(title_name))
+                print("No data of {} has been collected.".format(self.S1950Key))
 
         return system_1950_codes_data
 
-    # Collect 'GWR codes' - Great Western Railway depot codes
     def collect_gwr_codes(self, confirmation_required=True, verbose=False):
-        if confirmed("To collect Great Western Railway depot codes?", confirmation_required=confirmation_required):
-            title_name = list(self.Catalogue.keys())[4]
-            url = self.Catalogue[title_name]
+        """
+        Collect Great Western Railway (GWR) depot codes from source web page.
+
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of GWR depot codes and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            confirmation_required = True
+            verbose = True
+
+            gwr_codes_data = depots.collect_gwr_codes(confirmation_required, verbose)
+            # To collect Great Western Railway depot codes? [No]|Yes:
+            # >? yes
+
+            print(gwr_codes_data)
+            # {'GWR codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        if confirmed("To collect data of {}?".format(self.GWRKey), confirmation_required=confirmation_required):
+
+            url = self.Catalogue[self.GWRKey]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.GWRKey), end=" ... ")
 
             try:
-                header, gwr_codes = pd.read_html(url)
-                gwr_codes.columns = header.columns.to_list()
+                header, alphabetical_codes, numerical_codes_1, _, numerical_codes_2 = pd.read_html(url)
+
+                # Alphabetical codes
+                alphabetical_codes.columns = header.columns.to_list()
+
+                # Numerical codes
+                numerical_codes_1.drop(1, axis=1, inplace=True)
+                numerical_codes_1.columns = header.columns.to_list()
+                numerical_codes_2.columns = header.columns.to_list()
+                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2])
+
+                source = requests.get(url)
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+
+                gwr_codes = dict(zip([x.text for x in soup.find_all('h3')], [alphabetical_codes, numerical_codes]))
 
                 last_updated_date = get_last_updated_date(url)
-                gwr_codes_data = {title_name.replace(' ', '_'): gwr_codes, 'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
-                save_pickle(gwr_codes_data, path_to_pickle, verbose)
+                gwr_codes_data = {self.GWRKey: gwr_codes, self.LUDKey: last_updated_date}
+
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_depots(self.GWRPickle + ".pickle")
+                save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}.\" {}".format(title_name, e))
+                print("Failed. {}".format(e))
                 gwr_codes_data = None
 
             return gwr_codes_data
 
-    #
     def fetch_gwr_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = list(self.Catalogue.keys())[4]
-        path_to_pickle = self.cd_depots(title_name.replace(" ", "-").lower() + ".pickle")
+        """
+        Fetch Great Western Railway (GWR) depot codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of GWR depot codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            gwr_codes_data = depots.fetch_gwr_codes(update, pickle_it, data_dir, verbose)
+
+            print(gwr_codes_data)
+            # {'GWR codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_depots(self.GWRPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            gwr_codes_data = load_pickle(path_to_pickle)
+            gwr_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             gwr_codes_data = self.collect_gwr_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
+
             if gwr_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(gwr_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of \"{}\" has been collected.".format(title_name))
+                print("No data of \"{}\" has been collected.".format(self.GWRKey))
 
         return gwr_codes_data
 
-    # Fetch all the collected depots codes
     def fetch_depot_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        two_char_tops_codes_data = self.fetch_two_char_tops_codes(update, verbose=verbose)
-        four_digit_pre_tops_codes_data = self.fetch_four_digit_pre_tops_codes(update, verbose=verbose)
-        system_1950_codes_data = self.fetch_1950_system_codes(update, verbose=verbose)
-        gwr_codes_data = self.fetch_gwr_codes(update, verbose=verbose)
+        """
+        Fetch depots codes from local backup.
 
-        depot_codes = {}
-        for x in (two_char_tops_codes_data, four_digit_pre_tops_codes_data, system_1950_codes_data, gwr_codes_data):
-            old_key = list(x.keys())[0]
-            x['Data'] = x.pop(old_key)
-            depot_codes.update({old_key: x})
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of depot codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Depots
+
+            depots = Depots()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            depot_codes = depots.fetch_depot_codes(update, pickle_it, data_dir, verbose)
+
+            print(depot_codes)
+            # {'Depots': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        codes = []
+        for func in dir(self):
+            if func.startswith('fetch_') and func != 'fetch_depot_codes':
+                codes.append(getattr(self, func)(update=update, verbose=verbose))
+
+        depot_codes = {self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
+                       self.LUDKey: self.Date}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, "depot-codes.pickle")
-            save_pickle(depot_codes, path_to_pickle)
+            path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower() + ".pickle")
+            save_pickle(depot_codes, path_to_pickle, verbose=verbose)
 
         return depot_codes
