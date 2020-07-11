@@ -34,14 +34,14 @@ class ELRMileages:
 
     **Example**::
 
-        from pyrcs.line_data import LocationIdentifiers
+        from pyrcs.line_data import ELRMileages
 
-        lid = LocationIdentifiers()
+        em = ELRMileages()
 
-        print(lid.Name)
+        print(em.Name)
         # Engineer's Line References (ELRs)
 
-        print(lid.SourceURL)
+        print(em.SourceURL)
         # http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
 
@@ -49,15 +49,18 @@ class ELRMileages:
         """
         Constructor method.
         """
-        self.Name = "Engineer's Line References (ELRs)"
+        self.Name = "ELRs and mileages"
         self.HomeURL = homepage_url()
         self.SourceURL = self.HomeURL + '/elrs/elr0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL)
+        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "elrs-and-mileages")
+        self.Key = 'ELRs'  # key to ELRs and mileages
+        self.LUDKey = 'Last updated date'  # key to last updated date
+        if data_dir:
+            self.DataDir = regulate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("line-data", self.Name.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
-        self.Key = 'ELRs_mileages'  # key to ELRs and mileages
-        self.LUDKey = 'Last_updated_date'  # key to last updated date
 
     def cdd_em(self, *sub_dir):
         """
@@ -294,7 +297,7 @@ class ELRMileages:
         :param update: whether to check on update and proceed to update the package data, defaults to ``False``
         :type update: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: data of ELRs whose names start with the given ``initial`` and date of when the data was last updated
         :rtype: dict
 
@@ -311,7 +314,8 @@ class ELRMileages:
             elrs = em.collect_elr_by_initial(initial, update, verbose)
 
             print(elrs)
-            # {'A': <codes>, 'Last_updated_date': <date>}
+            # {'A': <codes>,
+            #  'Last updated date': <date>}
         """
 
         assert initial in string.ascii_letters
@@ -319,10 +323,13 @@ class ELRMileages:
 
         path_to_pickle = self.cdd_em("a-z", beginning_with.lower() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
-            elrs = load_pickle(path_to_pickle)
+            elrs = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             url = self.Catalogue[beginning_with]  # Specify the requested URL
+
+            if verbose == 2:
+                print("Collecting data of ELRs beginning with \"{}\"".format(beginning_with.upper()), end=" ... ")
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())  # Request to get connected to the url
@@ -331,11 +338,14 @@ class ELRMileages:
                 data = pd.DataFrame([[x.replace('=', 'See').strip('\xa0') for x in i] for i in records], columns=header)
                 # Return a dictionary containing both the DataFrame and its last updated date
                 elrs = {beginning_with: data, self.LUDKey: get_last_updated_date(url)}
+
+                print("Done. ") if verbose == 2 else ""
+
                 save_pickle(elrs, path_to_pickle, verbose=verbose)
 
             except Exception as e:  # e.g the requested URL is not available:
-                print("Failed to collect data of ELR beginning with \"{}\". {}".format(beginning_with.upper(), e))
-                elrs = {beginning_with: pd.DataFrame(), self.LUDKey: ''}
+                print("Failed. {}".format(e))
+                elrs = {beginning_with: None, self.LUDKey: None}
 
         return elrs
 
@@ -350,7 +360,7 @@ class ELRMileages:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return data of all available ELRs and date of when the data was last updated
         :rtype: dict
 
@@ -368,7 +378,8 @@ class ELRMileages:
             elrs_data = em.fetch_elr(update, pickle_it, data_dir, verbose)
 
             print(elrs_data)
-            # {'ELRs_mileages': <codes>, 'Latest_update_date': <date>}
+            # {'ELRs': <codes>,
+            #  'Latest update date': <date>}
         """
 
         data = [self.collect_elr_by_initial(x, update, verbose=False if data_dir or not verbose else True)
@@ -377,13 +388,13 @@ class ELRMileages:
         elrs_data_table = pd.concat(elrs_data, axis=0, ignore_index=True, sort=False)
 
         # Get the latest updated date
-        last_updated_dates = (item['Last_updated_date'] for item, _ in zip(data, string.ascii_uppercase))
+        last_updated_dates = (item[self.LUDKey] for item, _ in zip(data, string.ascii_uppercase))
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
         elrs_data = {self.Key: elrs_data_table, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            pickle_filename = "elrs-and-mileages.pickle"
+            pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(elrs_data, path_to_pickle, verbose=verbose)
@@ -403,7 +414,7 @@ class ELRMileages:
         :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: mileage file for the given ``elr``
         :rtype: dict
 
@@ -428,20 +439,21 @@ class ELRMileages:
             elr = 'CJD'
             mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it,
                                                           verbose)
+            # To collect mileage file for "CJD"? [No]|Yes:
+            # >? yes
 
             print(mileage_file)
-            # {'ELR': <the given `elr`>,
-            #  'Line': <line name>,
-            #  'Sub-Line': <sub-line name>,
-            #  '<the given `elr`>': <codes>,
-            #  'Note': <note>}
+            # {'ELR': 'CJD',
+            #  'Line': 'Challoch Junction to Dumfries Line',
+            #  'Sub-Line': '',
+            #  'CJD': <codes>,
+            #  'Notes': <notes>}
         """
 
-        if confirmed("To collect mileage file for \"{}\"?".format(elr.upper()),
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect mileage file of {}?".format(elr.upper()), confirmation_required=confirmation_required):
 
-            if verbose:
-                print("Collecting mileage file for \"{}\"".format(elr.upper()), end=" ... ")
+            if verbose == 2:
+                print("Collecting mileage file of {}".format(elr.upper()), end=" ... ")
             try:
                 # The URL of the mileage file for the ELR
                 url = self.HomeURL + '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
@@ -505,11 +517,11 @@ class ELRMileages:
 
                 # Search for note
                 note_temp = min(parsed_content, key=len)
-                note = note_temp[0] if len(note_temp) == 1 else ''
-                if note:
-                    if ' Revised distances are thus:' in note:
+                notes = note_temp[0] if len(note_temp) == 1 else ''
+                if notes:
+                    if ' Revised distances are thus:' in notes:
                         parsed_content[parsed_content.index(note_temp)] = ['', 'Current measure']
-                        note = note.replace(' Revised distances are thus:', '')
+                        notes = notes.replace(' Revised distances are thus:', '')
                     else:
                         parsed_content.remove(note_temp)
 
@@ -518,15 +530,15 @@ class ELRMileages:
 
                 # Check if there is any missing note
                 if mileage_data.iloc[-1].Mileage == '':
-                    note = [note, mileage_data.iloc[-1].Node] if note else mileage_data.iloc[-1].Node
+                    notes = [notes, mileage_data.iloc[-1].Node] if notes else mileage_data.iloc[-1].Node
                     mileage_data = mileage_data[:-1]
 
                 if len(mileage_data.iloc[-1].Mileage) > 6:
-                    note = [note, mileage_data.iloc[-1].Mileage] if note else mileage_data.iloc[-1].Mileage
+                    notes = [notes, mileage_data.iloc[-1].Mileage] if notes else mileage_data.iloc[-1].Mileage
                     mileage_data = mileage_data[:-1]
 
                 # Make a dict of note
-                note_dat = {'Note': note}
+                note_dat = {'Notes': notes}
 
                 # Identify if there are multiple (both current and former) measures in 'mileage_data'
                 mileage_data = self.identify_multiple_measures(mileage_data)
@@ -539,7 +551,7 @@ class ELRMileages:
 
                 mileage_file = dict(pair for x in [line_info, {elr: mileage_data}, note_dat] for pair in x.items())
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
                 if pickle_it:
                     path_to_pickle = self.cdd_em("mileage-files", elr[0].lower(), elr + ".pickle")
@@ -548,7 +560,7 @@ class ELRMileages:
                     save_pickle(mileage_file, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the mileage file for \"{}\". {}.".format(elr, e))
+                print("Failed. {}.".format(e))
                 mileage_file = None
 
             return mileage_file
@@ -566,7 +578,7 @@ class ELRMileages:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: mileage file (codes), line name and, if any, additional information/notes
         :rtype: dict
 
@@ -585,10 +597,11 @@ class ELRMileages:
             mileage_file = em.fetch_mileage_file(elr, update, pickle_it, data_dir, verbose)
 
             print(mileage_file)
-
-        {<the given `elr`>: <codes>,
-         'Line': <line name>,
-         'Note': <additional information/notes, or None>
+            # {'ELR': 'MLA',
+            #  'Line': 'Maryhill Park Junction to Anniesland Line',
+            #  'Sub-Line': '',
+            #  'MLA': <codes>,
+            #  'Notes': <notes>}
         """
 
         path_to_pickle = self.cdd_em("mileage-files", elr[0].lower(), elr + ".pickle")
@@ -596,20 +609,20 @@ class ELRMileages:
             path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            mileage_file = load_pickle(path_to_pickle)
+            mileage_file = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
+            verbose_ = False if data_dir or not verbose else True
             mileage_file = self.collect_mileage_file_by_elr(elr, parsed=True, confirmation_required=False,
-                                                            pickle_it=pickle_it,
-                                                            verbose=False if data_dir or not verbose else True)
+                                                            pickle_it=pickle_it, verbose=verbose_)
 
             if mileage_file:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(mileage_file, path_to_pickle, verbose=True)
+                    save_pickle(mileage_file, path_to_pickle, verbose=verbose)
             else:
-                print("No mileage file has been collected for \"{}\".".format(elr.upper())) if verbose else None
+                print("No mileage file has been collected for \"{}\".".format(elr.upper()))
 
         return mileage_file
 
@@ -700,7 +713,7 @@ class ELRMileages:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: connection ELR and mileages between the given ``start_elr`` and ``end_elr``
         :rtype: tuple
 
