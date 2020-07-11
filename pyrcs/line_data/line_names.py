@@ -13,7 +13,7 @@ from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, fake_requests_headers, get_last_updated_date, homepage_url, parse_table
+from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url, parse_table
 
 
 class LineNames:
@@ -45,11 +45,15 @@ class LineNames:
         self.Name = 'Railway line names'
         self.HomeURL = homepage_url()
         self.SourceURL = self.HomeURL + '/misc/line_names.shtm'
+        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", "line-names")
+        self.Key = 'Line names'
+        self.LUDKey = 'Last updated date'
+        if data_dir:
+            self.DataDir = regulate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
-        self.Key = 'Line_names'
-        self.LUDKey = 'Last_updated_date'
 
     def cdd_ln(self, *sub_dir):
         """
@@ -95,10 +99,11 @@ class LineNames:
             #  'Last_updated_date': <date>}
         """
 
-        if confirmed("To collect British railway line names? ", confirmation_required=confirmation_required):
+        if confirmed("To collect British railway {}?".format(self.Key.lower()),
+                     confirmation_required=confirmation_required):
 
-            if verbose:
-                print("Collecting the railway line names", end=" ... ")
+            if verbose == 2:
+                print("Collecting the railway {}".format(self.Key.lower()), end=" ... ")
 
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
@@ -132,12 +137,14 @@ class LineNames:
 
                 line_names_data = {self.Key: line_names, self.LUDKey: last_updated_date}
 
-                print("Done. ") if verbose else ""
+                print("Done. ") if verbose == 2 else ""
 
-                save_pickle(line_names_data, self.cdd_ln("line-names.pickle"), verbose=verbose)
+                pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+                path_to_pickle = self.cdd_ln(pickle_filename)
+                save_pickle(line_names_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect line names. {}".format(e))
+                print("Failed. {}".format(e))
                 line_names_data = None
 
             return line_names_data
@@ -175,7 +182,7 @@ class LineNames:
             #  'Last_updated_date': <date>}
         """
 
-        pickle_filename = "line-names.pickle"
+        pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
         path_to_pickle = self.cdd_ln(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -190,6 +197,6 @@ class LineNames:
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(line_names_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of the railway line names has been collected.")
+                print("No data of the railway {} has been collected.".format(self.Key.lower()))
 
         return line_names_data
