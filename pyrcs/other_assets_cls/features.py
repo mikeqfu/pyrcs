@@ -1,6 +1,14 @@
-""" Features """
+""" A class for collecting codes of infrastructure features.
+
+- OLE neutral sections
+- HABD and WILD
+- Water troughs
+- Telegraph codes
+- Driver/guard buzzer codes
+"""
 
 import copy
+import itertools
 import os
 import re
 import unicodedata
@@ -12,75 +20,142 @@ import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.ops import confirmed
-from pyhelpers.store import load_pickle
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_last_updated_date
-from pyrcs.utils import save_pickle
-
-
-# Decode vulgar fraction
-def decode_vulgar_fraction(string):
-    for s in string:
-        try:
-            name = unicodedata.name(s)
-            if name.startswith('VULGAR FRACTION'):
-                # normalized = unicodedata.normalize('NFKC', s)
-                # numerator, _, denominator = normalized.partition('⁄')
-                # frac_val = int(numerator) / int(denominator)
-                frac_val = unicodedata.numeric(s)
-                return frac_val
-        except (TypeError, ValueError):
-            pass
-
-
-# Parse 'VULGAR FRACTION'
-def parse_vulgar_fraction_in_length(x):
-    if x == '':
-        yd = np.nan
-    elif re.match(r'\d+yd', x):  # e.g. '620yd'
-        yd = int(re.search(r'\d+(?=yd)', x).group(0))
-    elif re.match(r'\d+&frac\d+;yd', x):  # e.g. '506&frac23;yd'
-        yd, frac = re.search(r'([0-9]+)&frac([0-9]+)(?=;yd)', x).groups()
-        yd = int(yd) + int(frac[0]) / int(frac[1])
-    else:  # e.g. '557½yd'
-        yd = decode_vulgar_fraction(x)
-    return yd
+from pyrcs.line_data.electrification import Electrification
+from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url
 
 
 class Features:
+    """
+    A class for collecting `infrastructure features`_.
+
+    .. _`CRS, NLC, TIPLOC and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+
+    :param data_dir: name of data directory, defaults to ``None``
+    :type data_dir: str, None
+
+    **Example**::
+
+        from pyrcs.other_assets import Features
+
+        features = Features()
+
+        print(features.Name)
+        # Infrastructure features
+    """
+
     def __init__(self, data_dir=None):
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
+        """
+        Constructor method.
+        """
         self.Name = 'Infrastructure features'
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "features")
+        self.HomeURL = homepage_url()
+        self.Key = 'Features'
+        self.LUDKey = 'Last updated date'  # key to last updated date
+        self.Catalogue = get_catalogue(urllib.parse.urljoin(self.HomeURL, '/misc/habdwild.shtm'),
+                                       confirmation_required=False)
+        self.HabdWildKey = 'HABD and WILD'
+        self.HabdWildPickle = self.HabdWildKey.replace(" ", "-").lower()
+        self.OLENeutralNetworkKey = 'OLE neutral sections'
+        self.WaterTroughsKey = 'Water troughs'
+        self.WaterTroughsPickle = self.WaterTroughsKey.replace(" ", "-").lower()
+        self.TelegraphKey = 'Telegraphic codes'
+        self.TelegraphPickle = self.TelegraphKey.lower().replace(" ", "-")
+        self.BuzzerKey = 'Buzzer codes'
+        self.BuzzerPickle = self.BuzzerKey.lower().replace(" ", "-")
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other-assets\\features\\"
-    def cd_features(self, *directories):
-        path = self.DataDir
-        for x in directories:
-            path = os.path.join(path, x)
-        return path
-
-    # Change directory to "dat\\other-assets\\features\\dat"
     def cdd_features(self, *sub_dir):
-        path = self.cd_features("dat")
+        """
+        Change directory to "dat\\other-assets\\features\\" and sub-directories (and/or a file)
+
+        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :type sub_dir: str
+        :return: path to the backup data directory for ``Features``
+        :rtype: str
+
+        :meta private:
+        """
+
+        path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Collect 'hot axle box detectors (HABDs)' and 'wheel impact load detectors (WILDs)'
+    @staticmethod
+    def decode_vulgar_fraction(x):
+        """
+        Decode vulgar fraction.
+        """
+        for s in x:
+            try:
+                name = unicodedata.name(s)
+                if name.startswith('VULGAR FRACTION'):
+                    # normalized = unicodedata.normalize('NFKC', s)
+                    # numerator, _, denominator = normalized.partition('⁄')
+                    # frac_val = int(numerator) / int(denominator)
+                    frac_val = unicodedata.numeric(s)
+                    return frac_val
+            except (TypeError, ValueError):
+                pass
+
+    def parse_vulgar_fraction_in_length(self, x):
+        """
+        Parse 'VULGAR FRACTION' for 'Length' of water trough locations.
+        """
+        if x == '':
+            yd = np.nan
+        elif re.match(r'\d+yd', x):  # e.g. '620yd'
+            yd = int(re.search(r'\d+(?=yd)', x).group(0))
+        elif re.match(r'\d+&frac\d+;yd', x):  # e.g. '506&frac23;yd'
+            yd, frac = re.search(r'([0-9]+)&frac([0-9]+)(?=;yd)', x).groups()
+            yd = int(yd) + int(frac[0]) / int(frac[1])
+        else:  # e.g. '557½yd'
+            yd = self.decode_vulgar_fraction(x)
+        return yd
+
     def collect_habds_and_wilds(self, confirmation_required=True, verbose=False):
+        """
+        Collect codes of hot axle box detectors (HABDs) and wheel impact load detectors (WILDs) from source web page.
 
-        if confirmed("To collect codes for HABDs and WILDs?", confirmation_required=confirmation_required):
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of HABDs and WILDs, and date of when the data was last updated
+        :rtype: dict, None
 
-            url = self.HomeURL + '/misc/habdwild.shtm'
-            source = requests.get(url)
-            titles = [x.text for x in bs4.BeautifulSoup(source.text, 'lxml').find_all('h3')]
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            confirmation_required = True
+            verbose = True
+
+            habds_and_wilds_codes_data = features.collect_habds_and_wilds(confirmation_required, verbose)
+            # To collect codes for HABDs and WILDs? [No]|Yes:
+            # >? yes
+
+            print(habds_and_wilds_codes_data)
+            # {'HABD and WILD': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        if confirmed("To collect data of {}?".format(self.HabdWildKey), confirmation_required=confirmation_required):
+
+            url = self.Catalogue[self.HabdWildKey]
+
+            if verbose == 2:
+                print("Collecting data of {}".format(self.HabdWildKey), end=" ... ")
 
             try:
-                titles = [x[x.index('(') + 1:x.index(')')] for x in titles]
+                sub_keys = self.HabdWildKey.split(' and ')
             except ValueError:
-                pass
+                sub_keys = [self.HabdWildKey + ' 1', self.HabdWildKey + ' 2']
 
             try:
                 habds_and_wilds_codes = iter(pd.read_html(url, na_values=[''], keep_default_na=False))
@@ -92,27 +167,61 @@ class Features:
                     data.fillna('', inplace=True)
                     habds_and_wilds_codes_list.append(data)
 
-                habds_and_wilds_codes_data = dict(zip(titles, habds_and_wilds_codes_list))
+                habds_and_wilds_codes_data = {self.HabdWildKey: dict(zip(sub_keys, habds_and_wilds_codes_list)),
+                                              self.LUDKey: get_last_updated_date(url)}
 
-                last_updated_date = get_last_updated_date(url)
-                habds_and_wilds_codes_data.update({'Last_updated_date': last_updated_date})
+                print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cd_features("habds-and-wilds.pickle")
-                save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose)
+                pickle_filename = self.HabdWildPickle + ".pickle"
+                path_to_pickle = self.cdd_features(pickle_filename)
+                save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}\". {}".format(' and '.join(titles), e))
+                print("Failed. {}".format(e))
                 habds_and_wilds_codes_data = None
 
             return habds_and_wilds_codes_data
 
-    # Fetch HABDs and WILDs
     def fetch_habds_and_wilds(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        pickle_filename = "habds-and-wilds.pickle"
-        path_to_pickle = self.cd_features(pickle_filename)
+        """
+        Fetch codes of HABDs and WILDs from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of hot axle box detectors (HABDs) and wheel impact load detectors (WILDs),
+            and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            habds_and_wilds_codes_data = features.fetch_habds_and_wilds(update, pickle_it, data_dir,
+                                                                        verbose)
+
+            print(habds_and_wilds_codes_data)
+            # {'HABD and WILD': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        pickle_filename = self.HabdWildPickle + ".pickle"
+        path_to_pickle = self.cdd_features(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            habds_and_wilds_codes_data = load_pickle(path_to_pickle)
+            habds_and_wilds_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             habds_and_wilds_codes_data = self.collect_habds_and_wilds(
@@ -122,48 +231,108 @@ class Features:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
-                    save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of \"HABDs or WILDs\" has been collected.")
+                print("No data of {} has been collected.".format(self.HabdWildKey.replace("and", "or")))
 
         return habds_and_wilds_codes_data
 
-    # Collect 'Water troughs'
     def collect_water_troughs(self, confirmation_required=True, verbose=False):
-        title_name = 'Water trough'
+        """
+        Collect codes of water troughs from source web page.
 
-        if confirmed("To collect codes for \"{}\"?".format(title_name.lower()),
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of water troughs, and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            confirmation_required = True
+            verbose = True
+
+            water_troughs_data = features.collect_water_troughs(confirmation_required, verbose)
+            # To collect codes for water troughs? [No]|Yes:
+            # >? yes
+
+            print(water_troughs_data)
+            # {'Water troughs': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        url = self.Catalogue[self.WaterTroughsKey]
+
+        if confirmed("To collect data of {}?".format(self.WaterTroughsKey.lower()),
                      confirmation_required=confirmation_required):
 
-            url = urllib.parse.urljoin(self.HomeURL, '/misc/troughs.shtm')
+            if verbose == 2:
+                print("Collecting data of {}".format(self.WaterTroughsKey.lower()), end=" ... ")
 
             try:
-                header, water_troughs = pd.read_html(url)
-                water_troughs.columns = header.columns.to_list()
-                water_troughs.fillna('', inplace=True)
-                water_troughs.Length = water_troughs.Length.map(parse_vulgar_fraction_in_length)
-                water_troughs.rename(columns={'Length': 'Length_yard'}, inplace=True)
+                header, water_troughs_codes = pd.read_html(url)
+                water_troughs_codes.columns = header.columns.to_list()
+                water_troughs_codes.fillna('', inplace=True)
+                water_troughs_codes.Length = water_troughs_codes.Length.map(self.parse_vulgar_fraction_in_length)
+                water_troughs_codes.rename(columns={'Length': 'Length_yard'}, inplace=True)
 
                 last_updated_date = get_last_updated_date(url)
-                water_troughs_data = {title_name.replace(' ', '_'): water_troughs,
-                                      'Last_updated_date': last_updated_date}
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
-                save_pickle(water_troughs_data, path_to_pickle, verbose)
+                water_troughs_data = {self.WaterTroughsKey: water_troughs_codes, self.LUDKey: last_updated_date}
+
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
+                save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}\". {}".format(title_name.lower(), e))
+                print("Failed. {}".format(e))
                 water_troughs_data = None
 
             return water_troughs_data
 
-    # Fetch 'Water troughs'
     def fetch_water_troughs(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = 'Water trough'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
+        """
+        Fetch codes of water troughs from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of water troughs, and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            water_troughs_data = features.fetch_water_troughs(update, pickle_it, data_dir, verbose)
+
+            print(water_troughs_data)
+            # {'Water troughs': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            water_troughs_data = load_pickle(path_to_pickle)
+            water_troughs_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             water_troughs_data = self.collect_water_troughs(
@@ -173,25 +342,53 @@ class Features:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(water_troughs_data, path_to_pickle, verbose=True)
+                    save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of \"{}\" has been collected.".format(title_name.lower()))
+                print("No data of {} has been collected.".format(self.WaterTroughsKey.lower()))
 
         return water_troughs_data
 
-    # Collect 'Telegraph code words'
     def collect_telegraph_codes(self, confirmation_required=True, verbose=False):
-        title_name = 'Telegraph code words'
+        """
+        Collect telegraph code words from source web page.
 
-        if confirmed("To collect codes for \"{}\"?".format(title_name.lower()),
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of telegraph code words, and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            confirmation_required = True
+            verbose = True
+
+            telegraph_codes_data = features.collect_telegraph_codes(confirmation_required, verbose)
+            # To collect codes for "telegraphic codes"? [No]|Yes:
+            # >? yes
+
+            print(telegraph_codes_data)
+            # {'Telegraphic codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        url = self.Catalogue[self.TelegraphKey]
+
+        if confirmed("To collect data of {}?".format(self.TelegraphKey.lower()),
                      confirmation_required=confirmation_required):
 
-            url = urllib.parse.urljoin(self.HomeURL, '/misc/telegraph.shtm')
+            if verbose == 2:
+                print("Collecting data of {}".format(self.TelegraphKey.lower()), end=" ... ")
 
             try:
-                source = requests.get(url)
+                source = requests.get(url, headers=fake_requests_headers())
                 #
-                sub_titles = [x.text for x in bs4.BeautifulSoup(source.text, 'lxml').find_all('h3')]
+                sub_keys = [x.text for x in bs4.BeautifulSoup(source.text, 'lxml').find_all('h3')]
                 #
                 data_sets = iter(pd.read_html(source.text))
                 telegraph_codes_list = []
@@ -200,27 +397,59 @@ class Features:
                     telegraph_codes.columns = header.columns.to_list()
                     telegraph_codes_list.append(telegraph_codes)
 
-                telegraph_codes_data = dict(zip(sub_titles, telegraph_codes_list))
-
                 last_updated_date = get_last_updated_date(url)
-                telegraph_codes_data.update({'Last_updated_date': last_updated_date})
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
-                save_pickle(telegraph_codes_data, path_to_pickle, verbose)
+                telegraph_codes_data = {self.TelegraphKey: dict(zip(sub_keys, telegraph_codes_list)),
+                                        self.LUDKey: last_updated_date}
+
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
+                save_pickle(telegraph_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}.\" {}".format(title_name.lower(), e))
+                print("Failed. {}".format(e))
                 telegraph_codes_data = None
 
             return telegraph_codes_data
 
-    # Fetch 'Telegraph code words'
     def fetch_telegraph_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = 'Telegraph code words'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
+        """
+        Fetch telegraph code words from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of telegraph code words, and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            telegraph_codes_data = features.fetch_telegraph_codes(update, pickle_it, data_dir, verbose)
+
+            print(telegraph_codes_data)
+            # {'Telegraphic codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            telegraph_codes_data = load_pickle(path_to_pickle)
+            telegraph_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             telegraph_codes_data = self.collect_telegraph_codes(
@@ -230,20 +459,48 @@ class Features:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(telegraph_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(telegraph_codes_data, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of \"{}\" has been collected.".format(title_name.lower()))
+                print("No data of {} has been collected.".format(self.TelegraphKey.lower()))
 
         return telegraph_codes_data
 
-    # Collect 'Buzzer codes'
     def collect_buzzer_codes(self, confirmation_required=True, verbose=False):
-        title_name = 'Buzzer codes'
+        """
+        Collect buzzer codes from source web page.
 
-        if confirmed("To collect codes for \"{}\"?".format(title_name.lower()),
+        :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of buzzer codes, and date of when the data was last updated
+        :rtype: dict, None
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            confirmation_required = True
+            verbose = True
+
+            buzzer_codes_data = features.collect_buzzer_codes(confirmation_required, verbose)
+            # To collect codes for buzzer codes? [No]|Yes: >? yes
+
+            print(buzzer_codes_data)
+            # {'Buzzer codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        url = self.Catalogue[self.BuzzerKey]
+
+        if confirmed("To collect data of {}?".format(self.BuzzerKey.lower()),
                      confirmation_required=confirmation_required):
 
-            url = urllib.parse.urljoin(self.HomeURL, '/misc/buzzer.shtm')
+            if verbose == 2:
+                print("Collecting data of {}".format(self.BuzzerKey), end=" ... ")
 
             try:
                 header, buzzer_codes = pd.read_html(url)
@@ -252,24 +509,56 @@ class Features:
 
                 last_updated_date = get_last_updated_date(url)
 
-                buzzer_codes_data = {'Codes': buzzer_codes, 'Last_updated_data': last_updated_date}
+                buzzer_codes_data = {self.BuzzerKey: buzzer_codes, self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
-                save_pickle(buzzer_codes_data, path_to_pickle, verbose)
+                print("Done. ") if verbose == 2 else ""
+
+                path_to_pickle = self.cdd_features(self.BuzzerPickle + ".pickle")
+                save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
-                print("Failed to collect the data of \"{}\". {}".format(title_name.lower(), e))
+                print("Failed. {}".format(e))
                 buzzer_codes_data = None
 
             return buzzer_codes_data
 
-    # Fetch 'Buzzer codes'
     def fetch_buzzer_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        title_name = 'Buzzer codes'
-        path_to_pickle = self.cd_features(title_name.lower().replace(" ", "-") + ".pickle")
+        """
+        Fetch buzzer codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of buzzer codes, and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            buzzer_codes_data = features.fetch_buzzer_codes(update, pickle_it, data_dir, verbose)
+
+            print(buzzer_codes_data)
+            # {'Buzzer codes': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        path_to_pickle = self.cdd_features(self.BuzzerPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            buzzer_codes_data = load_pickle(path_to_pickle)
+            buzzer_codes_data = load_pickle(path_to_pickle, verbose=verbose)
 
         else:
             buzzer_codes_data = self.collect_buzzer_codes(
@@ -279,8 +568,61 @@ class Features:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = regulate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(buzzer_codes_data, path_to_pickle, verbose=True)
+                    save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of \"{}\" has been collected.".format(title_name.lower()))
+                print("No data of {} has been collected.".format(self.BuzzerKey.lower()))
 
         return buzzer_codes_data
+
+    def fetch_features_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        """
+        Fetch features codes from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool
+        :return: data of features codes and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Features
+
+            features = Features()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = True
+
+            features_codes = features.fetch_features_codes(update, pickle_it, data_dir, verbose)
+
+            print(features_codes)
+            # {'Features': <codes>,
+            #  'Last updated date': <date>}
+        """
+
+        codes = []
+        for func in dir(self):
+            if func.startswith('fetch_') and func != 'fetch_features_codes':
+                codes.append(getattr(self, func)(update=update, verbose=verbose))
+
+        elec = Electrification()
+        ohns_codes = elec.fetch_codes_for_ohns(update=update, verbose=verbose)
+        codes.append(ohns_codes)
+
+        features_codes = {
+            self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
+            self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
+
+        if pickle_it and data_dir:
+            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
+            save_pickle(features_codes, path_to_pickle, verbose=verbose)
+
+        return features_codes
