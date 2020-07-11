@@ -18,7 +18,17 @@ from pyhelpers.ops import confirmed
 from pyhelpers.store import load_json, save_json
 
 
-# -- Directory ---------------------------------------------------------------
+def homepage_url():
+    """
+    Specify the homepage URL of the data source.
+
+    :return: URL of the data source homepage
+    :rtype: str
+    """
+    return 'http://www.railwaycodes.org.uk/'
+
+
+# -- Directory ----------------------------------------------------------------------------------------
 
 def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
@@ -59,7 +69,7 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     return path
 
 
-# -- Converters --------------------------------------------------------------
+# -- Converters ---------------------------------------------------------------------------------------
 
 def mile_chain_to_nr_mileage(miles_chains):
     """
@@ -287,7 +297,7 @@ def year_to_financial_year(date):
     return financial_date.year
 
 
-# -- Parsers -----------------------------------------------------------------
+# -- Parsers ------------------------------------------------------------------------------------------
 
 def parse_tr(header, trs):
     """
@@ -308,11 +318,11 @@ def parse_tr(header, trs):
 
         import bs4
         import fake_useragent
-        from pyrcs.utils import parse_tr
+        from pyrcs.utils import fake_requests_headers, parse_tr
 
         source = requests.get(
             'http://www.railwaycodes.org.uk/elrs/elra.shtm',
-            headers={'User-Agent': fake_useragent.UserAgent().random})
+            headers=fake_requests_headers())
         parsed_text = bs4.BeautifulSoup(source.text, 'lxml')
         header = [x.text for x in parsed_text.find_all('th')]  # Column names
         trs = parsed_text.find_all('tr')
@@ -394,11 +404,11 @@ def parse_table(source, parser='lxml'):
 
         import bs4
         import fake_useragent
-        from pyrcs.utils import parse_table
+        from pyrcs.utils import fake_requests_headers, parse_table
 
         source = requests.get(
             'http://www.railwaycodes.org.uk/elrs/elra.shtm',
-            headers={'User-Agent': fake_useragent.UserAgent().random})
+            headers=fake_requests_headers())
         parser = 'lxml'
 
         parse_table(source, parser)
@@ -528,7 +538,24 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-# -- Get useful information --------------------------------------------------
+# -- Get useful information ---------------------------------------------------------------------------
+
+def fake_requests_headers(random=False):
+    """
+    Make a fake HTTP headers for `requests.get`_.
+
+    .. _`requests`: https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
+
+    :param random: whether to go for a random agent, defaults to ``False``
+    :type random: bool
+    :return: fake HTTP headers
+    :rtype: dict
+    """
+
+    fake_user_agent = fake_useragent.UserAgent()
+    fake_header = {'User-Agent': fake_user_agent.random if random else fake_user_agent.chrome}
+    return fake_header
+
 
 def get_last_updated_date(url, parsed=True, as_date_type=False):
     """
@@ -567,7 +594,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
     """
 
     # Request to get connected to the given url
-    source = requests.get(url, headers={'User-Agent': fake_useragent.UserAgent().random})
+    source = requests.get(url, headers=fake_requests_headers())
     web_page_text = source.text
     # Parse the text scraped from the requested web page
     parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')  # (Alternative parsers: 'html5lib', 'html.parser')
@@ -584,56 +611,69 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
     return last_update_date
 
 
-def get_catalogue(main_url, navigation_bar_exists=True, menu_exists=True):
+def get_catalogue(page_url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
     Get the catalogue for a class.
 
-    :param main_url: URL of the main page of a code category
-    :type main_url: str
-    :param navigation_bar_exists: whether a navigation bar exists on the web page, defaults to ``True``
-    :type navigation_bar_exists: bool
-    :param menu_exists: whether a menu exists on the web page, defaults to ``True``
-    :type menu_exists: bool
-    :return: {'<title>': '<URL>'}
+    :param page_url: URL of the main page of a code category
+    :type page_url: str
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
+    :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+    :type confirmation_required: bool
+    :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
+    :type json_it: bool
+    :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+    :type verbose: bool
+    :return: catalogue in the form {'<title>': '<URL>'}
     :rtype: dict
 
     **Examples**::
 
         from pyrcs.utils import get_catalogue
 
-        menu_exists  = True
+        update = False
+        verbose = True
 
-        main_url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
-        navigation_bar_exists = True
-        get_catalogue(main_url, navigation_bar_exists, menu_exists)
+        page_url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
+        confirmation_required = True
+        catalogue = get_catalogue(page_url, update, confirmation_required, verbose)
 
-        main_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-        navigation_bar_exists = False
-        get_catalogue(main_url, navigation_bar_exists, menu_exists)
+        page_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+        confirmation_required = False
+        catalogue = get_catalogue(page_url, update, confirmation_required, verbose)
     """
 
-    source = requests.get(main_url, headers={'User-Agent': fake_useragent.UserAgent().random})
+    cat_json = '-'.join(x for x in urllib.parse.urlparse(page_url).path.replace('.shtm', '.json').split('/') if x)
+    path_to_cat_json = cd_dat("catalogue", cat_json)
 
-    if navigation_bar_exists:
-        cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', text=True, attrs={'class': None})
-        lst_reversed = list(reversed(cold_soup))
-        hot_soup = []
-        for x in lst_reversed:
-            if x.text == 'Introduction':
-                starting_idx = len(cold_soup) - lst_reversed.index(x) - 1
-                hot_soup = cold_soup[starting_idx:]
-                break
+    if os.path.isfile(path_to_cat_json) and not update:
+        catalogue = load_json(path_to_cat_json, verbose=verbose)
+
     else:
-        hot_soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', text=True, attrs={'class': None})[-6:] \
-            if menu_exists else []
+        if confirmed("To collect/update catalogue? ", confirmation_required=confirmation_required):
 
-    source.close()
+            source = requests.get(page_url, headers=fake_requests_headers())
+            source_text = source.text
+            source.close()
 
-    raw_contents = [{x.text: urllib.parse.urljoin(os.path.dirname(main_url) + '/', x['href'])} for x in hot_soup]
+            try:
+                cold_soup = bs4.BeautifulSoup(source_text, 'lxml').find('div', attrs={'class': 'fixed'})
+                catalogue = {a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
+                             for a in cold_soup.find_all('a')}
+            except AttributeError:
+                cold_soup = bs4.BeautifulSoup(source_text, 'lxml').find('h1').find_all_next('a')
+                catalogue = {a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
+                             for a in cold_soup}
 
-    contents = dict(e for d in raw_contents for e in d.items())
+            if json_it:
+                save_json(catalogue, path_to_cat_json, verbose=verbose)
 
-    return contents
+        else:
+            print("The catalogue for the requested data has not been acquired.")
+            catalogue = None
+
+    return catalogue
 
 
 def get_category_menu(menu_url):
@@ -653,7 +693,7 @@ def get_category_menu(menu_url):
         get_category_menu(menu_url)
     """
 
-    source = requests.get(menu_url, headers={'User-Agent': fake_useragent.UserAgent().random})
+    source = requests.get(menu_url, headers=fake_requests_headers())
 
     soup = bs4.BeautifulSoup(source.text, 'lxml')
     h1, h2s = soup.find('h1'), soup.find_all('h2')
@@ -687,7 +727,7 @@ def get_category_menu(menu_url):
     return cls_menu
 
 
-# -- Rectification of location names -----------------------------------------
+# -- Rectification of location names ------------------------------------------------------------------
 
 def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
     """
@@ -768,7 +808,7 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-# -- Fixers ------------------------------------------------------------------
+# -- Fixers -------------------------------------------------------------------------------------------
 
 def fix_num_stanox(stanox_code):
     """
@@ -787,3 +827,21 @@ def fix_num_stanox(stanox_code):
         stanox_code = '0' * (5 - len(stanox_code)) + stanox_code
 
     return stanox_code
+
+
+# -- Misc ---------------------------------------------------------------------------------------------
+
+def is_str_float(str_val):
+    """
+    Check if a str expresses a float.
+
+    :param str_val:
+    :return:
+    """
+
+    try:
+        float(str_val)  # float(re.sub('[()~]', '', text))
+        test_res = True
+    except ValueError:
+        test_res = False
+    return test_res
