@@ -1,16 +1,14 @@
-"""
+""" A class for collecting railway station data.
 
-Data source: http://www.railwaycodes.org.uk
+Data source: http://www.railwaycodes.org.uk/stations/station0.shtm
 
-ELRs, mileages, operators, grid references
-Bilingual station names
-Sponsored stations
-Stations not served by their Station Facility Operator (SFO)
-International stations
-Station trivia
+.. todo::
 
-Railway station data (http://www.railwaycodes.org.uk/stations/station0.shtm)
-
+   Bilingual station names
+   Sponsored stations
+   Stations not served by their Station Facility Operator (SFO)
+   International stations
+   Station trivia
 """
 
 import copy
@@ -25,45 +23,99 @@ import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
-from pyhelpers.store import load_pickle
+from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, parse_location_note, parse_table
-from pyrcs.utils import save_pickle
+from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url, save_json
+from pyrcs.utils import get_catalogue, get_last_updated_date, parse_location_name, parse_table
 
 
 class Stations:
+    """
+    A class for collecting `railway station data`_.
+
+    .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
+
+    :param data_dir: name of data directory, defaults to ``None``
+    :type data_dir: str, None
+
+    **Example**::
+
+        from pyrcs.other_assets import Stations
+
+        stn = Stations()
+
+        print(stn.Name)
+        # Stations
+
+        print(stn.SourceURL)
+        # http://www.railwaycodes.org.uk/crs/CRS0.shtm
+    """
+
     def __init__(self, data_dir=None):
-        self.HomeURL = 'http://www.railwaycodes.org.uk'
-        self.Name = 'Railway station data'
-        self.URL = self.HomeURL + '/stations/station0.shtm'
-        self.Catalogue = get_catalogue(self.URL)
+        """
+        Constructor method.
+        """
+        self.Name = 'Stations'
+        self.HomeURL = homepage_url()
+        self.SourceURL = self.HomeURL + '/stations/station0.shtm'
 
-        source = requests.get(self.URL)
-        soup = bs4.BeautifulSoup(source.text, 'lxml').find_all('a', href=True)
-        self.SubCatalogue = dict((x.text, urllib.parse.urljoin(os.path.dirname(self.URL) + '/', x['href']))
-                                 for x in [x for x in soup if x.text in string.ascii_uppercase][2:])
+        self.StnKey = 'Railway station data'
+        self.BilingualKey = 'Bilingual names'
+        self.SpStnNameSignKey = 'Sponsored signs'
+        self.NSFOKey = 'Not served by SFO'
+        self.IntlKey = 'International'
+        self.TriviaKey = 'Trivia'
+        self.ARKey = 'Access rights'
+        self.BarrierErrKey = 'Barrier error codes'
 
-        self.Date = get_last_updated_date(self.URL, parsed=True, date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", "stations")
+        self.LUDKey = 'Last updated date'  # key to last updated date
+
+        source = requests.get(self.SourceURL, headers=fake_requests_headers())
+        cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find('p', {'class': 'appeal'}).find_next('p').find_next('p')
+        hot_soup = {a.text: urllib.parse.urljoin(self.SourceURL, a.get('href')) for a in cold_soup.find_all('a')}
+        self.Catalogue = {}
+        for k, v in hot_soup.items():
+            sub_cat = get_catalogue(v, confirmation_required=False, json_it=False)
+            if sub_cat != hot_soup:
+                cat_json = '-'.join(x for x in urllib.parse.urlparse(v).path.replace('.shtm', '.json').split('/') if x)
+                path_to_cat_json = cd_dat("catalogue", cat_json)
+                save_json(sub_cat, path_to_cat_json)
+                if k == 'Introduction':
+                    self.Catalogue.update({self.StnKey: {k: hot_soup[k], **sub_cat}})
+                else:
+                    self.Catalogue.update({k: sub_cat})
+            else:
+                self.Catalogue.update({k: v})
+
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    # Change directory to "dat\\other-assets\\stations" and sub-directories
-    def cd_stn(self, *sub_dir):
+    def cdd_stn(self, *sub_dir):
+        """
+        Change directory to "dat\\other-assets\\stations\\" and sub-directories (and/or a file)
+
+        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :type sub_dir: str
+        :return: path to the backup data directory for ``Stations``
+        :rtype: str
+
+        :meta private:
+        """
+
         path = self.DataDir
         for x in sub_dir:
             path = os.path.join(path, x)
         return path
 
-    # Change directory to "dat\\other-assets\\stations\\dat"
-    def cdd_stn(self, *sub_dir):
-        path = self.cd_stn("dat")
-        for x in sub_dir:
-            path = os.path.join(path, x)
-        return path
-
-    # Parse 'Operator' column
     @staticmethod
     def parse_current_operator(x):
+        """
+        Parse 'Operator' column
+        :param x:
+        :return:
+        """
+
         contents = re.split(r'\\r| \[\'|\\\\r| {2}\'\]|\', \'|\\n',
                             x.lstrip(' [\'').rstrip('  \']').lstrip('\n').strip())
         contents = [x for x in contents if x != '']
@@ -79,36 +131,57 @@ class Stations:
             operators.append((operator_name, start_date))
         return operators
 
-    # Collect railway station data for a given 'keyword'
-    def collect_station_locations(self, initial, update=False, verbose=False):
+    def collect_railway_station_data_by_initial(self, initial, update=False, verbose=False):
         """
-        :param initial: [str] station data (including the station name, ELR, mileage, status, owner, operator,
-                            degrees of longitude and latitude, and grid reference) for stations whose name start with
-        :param update: [bool]
-        :param verbose: [bool]
-        :return [dict] {keyword: [DataFrame] railway station data,
-                        'Last_updated_date': [str] date of when the data was last updated}
+        Collect railway station data for the given ``initial`` letter.
+
+        :param initial: initial letter of station data (including the station name, ELR, mileage, status, owner, 
+            operator, degrees of longitude and latitude, and grid reference) for specifying URL
+        :type initial: str
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool, int
+        :return: railway station data for the given ``initial`` letter; and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Stations
+
+            stn = Stations()
+
+            update = True
+            verbose = True
+
+            initial = 'a'
+            railway_station_data_a = stn.collect_railway_station_data_by_initial(initial, update, verbose)
+
+            print(railway_station_data_a)
+            # {'A': <codes>,
+            #  'Last updated date': <date>}
         """
-        path_to_pickle = self.cd_stn("a-z", initial.lower() + ".pickle")
+
+        path_to_pickle = self.cdd_stn("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            station_location_codes = load_pickle(path_to_pickle)
+            railway_station_data = load_pickle(path_to_pickle)
 
         else:
-            url = self.URL.replace('station0', 'station{}'.format(initial.lower()))
+            url = self.SourceURL.replace('station0', 'station{}'.format(initial.lower()))
 
-            if initial.upper() not in list(self.SubCatalogue.keys()):
+            if initial.upper() not in list(self.Catalogue[self.StnKey].keys()):
                 print("No data is available for signal box codes beginning with \"{}\".".format(initial.upper()))
-                station_location_codes = {initial.upper(): pd.DataFrame(), 'Last_updated_date': ''}
+                railway_station_table, last_updated_date = None, None
 
             else:
                 try:
-                    source = requests.get(url)  # Request to get connected to the url
+                    source = requests.get(url, headers=fake_requests_headers())  # Request to get connected to the url
                     records, header = parse_table(source, parser='lxml')
                     # Create a DataFrame of the requested table
                     dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
                     col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
-                    station_locations_table = pd.DataFrame(dat, columns=col)
+                    railway_station_table = pd.DataFrame(dat, columns=col)
 
                     def parse_degrees(x):
                         if x == '':
@@ -117,16 +190,16 @@ class Stations:
                             y = float(x.replace('c.', '') if x.startswith('c.') else x)
                         return y
 
-                    station_locations_table[['Degrees Longitude', 'Degrees Latitude']] = \
-                        station_locations_table[['Degrees Longitude', 'Degrees Latitude']].applymap(parse_degrees)
-                    station_locations_table['Grid Reference'] = station_locations_table['Grid Reference'].map(
+                    railway_station_table[['Degrees Longitude', 'Degrees Latitude']] = \
+                        railway_station_table[['Degrees Longitude', 'Degrees Latitude']].applymap(parse_degrees)
+                    railway_station_table['Grid Reference'] = railway_station_table['Grid Reference'].map(
                         lambda x: x.replace('c.', '') if x.startswith('c.') else x)
 
-                    station_locations_table[['Station', 'Station_Note']] = \
-                        station_locations_table.Station.map(parse_location_note).apply(pd.Series)
+                    railway_station_table[['Station', 'Station_Note']] = \
+                        railway_station_table.Station.map(parse_location_name).apply(pd.Series)
 
                     # Operator
-                    temp = list(station_locations_table.Operator.map(self.parse_current_operator))
+                    temp = list(railway_station_table.Operator.map(self.parse_current_operator))
                     length = len(max(temp, key=len))
                     col_names_current = ['Operator', 'Date']
                     prev_no = list(
@@ -143,53 +216,75 @@ class Stations:
                     operators = pd.concat(operators, axis=1, sort=False)
                     operators.columns = col_names
 
-                    station_locations_table.drop('Operator', axis=1, inplace=True)
-                    station_locations_table = station_locations_table.join(operators)
+                    railway_station_table.drop('Operator', axis=1, inplace=True)
+                    railway_station_table = railway_station_table.join(operators)
 
                 except Exception as e:
                     print("Failed to collect station location codes beginning with \"{}\". {}".format(
                         initial.upper(), e))
-                    station_locations_table = pd.DataFrame()
+                    railway_station_table = None
 
                 try:
                     last_updated_date = get_last_updated_date(url)
                 except Exception as e:
                     print("Failed to find the last updated date of the station location codes beginning with "
                           "\"{}\" {}".format(initial.upper(), e))
-                    last_updated_date = ''
+                    last_updated_date = None
 
-                station_location_codes = {initial.upper(): station_locations_table,
-                                          'Last_updated_date': last_updated_date}
+            railway_station_data = {initial.upper(): railway_station_table, self.LUDKey: last_updated_date}
 
-            save_pickle(station_location_codes, path_to_pickle, verbose)
+            save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
 
-        return station_location_codes
+        return railway_station_data
 
-    # Fetch all of the collected railway station data
-    def fetch_station_locations(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_railway_station_data(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
-        :param update: [bool]
-        :param pickle_it: [bool]
-        :param data_dir: [str; None]
-        :param verbose: [bool]
-        :return [dict] {initial: [DataFrame] station data, including the station name, ELR, mileage, status, owner,
-                                    operator, degrees of longitude and latitude, and grid reference,
-                        'Latest_update_date': [str] date of when the data was last updated}
+        Fetch  railway station data from local backup.
+
+        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :type update: bool
+        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :type pickle_it: bool
+        :param data_dir: name of package data folder, defaults to ``None``
+        :type data_dir: str, None
+        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+        :type verbose: bool, int
+        :return: railway station data (incl. the station name, ELR, mileage, status, owner, operator, 
+            degrees of longitude and latitude, and grid reference) and date of when the data was last updated
+        :rtype: dict
+
+        **Example**::
+
+            from pyrcs.other_assets import Stations
+
+            stn = Stations()
+
+            update = False
+            pickle_it = False
+            data_dir = None
+            verbose = False
+
+            railway_station_data = stn.fetch_railway_station_data(update, pickle_it, data_dir, verbose)
+
+            print(railway_station_data)
+            # {'Railway station data': <codes>,
+            #  'Latest update date': <date>}
         """
-        data_sets = [self.collect_station_locations(x, update, verbose=False if data_dir or not verbose else True)
-                     for x in string.ascii_lowercase]
 
-        station_location_codes_tables = (item[x] for item, x in zip(data_sets, string.ascii_uppercase))
-        station_location_codes = pd.concat(station_location_codes_tables, axis=0, ignore_index=True, sort=False)
+        verbose_ = False if data_dir or not verbose else True
+        data_sets = [self.collect_railway_station_data_by_initial(x, update, verbose_) for x in string.ascii_lowercase]
 
-        last_updated_dates = (d['Last_updated_date'] for d in data_sets)
-        latest_update_date = max(d for d in last_updated_dates if d != '')
+        railway_station_tables = (item[x] for item, x in zip(data_sets, string.ascii_uppercase))
+        railway_station_data_ = pd.concat(railway_station_tables, axis=0, ignore_index=True, sort=False)
 
-        station_locations_data = {'Stations': station_location_codes, 'Latest_update_date': latest_update_date}
+        last_updated_dates = (d[self.LUDKey] for d in data_sets)
+        latest_update_date = max(d for d in last_updated_dates if d is not None)
+
+        railway_station_data = {self.StnKey: railway_station_data_, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, "station_locations.pickle")
-            save_pickle(station_locations_data, path_to_pickle, verbose=True)
+            path_to_pickle = os.path.join(self.CurrentDataDir, self.StnKey.lower().replace(" ", "-") + ".pickle")
+            save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
 
-        return station_locations_data
+        return railway_station_data
