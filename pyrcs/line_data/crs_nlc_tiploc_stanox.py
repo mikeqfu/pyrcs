@@ -1,4 +1,4 @@
-""" A class for collecting CRS, NLC, TIPLOC and STANOX codes.
+""" Collecting CRS, NLC, TIPLOC and STANOX codes.
 
 Data source: http://www.railwaycodes.org.uk/crs/CRS0.shtm
 """
@@ -23,9 +23,7 @@ from pyrcs.utils import get_catalogue, get_last_updated_date, parse_date, parse_
 
 class LocationIdentifiers:
     """
-    A class for collecting `CRS, NLC, TIPLOC and STANOX codes`_.
-
-    .. _`CRS, NLC, TIPLOC and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+    A class for collecting CRS, NLC, TIPLOC and STANOX codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
@@ -180,7 +178,8 @@ class LocationIdentifiers:
             confirmation_required = True
             verbose = True
 
-            explanatory_note = lid.collect_multiple_station_codes_explanatory_note(confirmation_required, verbose)
+            explanatory_note = lid.collect_multiple_station_codes_explanatory_note(confirmation_required,
+                                                                                   verbose)
             # To collect multiple station codes explanatory note? [No]|Yes:
             # >? yes
 
