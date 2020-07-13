@@ -31,19 +31,16 @@ After importing the module, you can create an instance for getting the location 
 
 .. note::
 
-    An alternative way of creating the instance is through :ref:`pyrcs._line_data.LineData()<pyrcs-_line-data>`:
+   An alternative way of creating the instance is through :ref:`pyrcs._line_data.LineData()<pyrcs-_line-data>`:
 
     .. code-block:: python
 
-       >>> from pyrcs._line_data import LineData
-       >>> ld = LineData()
-       >>> lid = ld.LocationIdentifiers
+        >>> from pyrcs._line_data import LineData
+
+        >>> ld = LineData()
+        >>> lid = ld.LocationIdentifiers
 
     The instance ``ld`` contains all classes under the category of `line data`_. In that way, ``ld.LocationIdentifiers`` is equivalent to ``lid``.
-
-    .. code-block:: python
-
-       >>> location_codes = ld.LocationIdentifiers()
 
 .. _qs-locations-beginning-with-a-given-letter:
 
@@ -55,7 +52,7 @@ By using the method :ref:`collect_location_codes_by_initial()<cnts-collect-locat
 .. code-block:: python
 
    # The input is case-insensitive
-   >>> location_codes_a = line_data.LocationIdentifiers.collect_location_codes_by_initial('A')
+   >>> location_codes_a = lid.collect_location_codes_by_initial('A')
 
 ``location_codes_a`` is a dictionary (in `dict`_ type), with the following keys:
 
@@ -78,7 +75,7 @@ To get all available location codes in this category, use the method :ref:``.fet
 
 .. code-block:: python
 
-   >>> location_codes = line_data.LocationIdentifiers.fetch_location_codes()
+   >>> location_codes = lid.fetch_location_codes()
 
 This method also returns a dictionary, ``location_codes_a``, of which the keys are as follows:
 
@@ -180,18 +177,25 @@ Their corresponding values are
 Get railway stations data
 -------------------------
 
-The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets`_ in the source data.
+The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets`_ in the source data. To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :ref:`.collect_railway_station_data_by_initial()<stations-collect-railway-station-data-by-initial>`:
 
 .. code-block:: python
 
-   >>> from pyrcs.other_assets import OtherAssets
-   >>> other_assets = OtherAssets()
+   >>> from pyrcs.other_assets import Stations
 
-To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :ref:`.collect_railway_station_data_by_initial()<stations-collect-railway-station-data-by-initial>`:
+   >>> stations = Stations()
+   >>> railway_station_data_a = stations.collect_railway_station_data_by_initial('A')
 
-.. code-block:: python
+.. note::
 
-   >>> railway_station_data_a = other_assets.Stations.collect_railway_station_data_by_initial('A')
+   Alternatively, the class ``stations`` can also be defined in the following way:
+
+    .. code-block:: python
+
+        >>> from pyrcs._other_assets import OtherAssets
+
+        >>> other_assets = OtherAssets()
+        >>> stations = other_assets.Stations
 
 Like ``elrs_data`` above, yhe keys of ``railway_station_data_a`` include:
 
@@ -207,7 +211,7 @@ To get available railway station data (from 'A' to 'Z') in this category, use th
 
 .. code-block:: python
 
-   >>> railway_station_data = other_assets.Stations.fetch_railway_station_data()
+   >>> railway_station_data = stations.fetch_railway_station_data()
 
 The keys of ``railway_station_data`` include:
 
