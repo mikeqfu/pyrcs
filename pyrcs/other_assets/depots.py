@@ -1,4 +1,4 @@
-""" A class for collecting depots codes.
+""" Collecting depots codes.
 
 Data source: http://www.railwaycodes.org.uk/depots/depots0.shtm
 """
@@ -19,9 +19,7 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_u
 
 class Depots:
     """
-    A class for collecting `depot codes`_.
-
-    .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
+    A class for collecting depot codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
