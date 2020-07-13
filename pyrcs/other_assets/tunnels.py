@@ -1,4 +1,4 @@
-""" A class for collecting codes of railway tunnel lengths.
+""" Collecting codes of railway tunnel lengths.
 
 Data source: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 """
@@ -23,9 +23,7 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_u
 
 class Tunnels:
     """
-    A class for collecting `railway tunnel lengths`_.
-
-    .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
+    A class for collecting railway tunnel lengths.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
@@ -78,9 +76,10 @@ class Tunnels:
     @staticmethod
     def parse_tunnel_length(x):
         """
-        Parse data in 'Length' column, i.e. convert miles/yards to metres.
+        Parse data in ``'Length'`` column, i.e. convert miles/yards to metres.
 
         :param x: raw length data
+        :type x: str, None
         :return: parsed length data and, if any, additional information associated with it
         :rtype: tuple
 
@@ -90,12 +89,20 @@ class Tunnels:
 
             tunnels = Tunnels()
 
-            tunnels.parse_tunnel_length('')  # (nan, 'Unavailable')
-            tunnels.parse_tunnel_length('1m 182y')  # (1775.7648, None)
-            tunnels.parse_tunnel_length('formerly 0m236y')  # (215.7984, 'Formerly')
-            tunnels.parse_tunnel_length('0.325km (0m 356y)')  # (325.5264, '0.325km')
-            tunnels.parse_tunnel_length("0m 48yd- (['0m 58yd'])")  # (48.4632, '43.89-53.04 metres')
-            tunnels.parse_tunnel_length("0.325km\r ['(0m 356y)']")  # (325.5264, '0.325km')
+            tunnels.parse_tunnel_length('')
+            # (nan, 'Unavailable')
+
+            tunnels.parse_tunnel_length('1m 182y')
+            # (1775.7648, None)
+
+            tunnels.parse_tunnel_length('formerly 0m236y')
+            # (215.7984, 'Formerly')
+
+            tunnels.parse_tunnel_length('0.325km (0m 356y)')
+            # (325.5264, '0.325km')
+
+            tunnels.parse_tunnel_length("0m 48yd- (['0m 58yd'])")
+            # (48.4632, '43.89-53.04 metres')
         """
 
         if re.match(r'[Uu]nknown', x):
@@ -243,7 +250,7 @@ class Tunnels:
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
         :type verbose: bool, int
-        :return railway tunnel lengths data (including the name, length, owner and relative location) and
+        :return: railway tunnel lengths data (including the name, length, owner and relative location) and
             date of when the data was last updated
         :rtype: dict
 
