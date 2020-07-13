@@ -1,4 +1,4 @@
-""" A class for collecting codes of railway viaducts.
+""" Collecting codes of railway viaducts.
 
 Data source: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 """
@@ -18,9 +18,7 @@ from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_u
 
 class Viaducts:
     """
-    A class for collecting `railway viaducts`_.
-
-    .. _`railway viaducts`: http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm
+    A class for collecting railway viaducts.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
@@ -144,7 +142,7 @@ class Viaducts:
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
         :type verbose: bool, int
-        :return railway viaducts data and date of when the data was last updated
+        :return: railway viaducts data and date of when the data was last updated
         :rtype: dict
 
         **Example**::
