@@ -1,4 +1,4 @@
-""" A class for collecting section codes for OLE installations.
+""" Collecting section codes for OLE installations.
 
 Data source: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 """
