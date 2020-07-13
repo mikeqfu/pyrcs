@@ -1,4 +1,4 @@
-""" A class for collecting British railway line names.
+""" Collecting British railway line names.
 
 Data source: http://www.railwaycodes.org.uk/misc/line_names.shtm
 """
@@ -18,9 +18,7 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_u
 
 class LineNames:
     """
-    A class for collecting British `railway line names`_.
-
-    .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
+    A class for collecting British railway line names.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
@@ -80,7 +78,7 @@ class LineNames:
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
         :type verbose: bool
-        :return railway line names and routes data and date of when the data was last updated
+        :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict, None
 
         **Example**::
