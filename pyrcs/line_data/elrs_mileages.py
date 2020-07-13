@@ -1,4 +1,4 @@
-""" A class for collecting Engineer's Line References (ELRs) codes.
+""" Collecting Engineer's Line References (ELRs) codes.
 
 Data source: http://www.railwaycodes.org.uk/elrs/elr0.shtm
 """
@@ -25,9 +25,7 @@ from pyrcs.utils import mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, yard
 
 class ELRMileages:
     """
-    A class for collecting `Engineer's Line References (ELRs)`_ codes.
-
-    .. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
+    A class for collecting Engineer's Line References (ELRs) codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
@@ -311,9 +309,9 @@ class ELRMileages:
             update  = False
             verbose = True
 
-            elrs = em.collect_elr_by_initial(initial, update, verbose)
+            elrs_a = em.collect_elr_by_initial(initial, update, verbose)
 
-            print(elrs)
+            print(elrs_a)
             # {'A': <codes>,
             #  'Last updated date': <date>}
         """
@@ -361,7 +359,7 @@ class ELRMileages:
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
         :type verbose: bool, int
-        :return data of all available ELRs and date of when the data was last updated
+        :return: data of all available ELRs and date of when the data was last updated
         :rtype: dict
 
         **Example**::
