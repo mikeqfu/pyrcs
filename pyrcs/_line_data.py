@@ -1,4 +1,4 @@
-""" A class for collecting line data """
+""" Collecting line data """
 
 import urllib.parse
 
