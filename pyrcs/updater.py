@@ -1,4 +1,9 @@
-""" Update package data """
+""" Update package data
+
+.. todo::
+
+   Updating track diagrams.
+"""
 
 import os
 import re
@@ -134,18 +139,17 @@ def update_backup_data(verbose=False, time_gap=5):
 
     :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
     :type verbose: bool
-    :param time_gap: time gap between the updating of different classes
+    :param time_gap: time gap (in seconds) between the updating of different classes
     :type time_gap: int
 
     **Example**::
 
+        from pyrcs.update import update_backup_data
+
         verbose = True
+        time_gap = 5
 
-        update_backup_data(verbose)
-
-    .. todo::
-
-        Track diagrams
+        update_backup_data(verbose, time_gap)
     """
 
     if confirmed("To update resources? "):
