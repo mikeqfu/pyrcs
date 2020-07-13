@@ -1,4 +1,4 @@
-""" A class for collecting codes of infrastructure features.
+""" Collecting codes of infrastructure features.
 
 - OLE neutral sections
 - HABD and WILD
@@ -28,9 +28,8 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_u
 
 class Features:
     """
-    A class for collecting `infrastructure features`_.
-
-    .. _`CRS, NLC, TIPLOC and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+    A class for collecting infrastructure features, including OLE neutral sections, HABD and WILD,
+    water troughs, telegraph codes and driver/guard buzzer codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
