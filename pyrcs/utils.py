@@ -544,7 +544,7 @@ def fake_requests_headers(random=False):
     """
     Make a fake HTTP headers for `requests.get`_.
 
-    .. _`requests`: https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
+    .. _`requests.get`: https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
 
     :param random: whether to go for a random agent, defaults to ``False``
     :type random: bool
