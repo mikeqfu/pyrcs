@@ -1,4 +1,4 @@
-""" A class for collecting data of other assets """
+""" Collecting data of other assets """
 
 import urllib.parse
 
