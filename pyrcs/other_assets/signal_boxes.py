@@ -1,4 +1,4 @@
-""" A class for collecting signal box prefix codes
+""" Collecting signal box prefix codes.
 
 Data source: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
 
@@ -26,9 +26,7 @@ from pyrcs.utils import get_catalogue, get_last_updated_date, parse_table, parse
 
 class SignalBoxes:
     """
-    A class for collecting `signal box prefix codes`_.
-
-    .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
+    A class for collecting signal box prefix codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
