@@ -1,4 +1,4 @@
-""" A class for collecting Line Of Route (LOR) codes.
+""" Collecting line of route (LOR) codes.
 
 Data source: http://www.railwaycodes.org.uk/pride/pride0.shtm
 """
@@ -20,9 +20,7 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_u
 
 class LOR:
     """
-    A class for collecting `Line Of Route (LOR) codes`_.
-
-    .. _`Line Of Route (LOR) codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
+    A class for collecting line of route (LOR) codes.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
