@@ -1,4 +1,4 @@
-""" A class for collecting British railway track diagrams.
+""" Collecting British railway track diagrams.
 
 Data source: http://www.railwaycodes.org.uk/track/diagrams0.shtm
 
@@ -21,9 +21,7 @@ from pyrcs.utils import cd_dat, fake_requests_headers, get_last_updated_date, ho
 
 class TrackDiagrams:
     """
-    A class for collecting British `railway track diagrams`_.
-
-    .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
+    A class for collecting British railway track diagrams.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
