@@ -1,3 +1,4 @@
+fake_useragent
 beautifulsoup4
 fuzzywuzzy
 html5lib
@@ -10,10 +11,7 @@ pandas
 pyhelpers
 python-dateutil
 python-Levenshtein
-python-rapidjson
 requests
-SQLAlchemy
-SQLAlchemy-Utils
 tqdm
 xlrd
 XlsxWriter
