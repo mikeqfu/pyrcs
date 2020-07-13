@@ -2,7 +2,14 @@ import os
 
 import setuptools
 
-ver_no = '0.2.6'
+import pyrcs
+
+with open("README.rst", 'r', encoding='utf-8') as readme:
+    long_description = readme.read()
+
+with open('requirements.txt') as f:
+    requirements = f.readlines()
+install_requirements = [r.strip() for r in requirements]
 
 
 def find_all_pkg_dat_files(directory):
@@ -15,33 +22,27 @@ def find_all_pkg_dat_files(directory):
 
 dat_files = find_all_pkg_dat_files('pyrcs\\dat')
 
-
-with open("README.md", 'r', encoding='utf-8') as readme:
-    long_description = readme.read()
-
-with open('requirements.txt') as f:
-    requirements = f.readlines()
-requirements_ = [r.strip() for r in requirements]
-
 setuptools.setup(
 
-    name='pyrcs',
-    version=ver_no,
+    name=pyrcs.__package_name__,
+    version=pyrcs.__version__,
 
-    author='Qian Fu',
-    author_email='qian.fu@outlook.com',
+    author=pyrcs.__author__,
+    author_email=pyrcs.__email__,
 
-    description="A data scraping tool for collection and storage of the railway codes used in the UK rail industry",
+    description=pyrcs.__description__,
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
 
     url='https://github.com/mikeqfu/pyrcs',
 
-    install_requires=requirements_,
+    install_requires=install_requirements,
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
 
-    package_data={"pyrcs": dat_files + ["line_data_cls/*", "other_assets_cls/*"]},
+    package_data={
+        "": ["requirements.txt", "LICENSE"],
+        "pyrcs": dat_files + ["line_data/*", "other_assets/*"]},
     include_package_data=True,
 
     classifiers=[
