@@ -4,17 +4,13 @@ Quick start
 
 **This part of the documentation provides a quick guide and a few examples to demonstrate how PyRCS works.**
 
-:ref:`Get location codes: CRS, NLC, TIPLOC and STANOX<qs-crs-nlc-tiploc-and-stanox>`
-
+- :ref:`Get location codes: CRS, NLC, TIPLOC and STANOX<qs-crs-nlc-tiploc-and-stanox>`
     - :ref:`Location codes for a given initial letter<qs-locations-beginning-with-a-given-letter>`
     - :ref:`All available location codes<qs-all-available-location-codes>`
-
-:ref:`Get ELRs and mileages<qs-elrs>`
-
-  -  :ref:`ELR codes<qs-elr-codes>`
-  -  :ref:`Mileage files<qs-mileage-files>`
-
-:ref:`Get railway stations data<qs-railway-stations-data>`
+- :ref:`Get ELRs and mileages<qs-elrs>`
+    - :ref:`ELR codes<qs-elr-codes>`
+    - :ref:`Mileage files<qs-mileage-files>`
+- :ref:`Get railway stations data<qs-railway-stations-data>`
 
 |
 
