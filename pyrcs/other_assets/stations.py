@@ -1,4 +1,4 @@
-""" A class for collecting railway station data.
+""" Collecting railway station data.
 
 Data source: http://www.railwaycodes.org.uk/stations/station0.shtm
 
@@ -31,9 +31,7 @@ from pyrcs.utils import get_catalogue, get_last_updated_date, parse_location_nam
 
 class Stations:
     """
-    A class for collecting `railway station data`_.
-
-    .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
+    A class for collecting railway station data.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
