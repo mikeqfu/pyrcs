@@ -818,6 +818,14 @@ def fix_num_stanox(stanox_code):
     :type stanox_code: str, int
     :return: standard STANOX code
     :rtype: str
+
+    **Examples**::
+
+        stanox_code = 65630
+        fix_num_stanox(stanox_code)  # '65630'
+
+        stanox_code = 2071
+        fix_num_stanox(stanox_code)  # '02071'
     """
 
     if isinstance(stanox_code, (int, float)):
@@ -833,10 +841,26 @@ def fix_num_stanox(stanox_code):
 
 def is_str_float(str_val):
     """
-    Check if a str expresses a float.
+    Check if a string-type variable can express a float value.
 
-    :param str_val:
-    :return:
+    :param str_val: a string-type variable
+    :type str_val: str
+    :return: whether ``str_val`` can express a float value
+    :rtype: bool
+
+    **Examples**::
+
+        str_val = ''
+        is_str_float(str_val)  # False
+
+        str_val = 'a'
+        is_str_float(str_val)  # False
+
+        str_val = '1'
+        is_str_float(str_val)  # True
+
+        str_val = '1.1'
+        is_str_float(str_val)  # True
     """
 
     try:
