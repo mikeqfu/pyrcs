@@ -47,7 +47,7 @@ After importing the module, you can create an instance for getting the location 
 For a given initial letter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By using the method :ref:`collect_location_codes_by_initial()<cnts-collect-location-codes-by-initial>`, you can get the location codes that start with a specific letter, say ``'A'`` or ``'a'``:
+By using the method :ref:`.collect_location_codes_by_initial()<cnts-collect-location-codes-by-initial>`, you can get the location codes that start with a specific letter, say ``'A'`` or ``'a'``:
 
 .. code-block:: python
 
