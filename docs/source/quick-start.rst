@@ -2,7 +2,7 @@
 Quick start
 ===========
 
-**This part of the documentation provides a quick guide and a few examples to demonstrate how PyRCS works.**
+To demonstrate how PyRCS works, this part of the documentation provides a quick guide and a few examples as follows:
 
 - :ref:`Get location codes: CRS, NLC, TIPLOC and STANOX<qs-crs-nlc-tiploc-and-stanox>`
     - :ref:`Location codes for a given initial letter<qs-locations-beginning-with-a-given-letter>`
@@ -12,6 +12,8 @@ Quick start
     - :ref:`Mileage files<qs-mileage-files>`
 - :ref:`Get railway stations data<qs-railway-stations-data>`
 
+For more details and examples, feel free to check :ref:`Modules<pyrcs-modules>`.
+
 |
 
 .. _qs-crs-nlc-tiploc-and-stanox:
@@ -19,11 +21,13 @@ Quick start
 Get location codes
 ------------------
 
+The location codes (including CRS, NLC, TIPLOC and STANOX) are categorised as `line data`_. Import the class :ref:`pyrcs.line_data.LocationIdentifiers()<ld-cnts>` as follows:
+
 .. code-block:: python
 
    >>> from pyrcs.line_data import LocationIdentifiers
 
-After importing the module, you can create an instance for getting the location codes:
+Now you can create an instance for getting the location codes:
 
 .. code-block:: python
 
@@ -40,7 +44,7 @@ After importing the module, you can create an instance for getting the location 
         >>> ld = LineData()
         >>> lid = ld.LocationIdentifiers
 
-    The instance ``ld`` contains all classes under the category of `line data`_. In that way, ``ld.LocationIdentifiers`` is equivalent to ``lid``.
+    The instance ``ld`` contains all classes under the category of `line data`_. Here ``ld.LocationIdentifiers`` is equivalent to ``lid``.
 
 .. _qs-locations-beginning-with-a-given-letter:
 
@@ -62,7 +66,7 @@ By using the method :ref:`.collect_location_codes_by_initial()<cnts-collect-loca
 
 Their corresponding values are
 
--  ``location_codes_a['A']``: a `pandas.DataFrame`_ of the location codes that begin with 'A'. You may compare it with the table on the web page of `Locations beginning with 'A' <http://www.railwaycodes.org.uk/crs/CRSa.shtm>`_;
+-  ``location_codes_a['A']``: a `pandas.DataFrame`_ of the location codes that begin with 'A'. You may compare it with the table on the web page of `Locations beginning with 'A'`_;
 -  ``location_codes_a['Additional notes']``: some additional information on the web page (if available);
 -  ``location_codes_a['Last updated date']``: the date when the web page was last updated.
 
@@ -71,7 +75,7 @@ Their corresponding values are
 For all location codes
 ~~~~~~~~~~~~~~~~~~~~~~
 
-To get all available location codes in this category, use the method :ref:``.fetch_location_codes()<cnts-fetch-location-codes>``:
+To get all available location codes in this category, use the method :ref:`.fetch_location_codes()<cnts-fetch-location-codes>`:
 
 .. code-block:: python
 
@@ -127,7 +131,7 @@ Their corresponding values are
 -  ``elrs_a['A']``: a `pandas.DataFrame`_ of ELRs that begin with 'A'. You may compare it with the table on the web page of `ELRs beginning with 'A' <http://www.railwaycodes.org.uk/elrs/elra.shtm>`_;
 -  ``elrs_a['Last updated date']``: the date when the web page was last updated.
 
-To get all available ELR codes, use the method :ref:``.fetch_elr()<em-fetch-elr>``, which also returns a dictionary:
+To get all available ELR codes, use the method :ref:`.fetch_elr()<em-fetch-elr>`, which also returns a dictionary:
 
 .. code-block:: python
 
@@ -141,7 +145,7 @@ The keys of ``elrs_data`` include:
 Their corresponding values are
 
 -  ``elrs_data['ELRs']``: a ``pandas.DataFrame`` of all available ELRs (from 'A' to 'Z');
--  ``elrs_data['Latest update date']``: the latest `Last updated date` among all initial letter-specific codes.
+-  ``elrs_data['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
 .. _qs-mileage-files:
 
@@ -188,7 +192,7 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
 
 .. note::
 
-   Alternatively, the class ``stations`` can also be defined in the following way:
+   Alternatively, the instance ``stations`` can also be defined in the following way, where ``other_assets`` contains all classes under the category of `other assets`_.
 
     .. code-block:: python
 
@@ -197,14 +201,14 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
         >>> other_assets = OtherAssets()
         >>> stations = other_assets.Stations
 
-Like ``elrs_data`` above, yhe keys of ``railway_station_data_a`` include:
+The keys of ``railway_station_data_a`` include:
 
 -  ``'A'``
 -  ``'Last updated date'``
 
 The corresponding values are
 
--  ``railway_station_data_a['A']``: a `pandas.DataFrame`_ of the data of railway stations whose names begin with 'A'. You may compare it with the table on the web page of `Stations beginning with 'A' <http://www.railwaycodes.org.uk/stations/station0.shtm>`_;
+-  ``railway_station_data_a['A']``: a `pandas.DataFrame`_ of the data of railway stations whose names begin with 'A'. You may compare it with the table on the web page of `Stations beginning with 'A'`_;
 -  ``railway_station_data_a['Last updated date']``: the date when the web page was last updated.
 
 To get available railway station data (from 'A' to 'Z') in this category, use the method :ref:`.fetch_railway_station_data()<stations-fetch-railway-station-data>`
@@ -221,14 +225,16 @@ The keys of ``railway_station_data`` include:
 Their corresponding values are
 
 -  ``railway_station_data['Railway station data']``: a ``pandas.DataFrame`` of available railway station data (from 'A' to 'Z');
--  ``railway_station_data['Latest update date']``: the latest `Last updated date` among all initial letter-specific codes.
+-  ``railway_station_data['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
 .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 .. _`CRS, NLC, TIPLOC and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+.. _`Locations beginning with 'A'`: http://www.railwaycodes.org.uk/crs/CRSa.shtm
 .. _`other systems`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
 .. _`ELRs (Engineer's Line References) and mileages`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
 .. _`AAM`: http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm
 .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
+.. _`Stations beginning with 'A'`: http://www.railwaycodes.org.uk/stations/station0.shtm
 .. _`dict`: https://docs.python.org/3/library/stdtypes.html#dict
 .. _`pandas.DataFrame`: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
