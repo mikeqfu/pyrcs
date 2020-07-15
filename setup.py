@@ -22,7 +22,16 @@ setuptools.setup(
 
     url='https://github.com/mikeqfu/pyrcs',
 
-    install_requires=install_requirements,
+    install_requires=[
+        'fake_useragent',
+        'beautifulsoup4',
+        'html5lib',
+        'lxml',
+        'measurement'
+        'openpyxl'
+        'pyhelpers'
+        'XlsxWriter'
+    ],
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
 
