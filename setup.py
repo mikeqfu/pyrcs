@@ -13,7 +13,6 @@ setuptools.setup(
 
     name=pyrcs.__package_name__,
     version=pyrcs.__version__,
-
     author=pyrcs.__author__,
     author_email=pyrcs.__email__,
 
