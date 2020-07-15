@@ -1,5 +1,3 @@
-import os
-
 import setuptools
 
 import pyrcs
@@ -7,20 +5,9 @@ import pyrcs
 with open("README.rst", 'r', encoding='utf-8') as readme:
     long_description = readme.read()
 
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     requirements = f.readlines()
 install_requirements = [r.strip() for r in requirements]
-
-
-def find_all_pkg_dat_files(directory):
-    paths = []
-    for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
-    return paths
-
-
-dat_files = find_all_pkg_dat_files('pyrcs\\dat')
 
 setuptools.setup(
 
@@ -40,9 +27,6 @@ setuptools.setup(
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
 
-    package_data={
-        "": ["requirements.txt", "LICENSE"],
-        "pyrcs": dat_files + ["line_data/*", "other_assets/*"]},
     include_package_data=True,
 
     classifiers=[
