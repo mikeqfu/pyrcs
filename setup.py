@@ -5,10 +5,6 @@ import pyrcs
 with open("README.rst", 'r', encoding='utf-8') as readme:
     long_description = readme.read()
 
-with open("requirements.txt") as f:
-    requirements = f.readlines()
-install_requirements = [r.strip() for r in requirements]
-
 setuptools.setup(
 
     name=pyrcs.__package_name__,
