@@ -8,6 +8,7 @@ import itertools
 import os
 import re
 import string
+import urllib.parse
 
 import bs4
 import measurement.measures
@@ -29,6 +30,8 @@ class ELRMileages:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -37,20 +40,20 @@ class ELRMileages:
         em = ELRMileages()
 
         print(em.Name)
-        # Engineer's Line References (ELRs)
+        # ELRs and mileages
 
         print(em.SourceURL)
         # http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
         self.Name = "ELRs and mileages"
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/elrs/elr0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/elrs/elr0.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'ELRs'  # key to ELRs and mileages
         self.LUDKey = 'Last updated date'  # key to last updated date
@@ -307,9 +310,8 @@ class ELRMileages:
 
             initial = 'a'
             update  = False
-            verbose = True
 
-            elrs_a = em.collect_elr_by_initial(initial, update, verbose)
+            elrs_a = em.collect_elr_by_initial(initial, update)
 
             print(elrs_a)
             # {'A': <codes>,
@@ -321,7 +323,7 @@ class ELRMileages:
 
         path_to_pickle = self.cdd_em("a-z", beginning_with.lower() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
-            elrs = load_pickle(path_to_pickle, verbose=verbose)
+            elrs = load_pickle(path_to_pickle)
 
         else:
             url = self.Catalogue[beginning_with]  # Specify the requested URL
@@ -371,9 +373,8 @@ class ELRMileages:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            elrs_data = em.fetch_elr(update, pickle_it, data_dir, verbose)
+            elrs_data = em.fetch_elr(update, pickle_it, data_dir)
 
             print(elrs_data)
             # {'ELRs': <codes>,
@@ -417,9 +418,10 @@ class ELRMileages:
         :rtype: dict
 
         .. note::
-            - In some cases, mileages are unknown hence left blank,
+
+            - In some cases, mileages are unknown hence left blank, \
                 e.g. ANI2, Orton Junction with ROB (~3.05)
-            - Mileages in parentheses are not on that ELR, but are included for reference,
+            - Mileages in parentheses are not on that ELR, but are included for reference, \
                 e.g. ANL, (8.67) NORTHOLT [London Underground]
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
 
@@ -432,11 +434,9 @@ class ELRMileages:
             parsed = True
             confirmation_required = True
             pickle_it = False
-            verbose = True
 
             elr = 'CJD'
-            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it,
-                                                          verbose)
+            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
             # To collect mileage file for "CJD"? [No]|Yes:
             # >? yes
 
@@ -448,10 +448,11 @@ class ELRMileages:
             #  'Notes': <notes>}
         """
 
-        if confirmed("To collect mileage file of {}?".format(elr.upper()), confirmation_required=confirmation_required):
+        if confirmed("To collect mileage file of \"{}\"?".format(elr.upper()),
+                     confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting mileage file of {}".format(elr.upper()), end=" ... ")
+                print("Collecting mileage file of \"{}\"".format(elr.upper()), end=" ... ")
             try:
                 # The URL of the mileage file for the ELR
                 url = self.HomeURL + '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
@@ -589,10 +590,9 @@ class ELRMileages:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
             elr = 'MLA'
-            mileage_file = em.fetch_mileage_file(elr, update, pickle_it, data_dir, verbose)
+            mileage_file = em.fetch_mileage_file(elr, update, pickle_it, data_dir)
 
             print(mileage_file)
             # {'ELR': 'MLA',
@@ -607,7 +607,7 @@ class ELRMileages:
             path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            mileage_file = load_pickle(path_to_pickle, verbose=verbose)
+            mileage_file = load_pickle(path_to_pickle)
 
         else:
             verbose_ = False if data_dir or not verbose else True
@@ -647,15 +647,15 @@ class ELRMileages:
             em = ELRMileages()
 
             start_elr = 'AAM'
-            start_mileage_file = em.collect_mileage_file_by_elr(start_elr, verbose=True)
-            # To collect mileage file for "AAM"? [No]|Yes: >? yes
-            # Collecting mileage file for "AAM" ... Done.
+            start_mileage_file = em.collect_mileage_file_by_elr(start_elr)
+            # To collect mileage file of "AAM"? [No]|Yes:
+            # >? yes
             start_em = start_mileage_file[start_elr]
 
             end_elr = 'ANZ'
-            end_mileage_file = em.collect_mileage_file_by_elr(end_elr, verbose=True)
-            # To collect mileage file for "ANZ"? [No]|Yes: >? yes
-            # Collecting mileage file for "ANZ" ... Done.
+            end_mileage_file = em.collect_mileage_file_by_elr(end_elr)
+            # To collect mileage file of "ANZ"? [No]|Yes:
+            # >? yes
             end_em = end_mileage_file[end_elr]
 
             start_dest_mileage, end_orig_mileage = em.search_conn(start_elr, start_em, end_elr, end_em)
@@ -724,12 +724,11 @@ class ELRMileages:
             update = False
             pickle_mileage_file = False
             data_dir = None
-            verbose = True
 
             start_elr = 'NAY'
             end_elr = 'LTN2'
             start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage = \
-                em.get_conn_mileages(start_elr, end_elr, update, pickle_mileage_file, data_dir, verbose)
+                em.get_conn_mileages(start_elr, end_elr, update, pickle_mileage_file, data_dir)
 
             print(start_dest_mileage)
             # 5.1606
