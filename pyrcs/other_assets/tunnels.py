@@ -8,6 +8,7 @@ import itertools
 import operator
 import os
 import re
+import urllib.parse
 
 import bs4
 import measurement.measures
@@ -27,6 +28,8 @@ class Tunnels:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -41,7 +44,7 @@ class Tunnels:
         # http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
@@ -49,8 +52,8 @@ class Tunnels:
         self.Key = 'Tunnels'
         self.LUDKey = 'Last updated date'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/tunnels/tunnels0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/tunnels/tunnels0.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.Catalogue.keys())[1:]
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
@@ -160,18 +163,15 @@ class Tunnels:
             tunnels = Tunnels()
 
             update = True
-            verbose = True
 
             page_no = 1
-            railway_tunnel_lengths_1 = tunnels.collect_railway_tunnel_lengths_by_page(page_no, update,
-                                                                                      verbose)
+            railway_tunnel_lengths_1 = tunnels.collect_railway_tunnel_lengths_by_page(page_no, update)
             print(railway_tunnel_lengths_1)
             # {'Page 1 (A-F)': <codes>,
             #  'Last updated date': <date>}
 
             page_no = 4
-            railway_tunnel_lengths_4 = tunnels.collect_railway_tunnel_lengths_by_page(page_no, update,
-                                                                                      verbose)
+            railway_tunnel_lengths_4 = tunnels.collect_railway_tunnel_lengths_by_page(page_no, update)
             print(railway_tunnel_lengths_4)
             # {'Page 4 (others)': <codes>,
             #  'Last updated date': <date>}
@@ -184,7 +184,7 @@ class Tunnels:
         path_to_pickle = self.cdd_tunnels(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            page_railway_tunnel_lengths = load_pickle(path_to_pickle, verbose=verbose)
+            page_railway_tunnel_lengths = load_pickle(path_to_pickle)
 
         else:
             url = self.Catalogue[page_name]
@@ -263,10 +263,8 @@ class Tunnels:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = False
 
-            railway_tunnel_lengths = tunnels.fetch_railway_tunnel_lengths(update, pickle_it, data_dir,
-                                                                          verbose)
+            railway_tunnel_lengths = tunnels.fetch_railway_tunnel_lengths(update, pickle_it, data_dir)
 
             print(railway_tunnel_lengths)
             # {'Tunnels': <codes>,
