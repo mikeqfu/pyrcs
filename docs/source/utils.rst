@@ -16,6 +16,7 @@ Source homepage
 
 .. autofunction:: homepage_url
 
+|
 
 Directory
 ~~~~~~~~~
@@ -25,6 +26,8 @@ Directory
    cd_dat
 
 .. autofunction:: cd_dat
+
+|
 
 Converters
 ~~~~~~~~~~
@@ -56,6 +59,8 @@ Converters
 
 .. autofunction:: year_to_financial_year
 
+|
+
 Parsers
 ~~~~~~~
 
@@ -74,6 +79,8 @@ Parsers
 
 .. autofunction:: parse_date
 
+|
+
 Get useful information
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -83,6 +90,8 @@ Get useful information
    get_last_updated_date
    get_catalogue
    get_category_menu
+   get_station_data_catalogue
+   get_track_diagrams_items
 
 .. autofunction:: fake_requests_headers
 
@@ -91,6 +100,12 @@ Get useful information
 .. autofunction:: get_catalogue
 
 .. autofunction:: get_category_menu
+
+.. autofunction:: get_station_data_catalogue
+
+.. autofunction:: get_track_diagrams_items
+
+|
 
 Rectification of location names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +119,8 @@ Rectification of location names
 
 .. autofunction:: update_location_name_repl_dict
 
+|
+
 Fixers
 ~~~~~~
 
@@ -112,6 +129,8 @@ Fixers
    fix_num_stanox
 
 .. autofunction:: fix_num_stanox
+
+|
 
 Misc
 ~~~~
