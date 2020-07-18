@@ -15,7 +15,7 @@ import pandas as pd
 import pkg_resources
 import requests
 from pyhelpers.ops import confirmed
-from pyhelpers.store import load_json, save_json
+from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 
 
 def homepage_url():
@@ -676,55 +676,163 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
     return catalogue
 
 
-def get_category_menu(menu_url):
+def get_category_menu(menu_url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
     Get a menu of the available classes.
 
     :param menu_url: URL of the menu page
     :type menu_url: str
-    :return: {'<category name>': {'<title>': '<URL>'}}
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
+    :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+    :type confirmation_required: bool
+    :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
+    :type json_it: bool
+    :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
+    :type verbose: bool
+    :return:
     :rtype: dict
 
     **Example**::
 
         from pyrcs.utils import get_category_menu
 
+        update = False
+        confirmation_required = True
+        verbose = True
+
         menu_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-        get_category_menu(menu_url)
+        cls_menu = get_category_menu(menu_url)
+
+        print(cls_menu)
+        # {'<category name>': {'<title>': '<URL>'}}
     """
 
-    source = requests.get(menu_url, headers=fake_requests_headers())
+    menu_json = '-'.join(x for x in urllib.parse.urlparse(menu_url).path.replace('.shtm', '.json').split('/') if x)
+    path_to_menu_json = cd_dat("catalogue", menu_json)
 
-    soup = bs4.BeautifulSoup(source.text, 'lxml')
-    h1, h2s = soup.find('h1'), soup.find_all('h2')
-
-    cls_name = h1.text.replace(' menu', '')
-
-    if len(h2s) == 0:
-        cls_elem = dict((x.text, urllib.parse.urljoin(menu_url, x.get('href'))) for x in h1.find_all_next('a'))
+    if os.path.isfile(path_to_menu_json) and not update:
+        cls_menu = load_json(path_to_menu_json, verbose=verbose)
 
     else:
-        all_next = [x.replace(':', '') for x in h1.find_all_next(string=True) if x != '\n' and x != '\xa0'][2:]
-        h2s_list = [x.text.replace(':', '') for x in h2s]
-        all_next_a = [(x.text, urllib.parse.urljoin(menu_url, x.get('href'))) for x in h1.find_all_next('a', href=True)]
+        if confirmed("To collect/update category menu? ", confirmation_required=confirmation_required):
 
-        idx = [all_next.index(x) for x in h2s_list]
-        for i in idx:
-            all_next_a.insert(i, all_next[i])
+            source = requests.get(menu_url, headers=fake_requests_headers())
 
-        cls_elem, i = {}, 0
-        while i <= len(idx):
-            if i == 0:
-                d = dict(all_next_a[i:idx[i]])
-            elif i < len(idx):
-                d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:idx[i]])}
+            soup = bs4.BeautifulSoup(source.text, 'lxml')
+            h1, h2s = soup.find('h1'), soup.find_all('h2')
+
+            cls_name = h1.text.replace(' menu', '')
+
+            if len(h2s) == 0:
+                cls_elem = dict((x.text, urllib.parse.urljoin(menu_url, x.get('href'))) for x in h1.find_all_next('a'))
+
             else:
-                d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:])}
-            i += 1
-            cls_elem.update(d)
+                all_next = [x.replace(':', '') for x in h1.find_all_next(string=True) if x != '\n' and x != '\xa0'][2:]
+                h2s_list = [x.text.replace(':', '') for x in h2s]
+                all_next_a = [(x.text, urllib.parse.urljoin(menu_url, x.get('href')))
+                              for x in h1.find_all_next('a', href=True)]
 
-    cls_menu = {cls_name: cls_elem}
+                idx = [all_next.index(x) for x in h2s_list]
+                for i in idx:
+                    all_next_a.insert(i, all_next[i])
+
+                cls_elem, i = {}, 0
+                while i <= len(idx):
+                    if i == 0:
+                        d = dict(all_next_a[i:idx[i]])
+                    elif i < len(idx):
+                        d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:idx[i]])}
+                    else:
+                        d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:])}
+                    i += 1
+                    cls_elem.update(d)
+
+            cls_menu = {cls_name: cls_elem}
+
+            if json_it:
+                save_json(cls_menu, path_to_menu_json, verbose=verbose)
+
+        else:
+            print("The category menu has not been acquired.")
+            cls_menu = None
+
     return cls_menu
+
+
+def get_station_data_catalogue(source_url, source_key, update=False):
+    """
+    Get catalogue of railway station data.
+
+    :param source_url: URL to the source web page
+    :type source_url: str
+    :param source_key: key of the returned catalogue (which is a dictionary)
+    :type source_key: str
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
+    :return: catalogue of railway station data
+    :rtype: dict
+    """
+
+    cat_json = '-'.join(x for x in urllib.parse.urlparse(source_url).path.replace('.shtm', '.json').split('/') if x)
+    path_to_cat = cd_dat("catalogue", cat_json)
+
+    if os.path.isfile(path_to_cat) and not update:
+        catalogue = load_json(path_to_cat)
+
+    else:
+        source = requests.get(source_url, headers=fake_requests_headers())
+        cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find('p', {'class': 'appeal'}).find_next('p').find_next('p')
+        hot_soup = {a.text: urllib.parse.urljoin(source_url, a.get('href')) for a in cold_soup.find_all('a')}
+
+        catalogue = {source_key: None}
+        for k, v in hot_soup.items():
+            sub_cat = get_catalogue(v, update=True, confirmation_required=False, json_it=False)
+            if sub_cat != hot_soup:
+                if k == 'Introduction':
+                    catalogue.update({source_key: {k: v, **sub_cat}})
+                else:
+                    catalogue.update({k: sub_cat})
+            else:
+                if k in ('Bilingual names', 'Not served by SFO'):
+                    catalogue[source_key].update({k: v})
+                else:
+                    catalogue.update({k: v})
+
+        save_json(catalogue, path_to_cat)
+
+    return catalogue
+
+
+def get_track_diagrams_items(source_url, source_key, update=False):
+    """
+    Get catalogue of track diagrams.
+
+    :param source_url: URL to the source web page
+    :type source_url: str
+    :param source_key: key of the returned catalogue (which is a dictionary)
+    :type source_key: str
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
+    :return: catalogue of railway station data
+    :rtype: dict
+    """
+
+    cat_json = '-'.join(x for x in urllib.parse.urlparse(source_url).path.replace('.shtm', '.json').split('/') if x)
+    path_to_cat = cd_dat("catalogue", cat_json)
+
+    if os.path.isfile(path_to_cat) and not update:
+        items = load_pickle(path_to_cat)
+
+    else:
+        source = requests.get(source_url, headers=fake_requests_headers())
+        soup = bs4.BeautifulSoup(source.text, 'lxml')
+        h3 = {x.get_text(strip=True) for x in soup.find_all('h3', text=True, attrs={'class': None})}
+        items = {source_key: h3}
+
+        save_pickle(items, path_to_cat)
+
+    return items
 
 
 # -- Rectification of location names ------------------------------------------------------------------
