@@ -18,15 +18,14 @@ import re
 import string
 import urllib.parse
 
-import bs4
 import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url, save_json
-from pyrcs.utils import get_catalogue, get_last_updated_date, parse_location_name, parse_table
+from pyrcs.utils import cd_dat, fake_requests_headers, get_last_updated_date, get_station_data_catalogue, \
+    homepage_url, parse_location_name, parse_table
 
 
 class Stations:
@@ -35,6 +34,8 @@ class Stations:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -46,16 +47,16 @@ class Stations:
         # Stations
 
         print(stn.SourceURL)
-        # http://www.railwaycodes.org.uk/crs/CRS0.shtm
+        # http://www.railwaycodes.org.uk/stations/station0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
         self.Name = 'Stations'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/stations/station0.shtm'
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/stations/station0.shtm')
 
         self.StnKey = 'Railway station data'
         self.BilingualKey = 'Bilingual names'
@@ -68,22 +69,7 @@ class Stations:
 
         self.LUDKey = 'Last updated date'  # key to last updated date
 
-        source = requests.get(self.SourceURL, headers=fake_requests_headers())
-        cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find('p', {'class': 'appeal'}).find_next('p').find_next('p')
-        hot_soup = {a.text: urllib.parse.urljoin(self.SourceURL, a.get('href')) for a in cold_soup.find_all('a')}
-        self.Catalogue = {}
-        for k, v in hot_soup.items():
-            sub_cat = get_catalogue(v, confirmation_required=False, json_it=False)
-            if sub_cat != hot_soup:
-                cat_json = '-'.join(x for x in urllib.parse.urlparse(v).path.replace('.shtm', '.json').split('/') if x)
-                path_to_cat_json = cd_dat("catalogue", cat_json)
-                save_json(sub_cat, path_to_cat_json)
-                if k == 'Introduction':
-                    self.Catalogue.update({self.StnKey: {k: hot_soup[k], **sub_cat}})
-                else:
-                    self.Catalogue.update({k: sub_cat})
-            else:
-                self.Catalogue.update({k: v})
+        self.Catalogue = get_station_data_catalogue(self.SourceURL, self.StnKey, update=update)
 
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
@@ -149,11 +135,10 @@ class Stations:
 
             stn = Stations()
 
-            update = True
-            verbose = True
+            update = False
 
             initial = 'a'
-            railway_station_data_a = stn.collect_railway_station_data_by_initial(initial, update, verbose)
+            railway_station_data_a = stn.collect_railway_station_data_by_initial(initial, update)
 
             print(railway_station_data_a)
             # {'A': <codes>,
@@ -260,9 +245,8 @@ class Stations:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = False
 
-            railway_station_data = stn.fetch_railway_station_data(update, pickle_it, data_dir, verbose)
+            railway_station_data = stn.fetch_railway_station_data(update, pickle_it, data_dir)
 
             print(railway_station_data)
             # {'Railway station data': <codes>,
