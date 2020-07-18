@@ -27,6 +27,8 @@ class LocationIdentifiers:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -41,14 +43,14 @@ class LocationIdentifiers:
         # http://www.railwaycodes.org.uk/crs/CRS0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/crs/CRS0.shtm')
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'Location codes'  # key to location codes
         self.LUDKey = 'Last updated date'  # key to last updated date
@@ -176,10 +178,8 @@ class LocationIdentifiers:
             lid = LocationIdentifiers()
 
             confirmation_required = True
-            verbose = True
 
-            explanatory_note = lid.collect_multiple_station_codes_explanatory_note(confirmation_required,
-                                                                                   verbose)
+            explanatory_note = lid.collect_multiple_station_codes_explanatory_note(confirmation_required)
             # To collect multiple station codes explanatory note? [No]|Yes:
             # >? yes
 
@@ -260,7 +260,7 @@ class LocationIdentifiers:
         path_to_pickle = self.cdd_lc(self.MSCENPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            explanatory_note = load_pickle(path_to_pickle, verbose=verbose)
+            explanatory_note = load_pickle(path_to_pickle)
 
         else:
             explanatory_note = self.collect_multiple_station_codes_explanatory_note(
@@ -400,11 +400,8 @@ class LocationIdentifiers:
 
             lid = LocationIdentifiers()
 
-            update = True
-            verbose = True
-
             initial = 'a'
-            location_codes_a = lid.collect_location_codes_by_initial(initial, update, verbose)
+            location_codes_a = lid.collect_location_codes_by_initial(initial)
 
             print(location_codes_a)
             # {'A': <codes>,
@@ -545,9 +542,8 @@ class LocationIdentifiers:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = False
 
-            location_codes = lid.fetch_location_codes(update, pickle_it, data_dir, verbose)
+            location_codes = lid.fetch_location_codes(update, pickle_it, data_dir)
 
             print(location_codes)
             # {'Location codes': <codes>,
@@ -583,9 +579,9 @@ class LocationIdentifiers:
 
         # Create a dict to include all information
         location_codes = {self.Key: location_codes_data_table,
-                          self.LUDKey: latest_update_date,
+                          self.OSKey: other_systems_codes,
                           self.ANKey: additional_notes,
-                          self.OSKey: other_systems_codes}
+                          self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = regulate_input_data_dir(data_dir)
@@ -630,7 +626,6 @@ class LocationIdentifiers:
             save_it = False
             data_dir = None
             update = False
-            verbose = False
 
             keys = 'STANOX'
             initials = None
@@ -638,7 +633,8 @@ class LocationIdentifiers:
             main_key = None
             stanox_dictionary = lid.make_location_codes_dictionary(keys, initials, drop_duplicates,
                                                                    as_dict, main_key, save_it, data_dir,
-                                                                   update, verbose)
+                                                                   update)
+            print(stanox_dictionary)
 
             keys = ['STANOX', 'TIPLOC']
             initials = 'a'
@@ -646,7 +642,8 @@ class LocationIdentifiers:
             main_key = None
             stanox_dictionary = lid.make_location_codes_dictionary(keys, initials, drop_duplicates,
                                                                    as_dict, main_key, save_it, data_dir,
-                                                                   update, verbose)
+                                                                   update)
+            print(stanox_dictionary)
 
             keys = ['STANOX', 'TIPLOC']
             initials = 'b'
@@ -654,7 +651,8 @@ class LocationIdentifiers:
             main_key = 'Data'
             stanox_dictionary = lid.make_location_codes_dictionary(keys, initials, drop_duplicates,
                                                                    as_dict, main_key, save_it, data_dir,
-                                                                   update, verbose)
+                                                                   update)
+            print(stanox_dictionary)
         """
 
         valid_keys = {'CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME'}
@@ -682,9 +680,9 @@ class LocationIdentifiers:
 
         if os.path.isfile(path_to_file) and not update:
             if as_dict:
-                location_codes_dictionary = load_json(path_to_file, verbose=verbose)
+                location_codes_dictionary = load_json(path_to_file)
             else:
-                location_codes_dictionary = load_pickle(path_to_file, verbose=verbose)
+                location_codes_dictionary = load_pickle(path_to_file)
 
         else:
             if initials is None:
