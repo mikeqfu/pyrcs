@@ -7,6 +7,7 @@ import copy
 import itertools
 import os
 import re
+import urllib.parse
 
 import pandas as pd
 from pyhelpers.dir import regulate_input_data_dir
@@ -22,6 +23,8 @@ class Viaducts:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -36,7 +39,7 @@ class Viaducts:
         # http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
@@ -44,8 +47,8 @@ class Viaducts:
         self.Key = 'Viaducts'
         self.LUDKey = 'Last updated date'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/viaducts/viaducts0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/viaducts/viaducts0.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.P1Key, self.P2Key, self.P3Key, self.P4Key, self.P5Key, self.P6Key = list(self.Catalogue.keys())[1:]
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
@@ -77,7 +80,7 @@ class Viaducts:
         :param update: whether to check on update and proceed to update the package data, defaults to ``False``
         :type update: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type verbose: bool
         :return: railway viaducts data of the given ``page_no`` and date of when the data was last updated
         :rtype: dict
 
@@ -88,10 +91,10 @@ class Viaducts:
             viaducts = Viaducts()
 
             update = True
-            verbose = True
 
             page_no = 1
-            railway_viaducts_1 = viaducts.collect_railway_viaducts_by_page(page_no, update, verbose)
+            railway_viaducts_1 = viaducts.collect_railway_viaducts_by_page(page_no, update)
+
             print(railway_viaducts_1)
             # {'Page 1 (A-C)': <codes>,
             #  'Last updated date': <date>}
@@ -105,7 +108,7 @@ class Viaducts:
         path_to_pickle = self.cdd_viaducts(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            page_railway_viaducts = load_pickle(path_to_pickle, verbose=verbose)
+            page_railway_viaducts = load_pickle(path_to_pickle)
 
         else:
             url = self.Catalogue[page_name]
@@ -141,7 +144,7 @@ class Viaducts:
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type verbose: bool
         :return: railway viaducts data and date of when the data was last updated
         :rtype: dict
 
@@ -154,9 +157,8 @@ class Viaducts:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = False
 
-            railway_viaducts = viaducts.fetch_railway_viaducts(update, pickle_it, data_dir, verbose)
+            railway_viaducts = viaducts.fetch_railway_viaducts(update, pickle_it, data_dir)
 
             print(railway_tunnel_lengths)
             # {'Viaducts': <codes>,
