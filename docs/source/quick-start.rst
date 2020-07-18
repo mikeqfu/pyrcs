@@ -39,7 +39,7 @@ Now you can create an instance for getting the location codes:
 
     .. code-block:: python
 
-        >>> from pyrcs._line_data import LineData
+        >>> from pyrcs import LineData
 
         >>> ld = LineData()
         >>> lid = ld.LocationIdentifiers
@@ -81,7 +81,7 @@ To get all available location codes in this category, use the method :ref:`.fetc
 
    >>> location_codes = lid.fetch_location_codes()
 
-This method also returns a dictionary, ``location_codes_a``, of which the keys are as follows:
+``location_codes`` is also a dictionary, of which the keys are as follows:
 
 -  ``'Location codes'``
 -  ``'Other systems'``
@@ -115,7 +115,7 @@ To get `ELRs (Engineer's Line References) and mileages`_, use the class :ref:`py
 Get ELR codes
 ~~~~~~~~~~~~~
 
-To get ELR codes which start with ``'A'``, use the method :ref:`.collect_elr_by_initial()<em-collect-elr-by-initial>`:
+To get ELR codes which start with ``'A'``, use the method :ref:`.collect_elr_by_initial()<em-collect-elr-by-initial>`, which returns a dictionary:
 
 .. code-block:: python
 
@@ -128,7 +128,7 @@ The keys of ``elrs_a`` include:
 
 Their corresponding values are
 
--  ``elrs_a['A']``: a `pandas.DataFrame`_ of ELRs that begin with 'A'. You may compare it with the table on the web page of `ELRs beginning with 'A' <http://www.railwaycodes.org.uk/elrs/elra.shtm>`_;
+-  ``elrs_a['A']``: a `pandas.DataFrame`_ of ELRs that begin with 'A'. You may compare it with the table on the web page of `ELRs beginning with 'A'`_;
 -  ``elrs_a['Last updated date']``: the date when the web page was last updated.
 
 To get all available ELR codes, use the method :ref:`.fetch_elr()<em-fetch-elr>`, which also returns a dictionary:
@@ -144,7 +144,7 @@ The keys of ``elrs_data`` include:
 
 Their corresponding values are
 
--  ``elrs_data['ELRs']``: a ``pandas.DataFrame`` of all available ELRs (from 'A' to 'Z');
+-  ``elrs_data['ELRs']``: a `pandas.DataFrame`_ of all available ELRs (from 'A' to 'Z');
 -  ``elrs_data['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
 .. _qs-mileage-files:
@@ -181,25 +181,30 @@ Their corresponding values are
 Get railway stations data
 -------------------------
 
-The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets`_ in the source data. To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :ref:`.collect_railway_station_data_by_initial()<stations-collect-railway-station-data-by-initial>`:
+The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets`_ in the source data.
 
 .. code-block:: python
 
    >>> from pyrcs.other_assets import Stations
 
-   >>> stations = Stations()
-   >>> railway_station_data_a = stations.collect_railway_station_data_by_initial('A')
+   >>> stn = Stations()
 
 .. note::
 
-   Alternatively, the instance ``stations`` can also be defined in the following way, where ``other_assets`` contains all classes under the category of `other assets`_.
+   Alternatively, the instance ``stn`` can also be defined in the following way, where ``oa`` contains all classes under the category of `other assets`_.
 
     .. code-block:: python
 
-        >>> from pyrcs._other_assets import OtherAssets
+        >>> from pyrcs import OtherAssets
 
-        >>> other_assets = OtherAssets()
-        >>> stations = other_assets.Stations
+        >>> oa = OtherAssets()
+        >>> stn = oa.Stations
+
+To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :ref:`.collect_railway_station_data_by_initial()<stations-collect-railway-station-data-by-initial>`:
+
+.. code-block:: python
+
+   >>> railway_station_data_a = stn.collect_railway_station_data_by_initial('A')
 
 The keys of ``railway_station_data_a`` include:
 
@@ -215,7 +220,7 @@ To get available railway station data (from 'A' to 'Z') in this category, use th
 
 .. code-block:: python
 
-   >>> railway_station_data = stations.fetch_railway_station_data()
+   >>> railway_station_data = stn.fetch_railway_station_data()
 
 The keys of ``railway_station_data`` include:
 
@@ -224,7 +229,7 @@ The keys of ``railway_station_data`` include:
 
 Their corresponding values are
 
--  ``railway_station_data['Railway station data']``: a ``pandas.DataFrame`` of available railway station data (from 'A' to 'Z');
+-  ``railway_station_data['Railway station data']``: a `pandas.DataFrame`_ of available railway station data (from 'A' to 'Z');
 -  ``railway_station_data['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
 .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
@@ -232,9 +237,10 @@ Their corresponding values are
 .. _`Locations beginning with 'A'`: http://www.railwaycodes.org.uk/crs/CRSa.shtm
 .. _`other systems`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
 .. _`ELRs (Engineer's Line References) and mileages`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
+.. _`ELRs beginning with 'A'`: http://www.railwaycodes.org.uk/elrs/elra.shtm
 .. _`AAM`: http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm
 .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
-.. _`Stations beginning with 'A'`: http://www.railwaycodes.org.uk/stations/station0.shtm
+.. _`Stations beginning with 'A'`: http://www.railwaycodes.org.uk/stations/stationa.shtm
 .. _`dict`: https://docs.python.org/3/library/stdtypes.html#dict
 .. _`pandas.DataFrame`: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
