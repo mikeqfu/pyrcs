@@ -26,6 +26,10 @@ Classes for collecting other assets data.
    tunnels
    viaducts
 
+|
+
+.. _pyrcs-_other-assets:
+
 .. py:module:: pyrcs._other_assets
 
 .. autoclass:: OtherAssets
