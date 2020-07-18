@@ -33,6 +33,8 @@ class Features:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -44,7 +46,7 @@ class Features:
         # Infrastructure features
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
@@ -53,7 +55,7 @@ class Features:
         self.Key = 'Features'
         self.LUDKey = 'Last updated date'  # key to last updated date
         self.Catalogue = get_catalogue(urllib.parse.urljoin(self.HomeURL, '/misc/habdwild.shtm'),
-                                       confirmation_required=False)
+                                       update=update, confirmation_required=False)
         self.HabdWildKey = 'HABD and WILD'
         self.HabdWildPickle = self.HabdWildKey.replace(" ", "-").lower()
         self.OLENeutralNetworkKey = 'OLE neutral sections'
@@ -122,7 +124,7 @@ class Features:
         :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: data of HABDs and WILDs, and date of when the data was last updated
         :rtype: dict, None
 
@@ -133,10 +135,9 @@ class Features:
             features = Features()
 
             confirmation_required = True
-            verbose = True
 
-            habds_and_wilds_codes_data = features.collect_habds_and_wilds(confirmation_required, verbose)
-            # To collect codes for HABDs and WILDs? [No]|Yes:
+            habds_and_wilds_codes_data = features.collect_habds_and_wilds(confirmation_required)
+            # To collect data of HABD and WILD? [No]|Yes:
             # >? yes
 
             print(habds_and_wilds_codes_data)
@@ -206,10 +207,8 @@ class Features:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            habds_and_wilds_codes_data = features.fetch_habds_and_wilds(update, pickle_it, data_dir,
-                                                                        verbose)
+            habds_and_wilds_codes_data = features.fetch_habds_and_wilds(update, pickle_it, data_dir)
 
             print(habds_and_wilds_codes_data)
             # {'HABD and WILD': <codes>,
@@ -220,7 +219,7 @@ class Features:
         path_to_pickle = self.cdd_features(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            habds_and_wilds_codes_data = load_pickle(path_to_pickle, verbose=verbose)
+            habds_and_wilds_codes_data = load_pickle(path_to_pickle)
 
         else:
             habds_and_wilds_codes_data = self.collect_habds_and_wilds(
@@ -243,7 +242,7 @@ class Features:
         :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: data of water troughs, and date of when the data was last updated
         :rtype: dict, None
 
@@ -254,10 +253,9 @@ class Features:
             features = Features()
 
             confirmation_required = True
-            verbose = True
 
-            water_troughs_data = features.collect_water_troughs(confirmation_required, verbose)
-            # To collect codes for water troughs? [No]|Yes:
+            water_troughs_data = features.collect_water_troughs(confirmation_required)
+            # To collect data of water troughs? [No]|Yes:
             # >? yes
 
             print(water_troughs_data)
@@ -319,9 +317,8 @@ class Features:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            water_troughs_data = features.fetch_water_troughs(update, pickle_it, data_dir, verbose)
+            water_troughs_data = features.fetch_water_troughs(update, pickle_it, data_dir)
 
             print(water_troughs_data)
             # {'Water troughs': <codes>,
@@ -331,7 +328,7 @@ class Features:
         path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            water_troughs_data = load_pickle(path_to_pickle, verbose=verbose)
+            water_troughs_data = load_pickle(path_to_pickle)
 
         else:
             water_troughs_data = self.collect_water_troughs(
@@ -354,7 +351,7 @@ class Features:
         :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: data of telegraph code words, and date of when the data was last updated
         :rtype: dict, None
 
@@ -365,10 +362,9 @@ class Features:
             features = Features()
 
             confirmation_required = True
-            verbose = True
 
-            telegraph_codes_data = features.collect_telegraph_codes(confirmation_required, verbose)
-            # To collect codes for "telegraphic codes"? [No]|Yes:
+            telegraph_codes_data = features.collect_telegraph_codes(confirmation_required)
+            # To collect data of telegraphic codes? [No]|Yes:
             # >? yes
 
             print(telegraph_codes_data)
@@ -436,9 +432,8 @@ class Features:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            telegraph_codes_data = features.fetch_telegraph_codes(update, pickle_it, data_dir, verbose)
+            telegraph_codes_data = features.fetch_telegraph_codes(update, pickle_it, data_dir)
 
             print(telegraph_codes_data)
             # {'Telegraphic codes': <codes>,
@@ -448,7 +443,7 @@ class Features:
         path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            telegraph_codes_data = load_pickle(path_to_pickle, verbose=verbose)
+            telegraph_codes_data = load_pickle(path_to_pickle)
 
         else:
             telegraph_codes_data = self.collect_telegraph_codes(
@@ -472,7 +467,7 @@ class Features:
         :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool
+        :type verbose: bool, int
         :return: data of buzzer codes, and date of when the data was last updated
         :rtype: dict, None
 
@@ -483,10 +478,10 @@ class Features:
             features = Features()
 
             confirmation_required = True
-            verbose = True
 
-            buzzer_codes_data = features.collect_buzzer_codes(confirmation_required, verbose)
-            # To collect codes for buzzer codes? [No]|Yes: >? yes
+            buzzer_codes_data = features.collect_buzzer_codes(confirmation_required)
+            # To collect data of buzzer codes? [No]|Yes:
+            # >? yes
 
             print(buzzer_codes_data)
             # {'Buzzer codes': <codes>,
@@ -545,9 +540,8 @@ class Features:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            buzzer_codes_data = features.fetch_buzzer_codes(update, pickle_it, data_dir, verbose)
+            buzzer_codes_data = features.fetch_buzzer_codes(update, pickle_it, data_dir)
 
             print(buzzer_codes_data)
             # {'Buzzer codes': <codes>,
@@ -557,7 +551,7 @@ class Features:
         path_to_pickle = self.cdd_features(self.BuzzerPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            buzzer_codes_data = load_pickle(path_to_pickle, verbose=verbose)
+            buzzer_codes_data = load_pickle(path_to_pickle)
 
         else:
             buzzer_codes_data = self.collect_buzzer_codes(
@@ -597,9 +591,8 @@ class Features:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            features_codes = features.fetch_features_codes(update, pickle_it, data_dir, verbose)
+            features_codes = features.fetch_features_codes(update, pickle_it, data_dir)
 
             print(features_codes)
             # {'Features': <codes>,
