@@ -8,7 +8,7 @@ more-itertools
 numpy
 openpyxl
 pandas
-pyhelpers
+pyhelpers>=1.2.2
 python-dateutil
 python-Levenshtein
 requests
