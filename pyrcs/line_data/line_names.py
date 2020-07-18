@@ -6,6 +6,7 @@ Data source: http://www.railwaycodes.org.uk/misc/line_names.shtm
 import copy
 import os
 import re
+import urllib.parse
 
 import pandas as pd
 import requests
@@ -22,6 +23,8 @@ class LineNames:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -36,14 +39,14 @@ class LineNames:
         # http://www.railwaycodes.org.uk/misc/line_names.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
         self.Name = 'Railway line names'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/misc/line_names.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/misc/line_names.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'Line names'
         self.LUDKey = 'Last updated date'
@@ -88,13 +91,14 @@ class LineNames:
             ln = LineNames()
 
             confirmation_required = True
-            verbose = True
 
-            line_names_data = ln.collect_line_names(confirmation_required, verbose)
+            line_names_data = ln.collect_line_names(confirmation_required)
+            # To collect British railway line names? [No]|Yes:
+            # >? yes
 
             print(line_names_data)
-            # {'Line_names': <code>,
-            #  'Last_updated_date': <date>}
+            # {'Line names': <code>,
+            #  'Last updated date': <date>}
         """
 
         if confirmed("To collect British railway {}?".format(self.Key.lower()),
@@ -171,20 +175,19 @@ class LineNames:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            line_names_data = ln.fetch_line_names(update, pickle_it, data_dir, verbose)
+            line_names_data = ln.fetch_line_names(update, pickle_it, data_dir)
 
             print(line_names_data)
-            # {'Line_names': <code>,
-            #  'Last_updated_date': <date>}
+            # {'Line names': <code>,
+            #  'Last updated date': <date>}
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
         path_to_pickle = self.cdd_ln(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            line_names_data = load_pickle(path_to_pickle, verbose=verbose)
+            line_names_data = load_pickle(path_to_pickle)
 
         else:
             line_names_data = self.collect_line_names(confirmation_required=False,
