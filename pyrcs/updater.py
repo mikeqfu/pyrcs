@@ -1,9 +1,4 @@
-""" Update package data
-
-.. todo::
-
-   Updating track diagrams.
-"""
+""" Update package data """
 
 import os
 import re
@@ -15,20 +10,21 @@ import requests
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs._line_data import LineData
-from pyrcs._other_assets import OtherAssets
-from utils import cd_dat, fake_requests_headers, homepage_url
+from . import LineData, OtherAssets
+from .utils import cd_dat, fake_requests_headers, homepage_url
 
 
-def collect_site_map():
+def collect_site_map(confirmation_required=True):
     """
     Collect data of the site map.
 
+    :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+    :type confirmation_required: bool
     :return: dictionary of site map data
     :rtype: dict
     """
 
-    if confirmed("To collect the site map? "):
+    if confirmed("To collect the site map?", confirmation_required=confirmation_required):
 
         url = urljoin(homepage_url(), '/misc/sitemap.shtm')
         source = requests.get(url, headers=fake_requests_headers())
@@ -89,12 +85,14 @@ def collect_site_map():
         return site_map
 
 
-def fetch_site_map(update=False, verbose=False):
+def fetch_site_map(update=False, confirmation_required=True, verbose=False):
     """
     Fetch the site map from the package data.
 
     :param update: whether to check on update and proceed to update the package data, defaults to ``False``
     :type update: bool
+    :param confirmation_required: whether to prompt a message for confirmation to proceed, defaults to ``True``
+    :type confirmation_required: bool
     :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
     :type verbose: bool, int
     :return: dictionary of site map data
@@ -102,15 +100,13 @@ def fetch_site_map(update=False, verbose=False):
 
     **Examples**::
 
-        from pyrcs.update import fetch_site_map
-
-        verbose = True
+        from pyrcs.updater import fetch_site_map
 
         update = False
-        site_map = fetch_site_map(update, verbose)
+        site_map = fetch_site_map(update)
 
         update = True
-        site_map = fetch_site_map(update, verbose)
+        site_map = fetch_site_map(update)
     """
 
     path_to_pickle = cd_dat("site-map.pickle")
@@ -118,12 +114,12 @@ def fetch_site_map(update=False, verbose=False):
     print("Getting site map", end=" ... ") if verbose == 2 else ""
 
     if os.path.isfile(path_to_pickle) and not update:
-        site_map = load_pickle(path_to_pickle, verbose=verbose)
+        site_map = load_pickle(path_to_pickle)
 
     else:
         try:
             print("The package data is unavailable or needs to be updated ... ") if verbose == 2 else ""
-            site_map = collect_site_map()
+            site_map = collect_site_map(confirmation_required=confirmation_required)
             print("Done.") if verbose == 2 else ""
             save_pickle(site_map, path_to_pickle, verbose=verbose)
         except Exception as e:
@@ -144,7 +140,7 @@ def update_backup_data(verbose=False, time_gap=5):
 
     **Example**::
 
-        from pyrcs.update import update_backup_data
+        from pyrcs.updater import update_backup_data
 
         verbose = True
         time_gap = 5
@@ -154,7 +150,10 @@ def update_backup_data(verbose=False, time_gap=5):
 
     if confirmed("To update resources? "):
 
-        line_dat = LineData()
+        # Site map
+        _ = fetch_site_map(update=True, confirmation_required=False, verbose=verbose)
+
+        line_dat = LineData(update=True)
 
         # ELR and mileages
         _ = line_dat.ELRMileages.fetch_elr(update=True, verbose=verbose)
@@ -172,6 +171,9 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Line of routes
+        _ = line_dat.LOR.get_keys_to_prefixes(prefixes_only=True, update=True, verbose=verbose)
+        _ = line_dat.LOR.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=verbose)
+        _ = line_dat.LOR.get_lor_page_urls(update=True, verbose=verbose)
         _ = line_dat.LOR.fetch_lor_codes(update=True, verbose=verbose)
         _ = line_dat.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
 
@@ -182,7 +184,12 @@ def update_backup_data(verbose=False, time_gap=5):
 
         time.sleep(time_gap)
 
-        other_assets = OtherAssets()
+        # Track diagrams
+        _ = line_dat.TrackDiagrams.fetch_sample_track_diagrams_catalogue(update=True, verbose=verbose)
+
+        time.sleep(time_gap)
+
+        other_assets = OtherAssets(update=True)
 
         # Signal boxes
         _ = other_assets.SignalBoxes.fetch_signal_box_prefix_codes(update=True, verbose=verbose)
@@ -207,6 +214,11 @@ def update_backup_data(verbose=False, time_gap=5):
 
         # Depots
         _ = other_assets.Depots.fetch_depot_codes(update=True, verbose=verbose)
+
+        time.sleep(time_gap)
+
+        # Features
+        _ = other_assets.Features.fetch_features_codes(update=True, verbose=verbose)
 
         if verbose:
             print("\nUpdate finished.")
