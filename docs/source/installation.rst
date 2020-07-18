@@ -8,13 +8,13 @@ To install the latest release of `pyrcs <https://github.com/mikeqfu/pyrcs>`_ at 
 
 .. code-block:: bash
 
-   pip install -U pyrcs
+   pip install --upgrade pyrcs
 
 If you would like to try the more recent version under development, install it from GitHub
 
 .. code-block:: bash
 
-   pip install git+https://github.com/mikeqfu/pyrcs.git
+   pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
 
 To test if pyrcs is correctly installed, try importing the package from an interpreter shell:
 
@@ -26,6 +26,6 @@ To test if pyrcs is correctly installed, try importing the package from an inter
 
 .. note::
 
-    - To ensure you get the most recent version, it is always recommended to add ``-U`` (or ``--upgrade``) to ``pip install``.
+    - To ensure you get the most recent version, it is always recommended to add ``--upgrade`` (or ``-U``) to ``pip install``.
     - `pyrcs <https://github.com/mikeqfu/pyrcs>`_ has not yet been tested with Python 2. For users who have installed both Python 2 and 3, it would be recommended to replace ``pip`` with ``pip3``. But you are more than welcome to volunteer testing the package with Python 2 and any issues should be logged/reported onto the web page of "`Issues <https://github.com/mikeqfu/pyrcs/issues>`_".
     - For more general instructions, check the web page of "`Installing Packages <https://packaging.python.org/tutorials/installing-packages>`_".
