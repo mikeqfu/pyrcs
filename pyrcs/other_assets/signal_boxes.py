@@ -12,6 +12,7 @@ Data source: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
 import copy
 import os
 import string
+import urllib.parse
 
 import bs4
 import pandas as pd
@@ -30,6 +31,8 @@ class SignalBoxes:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
+    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type update: bool
 
     **Example**::
 
@@ -44,14 +47,14 @@ class SignalBoxes:
         # http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, update=False):
         """
         Constructor method.
         """
         self.Name = 'Signal box prefix codes'
         self.HomeURL = homepage_url()
-        self.SourceURL = self.HomeURL + '/signal/signal_boxes0.shtm'
-        self.Catalogue = get_catalogue(self.SourceURL, confirmation_required=False)
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/signal/signal_boxes0.shtm')
+        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.Date = get_last_updated_date(self.SourceURL)
         self.Key = 'Signal boxes'
         self.LUDKey = 'Last updated date'  # key to last updated date
@@ -103,10 +106,9 @@ class SignalBoxes:
             sb = SignalBoxes()
 
             update = False
-            verbose = True
 
             initial = 'a'
-            signal_boxes_a = sb.collect_signal_box_prefix_codes(initial, update, verbose)
+            signal_boxes_a = sb.collect_signal_box_prefix_codes(initial, update)
 
             print(signal_boxes_a)
             # {'A': <codes>,
@@ -116,7 +118,7 @@ class SignalBoxes:
         path_to_pickle = self.cdd_sigbox("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            signal_box_prefix_codes = load_pickle(path_to_pickle, verbose=verbose)
+            signal_box_prefix_codes = load_pickle(path_to_pickle)
 
         else:
             sig_keys = [initial.upper(), self.LUDKey]
@@ -179,10 +181,8 @@ class SignalBoxes:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = False
 
-            signal_box_prefix_codes = sb.fetch_signal_box_prefix_codes(update, pickle_it, data_dir,
-                                                                       verbose)
+            signal_box_prefix_codes = sb.fetch_signal_box_prefix_codes(update, pickle_it, data_dir)
 
             print(signal_box_prefix_codes)
             # {'Signal boxes': <codes>,
@@ -229,25 +229,23 @@ class SignalBoxes:
             sb = SignalBoxes()
 
             confirmation_required = True
-            verbose = True
 
-            non_national_rail_codes_data = sb.collect_non_national_rail_codes(confirmation_required,
-                                                                              verbose)
-            # To collect signal box prefix codes for non-national rail? [No]|Yes:
+            non_national_rail_codes_data = sb.collect_non_national_rail_codes(confirmation_required)
+            # To collect signal box data of non-national rail? [No]|Yes:
             # >? yes
 
             print(non_national_rail_codes_data)
-            # {'Non-National Rail': <codes>,
+            # {'Non-national rail': <codes>,
             #  'Last updated date': <date>}
         """
 
-        if confirmed("To collect of {}?".format(self.NonNationalRailKey.lower()),
+        if confirmed("To collect signal box data of {}?".format(self.NonNationalRailKey.lower()),
                      confirmation_required=confirmation_required):
 
             url = self.Catalogue[self.NonNationalRailKey]
 
             if verbose == 2:
-                print("Collecting data of {}".format(self.NonNationalRailKey.lower()), end=" ... ")
+                print("Collecting signal box data of {}".format(self.NonNationalRailKey.lower()), end=" ... ")
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
@@ -280,7 +278,7 @@ class SignalBoxes:
 
                 last_updated_date = get_last_updated_date(url)
 
-                non_national_rail_codes_data = {self.NonNationalRailKey: non_national_rail_codes,
+                non_national_rail_codes_data = {self.NonNationalRailKey.capitalize(): non_national_rail_codes,
                                                 self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
@@ -318,13 +316,11 @@ class SignalBoxes:
             update = False
             pickle_it = False
             data_dir = None
-            verbose = True
 
-            non_national_rail_codes_data = sb.fetch_non_national_rail_codes(update, pickle_it, data_dir,
-                                                                            verbose)
+            non_national_rail_codes_data = sb.fetch_non_national_rail_codes(update, pickle_it, data_dir)
 
             print(non_national_rail_codes_data)
-            # {'Non-National Rail': <codes>,
+            # {'Non-national rail': <codes>,
             #  'Last updated date': <date>}
         """
 
@@ -332,7 +328,7 @@ class SignalBoxes:
         path_to_pickle = self.cdd_sigbox(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
-            non_national_rail_codes_data = load_pickle(path_to_pickle, verbose=verbose)
+            non_national_rail_codes_data = load_pickle(path_to_pickle)
 
         else:
             non_national_rail_codes_data = self.collect_non_national_rail_codes(
