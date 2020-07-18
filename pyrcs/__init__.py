@@ -1,5 +1,5 @@
-from pyrcs.line_data import *
-from pyrcs.other_assets import *
+from ._line_data import *
+from ._other_assets import *
 
 __package_name__ = 'pyrcs'
 __version__ = '0.2.7'
