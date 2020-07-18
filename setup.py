@@ -23,10 +23,10 @@ setuptools.setup(
         'beautifulsoup4',
         'html5lib',
         'lxml',
-        'measurement'
-        'openpyxl'
-        'pyhelpers'
-        'XlsxWriter'
+        'measurement',
+        'openpyxl',
+        'pyhelpers',
+        'XlsxWriter',
     ],
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
