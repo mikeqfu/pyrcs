@@ -26,6 +26,8 @@ Classes for collecting line data.
    lor_codes
    track_diagrams
 
+|
+
 .. _pyrcs-_line-data:
 
 .. py:module:: pyrcs._line_data
