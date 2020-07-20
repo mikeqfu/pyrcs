@@ -6,4 +6,5 @@ from .lor_codes import LOR
 from .track_diagrams import TrackDiagrams
 
 
-__all__ = ['crs_nlc_tiploc_stanox', 'electrification', 'elrs_mileages', 'line_names', 'lor_codes', 'track_diagrams']
+__all__ = ['crs_nlc_tiploc_stanox', 'electrification', 'elrs_mileages', 'line_names', 'lor_codes', 'track_diagrams',
+           'LocationIdentifiers', 'Electrification', 'ELRMileages', 'LineNames', 'LOR', 'TrackDiagrams']
