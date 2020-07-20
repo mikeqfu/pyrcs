@@ -6,4 +6,5 @@ from .tunnels import Tunnels
 from .viaducts import Viaducts
 
 
-__all__ = ['depots', 'features', 'signal_boxes', 'stations', 'tunnels', 'viaducts']
+__all__ = ['depots', 'features', 'signal_boxes', 'stations', 'tunnels', 'viaducts',
+           'Depots', 'Features', 'SignalBoxes', 'Stations', 'Tunnels', 'Viaducts']
