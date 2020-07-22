@@ -174,7 +174,11 @@ def nr_mileage_num_to_str(num_mileage):
         nr_mileage_num_to_str(num_mileage)  # ''
     """
 
-    nr_mileage = '%.4f' % round(float(num_mileage), 4) if num_mileage and pd.notna(num_mileage) else ''
+    if (num_mileage or num_mileage == 0) and pd.notna(num_mileage):
+        nr_mileage = '%.4f' % round(float(num_mileage), 4)
+    else:
+        nr_mileage = ''
+
     return nr_mileage
 
 
