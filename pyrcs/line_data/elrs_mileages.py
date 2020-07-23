@@ -18,6 +18,7 @@ import requests
 from pyhelpers.dir import regulate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.text import remove_punctuation
 
 from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url
 from pyrcs.utils import get_catalogue, get_last_updated_date, is_str_float, parse_table
@@ -425,7 +426,7 @@ class ELRMileages:
                 e.g. ANL, (8.67) NORTHOLT [London Underground]
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
 
-        **Example**::
+        **Examples**::
 
             from pyrcs.line_data import ELRMileages
 
@@ -439,14 +440,70 @@ class ELRMileages:
             mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
             # To collect mileage file for "CJD"? [No]|Yes:
             # >? yes
-
             print(mileage_file)
             # {'ELR': 'CJD',
             #  'Line': 'Challoch Junction to Dumfries Line',
             #  'Sub-Line': '',
             #  'CJD': <codes>,
             #  'Notes': <notes>}
+
+            elr = 'GAM'
+            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
+            # To collect mileage file of "GAM"? [No]|Yes:
+            # >? yes
+            print(mileage_file)
+            # {'ELR': 'GAM',
+            #  'Line': 'Gartness Branch (LMS)',
+            #  'Sub-Line': '',
+            #  'GAM': <codes>,
+            #  'Notes': ''}
+
+            elr = 'SLD'
+            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
+            # To collect mileage file of "SLD"? [No]|Yes:
+            # >? yes
+            print(mileage_file)
+            # {'ELR': 'SLD',
+            #  'Line': 'Stainland Branch',
+            #  'Sub-Line': '',
+            #  'SLD': <codes>,
+            #  'Notes': ''}
+
+            elr = 'ZZD2'
+            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
+            # To collect mileage file of "ZZD2"? [No]|Yes:
+            # >? yes
+            print(mileage_file)
+            # {'ELR': 'ZZD2',
+            #  'Line': 'Gartsherrie Freightliner Depot Sidings',
+            #  'Sub-Line': '',
+            #  'ZZD2': <codes>,
+            #  'Notes': ''}
+
+            elr = 'WHG?'
+            mileage_file = em.collect_mileage_file_by_elr(elr, parsed, confirmation_required, pickle_it)
+            # To collect mileage file of "WHG"? [No]|Yes:
+            # >? yes
+            print(mileage_file)
+            # {'ELR': 'WHG',
+            #  'Line': 'West Hartlepool Goods Branch',
+            #  'Sub-Line': '',
+            #  'WHG': <codes>,
+            #  'Notes': ''}
+
+            elr = 'ELR'
+            mileage_file = em.fetch_mileage_file(elr, update, pickle_it, data_dir)
+            # To collect mileage file of "ELR"? [No]|Yes:
+            # >? yes
+            print(mileage_file)
+            # {'ELR': 'ELR',
+            #  'Line': 'Maryhill Park Junction to Anniesland Line',
+            #  'Sub-Line': '',
+            #  'MLA': <codes>,
+            #  'Notes': <notes>}
         """
+
+        elr = remove_punctuation(elr)
 
         if confirmed("To collect mileage file of \"{}\"?".format(elr.upper()),
                      confirmation_required=confirmation_required):
@@ -454,6 +511,7 @@ class ELRMileages:
             if verbose == 2:
                 print("Collecting mileage file of \"{}\"".format(elr.upper()), end=" ... ")
             try:
+
                 # The URL of the mileage file for the ELR
                 url = self.HomeURL + '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
                 source = requests.get(url, headers=fake_requests_headers())
@@ -469,11 +527,13 @@ class ELRMileages:
                     notes = elr_dat.Notes.values[0]
                     if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes):
                         new_elr = re.search(r'(?<= )[A-Z]{3}(\d)?', notes).group(0)
-                        mileage_file = self.fetch_mileage_file(elr=new_elr, pickle_it=pickle_it)
+                        mileage_file = self.collect_mileage_file_by_elr(
+                            elr=new_elr, parsed=parsed, confirmation_required=confirmation_required,
+                            pickle_it=pickle_it, verbose=verbose)
                         return mileage_file
 
                     else:
-                        line_name, mileages = elr_dat[['Line name', 'Mileages']].values[0]
+                        line_name, mileages, datum = elr_dat[['Line name', 'Mileages', 'Datum']].values[0]
                         if re.match(r'(\w ?)+ \((\w+ \w+)+.\)', line_name):
                             line_name_ = re.search(r'(?<=\w \()(\w+ \w+)+.(?=\))', line_name).group(0)
                             try:
@@ -488,15 +548,21 @@ class ELRMileages:
                                 2] if location_a in line_name else line_name
                         else:
                             try:
-                                location_a, _, location_b = re.split(r' (and|&|to) ', notes)
+                                location_a, _, location_b = re.split(r' (and|&|to|-) ', notes)
                             except (ValueError, TypeError):
-                                location_a, _, location_b = re.split(r' (and|&|to) ', line_name)
+                                pass
+                            try:
+                                location_a, _, location_b = re.split(r' (and|&|to|-) ', line_name)
+                            except (ValueError, TypeError):
+                                pass
+                            if line_name:
+                                location_a, location_b = line_name, line_name
                             else:
                                 location_a, location_b = '', ''
-                        location_b_ = re.sub(r' Branch| Curve', '', location_b) \
-                            if re.match(r'.*( Branch| Curve)$', location_b) else location_b
+                        # location_b_ = re.sub(r' Branch| Curve', '', location_b) \
+                        #     if re.match(r'.*( Branch| Curve)$', location_b) else location_b
 
-                        miles_chains, locations = mileages.split(' - '), [location_a, location_b_]
+                        miles_chains, locations = mileages.split(' - '), [location_a, location_b]
                         parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
 
                 else:
@@ -548,7 +614,8 @@ class ELRMileages:
                     else:  # isinstance(dat, pd.DataFrame)
                         mileage_data = self.parse_mileage_data(mileage_data)
 
-                mileage_file = dict(pair for x in [line_info, {elr: mileage_data}, note_dat] for pair in x.items())
+                mileage_file = dict(
+                    pair for x in [line_info, {'Mileage': mileage_data}, note_dat] for pair in x.items())
 
                 print("Done. ") if verbose == 2 else ""
 
@@ -603,6 +670,7 @@ class ELRMileages:
         """
 
         path_to_pickle = self.cdd_em("mileage-files", elr[0].lower(), elr + ".pickle")
+
         if os.path.basename(path_to_pickle) == "prn.pickle":
             path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
 
@@ -650,13 +718,13 @@ class ELRMileages:
             start_mileage_file = em.collect_mileage_file_by_elr(start_elr)
             # To collect mileage file of "AAM"? [No]|Yes:
             # >? yes
-            start_em = start_mileage_file[start_elr]
+            start_em = start_mileage_file['Mileage']
 
             end_elr = 'ANZ'
             end_mileage_file = em.collect_mileage_file_by_elr(end_elr)
             # To collect mileage file of "ANZ"? [No]|Yes:
             # >? yes
-            end_em = end_mileage_file[end_elr]
+            end_em = end_mileage_file['Mileage']
 
             start_dest_mileage, end_orig_mileage = em.search_conn(start_elr, start_em, end_elr, end_em)
             print(start_dest_mileage)
@@ -724,6 +792,7 @@ class ELRMileages:
             update = False
             pickle_mileage_file = False
             data_dir = None
+            verbose = True
 
             start_elr = 'NAY'
             end_elr = 'LTN2'
@@ -740,6 +809,12 @@ class ELRMileages:
             # 0.0638
             print(end_orig_mileage)
             # 123.1320
+
+            start_elr = 'MAC3'
+            end_elr = 'DBP1'
+            start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage = \
+                em.get_conn_mileages(start_elr, end_elr, update, pickle_mileage_file, data_dir)
+            # ''
         """
 
         start_file = self.fetch_mileage_file(start_elr, update, pickle_mileage_file, data_dir, verbose=verbose)
@@ -747,7 +822,7 @@ class ELRMileages:
 
         if start_file is not None and end_file is not None:
             start_elr, end_elr = start_file['ELR'], end_file['ELR']
-            start_em, end_em = start_file[start_elr], end_file[end_elr]
+            start_em, end_em = start_file['Mileage'], end_file['Mileage']
             key_pat = re.compile(r'(Current\s)|(One\s)|(Later\s)|(Usual\s)')
             if isinstance(start_em, dict):
                 start_em = start_em[[k for k in start_em.keys() if re.match(key_pat, k)][0]]
@@ -773,7 +848,7 @@ class ELRMileages:
                         conn_em = self.fetch_mileage_file(conn_elr, update=update)
                         if conn_em is not None:
                             conn_elr = conn_em['ELR']
-                            conn_em = conn_em[conn_elr]
+                            conn_em = conn_em['Mileage']
                             if isinstance(conn_em, dict):
                                 conn_em = conn_em[[k for k in conn_em.keys() if re.match(key_pat, k)][0]]
                             #
@@ -793,9 +868,7 @@ class ELRMileages:
                                 break
                             else:
                                 conn_elr = ''
-                                j += 1
-                        else:
-                            j += 1
+                        j += 1
 
                     if conn_elr != '':
                         break
