@@ -20,7 +20,7 @@ PyRCS
 | **Author**: Qian Fu
 | **Email**: qian.fu@outlook.com
 
-PyRCS is provides a web-scraping tool for collecting `acronyms and codes <http://www.railwaycodes.org.uk/>`_ being used in Britain's railway.
+PyRCS is a web-scraping tool for collecting `acronyms and codes <http://www.railwaycodes.org.uk/>`_ being used in Britain's railway.
 
 ######################
 Documentation contents
