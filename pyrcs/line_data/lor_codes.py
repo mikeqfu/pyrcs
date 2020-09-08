@@ -11,7 +11,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -51,7 +51,7 @@ class LOR:
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'LOR'
         self.LUDKey = 'Last updated date'
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
         self.PKey = 'Key to prefixes'
         self.ELCKey = 'ELR/LOR converter'
@@ -348,7 +348,7 @@ class LOR:
 
         if pickle_it and data_dir:
             pickle_filename = "lor-codes.pickle"
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(lor_codes_data, path_to_pickle, verbose=verbose)
 
@@ -466,7 +466,7 @@ class LOR:
                                                                verbose=False if data_dir or not verbose else True)
             if elr_lor_converter:  # codes_for_ole is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(elr_lor_converter, path_to_pickle, verbose=verbose)
             else:

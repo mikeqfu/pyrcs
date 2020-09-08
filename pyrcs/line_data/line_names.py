@@ -10,7 +10,7 @@ import urllib.parse
 
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -51,7 +51,7 @@ class LineNames:
         self.Key = 'Line names'
         self.LUDKey = 'Last updated date'
         if data_dir:
-            self.DataDir = regulate_input_data_dir(data_dir)
+            self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
@@ -194,7 +194,7 @@ class LineNames:
                                                       verbose=False if data_dir or not verbose else True)
             if line_names_data:  # line-names is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(line_names_data, path_to_pickle, verbose=verbose)
             else:

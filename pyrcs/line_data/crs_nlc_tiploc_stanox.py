@@ -13,7 +13,7 @@ import bs4
 import more_itertools
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_json, load_pickle, save, save_pickle
 
@@ -55,7 +55,7 @@ class LocationIdentifiers:
         self.Key = 'Location codes'  # key to location codes
         self.LUDKey = 'Last updated date'  # key to last updated date
         if data_dir:
-            self.DataDir = regulate_input_data_dir(data_dir)
+            self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", re.sub(r',| codes| and', '', self.Name.lower()).replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
@@ -268,7 +268,7 @@ class LocationIdentifiers:
 
             if explanatory_note:  # additional_note is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.MSCENPickle + ".pickle")
                     save_pickle(explanatory_note, path_to_pickle, verbose=True)
             else:
@@ -373,7 +373,7 @@ class LocationIdentifiers:
                                                                    verbose=False if data_dir or not verbose else True)
             if other_systems_codes:  # other_systems_codes is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.OSPickle + ".pickle")
                     save_pickle(other_systems_codes, path_to_pickle, verbose=True)
             else:
@@ -584,7 +584,7 @@ class LocationIdentifiers:
                           self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(location_codes, path_to_pickle, verbose=verbose)
 
@@ -673,7 +673,7 @@ class LocationIdentifiers:
         if main_key:
             assert isinstance(main_key, str)
 
-        dat_dir = regulate_input_data_dir(data_dir) if data_dir else self.DataDir
+        dat_dir = validate_input_data_dir(data_dir) if data_dir else self.DataDir
         path_to_file = os.path.join(dat_dir, "-".join(keys) +
                                     ("" if initials is None else "-" + "".join(initials)) +
                                     (".json" if as_dict and len(keys) == 1 else ".pickle"))

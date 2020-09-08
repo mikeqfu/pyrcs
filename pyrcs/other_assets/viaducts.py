@@ -10,7 +10,7 @@ import re
 import urllib.parse
 
 import pandas as pd
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
@@ -51,7 +51,7 @@ class Viaducts:
         self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.P1Key, self.P2Key, self.P3Key, self.P4Key, self.P5Key, self.P6Key = list(self.Catalogue.keys())[1:]
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
     def cdd_viaducts(self, *sub_dir):
@@ -173,7 +173,7 @@ class Viaducts:
             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(railways_viaducts_data, path_to_pickle, verbose=True)
 

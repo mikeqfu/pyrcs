@@ -15,7 +15,7 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
@@ -56,7 +56,7 @@ class Tunnels:
         self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
         self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.Catalogue.keys())[1:]
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
     def cdd_tunnels(self, *sub_dir):
@@ -280,7 +280,7 @@ class Tunnels:
             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(railway_tunnel_lengths, path_to_pickle, verbose=verbose)
 

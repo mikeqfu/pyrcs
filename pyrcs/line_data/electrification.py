@@ -12,7 +12,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -52,7 +52,7 @@ class Electrification:
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'Electrification'
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
         self.NationalNetworkKey = 'National network'
         self.NationalNetworkPickle = self.NationalNetworkKey.lower().replace(" ", "-")
@@ -211,7 +211,7 @@ class Electrification:
 
             if national_network_ole:  # codes_for_ole is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.NationalNetworkPickle + ".pickle")
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
             else:
@@ -390,7 +390,7 @@ class Electrification:
 
             if independent_lines_ole:  # codes_for_independent_lines is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
             else:
@@ -494,7 +494,7 @@ class Electrification:
 
             if ohns_codes:  # ohns is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
             else:
@@ -627,7 +627,7 @@ class Electrification:
 
             if etz_ole:  # codes_for_energy_tariff_zones is not None
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.TariffZonesPickle + ".pickle")
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
             else:
@@ -677,7 +677,7 @@ class Electrification:
 
         if pickle_it and data_dir:
             pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(ole_section_codes, path_to_pickle, verbose=verbose)
 

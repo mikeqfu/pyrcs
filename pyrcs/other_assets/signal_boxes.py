@@ -17,7 +17,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -59,7 +59,7 @@ class SignalBoxes:
         self.Key = 'Signal boxes'
         self.LUDKey = 'Last updated date'  # key to last updated date
         if data_dir:
-            self.DataDir = regulate_input_data_dir(data_dir)
+            self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
@@ -205,7 +205,7 @@ class SignalBoxes:
         signal_box_prefix_codes = {self.Key: signal_boxes_data_table, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(signal_box_prefix_codes, path_to_pickle, verbose=verbose)
 
@@ -336,7 +336,7 @@ class SignalBoxes:
 
             if non_national_rail_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(non_national_rail_codes_data, path_to_pickle, verbose=verbose)
             else:

@@ -11,7 +11,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -51,7 +51,7 @@ class Depots:
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'Depots'
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
         self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = list(self.Catalogue.keys())[1:]
         self.TCTPickle = self.TCTKey.replace(" ", "-").lower()
@@ -175,7 +175,7 @@ class Depots:
 
             if two_char_tops_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.TCTPickle + ".pickle")
                     save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
             else:
@@ -293,7 +293,7 @@ class Depots:
 
             if four_digit_pretops_codes:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(four_digit_pretops_codes, path_to_pickle, verbose=verbose)
 
@@ -399,7 +399,7 @@ class Depots:
 
             if system_1950_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
 
@@ -518,7 +518,7 @@ class Depots:
 
             if gwr_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
 
@@ -568,7 +568,7 @@ class Depots:
                        self.LUDKey: self.Date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower() + ".pickle")
             save_pickle(depot_codes, path_to_pickle, verbose=verbose)
 

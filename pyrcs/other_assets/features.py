@@ -18,7 +18,7 @@ import bs4
 import numpy as np
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -65,7 +65,7 @@ class Features:
         self.TelegraphPickle = self.TelegraphKey.lower().replace(" ", "-")
         self.BuzzerKey = 'Buzzer codes'
         self.BuzzerPickle = self.BuzzerKey.lower().replace(" ", "-")
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
     def cdd_features(self, *sub_dir):
@@ -227,7 +227,7 @@ class Features:
 
             if habds_and_wilds_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=verbose)
             else:
@@ -336,7 +336,7 @@ class Features:
 
             if water_troughs_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
             else:
@@ -451,7 +451,7 @@ class Features:
 
             if telegraph_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(telegraph_codes_data, path_to_pickle, verbose=verbose)
 
@@ -559,7 +559,7 @@ class Features:
 
             if buzzer_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
             else:
@@ -613,7 +613,7 @@ class Features:
             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(features_codes, path_to_pickle, verbose=verbose)
 

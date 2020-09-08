@@ -10,7 +10,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, confirmed, fake_requests_headers, get_last_updated_date, get_track_diagrams_items, \
@@ -49,7 +49,7 @@ class TrackDiagrams:
         self.Items = get_track_diagrams_items(self.SourceURL, self.Key, update=update)
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
         if data_dir:
-            self.DataDir = regulate_input_data_dir(data_dir)
+            self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
@@ -196,7 +196,7 @@ class TrackDiagrams:
                                                                                     verbose=verbose_)
             if track_diagrams_catalogue:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
             else:

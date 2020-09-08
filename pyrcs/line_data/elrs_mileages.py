@@ -15,7 +15,7 @@ import measurement.measures
 import numpy as np
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import remove_punctuation
@@ -59,7 +59,7 @@ class ELRMileages:
         self.Key = 'ELRs'  # key to ELRs and mileages
         self.LUDKey = 'Last updated date'  # key to last updated date
         if data_dir:
-            self.DataDir = regulate_input_data_dir(data_dir)
+            self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", self.Name.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
@@ -395,7 +395,7 @@ class ELRMileages:
 
         if pickle_it and data_dir:
             pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
             save_pickle(elrs_data, path_to_pickle, verbose=verbose)
 
@@ -684,7 +684,7 @@ class ELRMileages:
 
             if mileage_file:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = regulate_input_data_dir(data_dir)
+                    self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
                     save_pickle(mileage_file, path_to_pickle, verbose=verbose)
             else:

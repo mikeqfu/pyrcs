@@ -21,7 +21,7 @@ import urllib.parse
 import numpy as np
 import pandas as pd
 import requests
-from pyhelpers.dir import regulate_input_data_dir
+from pyhelpers.dir import validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, fake_requests_headers, get_last_updated_date, get_station_data_catalogue, \
@@ -72,7 +72,7 @@ class Stations:
         self.Catalogue = get_station_data_catalogue(self.SourceURL, self.StnKey, update=update)
 
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = regulate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
     def cdd_stn(self, *sub_dir):
@@ -265,7 +265,7 @@ class Stations:
         railway_station_data = {self.StnKey: railway_station_data_, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = regulate_input_data_dir(data_dir)
+            self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.StnKey.lower().replace(" ", "-") + ".pickle")
             save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
 
