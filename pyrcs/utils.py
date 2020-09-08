@@ -949,6 +949,44 @@ def fix_num_stanox(stanox_code):
     return stanox_code
 
 
+def fix_nr_mileage_str(nr_mileage):
+    """
+    Fix NR mileage.
+
+    :param nr_mileage: NR mileage
+    :type nr_mileage: str, float
+    :return: conventional NR mileage code
+    :rtype: str
+
+    **Examples**::
+
+        nr_mileage = 29.011
+        fix_nr_mileage_str(nr_mileage)  # '29.0110'
+
+        nr_mileage = '.1100'
+        fix_nr_mileage_str(nr_mileage)  # '0.1100'
+    """
+
+    if isinstance(nr_mileage, float):
+        nr_mileage_ = fix_nr_mileage_str(str(nr_mileage))
+
+    elif nr_mileage and nr_mileage != '0':
+        if '.' in nr_mileage:
+            miles, yards = nr_mileage.split('.')
+            if miles == '':
+                miles = '0'
+        else:
+            miles, yards = nr_mileage, '0'
+        if len(yards) < 4:
+            yards += '0' * (4 - len(yards))
+        nr_mileage_ = '.'.join([miles, yards])
+
+    else:
+        nr_mileage_ = nr_mileage
+
+    return nr_mileage_
+
+
 # -- Misc ---------------------------------------------------------------------------------------------
 
 def is_str_float(str_val):
