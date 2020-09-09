@@ -18,10 +18,10 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
-from pyhelpers.ops import confirmed
+from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url
+from pyrcs.utils import cd_dat, homepage_url
 from pyrcs.utils import get_catalogue, get_last_updated_date, parse_table, parse_tr
 
 
@@ -278,7 +278,7 @@ class SignalBoxes:
 
                 last_updated_date = get_last_updated_date(url)
 
-                non_national_rail_codes_data = {self.NonNationalRailKey.capitalize(): non_national_rail_codes,
+                non_national_rail_codes_data = {self.NonNationalRailKey: non_national_rail_codes,
                                                 self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
