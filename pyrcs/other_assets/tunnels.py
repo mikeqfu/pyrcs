@@ -16,10 +16,11 @@ import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
-from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url, parse_tr
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, parse_tr
 
 
 class Tunnels:
