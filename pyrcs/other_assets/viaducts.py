@@ -175,6 +175,6 @@ class Viaducts:
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
             path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
-            save_pickle(railways_viaducts_data, path_to_pickle, verbose=True)
+            save_pickle(railways_viaducts_data, path_to_pickle, verbose=verbose)
 
         return railways_viaducts_data
