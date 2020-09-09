@@ -22,10 +22,11 @@ import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, fake_requests_headers, get_last_updated_date, get_station_data_catalogue, \
-    homepage_url, parse_location_name, parse_table
+from pyrcs.utils import cd_dat, get_last_updated_date, get_station_data_catalogue, homepage_url, parse_location_name, \
+    parse_table
 
 
 class Stations:
