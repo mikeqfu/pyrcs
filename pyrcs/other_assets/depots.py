@@ -231,24 +231,24 @@ class Depots:
 
                 four_digit_pre_tops_codes_list = []
                 for x in data_sets:
-                    header, four_digit_pre_tops_codes = x, next(data_sets)
-                    four_digit_pre_tops_codes.columns = header.columns.to_list()
-                    four_digit_pre_tops_codes_list.append(four_digit_pre_tops_codes)
+                    header, four_digit_pre_tops_codes_data = x, next(data_sets)
+                    four_digit_pre_tops_codes_data.columns = header.columns.to_list()
+                    four_digit_pre_tops_codes_list.append(four_digit_pre_tops_codes_data)
 
                 last_updated_date = get_last_updated_date(url)
 
-                four_digit_pre_tops_codes = {self.FDPTKey: dict(zip(region_names, four_digit_pre_tops_codes_list)),
-                                             self.LUDKey: last_updated_date}
+                four_digit_pre_tops_codes_data = {self.FDPTKey: dict(zip(region_names, four_digit_pre_tops_codes_list)),
+                                                  self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
-                save_pickle(four_digit_pre_tops_codes, path_to_pickle, verbose=verbose)
+                save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
                 print("Failed. {}".format(e))
-                four_digit_pre_tops_codes = None
+                four_digit_pre_tops_codes_data = None
 
-            return four_digit_pre_tops_codes
+            return four_digit_pre_tops_codes_data
 
     def fetch_four_digit_pre_tops_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
@@ -285,22 +285,22 @@ class Depots:
         path_to_pickle = self.cdd_depots(self.FDPTPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            four_digit_pretops_codes = load_pickle(path_to_pickle)
+            four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
 
         else:
-            four_digit_pretops_codes = self.collect_four_digit_pre_tops_codes(
+            four_digit_pre_tops_codes_data = self.collect_four_digit_pre_tops_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
 
-            if four_digit_pretops_codes:
+            if four_digit_pre_tops_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(four_digit_pretops_codes, path_to_pickle, verbose=verbose)
+                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
 
             else:
                 print("No data of {} has been collected.".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]))
 
-        return four_digit_pretops_codes
+        return four_digit_pre_tops_codes_data
 
     def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
         """
