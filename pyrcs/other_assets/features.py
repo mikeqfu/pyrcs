@@ -19,11 +19,11 @@ import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
-from pyhelpers.ops import confirmed
+from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.line_data.electrification import Electrification
-from pyrcs.utils import cd_dat, fake_requests_headers, get_catalogue, get_last_updated_date, homepage_url
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url
 
 
 class Features:
@@ -280,18 +280,18 @@ class Features:
 
                 last_updated_date = get_last_updated_date(url)
 
-                water_troughs_data = {self.WaterTroughsKey: water_troughs_codes, self.LUDKey: last_updated_date}
+                water_troughs_locations = {self.WaterTroughsKey: water_troughs_codes, self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
                 path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
-                save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
+                save_pickle(water_troughs_locations, path_to_pickle, verbose=verbose)
 
             except Exception as e:
                 print("Failed. {}".format(e))
-                water_troughs_data = None
+                water_troughs_locations = None
 
-            return water_troughs_data
+            return water_troughs_locations
 
     def fetch_water_troughs(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
@@ -328,21 +328,21 @@ class Features:
         path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            water_troughs_data = load_pickle(path_to_pickle)
+            water_troughs_locations = load_pickle(path_to_pickle)
 
         else:
-            water_troughs_data = self.collect_water_troughs(
+            water_troughs_locations = self.collect_water_troughs(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
 
-            if water_troughs_data:
+            if water_troughs_locations:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
+                    save_pickle(water_troughs_locations, path_to_pickle, verbose=verbose)
             else:
                 print("No data of {} has been collected.".format(self.WaterTroughsKey.lower()))
 
-        return water_troughs_data
+        return water_troughs_locations
 
     def collect_telegraph_codes(self, confirmation_required=True, verbose=False):
         """
@@ -394,19 +394,19 @@ class Features:
 
                 last_updated_date = get_last_updated_date(url)
 
-                telegraph_codes_data = {self.TelegraphKey: dict(zip(sub_keys, telegraph_codes_list)),
+                telegraph_code_words = {self.TelegraphKey: dict(zip(sub_keys, telegraph_codes_list)),
                                         self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
                 path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
-                save_pickle(telegraph_codes_data, path_to_pickle, verbose=verbose)
+                save_pickle(telegraph_code_words, path_to_pickle, verbose=verbose)
 
             except Exception as e:
                 print("Failed. {}".format(e))
-                telegraph_codes_data = None
+                telegraph_code_words = None
 
-            return telegraph_codes_data
+            return telegraph_code_words
 
     def fetch_telegraph_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
@@ -443,22 +443,22 @@ class Features:
         path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
-            telegraph_codes_data = load_pickle(path_to_pickle)
+            telegraph_code_words = load_pickle(path_to_pickle)
 
         else:
-            telegraph_codes_data = self.collect_telegraph_codes(
+            telegraph_code_words = self.collect_telegraph_codes(
                 confirmation_required=False, verbose=False if data_dir or not verbose else True)
 
-            if telegraph_codes_data:
+            if telegraph_code_words:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, os.path.basename(path_to_pickle))
-                    save_pickle(telegraph_codes_data, path_to_pickle, verbose=verbose)
+                    save_pickle(telegraph_code_words, path_to_pickle, verbose=verbose)
 
             else:
                 print("No data of {} has been collected.".format(self.TelegraphKey.lower()))
 
-        return telegraph_codes_data
+        return telegraph_code_words
 
     def collect_buzzer_codes(self, confirmation_required=True, verbose=False):
         """
