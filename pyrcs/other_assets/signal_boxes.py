@@ -274,7 +274,7 @@ class SignalBoxes:
 
                     # Update data dict
                     non_national_rail_codes.update(
-                        {non_national_rail_name: data, 'Notes': desc_text.replace('\xa0', '')})
+                        {non_national_rail_name: data, 'Notes': desc_text.replace('\xa0', '').strip()})
 
                 last_updated_date = get_last_updated_date(url)
 
