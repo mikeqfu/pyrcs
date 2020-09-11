@@ -4,21 +4,30 @@ if __name__ == '__main__':
 
     stations = Stations()
 
+    test_data_dir = "dat"
+
     railway_station_data1 = stations.fetch_railway_station_data()
 
     railway_station_data1_ = railway_station_data1[stations.StnKey]
     print("\n{}: ".format(stations.Name))
-    print(type(railway_station_data1_))
-    print("\n{}: {}".format(stations.LUDKey, railway_station_data1[stations.LUDKey]))
+    print(f"\n  {stations.StnKey}:")
+    print(f"\n  {type(railway_station_data1_)}, {railway_station_data1_.shape}")
     # Stations:
-    # <class 'pandas.core.frame.DataFrame'>
     #
-    # Last updated date: 2020-06-29
+    #   Railway station data:
+    #
+    #   <class 'pandas.core.frame.DataFrame'>, (2835, 25)
 
-    test_data_dir = "tests\\dat"
+    print("\n{}: {}".format(stations.LUDKey, railway_station_data1[stations.LUDKey]))
+    # Last updated date: xxxx-xx-xx
+
+    print("")
+
     railway_station_data2 = stations.fetch_railway_station_data(update=True, pickle_it=True, data_dir=test_data_dir)
+    # No data is available for signal box codes beginning with "X".
+    # No data is available for signal box codes beginning with "Z".
 
     railway_station_data2_ = railway_station_data2[stations.StnKey]
 
-    print("Data is consistent:", all((x == y) for x, y in zip(railway_station_data1, railway_station_data2)))
-    # Data is consistent: True
+    print("\n{} data is consistent:".format(stations.StnKey), railway_station_data1_.equals(railway_station_data2_))
+    # Railway station data is consistent: True
