@@ -273,7 +273,8 @@ class LOR:
                     line_name_info.columns = ['Line Name', 'Line Name Note']
                     code_dat = pd.concat([code_dat, line_name_info], axis=1, sort=False)
                     try:
-                        note_dat = dict([(x['id'].title(), x.text) for x in soup.find('ol').findChildren('a')])
+                        note_dat = dict(
+                            [(x['id'].title(), x.text.replace('\xa0', '')) for x in soup.find('ol').findChildren('a')])
                     except AttributeError:
                         note_dat = dict([('Note', None)])
                     return code_dat, note_dat
