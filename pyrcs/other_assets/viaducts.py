@@ -10,7 +10,7 @@ import re
 import urllib.parse
 
 import pandas as pd
-from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
@@ -54,21 +54,22 @@ class Viaducts:
         self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_viaducts(self, *sub_dir):
+    def cdd_viaducts(self, *sub_dir, **kwargs):
         """
         Change directory to "dat\\other-assets\\viaducts\\" and sub-directories (and/or a file)
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
+        :param kwargs: optional parameters of `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
+            e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Viaducts``
         :rtype: str
 
         :meta private:
         """
 
-        path = self.DataDir
-        for x in sub_dir:
-            path = os.path.join(path, x)
+        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+
         return path
 
     def collect_railway_viaducts_by_page(self, page_no, update=False, verbose=False):
