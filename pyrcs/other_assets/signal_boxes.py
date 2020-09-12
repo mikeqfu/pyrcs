@@ -17,7 +17,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -69,21 +69,22 @@ class SignalBoxes:
         self.WMASDKey = 'Western region MAS dates'
         self.MSBKey = 'Mechanical signalling bell codes'
 
-    def cdd_sigbox(self, *sub_dir):
+    def cdd_sigbox(self, *sub_dir, **kwargs):
         """
         Change directory to "dat\\other-assets\\signal-boxes\\" and sub-directories (and/or a file)
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
+        :param kwargs: optional parameters of `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
+            e.g. ``mode=0o777``
         :return: path to the backup data directory for ``SignalBoxes``
         :rtype: str
 
         :meta private:
         """
 
-        path = self.DataDir
-        for x in sub_dir:
-            path = os.path.join(path, x)
+        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+
         return path
 
     def collect_signal_box_prefix_codes(self, initial, update=False, verbose=False):
