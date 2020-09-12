@@ -109,7 +109,7 @@ def fetch_site_map(update=False, confirmation_required=True, verbose=False):
         site_map = fetch_site_map(update)
     """
 
-    path_to_pickle = cd_dat("site-map.pickle")
+    path_to_pickle = cd_dat("site-map.pickle", mkdir=True)
 
     print("Getting site map", end=" ... ") if verbose == 2 else ""
 
