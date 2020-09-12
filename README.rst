@@ -1,7 +1,7 @@
 PyRCS
 =====
 
-|PyPI| |Python| |License| |Code size| |Downloads|
+|PyPI| |Python| |License| |Code size| |Downloads| |DOI|
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs?color=important&label=PyPI
    :target: https://pypi.org/project/pyrcs/
@@ -13,6 +13,8 @@ PyRCS
    :target: https://github.com/mikeqfu/pyrcs/tree/master/pyrcs
 .. |Downloads| image:: https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads
    :target: https://pypistats.org/packages/pyrcs
+.. |DOI| image:: https://zenodo.org/badge/92501006.svg
+   :target: https://zenodo.org/badge/latestdoi/92501006
 
 **Author**: Qian Fu |Twitter|
 
