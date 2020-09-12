@@ -11,7 +11,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
@@ -56,21 +56,21 @@ class LOR:
         self.PKey = 'Key to prefixes'
         self.ELCKey = 'ELR/LOR converter'
 
-    def cdd_lor(self, *sub_dir):
+    def cdd_lor(self, *sub_dir, **kwargs):
         """
         Change directory to "dat\\line-data\\lor-codes" and sub-directories (and/or a file)
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
 
         :meta private:
         """
 
-        path = self.DataDir
-        for x in sub_dir:
-            path = os.path.join(path, x)
+        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+
         return path
 
     def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
