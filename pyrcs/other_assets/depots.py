@@ -70,6 +70,7 @@ class Depots:
         :return: path to the backup data directory for ``Depots``
         :rtype: str
 
+        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
