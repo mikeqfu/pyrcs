@@ -109,4 +109,4 @@ venv.bak/
 # Misc
 .idea/
 pyrcs/dat/
-tests/
+tests/dat/
