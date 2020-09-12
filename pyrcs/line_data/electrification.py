@@ -147,8 +147,8 @@ class Electrification:
                         else:
                             notes['Notes'] = [notes['Notes'], notes_]
 
-                    data_key = re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0)
-                    national_network_ole_.update({data_key.strip(): table, **notes})
+                    data_key = h3.text.strip()  # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
+                    national_network_ole_.update({data_key: {'Codes': table, **notes}})
 
                     h3 = h3.find_next_sibling('h3')
 
@@ -324,7 +324,7 @@ class Electrification:
                                                    for x in ex_note_tag.find_all('li')), columns=['Initial', 'Code'])
                             notes.update({'Section codes known at present': li})
 
-                    independent_lines_ole_.update({h3.text: table, **notes})
+                    independent_lines_ole_.update({h3.text: {'Codes': table, **notes}})
 
                     h3 = h3.find_next_sibling('h3')
 
