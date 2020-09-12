@@ -8,13 +8,12 @@ import urllib.parse
 
 import bs4
 import dateutil.parser
-import fake_useragent
 import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
 import requests
-from pyhelpers.ops import confirmed
+from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 
 
@@ -544,22 +543,6 @@ def parse_date(str_date, as_date_type=False):
 
 # -- Get useful information ---------------------------------------------------------------------------
 
-def fake_requests_headers(random=False):
-    """
-    Make a fake HTTP headers for `requests.get`_.
-
-    .. _`requests.get`: https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
-
-    :param random: whether to go for a random agent, defaults to ``False``
-    :type random: bool
-    :return: fake HTTP headers
-    :rtype: dict
-    """
-
-    fake_user_agent = fake_useragent.UserAgent()
-    fake_header = {'User-Agent': fake_user_agent.random if random else fake_user_agent.chrome}
-    return fake_header
-
 
 def get_last_updated_date(url, parsed=True, as_date_type=False):
     """
@@ -600,18 +583,24 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
     # Request to get connected to the given url
     source = requests.get(url, headers=fake_requests_headers())
     web_page_text = source.text
+
     # Parse the text scraped from the requested web page
     parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')  # (Alternative parsers: 'html5lib', 'html.parser')
+
     # Find 'Last update date'
     update_tag = parsed_text.find('p', {'class': 'update'})
+
     if update_tag is not None:
         last_update_date = update_tag.text
+
         # Decide whether to convert the date's format
         if parsed:
             # Convert the date to "yyyy-mm-dd" format
             last_update_date = parse_date(last_update_date, as_date_type)
+
     else:
         last_update_date = None  # print('Information not available.')
+
     return last_update_date
 
 
