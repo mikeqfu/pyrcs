@@ -62,7 +62,8 @@ class LOR:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
+            e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
 
