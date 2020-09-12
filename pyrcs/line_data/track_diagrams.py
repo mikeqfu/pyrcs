@@ -11,10 +11,10 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
+from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, confirmed, fake_requests_headers, get_last_updated_date, get_track_diagrams_items, \
-    homepage_url
+from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, get_track_diagrams_items, homepage_url
 
 
 class TrackDiagrams:
