@@ -19,7 +19,7 @@ PyRCS
 .. |Twitter| image:: https://img.shields.io/twitter/url/https/twitter.com/Qian_Fu?label=Follow&style=social
    :target: https://twitter.com/Qian_Fu
 
-PyRCS is a web-scraping tool for collecting `acronyms and codes <http://www.railwaycodes.org.uk/>`_ being used in Britain's railway.
+PyRCS is a web-scraping tool for collecting `railway codes <http://www.railwaycodes.org.uk/>`_ used in different UK rail industry systems.
 
 Resources
 ---------
