@@ -24,9 +24,9 @@ setuptools.setup(
         'html5lib',
         'lxml',
         'measurement',
-        'openpyxl',
-        'pyhelpers>=1.2.2',
-        'XlsxWriter',
+        'more-itertools',
+        'pandas>=1.1.0',
+        'pyhelpers>=1.2.4',
     ],
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
