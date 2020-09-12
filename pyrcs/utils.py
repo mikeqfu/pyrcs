@@ -702,7 +702,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
     """
 
     menu_json = '-'.join(x for x in urllib.parse.urlparse(menu_url).path.replace('.shtm', '.json').split('/') if x)
-    path_to_menu_json = cd_dat("catalogue", menu_json)
+    path_to_menu_json = cd_dat("catalogue", menu_json, mkdir=True)
 
     if os.path.isfile(path_to_menu_json) and not update:
         cls_menu = load_json(path_to_menu_json, verbose=verbose)
