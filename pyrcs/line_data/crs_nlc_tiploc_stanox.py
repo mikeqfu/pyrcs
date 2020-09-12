@@ -10,14 +10,13 @@ import string
 import urllib.parse
 
 import bs4
-import more_itertools
 import pandas as pd
 import requests
 from pyhelpers.dir import validate_input_data_dir
-from pyhelpers.ops import confirmed
+from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 from pyhelpers.store import load_json, load_pickle, save, save_pickle
 
-from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url
+from pyrcs.utils import cd_dat, homepage_url
 from pyrcs.utils import get_catalogue, get_last_updated_date, parse_date, parse_location_name, parse_table, parse_tr
 
 
@@ -212,6 +211,9 @@ class LocationIdentifiers:
 
                 explanatory_note.update({'Notes': notes})
 
+                # Rearrange the dict
+                explanatory_note = {k: explanatory_note[k] for k in [self.MSCENKey, 'Notes', self.LUDKey]}
+
                 print("Done.") if verbose == 2 else ""
 
                 save_pickle(explanatory_note, self.cdd_lc(self.MSCENPickle + ".pickle"), verbose=verbose)
@@ -270,7 +272,7 @@ class LocationIdentifiers:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.MSCENPickle + ".pickle")
-                    save_pickle(explanatory_note, path_to_pickle, verbose=True)
+                    save_pickle(explanatory_note, path_to_pickle, verbose=verbose)
             else:
                 print("No data of {} has been collected.".format(self.MSCENKey.lower()))
 
@@ -310,19 +312,26 @@ class LocationIdentifiers:
                 print("To collect data of {}".format(self.OSKey.lower()), end=" ... ")
 
             try:
-                source = requests.get(self.Catalogue['Other systems'], headers=fake_requests_headers())
+                url = self.Catalogue['Other systems']
+
+                source = requests.get(url, headers=fake_requests_headers())
                 web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
+
                 # Get system name
                 system_names = [k.text for k in web_page_text.find_all('h3')]
-                system_names = [n.replace('Tramlnk', 'Tramlink') if 'Tramlnk' in n else n for n in system_names]
-                # Get column names for the other systems table
-                headers = list(more_itertools.unique_everseen([h.text for h in web_page_text.find_all('th')]))
+
                 # Parse table data for each system
-                tbl_data = web_page_text.find_all('table')
-                tables = [pd.DataFrame(parse_tr(headers, table.find_all('tr')), columns=headers) for table in tbl_data]
-                codes = [tables[i] for i in range(len(tables)) if i % 2 != 0]
+                table_data = list(split_list_by_size(web_page_text.find_all('table'), sub_len=2))
+
+                tables = []
+                for table in table_data:
+                    headers, tbl_dat = [x.text for x in table[0].find_all('th')], table[1].find_all('tr')
+                    tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat), columns=headers)
+                    tables.append(tbl_data)
+
                 # Make a dict
-                other_systems_codes = dict(zip(system_names, codes))
+                other_systems_codes = {self.OSKey: dict(zip(system_names, tables)),
+                                       self.LUDKey: get_last_updated_date(url)}
 
                 print("Done.") if verbose == 2 else ""
 
@@ -375,7 +384,7 @@ class LocationIdentifiers:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, self.OSPickle + ".pickle")
-                    save_pickle(other_systems_codes, path_to_pickle, verbose=True)
+                    save_pickle(other_systems_codes, path_to_pickle, verbose=verbose)
             else:
                 print("No data of {} has been collected.".format(self.OSKey.lower()))
 
@@ -571,11 +580,11 @@ class LocationIdentifiers:
         last_updated_dates = (item[self.LUDKey] for item, _ in zip(data, string.ascii_uppercase))
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
+        # Get other systems codes
+        other_systems_codes = self.fetch_other_systems_codes(update=update, verbose=verbose)[self.OSKey]
+
         # Get additional note
         additional_notes = self.fetch_multiple_station_codes_explanatory_note(update=update, verbose=verbose)
-
-        # Get other systems codes
-        other_systems_codes = self.fetch_other_systems_codes(update=update, verbose=verbose)
 
         # Create a dict to include all information
         location_codes = {self.Key: location_codes_data_table,
