@@ -1,6 +1,6 @@
-""" Collecting section codes for OLE installations.
-
-Data source: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
+"""
+Collecting `section codes for OLE installations
+<http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
 import copy
@@ -16,29 +16,32 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, parse_tr
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    parse_tr
 
 
 class Electrification:
     """
-    A class for collecting codes associated with British railway overhead electrification installations.
+    A class for collecting codes
+    associated with British railway overhead electrification installations.
 
     :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str, None
-    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :type data_dir: str or None
+    :param update: whether to check on update and proceed to update the package data,
+        defaults to ``False``
     :type update: bool
 
     **Example**::
 
-        from pyrcs.line_data import Electrification
+        >>> from pyrcs.line_data import Electrification
 
-        elec = Electrification()
+        >>> elec = Electrification()
 
-        print(elec.Name)
-        # Electrification masts and related features
+        >>> print(elec.Name)
+        Electrification masts and related features
 
-        print(elec.SourceURL)
-        # http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
+        >>> print(elec.SourceURL)
+        http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
     """
 
     def __init__(self, data_dir=None, update=False):
@@ -47,12 +50,16 @@ class Electrification:
         """
         self.Name = 'Electrification masts and related features'
         self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
-        self.Catalogue = get_catalogue(self.SourceURL, update=update, confirmation_required=False)
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+        self.SourceURL = \
+            urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
+        self.Catalogue = get_catalogue(
+            page_url=self.SourceURL, update=update, confirmation_required=False)
+        self.Date = get_last_updated_date(
+            url=self.SourceURL, parsed=True, as_date_type=False)
         self.Key = 'Electrification'
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir else cd_dat("line-data", self.Key.lower())
+        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
+            else cd_dat("line-data", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
         self.NationalNetworkKey = 'National network'
         self.NationalNetworkPickle = self.NationalNetworkKey.lower().replace(" ", "-")
@@ -65,11 +72,14 @@ class Electrification:
 
     def cdd_elec(self, *sub_dir, **kwargs):
         """
-        Change directory to "dat\\line-data\\electrification\\" and sub-directories (and/or a file)
+        Change directory to package data directory and sub-directories (and/or a file).
+
+        The directory for this module: ``"\\dat\\line-data\\electrification"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
+        :param kwargs: optional parameters of
+            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Electrification``
         :rtype: str
@@ -81,42 +91,46 @@ class Electrification:
 
         return path
 
-    def collect_codes_for_national_network(self, confirmation_required=True, verbose=False):
+    def collect_codes_for_national_network(self, confirmation_required=True,
+                                           verbose=False):
         """
         Collect OLE section codes for National network from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :param confirmation_required: whether to require users to confirm and proceed, 
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for National network
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            confirmation_required = True
+            >>> nn_ole_dat = \
+            ...     elec.collect_codes_for_national_network(confirmation_required=False)
 
-            national_network_ole = elec.collect_codes_for_national_network(confirmation_required)
-            # To collect section codes for OLE installations: national network? [No]|Yes:
-            # >? yes
-
-            print(national_network_ole)
-            # {'National network': <code>,
-            #  'Last updated date': <date>}
+            >>> type(nn_ole_dat)
+            <class 'dict'>
+            >>> print(list(nn_ole_dat.keys()))
+            ['National network', 'Last updated date']
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(self.NationalNetworkKey.lower()),
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect section codes for OLE installations: {}?".format(
+                self.NationalNetworkKey.lower()),
+                confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the codes for {}".format(self.NationalNetworkKey.lower()), end=" ... ")
+                print("Collecting the codes for {}".format(
+                    self.NationalNetworkKey.lower()), end=" ... ")
 
             try:
-                source = requests.get(self.Catalogue[self.NationalNetworkKey], headers=fake_requests_headers())
+                source = requests.get(self.Catalogue[self.NationalNetworkKey],
+                                      headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 national_network_ole_, h3 = {}, soup.find('h3')
@@ -125,12 +139,16 @@ class Electrification:
                     if header_tag:
                         header = [x.text for x in header_tag.find_all('th')]
 
-                        table = pd.DataFrame(parse_tr(header, header_tag.find_next('table').find_all('tr')),
-                                             columns=header)
+                        temp = parse_tr(
+                            header, header_tag.find_next('table').find_all('tr'))
+                        table = pd.DataFrame(temp, columns=header)
                         table = table.applymap(
-                            lambda x: re.sub(r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace('\\xa0', ''))
+                            lambda x:
+                            re.sub(r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
+                                '\\xa0', ''))
                     else:
-                        table = pd.DataFrame((x.text for x in h3.find_all_next('li')), columns=['Unknown_codes'])
+                        table = pd.DataFrame((x.text for x in h3.find_all_next('li')),
+                                             columns=['Unknown_codes'])
 
                     # Notes
                     notes = {'Notes': None}
@@ -141,22 +159,30 @@ class Electrification:
 
                     note_tag = h3.find_next('h4')
                     if note_tag and note_tag.text == 'Notes':
-                        notes_ = dict((x.a.get('id').title(), x.get_text(strip=True).replace('\xa0', ''))
-                                      for x in soup.find('ol') if x != '\n')
+                        notes_ = dict(
+                            (x.a.get('id').title(),
+                             x.get_text(strip=True).replace('\xa0', ''))
+                            for x in soup.find('ol') if x != '\n')
                         if notes['Notes'] is None:
                             notes['Notes'] = notes_
                         else:
                             notes['Notes'] = [notes['Notes'], notes_]
 
-                    data_key = h3.text.strip()  # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
+                    # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
+                    data_key = h3.text.strip()
+                    
                     national_network_ole_.update({data_key: {'Codes': table, **notes}})
 
                     h3 = h3.find_next_sibling('h3')
 
                 source.close()
 
-                last_updated_date = get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
-                national_network_ole = {self.NationalNetworkKey: national_network_ole_, self.LUDKey: last_updated_date}
+                last_updated_date = \
+                    get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
+                
+                national_network_ole = {
+                    self.NationalNetworkKey: national_network_ole_, 
+                    self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
@@ -169,36 +195,37 @@ class Electrification:
 
             return national_network_ole
 
-    def fetch_codes_for_national_network(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes_for_national_network(self, update=False, pickle_it=False,
+                                         data_dir=None, verbose=False):
         """
         Fetch OLE section codes for National network from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :param update: whether to check on update and proceed to update the package data, 
+            defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data 
+            with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for National network
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            update = False
-            pickle_it = False
-            data_dir = None
+            >>> nn_ole_dat = elec.fetch_codes_for_national_network()
 
-            national_network_ole = elec.fetch_codes_for_national_network(update, pickle_it, data_dir)
-
-            print(national_network_ole)
-            # {'National network': <code>,
-            #  'Last updated date': <date>}
+            >>> type(nn_ole_dat)
+            <class 'dict'>
+            >>> print(list(nn_ole_dat.keys()))
+            ['National network', 'Last updated date']
         """
 
         path_to_pickle = self.cdd_elec(self.NationalNetworkPickle + ".pickle")
@@ -208,15 +235,18 @@ class Electrification:
 
         else:
             national_network_ole = self.collect_codes_for_national_network(
-                confirmation_required=False, verbose=False if data_dir or not verbose else True)
+                confirmation_required=False,
+                verbose=False if data_dir or not verbose else True)
 
             if national_network_ole:  # codes_for_ole is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, self.NationalNetworkPickle + ".pickle")
+                    path_to_pickle = os.path.join(
+                        self.CurrentDataDir, self.NationalNetworkPickle + ".pickle")
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been collected.".format(self.NationalNetworkKey.lower()))
+                print("No data of {} has been collected.".format(
+                    self.NationalNetworkKey.lower()))
 
         return national_network_ole
 
@@ -229,59 +259,67 @@ class Electrification:
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            line_names = elec.get_names_of_independent_lines()
+            >>> l_names = elec.get_names_of_independent_lines()
 
-            print(line_names)
-            # a list of independent line names
+            >>> print(l_names[:5])
+            ['Beamish Tramway',
+             'Birkenhead Tramway',
+             'Black Country Living Museum',
+             'Blackpool Tramway',
+             'Brighton and Rottingdean Seashore Electric Railway']
         """
 
-        source = requests.get(self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
+        source = requests.get(self.Catalogue[self.IndependentLinesKey],
+                              headers=fake_requests_headers())
         soup = bs4.BeautifulSoup(source.text, 'lxml')
         for x in soup.find_all('p'):
             if re.match(r'^Jump to: ', x.text):
                 line_names = x.text.replace('Jump to: ', '').split('\xa0| ')
                 return line_names
 
-    def collect_codes_for_independent_lines(self, confirmation_required=True, verbose=False):
+    def collect_codes_for_independent_lines(self, confirmation_required=True,
+                                            verbose=False):
         """
         Collect OLE section codes for independent lines from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :param confirmation_required: whether to require users to confirm and proceed, 
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for independent lines
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            confirmation_required = True
+            >>> il_ole_dat = elec.collect_codes_for_independent_lines(False)
 
-            independent_lines_ole = elec.collect_codes_for_independent_lines(confirmation_required)
-            # To collect section codes for OLE installations: independent lines? [No]|Yes:
-            # >? yes
-
-            print(independent_lines_ole)
-            # {'Independent lines': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(il_ole_dat)
+            <class 'dict'>
+            >>> print(list(il_ole_dat.keys()))
+            ['Independent lines', 'Last updated date']
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(self.IndependentLinesKey.lower()),
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect section codes for OLE installations: {}?".format(
+                self.IndependentLinesKey.lower()),
+                confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the codes for {}".format(self.IndependentLinesKey.lower()), end=" ... ")
+                print("Collecting the codes for {}".format(
+                    self.IndependentLinesKey.lower()), end=" ... ")
 
             try:
-                source = requests.get(self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
+                source = requests.get(self.Catalogue[self.IndependentLinesKey],
+                                      headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 independent_lines_ole_ = {}
@@ -291,19 +329,25 @@ class Electrification:
                     if header_tag:
                         if header_tag.find_previous('h3') == h3:
                             header = [x.text for x in header_tag.find_all('th')]
-                            table = pd.DataFrame(parse_tr(header, header_tag.find_next('table').find_all('tr')),
-                                                 columns=header)
+                            temp = parse_tr(
+                                header, header_tag.find_next('table').find_all('tr'))
+                            table = pd.DataFrame(temp, columns=header)
                             table = table.applymap(
-                                lambda x: re.sub(
-                                    r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace('\\xa0', '').strip())
+                                lambda x:
+                                re.sub(
+                                    r'\']\)?', ']',
+                                    re.sub(r'\(?\[\'', '[', x)).replace(
+                                    '\\xa0', '').strip())
 
                     notes = {'Notes': None}
                     h4 = h3.find_next('h4')
                     if h4:
                         previous_h3 = h4.find_previous('h3')
                         if previous_h3 == h3 and h4.text == 'Notes':
-                            notes_ = dict((x.a.get('id').title(), x.get_text(strip=True).replace('\xa0', ''))
-                                          for x in h4.find_next('ol') if x != '\n')
+                            notes_ = dict(
+                                (x.a.get('id').title(),
+                                 x.get_text(strip=True).replace('\xa0', ''))
+                                for x in h4.find_next('ol') if x != '\n')
                             if notes['Notes'] is None:
                                 notes['Notes'] = notes_
 
@@ -321,8 +365,10 @@ class Electrification:
                     if ex_note_tag:
                         previous_h3 = ex_note_tag.find_previous('h3')
                         if previous_h3 == h3:
-                            li = pd.DataFrame(list(re.sub(r'[()]', '', x.text).split(' ', 1)
-                                                   for x in ex_note_tag.find_all('li')), columns=['Initial', 'Code'])
+                            li = pd.DataFrame(
+                                list(re.sub(r'[()]', '', x.text).split(' ', 1)
+                                     for x in ex_note_tag.find_all('li')),
+                                columns=['Initial', 'Code'])
                             notes.update({'Section codes known at present': li})
 
                     independent_lines_ole_.update({h3.text: {'Codes': table, **notes}})
@@ -331,13 +377,16 @@ class Electrification:
 
                 source.close()
 
-                last_updated_date = get_last_updated_date(self.Catalogue[self.IndependentLinesKey])
+                last_updated_date = \
+                    get_last_updated_date(self.Catalogue[self.IndependentLinesKey])
+
                 independent_lines_ole = {self.IndependentLinesKey: independent_lines_ole_,
                                          self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
+                pickle_filename = \
+                    self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
                 path_to_pickle = self.cdd_elec(pickle_filename)
                 save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
@@ -347,36 +396,37 @@ class Electrification:
 
             return independent_lines_ole
 
-    def fetch_codes_for_independent_lines(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes_for_independent_lines(self, update=False, pickle_it=False,
+                                          data_dir=None, verbose=False):
         """
         Fetch OLE section codes for independent lines from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :param update: whether to check on update and proceed to update the package data, 
+            defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data 
+            with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for independent lines
         :rtype: dict
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            update = False
-            pickle_it = False
-            data_dir = None
+            >>> il_ole_dat = elec.fetch_codes_for_independent_lines()
 
-            independent_lines_ole = elec.fetch_codes_for_independent_lines(update, pickle_it, data_dir)
-
-            print(independent_lines_ole)
-            # {'Independent lines': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(il_ole_dat)
+            <class 'dict'>
+            >>> print(list(il_ole_dat.keys()))
+            ['Independent lines', 'Last updated date']
         """
 
         pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
@@ -387,7 +437,8 @@ class Electrification:
 
         else:
             independent_lines_ole = self.collect_codes_for_independent_lines(
-                confirmation_required=False, verbose=False if data_dir or not verbose else True)
+                confirmation_required=False,
+                verbose=False if data_dir or not verbose else True)
 
             if independent_lines_ole:  # codes_for_independent_lines is not None
                 if pickle_it and data_dir:
@@ -395,40 +446,41 @@ class Electrification:
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been collected.".format(self.IndependentLinesKey.lower()))
+                print("No data of {} has been collected.".format(
+                    self.IndependentLinesKey.lower()))
 
         return independent_lines_ole
 
     def collect_codes_for_ohns(self, confirmation_required=True, verbose=False):
         """
-        Collect codes for overhead line electrification neutral sections (OHNS) from source web page.
+        Collect codes for overhead line electrification neutral sections (OHNS)
+        from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :param confirmation_required: whether to require users to confirm and proceed, 
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OHNS codes
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            confirmation_required = True
+            >>> ohns_dat = elec.collect_codes_for_ohns(confirmation_required=False)
 
-            ohns_codes = elec.collect_codes_for_ohns(confirmation_required)
-            # To collect section codes for OLE installations: national network neutral sections? [No]|Yes:
-            # >? yes
-
-            print(ohns_codes)
-            # {'National network neutral sections': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(ohns_dat)
+            <class 'dict'>
+            >>> print(list(ohns_dat.keys()))
+            ['National network neutral sections', 'Last updated date']
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(self.OhnsKey.lower()),
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect section codes for OLE installations: {}?".format(
+                self.OhnsKey.lower()), confirmation_required=confirmation_required):
 
             if verbose == 2:
                 print("Collecting data of {}".format(self.OhnsKey.lower()), end=" ... ")
@@ -438,8 +490,9 @@ class Electrification:
                 neutral_sections_data.columns = header.columns.to_list()
                 neutral_sections_data.fillna('', inplace=True)
 
-                ohns_codes = {self.OhnsKey: neutral_sections_data,
-                              self.LUDKey: get_last_updated_date(self.Catalogue[self.OhnsKey])}
+                ohns_codes = {
+                    self.OhnsKey: neutral_sections_data,
+                    self.LUDKey: get_last_updated_date(self.Catalogue[self.OhnsKey])}
 
                 print("Done. ") if verbose == 2 else ""
 
@@ -452,36 +505,38 @@ class Electrification:
 
             return ohns_codes
 
-    def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None,
+                             verbose=False):
         """
-        Fetch codes for overhead line electrification neutral sections (OHNS) from local backup.
+        Fetch codes for overhead line electrification neutral sections (OHNS)
+        from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :param update: whether to check on update and proceed to update the package data, 
+            defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data 
+            with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OHNS codes
         :rtype: dict
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            update = False
-            pickle_it = False
-            data_dir = None
+            >>> ohns_dat = elec.fetch_codes_for_ohns()
 
-            ohns_codes = elec.fetch_codes_for_ohns(update, pickle_it, data_dir)
-
-            print(ohns_codes)
-            # {'National network neutral sections': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(ohns_dat)
+            <class 'dict'>
+            >>> print(list(ohns_dat.keys()))
+            ['National network neutral sections', 'Last updated date']
         """
 
         path_to_pickle = self.cdd_elec(self.OhnsPickle + ".pickle")
@@ -490,55 +545,63 @@ class Electrification:
             ohns_codes = load_pickle(path_to_pickle)
 
         else:
-            ohns_codes = self.collect_codes_for_ohns(confirmation_required=False,
-                                                     verbose=False if data_dir or not verbose else True)
+            ohns_codes = self.collect_codes_for_ohns(
+                confirmation_required=False,
+                verbose=False if data_dir or not verbose else True)
 
             if ohns_codes:  # ohns is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
+                    path_to_pickle = \
+                        os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes for {} has been collected.".format(self.OhnsKey.lower()))
+                print("No data of section codes for {} has been collected.".format(
+                    self.OhnsKey.lower()))
 
         return ohns_codes
 
-    def collect_codes_for_energy_tariff_zones(self, confirmation_required=True, verbose=False):
+    def collect_codes_for_energy_tariff_zones(self, confirmation_required=True,
+                                              verbose=False):
         """
-        Collect OLE section codes for national network energy tariff zones from source web page.
+        Collect OLE section codes for national network energy tariff zones
+        from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, defaults to ``True``
+        :param confirmation_required: whether to require users to confirm and proceed, 
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            confirmation_required = True
+            >>> etz_ole_dat = \
+            ...     elec.collect_codes_for_energy_tariff_zones(confirmation_required=False)
 
-            etz_ole = elec.collect_codes_for_energy_tariff_zones(confirmation_required)
-            # To collect section codes for OLE installations: national network energy tariff zones? [No]|Yes:
-            # >? yes
-
-            print(etz_ole)
-            # {'National network energy tariff zones': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(etz_ole_dat)
+            <class 'dict'>
+            >>> print(list(etz_ole_dat.keys()))
+            ['National network energy tariff zones', 'Last updated date']
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(self.TariffZonesKey.lower()),
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect section codes for OLE installations: {}?".format(
+                self.TariffZonesKey.lower()),
+                confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the codes for {}".format(self.TariffZonesKey.lower()), end=" ... ")
+                print("Collecting the codes for {}".format(self.TariffZonesKey.lower()),
+                      end=" ... ")
 
             try:
-                source = requests.get(self.Catalogue[self.TariffZonesKey], headers=fake_requests_headers())
+                source = requests.get(self.Catalogue[self.TariffZonesKey],
+                                      headers=fake_requests_headers())
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 etz_ole_ = {}
@@ -548,10 +611,13 @@ class Electrification:
                     if header_tag:
                         if header_tag.find_previous('h3') == h3:
                             header = [x.text for x in header_tag.find_all('th')]
-                            table = pd.DataFrame(parse_tr(header, header_tag.find_next('table').find_all('tr')),
-                                                 columns=header)
+                            temp = parse_tr(
+                                header, header_tag.find_next('table').find_all('tr'))
+                            table = pd.DataFrame(temp, columns=header)
                             table = table.applymap(
-                                lambda x: re.sub(r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
+                                lambda x:
+                                re.sub(
+                                    r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
                                     '\\xa0', '').strip())
 
                     notes, next_p = [], h3.find_next('p')
@@ -571,8 +637,10 @@ class Electrification:
 
                 source.close()
 
-                etz_ole = {self.TariffZonesKey: etz_ole_,
-                           self.LUDKey: get_last_updated_date(self.Catalogue[self.TariffZonesKey])}
+                etz_ole = {
+                    self.TariffZonesKey: etz_ole_,
+                    self.LUDKey:
+                        get_last_updated_date(self.Catalogue[self.TariffZonesKey])}
 
                 print("Done. ") if verbose == 2 else ""
 
@@ -585,36 +653,38 @@ class Electrification:
 
             return etz_ole
 
-    def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False,
+                                            data_dir=None, verbose=False):
         """
-        Fetch OLE section codes for national network energy tariff zones from source web page.
+        Fetch OLE section codes for national network energy tariff zones
+        from source web page.
 
-        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :param update: whether to check on update and proceed to update the package data, 
+            defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data 
+            with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
         :rtype: dict
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            update = False
-            pickle_it = False
-            data_dir = None
+            >>> etz_ole_dat = elec.fetch_codes_for_energy_tariff_zones()
 
-            etz_ole = elec.fetch_codes_for_energy_tariff_zones(update, pickle_it, data_dir)
-
-            print(etz_ole)
-            # {'National network energy tariff zones': <codes>,
-            #  'Last updated date': <date>}
+            >>> type(etz_ole_dat)
+            <class 'dict'>
+            >>> print(list(etz_ole_dat.keys()))
+            ['National network energy tariff zones', 'Last updated date']
         """
 
         path_to_pickle = self.cdd_elec(self.TariffZonesPickle + ".pickle")
@@ -624,48 +694,51 @@ class Electrification:
 
         else:
             etz_ole = self.collect_codes_for_energy_tariff_zones(
-                confirmation_required=False, verbose=False if data_dir or not verbose else True)
+                confirmation_required=False,
+                verbose=False if data_dir or not verbose else True)
 
             if etz_ole:  # codes_for_energy_tariff_zones is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, self.TariffZonesPickle + ".pickle")
+                    path_to_pickle = os.path.join(self.CurrentDataDir,
+                                                  self.TariffZonesPickle + ".pickle")
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
             else:
                 print("No data of {} has been collected.".format(self.TariffZonesKey.lower()))
 
         return etz_ole
 
-    def fetch_electrification_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_electrification_codes(self, update=False, pickle_it=False, data_dir=None,
+                                    verbose=False):
         """
         Fetch OLE section codes in the electrification catalogue.
 
-        :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+        :param update: whether to check on update and proceed to update the package data, 
+            defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data 
+            with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console 
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
 
         **Example**::
 
-            from pyrcs.line_data import Electrification
+            >>> from pyrcs.line_data import Electrification
 
-            elec = Electrification()
+            >>> elec = Electrification()
 
-            update = False
-            pickle_it = False
-            data_dir = None
+            >>> electrification_codes = elec.fetch_electrification_codes()
 
-            ole_section_codes = elec.fetch_electrification_codes(update, pickle_it, data_dir)
-
-            print(ole_section_codes)
-            # {'Electrification': <codes>,
-            #  'Latest update date': <date>}
+            >>> type(electrification_codes)
+            <class 'dict'>
+            >>> print(list(electrification_codes.keys()))
+            ['Electrification', 'Last updated date']
         """
 
         codes = []
@@ -673,8 +746,10 @@ class Electrification:
             if func.startswith('fetch_codes_for_'):
                 codes.append(getattr(self, func)(update=update, verbose=verbose))
 
-        ole_section_codes = {self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
-                             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
+        ole_section_codes = {
+            self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
+            self.LUDKey:
+                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
 
         if pickle_it and data_dir:
             pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
