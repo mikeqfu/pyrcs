@@ -94,7 +94,9 @@ class Electrification:
     def collect_codes_for_national_network(self, confirmation_required=True,
                                            verbose=False):
         """
-        Collect OLE section codes for National network from source web page.
+        Collect OLE section codes for `national network
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
@@ -198,7 +200,9 @@ class Electrification:
     def fetch_codes_for_national_network(self, update=False, pickle_it=False,
                                          data_dir=None, verbose=False):
         """
-        Fetch OLE section codes for National network from local backup.
+        Fetch OLE section codes for `national network
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
+        from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
@@ -252,7 +256,8 @@ class Electrification:
 
     def get_names_of_independent_lines(self):
         """
-        Get names of independent lines.
+        Get names of `independent lines
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
         :return: a list of independent line names
         :rtype: list
@@ -284,7 +289,9 @@ class Electrification:
     def collect_codes_for_independent_lines(self, confirmation_required=True,
                                             verbose=False):
         """
-        Collect OLE section codes for independent lines from source web page.
+        Collect OLE section codes for `independent lines
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
@@ -399,7 +406,9 @@ class Electrification:
     def fetch_codes_for_independent_lines(self, update=False, pickle_it=False,
                                           data_dir=None, verbose=False):
         """
-        Fetch OLE section codes for independent lines from local backup.
+        Fetch OLE section codes for `independent lines
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
+        from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
@@ -453,7 +462,8 @@ class Electrification:
 
     def collect_codes_for_ohns(self, confirmation_required=True, verbose=False):
         """
-        Collect codes for overhead line electrification neutral sections (OHNS)
+        Collect codes for `overhead line electrification neutral sections
+        <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
@@ -508,7 +518,8 @@ class Electrification:
     def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None,
                              verbose=False):
         """
-        Fetch codes for overhead line electrification neutral sections (OHNS)
+        Fetch codes for `overhead line electrification neutral sections
+        <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
@@ -564,7 +575,8 @@ class Electrification:
     def collect_codes_for_energy_tariff_zones(self, confirmation_required=True,
                                               verbose=False):
         """
-        Collect OLE section codes for national network energy tariff zones
+        Collect OLE section codes for `national network energy tariff zones
+        <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
@@ -656,7 +668,8 @@ class Electrification:
     def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False,
                                             data_dir=None, verbose=False):
         """
-        Fetch OLE section codes for national network energy tariff zones
+        Fetch OLE section codes for `national network energy tariff zones
+        <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from source web page.
 
         :param update: whether to check on update and proceed to update the package data, 
@@ -711,7 +724,8 @@ class Electrification:
     def fetch_electrification_codes(self, update=False, pickle_it=False, data_dir=None,
                                     verbose=False):
         """
-        Fetch OLE section codes in the electrification catalogue.
+        Fetch OLE section codes in `electrification
+        <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_ catalogue.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
