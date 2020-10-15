@@ -76,7 +76,7 @@ class LocationIdentifiers:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: "\\dat\\line-data\\crs-nlc-tiploc-stanox"
+        The directory for this module: ``"\\dat\\line-data\\crs-nlc-tiploc-stanox"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
