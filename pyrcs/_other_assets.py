@@ -1,4 +1,6 @@
-""" Collecting data of other assets """
+"""
+Collecting data of `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+"""
 
 import urllib.parse
 
@@ -9,20 +11,50 @@ from .utils import get_category_menu, homepage_url
 class OtherAssets:
     """
 
-    :param update: whether to check on update and proceed to update the package data, defaults to ``False``
+    :param update: whether to check on update and proceed to update the package data,
+        defaults to ``False``
     :type update: bool
 
     **Example**::
 
-        from pyrcs import OtherAssets
+        >>> from pyrcs import OtherAssets
 
-        oa = OtherAssets()
+        >>> oa = OtherAssets()
 
-        # To get railway station data
-        stations = oa.Stations
+        >>> # To get data of railway stations
+        >>> railway_station_data = oa.Stations.fetch_railway_station_data()
 
-        # data of railway stations whose names start with 'A'
-        railway_station_data_a = stations.collect_railway_station_data_by_initial('A')
+        >>> type(railway_station_data)
+        <class 'dict'>
+        >>> print(list(railway_station_data.keys()))
+        ['Railway station data', 'Last updated date']
+        >>> railway_station_dat = railway_station_data['Railway station data']
+        >>> print(railway_station_dat.head())
+              Station   ELR   Mileage  ... Prev_Date_6 Prev_Operator_7  Prev_Date_7
+        0  Abbey Wood   NKL  11m 43ch  ...         NaN             NaN          NaN
+        1  Abbey Wood  XRS3  24.458km  ...         NaN             NaN          NaN
+        2        Aber   CAR   8m 69ch  ...         NaN             NaN          NaN
+        3   Abercynon   CAM  16m 28ch  ...         NaN             NaN          NaN
+        4   Abercynon   ABD  16m 28ch  ...         NaN             NaN          NaN
+
+        [5 rows x 25 columns]
+
+        >>> # To get data of signal boxes
+        >>> signal_boxes_data = oa.SignalBoxes.fetch_signal_box_prefix_codes()
+        >>> type(signal_boxes_data)
+        <class 'dict'>
+        >>> print(list(signal_boxes_data.keys()))
+        ['Signal boxes', 'Last updated date']
+        >>> signal_boxes_dat = signal_boxes_data['Signal boxes']
+        >>> print(signal_boxes_dat.head())
+          Code               Signal Box  ...            Closed        Control to
+        0   AF  Abbey Foregate Junction  ...
+        1   AJ           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
+        2    R           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
+        3   AW               Abbey Wood  ...      13 July 1975      Dartford (D)
+        4   AE         Abbey Works East  ...   1 November 1987  Port Talbot (PT)
+
+        [5 rows x 8 columns]
     """
 
     def __init__(self, update=False):
@@ -34,7 +66,8 @@ class OtherAssets:
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(
             self.HomeURL, '{}menu.shtm'.format(self.Name.lower().replace(' ', '')))
-        self.Catalogue = get_category_menu(self.SourceURL, update=update, confirmation_required=False)
+        self.Catalogue = \
+            get_category_menu(self.SourceURL, update=update, confirmation_required=False)
         # Classes
         self.SignalBoxes = signal_boxes.SignalBoxes(update=update)
         self.Tunnels = tunnels.Tunnels(update=update)
