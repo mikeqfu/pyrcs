@@ -2,30 +2,46 @@
 Installation
 ============
 
-If you are using a `virtualenv <https://packaging.python.org/key_projects/#virtualenv>`_, ensure that the virtualenv is activated.
-
-To install the latest release of `pyrcs <https://github.com/mikeqfu/pyrcs>`_ at `PyPI <https://pypi.org/project/pyrcs/>`_ via `pip <https://packaging.python.org/key_projects/#pip>`_ on Windows Command Prompt (CMD) or Linux/Unix terminal.
+To install the latest release of PyRCS at `PyPI`_ via `pip`_:
 
 .. code-block:: bash
 
    pip install --upgrade pyrcs
 
-If you would like to try the more recent version under development, install it from GitHub
+To install the more recent version hosted directly from `GitHub repository`_:
 
 .. code-block:: bash
 
    pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
 
-To test if pyrcs is correctly installed, try importing the package from an interpreter shell:
+To test if PyRCS is correctly installed, try importing the package via an interpreter shell:
 
-.. parsed-literal::
+.. code-block:: python
 
     >>> import pyrcs
+
     >>> pyrcs.__version__  # Check the current release
-    |version|
+
+.. parsed-literal::
+    The current release version is: |version|
 
 .. note::
 
+    - If using a `virtual environment`_, ensure that it is activated.
+
     - To ensure you get the most recent version, it is always recommended to add ``--upgrade`` (or ``-U``) to ``pip install``.
-    - `pyrcs <https://github.com/mikeqfu/pyrcs>`_ has not yet been tested with Python 2. For users who have installed both Python 2 and 3, it would be recommended to replace ``pip`` with ``pip3``. But you are more than welcome to volunteer testing the package with Python 2 and any issues should be logged/reported onto the web page of "`Issues <https://github.com/mikeqfu/pyrcs/issues>`_".
-    - For more general instructions, check the web page of "`Installing Packages <https://packaging.python.org/tutorials/installing-packages>`_".
+
+    - The package has not yet been tested with `Python 2`_. For users who have installed both Python 2 and `Python 3`_, it would be recommended to replace ``pip`` with ``pip3``. But you are more than welcome to volunteer testing the package with Python 2 and any issues should be logged/reported onto the `Issues`_ page.
+
+    - For more general instructions, check the "`Installing Packages <https://packaging.python.org/tutorials/installing-packages>`_".
+
+
+.. _`PyPI`: https://pypi.org/project/pyrcs/
+.. _`pip`: https://packaging.python.org/key_projects/#pip
+.. _`GitHub repository`: https://github.com/mikeqfu/pyrcs
+
+.. _`virtual environment`: https://packaging.python.org/glossary/#term-Virtual-Environment
+.. _`virtualenv`: https://packaging.python.org/key_projects/#virtualenv
+.. _`Python 2`: https://docs.python.org/2/
+.. _`Python 3`: https://docs.python.org/3/
+.. _`Issues`: https://github.com/mikeqfu/pyrcs/issues
