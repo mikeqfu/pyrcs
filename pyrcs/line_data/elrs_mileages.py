@@ -1,4 +1,5 @@
-""" Collecting `Engineer's Line References (ELRs) 
+"""
+Collect `Engineer's Line References (ELRs)
 <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
 """
 
@@ -80,8 +81,6 @@ class ELRMileages:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``ELRMileages``
         :rtype: str
-
-        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=mkdir, **kwargs)
@@ -89,12 +88,14 @@ class ELRMileages:
         return path
 
     @staticmethod
-    def identify_multiple_measures(mileage_data):
+    def parse_multi_measures(mileage_data):
         """
         Process data of mileage file with multiple measures.
 
         :param mileage_data: scraped raw mileage file from source web page
         :type: pandas.DataFrame
+
+        :meta private:
         """
 
         test_temp = mileage_data[~mileage_data.Mileage.astype(bool)]
@@ -202,6 +203,8 @@ class ELRMileages:
         :type mileage: pandas.Series
         :return: parsed mileages
         :rtype: pandas.DataFrame
+
+        :meta private:
         """
 
         mileage.index = range(len(mileage))
@@ -256,6 +259,16 @@ class ELRMileages:
 
     @staticmethod
     def parse_node_col(node):
+        """
+        Parse column of node data.
+
+        :param node: column of node data
+        :type node: pandas.Series
+        :return: parsed nodes
+        :rtype: pandas.DataFrame
+
+        :meta private:
+        """
 
         def preprocess_node_x(node_x):
             # node_x = node_x.replace(
@@ -513,8 +526,8 @@ class ELRMileages:
 
         return elrs_data
 
-    def collect_mileage_file_by_elr(self, elr, parsed=True, confirmation_required=True,
-                                    pickle_it=False, verbose=False):
+    def collect_mileage_file(self, elr, parsed=True, confirmation_required=True,
+                             pickle_it=False, verbose=False):
         """
         Collect mileage file for the given ELR from source web page.
 
@@ -548,14 +561,14 @@ class ELRMileages:
 
             >>> em = ELRMileages()
 
-            >>> mileage_dat = em.collect_mileage_file_by_elr(elr='CJD')
+            >>> mileage_dat = em.collect_mileage_file(elr='CJD')
             To collect mileage file for "CJD"? [No]|Yes: yes
             >>> type(mileage_dat)
             <class 'dict'>
             >>> print(list(mileage_dat.keys()))
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
 
-            >>> mileage_dat = em.collect_mileage_file_by_elr(elr='GAM')
+            >>> mileage_dat = em.collect_mileage_file(elr='GAM')
             To collect mileage file of "GAM"? [No]|Yes: yes
             >>> print(mileage_dat['Mileage'].head())
                Mileage Mileage_Note Miles_Chains  ... Link_1 Link_1_ELR Link_1_Mile_Chain
@@ -564,7 +577,7 @@ class ELRMileages:
 
             [2 rows x 8 columns]
 
-            >>> mileage_dat = em.collect_mileage_file_by_elr(elr='SLD')
+            >>> mileage_dat = em.collect_mileage_file(elr='SLD')
             To collect mileage file of "SLD"? [No]|Yes: yes
             >>> print(mileage_dat['Mileage'].head())
                Mileage Mileage_Note Miles_Chains  ... Link_1 Link_1_ELR Link_1_Mile_Chain
@@ -573,7 +586,7 @@ class ELRMileages:
 
             [2 rows x 8 columns]
 
-            >>> mileage_dat = em.collect_mileage_file_by_elr(elr='ELR')
+            >>> mileage_dat = em.collect_mileage_file(elr='ELR')
             To collect mileage file of "ELR"? [No]|Yes: yes
             >>> print(mileage_dat['Mileage'].head())
                 Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
@@ -616,7 +629,7 @@ class ELRMileages:
                         notes = elr_dat.Notes.values[0]
                         if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes):
                             new_elr = re.search(r'(?<= )[A-Z]{3}(\d)?', notes).group(0)
-                            mileage_file = self.collect_mileage_file_by_elr(
+                            mileage_file = self.collect_mileage_file(
                                 elr=new_elr, parsed=parsed,
                                 confirmation_required=confirmation_required,
                                 pickle_it=pickle_it, verbose=verbose)
@@ -723,7 +736,7 @@ class ELRMileages:
 
                     # Identify if there are multiple measures in 'mileage_data'
                     # e.g current and former measures
-                    mileage_data = self.identify_multiple_measures(mileage_data)
+                    mileage_data = self.parse_multi_measures(mileage_data)
 
                     if parsed:
                         if isinstance(mileage_data, dict) and len(mileage_data) > 1:
@@ -802,7 +815,7 @@ class ELRMileages:
 
         else:
             verbose_ = False if data_dir or not verbose else True
-            mileage_file = self.collect_mileage_file_by_elr(
+            mileage_file = self.collect_mileage_file(
                 elr, parsed=True, confirmation_required=False, pickle_it=pickle_it,
                 verbose=verbose_)
 
@@ -842,12 +855,12 @@ class ELRMileages:
             >>> em = ELRMileages()
 
             >>> start_elr_ = 'AAM'
-            >>> start_mileage_file_ = em.collect_mileage_file_by_elr(
+            >>> start_mileage_file_ = em.collect_mileage_file(
             ...     start_elr_, confirmation_required=False)
             >>> start_mileage_data_ = start_mileage_file_['Mileage']
 
             >>> end_elr_ = 'ANZ'
-            >>> end_mileage_file_ = em.collect_mileage_file_by_elr(
+            >>> end_mileage_file_ = em.collect_mileage_file(
             ...     end_elr_, confirmation_required=False)
             >>> end_mileage_data_ = end_mileage_file_['Mileage']
 
