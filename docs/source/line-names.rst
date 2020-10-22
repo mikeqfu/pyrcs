@@ -1,22 +1,17 @@
-.. _ld-line-names:
+.. py:module:: pyrcs.line_data.line_names
 
-.. py:module:: line_names
+line_names
+----------
 
-.. py:module:: pyrcs.line_data
-   :noindex:
+.. automodule:: line_names
+    :noindex:
+    :no-members:
+    :no-undoc-members:
+    :no-inherited-members:
 
-LineNames
-~~~~~~~~~
-
-A class for collecting `British railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
-
+.. rubric:: Class:
 .. autosummary::
+    :toctree: _generated/
+    :template: class.rst
 
-   LineNames.collect_line_names
-   LineNames.fetch_line_names
-
-.. autoclass:: pyrcs.line_data.LineNames
-
-   .. automethod:: collect_line_names
-
-   .. automethod:: fetch_line_names
+    LineNames
