@@ -1,10 +1,16 @@
-from .crs_nlc_tiploc_stanox import LocationIdentifiers
-from .electrification import Electrification
-from .elrs_mileages import ELRMileages
-from .line_names import LineNames
-from .lor_codes import LOR
-from .track_diagrams import TrackDiagrams
+"""
+A collection of modules for collecting
+`line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_. See also
+:py:mod:`pyrcs._line_data<pyrcs._line_data>`.
+"""
 
+from .elec import Electrification
+from .elr_mileage import ELRMileages
+from .line_name import LineNames
+from .loc_id import LocationIdentifiers
+from .lor_code import LOR
+from .trk_diagr import TrackDiagrams
 
-__all__ = ['crs_nlc_tiploc_stanox', 'electrification', 'elrs_mileages', 'line_names', 'lor_codes', 'track_diagrams',
-           'LocationIdentifiers', 'Electrification', 'ELRMileages', 'LineNames', 'LOR', 'TrackDiagrams']
+__all__ = ['loc_id', 'elec', 'elr_mileage', 'line_name', 'lor_code', 'trk_diagr',
+           'LocationIdentifiers', 'Electrification', 'ELRMileages', 'LineNames',
+           'LOR', 'TrackDiagrams']
