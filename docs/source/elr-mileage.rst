@@ -1,15 +1,15 @@
-.. py:module:: pyrcs.line_data.elrs_mileages
+.. py:module:: pyrcs.line_data.elr_mileage
 
-elrs_mileages
--------------
+elr_mileage
+-----------
 
-.. automodule:: elrs_mileages
+.. automodule:: elr_mileage
     :noindex:
     :no-members:
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Class:
+.. rubric:: Class
 .. autosummary::
     :toctree: _generated/
     :template: class.rst
