@@ -1,4 +1,4 @@
-from pyrcs.other_assets.viaducts import Viaducts
+from pyrcs.other_assets.viaduct import Viaducts
 
 if __name__ == '__main__':
 
@@ -35,7 +35,8 @@ if __name__ == '__main__':
     print("\n{}: {}".format(viaducts.LUDKey, railways_viaducts_data[viaducts.LUDKey]))
     # Last updated date: xxxx-xx-xx
 
-    railways_viaducts_data_ = viaducts.fetch_railway_viaducts(update=True, pickle_it=True, data_dir=test_data_dir)
+    railways_viaducts_data_ = viaducts.fetch_railway_viaducts(
+        update=True, pickle_it=True, data_dir=test_data_dir)
 
     railways_viaducts_dat_ = railways_viaducts_data[viaducts.Key]
 
