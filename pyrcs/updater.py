@@ -12,8 +12,9 @@ import requests
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
-from . import LineData, OtherAssets
-from .utils import cd_dat, fake_requests_headers, homepage_url
+from pyrcs._line_data import LineData
+from pyrcs._other_assets import OtherAssets
+from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url
 
 
 def collect_site_map(confirmation_required=True):
@@ -186,14 +187,12 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Electrification
-        _ = line_dat.Electrification.fetch_elec_codes(update=True,
-                                                      verbose=verbose)
+        _ = line_dat.Electrification.fetch_elec_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Location
-        _ = line_dat.LocationIdentifiers.fetch_location_codes(update=True,
-                                                              verbose=verbose)
+        _ = line_dat.LocationIdentifiers.fetch_location_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
@@ -214,8 +213,7 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Track diagrams
-        _ = line_dat.TrackDiagrams.fetch_sample_catalogue(update=True,
-                                                          verbose=verbose)
+        _ = line_dat.TrackDiagrams.fetch_sample_catalogue(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
@@ -230,8 +228,7 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Tunnels
-        _ = other_assets.Tunnels.fetch_tunnel_lengths(update=True,
-                                                      verbose=verbose)
+        _ = other_assets.Tunnels.fetch_tunnel_lengths(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
