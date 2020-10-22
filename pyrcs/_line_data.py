@@ -1,5 +1,5 @@
 """
-Collecting `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+Collect `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
 """
 
 import urllib.parse
@@ -10,6 +10,9 @@ from .utils import get_category_menu, homepage_url
 
 class LineData:
     """
+    A class representation of all modules of the subpackage
+    :ref:`pyrcs.line_data<line_data>` for collecting line data.
+
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
@@ -69,10 +72,9 @@ class LineData:
         self.Catalogue = \
             get_category_menu(self.SourceURL, update=update, confirmation_required=False)
         # Classes
-        self.ELRMileages = elrs_mileages.ELRMileages(update=update)
-        self.Electrification = electrification.Electrification(update=update)
-        self.LocationIdentifiers = \
-            crs_nlc_tiploc_stanox.LocationIdentifiers(update=update)
-        self.LOR = lor_codes.LOR(update=update)
-        self.LineNames = line_names.LineNames(update=update)
-        self.TrackDiagrams = track_diagrams.TrackDiagrams(update=update)
+        self.ELRMileages = elr_mileage.ELRMileages(update=update)
+        self.Electrification = elec.Electrification(update=update)
+        self.LocationIdentifiers = loc_id.LocationIdentifiers(update=update)
+        self.LOR = lor_code.LOR(update=update)
+        self.LineNames = line_name.LineNames(update=update)
+        self.TrackDiagrams = trk_diagr.TrackDiagrams(update=update)
