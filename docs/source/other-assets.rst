@@ -1,36 +1,28 @@
-.. _pyrcs-other-assets:
+.. py:module:: pyrcs.other_assets
 
 other_assets
 ------------
 
-Classes for collecting other assets data.
+.. automodule:: pyrcs.other_assets
+    :noindex:
+    :no-members:
+    :no-inherited-members:
 
 .. toctree::
-   :hidden:
+    :hidden:
 
-   depots
-   features
-   signal-boxes
-   stations
-   tunnels
-   viaducts
-
-.. py:module:: other_assets.*
+    sig-box
+    tunnel
+    viaduct
+    station
+    depot
+    feature
 
 .. autosummary::
 
-   depots
-   features
-   signal_boxes
-   stations
-   tunnels
-   viaducts
-
-|
-
-.. _pyrcs-_other-assets:
-
-.. py:module:: pyrcs._other_assets
-
-.. autoclass:: OtherAssets
-   :members:
+    sig_box
+    tunnel
+    viaduct
+    station
+    depot
+    feature
