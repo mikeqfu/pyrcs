@@ -1,5 +1,5 @@
 """
-Collecting codes of
+Collect codes of
 `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
