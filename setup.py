@@ -25,8 +25,8 @@ setuptools.setup(
         'lxml',
         'measurement',
         'more-itertools',
-        'pandas>=1.1.0',
-        'pyhelpers>=1.2.4',
+        'pandas~=1.1.3',
+        'pyhelpers>=1.2.5',
     ],
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
