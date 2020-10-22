@@ -1,15 +1,15 @@
-.. py:module:: pyrcs.line_data.lor_codes
+.. py:module:: pyrcs.line_data.lor_code
 
-lor_codes
----------
+lor_code
+--------
 
-.. automodule:: lor_codes
+.. automodule:: lor_code
     :noindex:
     :no-members:
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Class:
+.. rubric:: Class
 .. autosummary::
     :toctree: _generated/
     :template: class.rst
