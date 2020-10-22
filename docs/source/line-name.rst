@@ -1,15 +1,15 @@
-.. py:module:: pyrcs.line_data.line_names
+.. py:module:: pyrcs.line_data.line_name
 
-line_names
-----------
+line_name
+---------
 
-.. automodule:: line_names
+.. automodule:: line_name
     :noindex:
     :no-members:
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Class:
+.. rubric:: Class
 .. autosummary::
     :toctree: _generated/
     :template: class.rst
