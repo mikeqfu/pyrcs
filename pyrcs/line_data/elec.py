@@ -750,7 +750,7 @@ class Electrification:
 
         codes = []
         for func in dir(self):
-            if func.startswith('fetch_codes_for_'):
+            if func.startswith('fetch_') and func != 'fetch_elec_codes':
                 codes.append(getattr(self, func)(update=update, verbose=verbose))
 
         ole_section_codes = {
