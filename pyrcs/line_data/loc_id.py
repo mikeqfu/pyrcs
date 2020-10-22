@@ -1,6 +1,6 @@
 """
-Collecting `CRS, NLC, TIPLOC and STANOX <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_
-(including `other systems <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_ station) codes.
+Collect
+`CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
 """
 
 import copy
@@ -22,8 +22,8 @@ from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_da
 
 class LocationIdentifiers:
     """
-    A class for collecting CRS, NLC, TIPLOC and STANOX
-    (including other systems' station) codes.
+    A class for collecting location identifiers
+    (including `other systems <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_ station).
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
@@ -94,7 +94,7 @@ class LocationIdentifiers:
         return path
 
     @staticmethod
-    def amendment_to_location_names_dict():
+    def amendment_to_loc_names():
         """
         Create a replacement dictionary for location name amendments.
 
@@ -107,7 +107,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> loc_name_amendment_dict = lid.amendment_to_location_names_dict()
+            >>> loc_name_amendment_dict = lid.amendment_to_loc_names()
 
             >>> print(list(loc_name_amendment_dict.keys()))
             ['Location']
@@ -130,7 +130,7 @@ class LocationIdentifiers:
         return location_name_amendment_dict
 
     @staticmethod
-    def parse_additional_note_page(note_url, parser='lxml'):
+    def parse_note_page(note_url, parser='lxml'):
         """
         Parse addition note page.
 
@@ -156,7 +156,7 @@ class LocationIdentifiers:
 
             >>> url = lid.HomeURL + '/crs/CRS2.shtm'
 
-            >>> parsed_note_ = lid.parse_additional_note_page(url, parser='lxml')
+            >>> parsed_note_ = lid.parse_note_page(url, parser='lxml')
 
             >>> print(parsed_note_[3].head())
                               Location  CRS CRS_alt1 CRS_alt2
@@ -192,8 +192,7 @@ class LocationIdentifiers:
                     parsed_note.append(text)
         return parsed_note
 
-    def collect_multiple_station_codes_explanatory_note(self, confirmation_required=True,
-                                                        verbose=False):
+    def collect_explanatory_note(self, confirmation_required=True, verbose=False):
         """
         Collect note about CRS code from source web page.
 
@@ -212,7 +211,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> exp_note = lid.collect_multiple_station_codes_explanatory_note(
+            >>> exp_note = lid.collect_explanatory_note(
             ...     confirmation_required=False)
 
             >>> type(exp_note)
@@ -230,7 +229,7 @@ class LocationIdentifiers:
             try:
                 note_url = self.HomeURL + '/crs/CRS2.shtm'
 
-                explanatory_note_ = self.parse_additional_note_page(note_url)
+                explanatory_note_ = self.parse_note_page(note_url)
                 explanatory_note, notes = {}, []
 
                 for x in explanatory_note_:
@@ -260,8 +259,8 @@ class LocationIdentifiers:
 
             return explanatory_note
 
-    def fetch_multiple_station_codes_explanatory_note(self, update=False, pickle_it=False,
-                                                      data_dir=None, verbose=False):
+    def fetch_explanatory_note(self, update=False, pickle_it=False, data_dir=None,
+                               verbose=False):
         """
         Fetch multiple station codes explanatory note from local backup.
 
@@ -285,7 +284,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> exp_note = lid.fetch_multiple_station_codes_explanatory_note(
+            >>> exp_note = lid.fetch_explanatory_note(
             ...     update=False, pickle_it=False, data_dir=None, verbose=True)
 
             >>> type(exp_note)
@@ -300,7 +299,7 @@ class LocationIdentifiers:
             explanatory_note = load_pickle(path_to_pickle)
 
         else:
-            explanatory_note = self.collect_multiple_station_codes_explanatory_note(
+            explanatory_note = self.collect_explanatory_note(
                 confirmation_required=False,
                 verbose=False if data_dir or not verbose else True)
 
@@ -438,7 +437,7 @@ class LocationIdentifiers:
 
         return other_systems_codes
 
-    def collect_location_codes_by_initial(self, initial, update=False, verbose=False):
+    def collect_loc_codes_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ for a given ``initial`` letter.
@@ -462,7 +461,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> location_codes_a = lid.collect_location_codes_by_initial(initial='a')
+            >>> location_codes_a = lid.collect_loc_codes_by_initial(initial='a')
 
             >>> type(location_codes_a)
             <class 'dict'>
@@ -567,7 +566,7 @@ class LocationIdentifiers:
                         urllib.parse.urljoin(self.Catalogue[initial.upper()], x['href'])
                         for x in web_page_text.find_all('a', href=True, text='note')]
                     additional_notes = [
-                        self.parse_additional_note_page(note_url)
+                        self.parse_note_page(note_url)
                         for note_url in note_urls]
                     additional_notes = dict(
                         zip(location_codes.CRS.iloc[loc_idx], additional_notes))
@@ -575,7 +574,7 @@ class LocationIdentifiers:
                     additional_notes = None
 
                 location_codes = location_codes.replace(
-                    self.amendment_to_location_names_dict(), regex=True)
+                    self.amendment_to_loc_names(), regex=True)
 
                 location_codes.STANOX = location_codes.STANOX.replace({'-': ''})
 
@@ -634,7 +633,7 @@ class LocationIdentifiers:
 
         # Get every data table
         data = [
-            self.collect_location_codes_by_initial(
+            self.collect_loc_codes_by_initial(
                 x, update, verbose=False if data_dir or not verbose else True)
             for x in string.ascii_lowercase]
 
@@ -662,7 +661,7 @@ class LocationIdentifiers:
             update=update, verbose=verbose)[self.OSKey]
 
         # Get additional note
-        additional_notes = self.fetch_multiple_station_codes_explanatory_note(
+        additional_notes = self.fetch_explanatory_note(
             update=update, verbose=verbose)
 
         # Create a dict to include all information
@@ -679,9 +678,9 @@ class LocationIdentifiers:
 
         return location_codes
 
-    def make_location_codes_dictionary(self, keys, initials=None, drop_duplicates=False,
-                                       as_dict=False, main_key=None, save_it=False,
-                                       data_dir=None, update=False, verbose=False):
+    def make_loc_id_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False,
+                         main_key=None, save_it=False, data_dir=None, update=False,
+                         verbose=False):
         """
         Make a dict/dataframe for location code data for the given ``keys``.
 
@@ -718,7 +717,7 @@ class LocationIdentifiers:
             >>> lid = LocationIdentifiers()
 
             >>> key = 'STANOX'
-            >>> stanox_dictionary = lid.make_location_codes_dictionary(key)
+            >>> stanox_dictionary = lid.make_loc_id_dict(key)
 
             >>> print(stanox_dictionary.head())
                                       Location
@@ -732,7 +731,7 @@ class LocationIdentifiers:
             >>> keys_ = ['STANOX', 'TIPLOC']
             >>> initial_ = 'a'
 
-            >>> stanox_dictionary = lid.make_location_codes_dictionary(keys_, initial_)
+            >>> stanox_dictionary = lid.make_loc_id_dict(keys_, initial_)
 
             >>> print(stanox_dictionary.head())
                                               Location
@@ -746,7 +745,7 @@ class LocationIdentifiers:
             >>> keys_ = ['STANOX', 'TIPLOC']
             >>> initial_ = 'b'
 
-            >>> stanox_dictionary = lid.make_location_codes_dictionary(
+            >>> stanox_dictionary = lid.make_loc_id_dict(
             ...     keys_, initial_, as_dict=True, main_key='Data')
 
             >>> type(stanox_dictionary)
@@ -794,7 +793,7 @@ class LocationIdentifiers:
                 location_codes = self.fetch_location_codes(verbose=verbose)[self.Key]
             else:
                 temp = [
-                    self.collect_location_codes_by_initial(initial, verbose=verbose)[
+                    self.collect_loc_codes_by_initial(initial, verbose=verbose)[
                         initial.upper()]
                     for initial in initials]
                 location_codes = pd.concat(temp, axis=0, ignore_index=True, sort=False)
