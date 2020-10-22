@@ -1,5 +1,5 @@
 """
-Collecting data of `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+Collect data of `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 """
 
 import urllib.parse
@@ -10,6 +10,8 @@ from .utils import get_category_menu, homepage_url
 
 class OtherAssets:
     """
+    A class representation of all modules of the subpackage
+    :ref:`pyrcs.other_assets<other_assets>` for collecting other assets.
 
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
@@ -69,9 +71,9 @@ class OtherAssets:
         self.Catalogue = \
             get_category_menu(self.SourceURL, update=update, confirmation_required=False)
         # Classes
-        self.SignalBoxes = signal_boxes.SignalBoxes(update=update)
-        self.Tunnels = tunnels.Tunnels(update=update)
-        self.Viaducts = viaducts.Viaducts(update=update)
-        self.Stations = stations.Stations(update=update)
-        self.Depots = depots.Depots(update=update)
-        self.Features = features.Features(update=update)
+        self.SignalBoxes = sig_box.SignalBoxes(update=update)
+        self.Tunnels = tunnel.Tunnels(update=update)
+        self.Viaducts = viaduct.Viaducts(update=update)
+        self.Stations = station.Stations(update=update)
+        self.Depots = depot.Depots(update=update)
+        self.Features = feature.Features(update=update)
