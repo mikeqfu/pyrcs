@@ -1,6 +1,6 @@
 """
-Collecting
-`British railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+Collect
+British `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
 """
 
 import copy
@@ -75,8 +75,6 @@ class LineNames:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LineNames``
         :rtype: str
-
-        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
