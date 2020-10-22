@@ -1,5 +1,5 @@
 """
-Collecting `PRIDE/LOR <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+Collect `PRIDE/LOR <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
 """
 
 import copy
@@ -83,8 +83,6 @@ class LOR:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
-
-        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
@@ -93,7 +91,7 @@ class LOR:
 
     def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
         """
-        Get key to LOR code prefixes.
+        Get key to PRIDE/LOR code prefixes.
 
         :param prefixes_only: whether to get only prefixes, defaults to ``True``
         :type prefixes_only: bool
@@ -157,7 +155,7 @@ class LOR:
 
     def get_lor_page_urls(self, update=False, verbose=False):
         """
-        Get URLs to LOR codes with different prefixes.
+        Get URLs to PRIDE/LOR codes with different prefixes.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
@@ -225,7 +223,8 @@ class LOR:
 
     def collect_lor_codes_by_prefix(self, prefix, update=False, verbose=False):
         """
-        Collect LOR codes by a given prefix. 
+        Collect `PRIDE/LOR codes
+        <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ by a given prefix.
 
         :param prefix: prefix of LOR codes
         :type prefix: str
@@ -355,7 +354,8 @@ class LOR:
     def fetch_lor_codes(self, update=False, pickle_it=False, data_dir=None,
                         verbose=False):
         """
-        Fetch LOR codes from local backup.
+        Fetch `PRIDE/LOR codes
+        <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
@@ -390,8 +390,10 @@ class LOR:
             <class 'dict'>
         """
 
-        prefixes = self.get_keys_to_prefixes(prefixes_only=True, update=update, verbose=verbose)
-        lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose) for p in prefixes if p != 'NZ']
+        prefixes = self.get_keys_to_prefixes(prefixes_only=True, update=update,
+                                             verbose=verbose)
+        lor_codes = [self.collect_lor_codes_by_prefix(p, update, verbose)
+                     for p in prefixes if p != 'NZ']
 
         prefixes[prefixes.index('NW')] = 'NW/NZ'
         prefixes.remove('NZ')
@@ -414,7 +416,8 @@ class LOR:
 
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
         """
-        Collect ELR/LOR converter from source web page.
+        Collect `ELR/LOR converter
+        <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_ from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
@@ -499,7 +502,8 @@ class LOR:
     def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None,
                                 verbose=False):
         """
-        Fetch ELR/LOR converter from local backup.
+        Fetch `ELR/LOR converter
+        <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_ from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
