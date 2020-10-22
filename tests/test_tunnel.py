@@ -1,6 +1,6 @@
 import pandas as pd
 
-from pyrcs.other_assets.tunnels import Tunnels
+from pyrcs.other_assets.tunnel import Tunnels
 
 if __name__ == '__main__':
 
@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
     test_data_dir = "dat"
 
-    railway_tunnel_lengths1 = tunnels.fetch_railway_tunnel_lengths()
+    railway_tunnel_lengths1 = tunnels.fetch_tunnel_lengths()
 
     railway_tunnel_lengths1_ = railway_tunnel_lengths1[tunnels.Key]
     print("\n{}: ".format(tunnels.Name))
@@ -41,10 +41,12 @@ if __name__ == '__main__':
     print("\n{}: {}".format(tunnels.LUDKey, railway_tunnel_lengths1[tunnels.LUDKey]))
     # Last updated date: xxxx-xx-xx
 
-    railway_tunnel_lengths2 = tunnels.fetch_railway_tunnel_lengths(update=True, pickle_it=True, data_dir=test_data_dir)
+    railway_tunnel_lengths2 = tunnels.fetch_tunnel_lengths(
+        update=True, pickle_it=True, data_dir=test_data_dir)
 
     railway_tunnel_lengths2_ = railway_tunnel_lengths2[tunnels.Key]
 
     print("\n{} data is consistent:".format(tunnels.Key),
-          all((x == y) for x, y in zip(railway_tunnel_lengths1_, railway_tunnel_lengths2_)))
+          all((x == y) for x, y in
+              zip(railway_tunnel_lengths1_, railway_tunnel_lengths2_)))
     # Tunnels data is consistent: True
