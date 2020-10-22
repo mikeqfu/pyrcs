@@ -4,8 +4,8 @@ Collect data of `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.sh
 
 import urllib.parse
 
-from .other_assets import *
-from .utils import get_category_menu, homepage_url
+from pyrcs.other_assets import *
+from pyrcs.utils import get_category_menu, homepage_url
 
 
 class OtherAssets:
