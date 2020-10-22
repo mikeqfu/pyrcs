@@ -1,4 +1,4 @@
-from pyrcs.line_data.lor_codes import LOR
+from pyrcs.line_data.lor_code import LOR
 
 if __name__ == '__main__':
     lor = LOR()
