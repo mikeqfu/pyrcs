@@ -1,4 +1,4 @@
-from pyrcs.other_assets.signal_boxes import SignalBoxes
+from pyrcs.other_assets.sig_box import SignalBoxes
 
 if __name__ == '__main__':
 
