@@ -1,5 +1,5 @@
 """
-Collecting `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+Collect `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
 import copy
