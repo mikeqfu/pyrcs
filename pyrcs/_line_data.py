@@ -4,8 +4,8 @@ Collect `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
 
 import urllib.parse
 
-from .line_data import *
-from .utils import get_category_menu, homepage_url
+from pyrcs.line_data import *
+from pyrcs.utils import get_category_menu, homepage_url
 
 
 class LineData:
