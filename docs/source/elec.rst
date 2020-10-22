@@ -9,7 +9,7 @@ elec
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Class:
+.. rubric:: Class
 .. autosummary::
     :toctree: _generated/
     :template: class.rst
