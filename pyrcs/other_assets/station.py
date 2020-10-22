@@ -1,5 +1,5 @@
 """
-Collecting `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 
 .. todo::
 
