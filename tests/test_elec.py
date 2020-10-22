@@ -1,4 +1,4 @@
-from pyrcs.line_data.electrification import Electrification
+from pyrcs.line_data.elec import Electrification
 
 if __name__ == '__main__':
     electrification = Electrification()
@@ -8,7 +8,7 @@ if __name__ == '__main__':
     print("\n{}: ".format(electrification.Name))
     # Electrification masts and related features:
 
-    national_network_ole1 = electrification.fetch_codes_for_national_network()
+    national_network_ole1 = electrification.fetch_national_network_codes()
     national_network_ole1_ = national_network_ole1[electrification.NationalNetworkKey]
     print(f"\n  {electrification.NationalNetworkKey}: ")
     for k, v in national_network_ole1_.items():
@@ -61,15 +61,16 @@ if __name__ == '__main__':
     #       Notes:
     #         <class 'str'>
 
-    national_network_ole2 = electrification.fetch_codes_for_national_network(update=True, pickle_it=True,
-                                                                             data_dir=test_data_dir)
+    national_network_ole2 = electrification.fetch_national_network_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     national_network_ole2_ = national_network_ole2[electrification.NationalNetworkKey]
     print("\n    {} data is consistent:".format(electrification.Key),
           all(x['Codes'].equals(y['Codes'])
-              for x, y in zip(national_network_ole1_.values(), national_network_ole2_.values())))
+              for x, y in
+              zip(national_network_ole1_.values(), national_network_ole2_.values())))
     #     Electrification data is consistent: True
 
-    independent_lines_ole1 = electrification.fetch_codes_for_independent_lines()
+    independent_lines_ole1 = electrification.fetch_indep_lines_codes()
     independent_lines_ole1_ = independent_lines_ole1[electrification.IndependentLinesKey]
 
     print(f"\n  {electrification.IndependentLinesKey}: ")
@@ -84,24 +85,27 @@ if __name__ == '__main__':
                 else:
                     print(f"\n      {k}:\n        {type(v_)}")
 
-    independent_lines_ole2 = electrification.fetch_codes_for_independent_lines(update=True, pickle_it=True,
-                                                                               data_dir=test_data_dir)
+    independent_lines_ole2 = electrification.fetch_indep_lines_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     independent_lines_ole2_ = independent_lines_ole2[electrification.IndependentLinesKey]
     print("\n    {} data is consistent:".format(electrification.IndependentLinesKey),
           all((x == y) for x, y in zip(independent_lines_ole1_, independent_lines_ole2_)))
     #     Independent lines data is consistent: True
 
-    ohns_codes1 = electrification.fetch_codes_for_ohns()
+    ohns_codes1 = electrification.fetch_ohns_codes()
     ohns_codes1_ = ohns_codes1[electrification.OhnsKey]
 
-    print(f"\n  {electrification.OhnsKey}:\n    {type(ohns_codes1_)}, {ohns_codes1_.shape}")
+    print(f"\n  {electrification.OhnsKey}:\n    {type(ohns_codes1_)}, "
+          f"{ohns_codes1_.shape}")
     print(f"\n    {electrification.LUDKey}: {ohns_codes1[electrification.LUDKey]}")
 
-    ohns_codes2 = electrification.fetch_codes_for_ohns(update=True, pickle_it=True, data_dir=test_data_dir)
+    ohns_codes2 = electrification.fetch_ohns_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     ohns_codes2_ = ohns_codes2[electrification.OhnsKey]
-    print("\n    {} data is consistent:".format(electrification.OhnsKey), ohns_codes1_.equals(ohns_codes2_))
+    print("\n    {} data is consistent:".format(electrification.OhnsKey),
+          ohns_codes1_.equals(ohns_codes2_))
 
-    etz_ole1 = electrification.fetch_codes_for_energy_tariff_zones()
+    etz_ole1 = electrification.fetch_etz_codes()
     etz_ole1_ = etz_ole1[electrification.TariffZonesKey]
 
     print(f"\n  {electrification.TariffZonesKey}: ")
@@ -111,7 +115,8 @@ if __name__ == '__main__':
         else:
             print(f"\n      {k}:\n        {type(v)}, {v.shape}")
 
-    etz_ole2 = electrification.fetch_codes_for_energy_tariff_zones(update=True, pickle_it=True, data_dir=test_data_dir)
+    etz_ole2 = electrification.fetch_etz_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     etz_ole2_ = etz_ole2[electrification.TariffZonesKey]
     print("\n    {} data is consistent:".format(electrification.TariffZonesKey),
           all((x == y) for x, y in zip(etz_ole1_, etz_ole2_)))
