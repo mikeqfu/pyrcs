@@ -1,5 +1,5 @@
 """
-Collecting `section codes for OLE installations
+Collect codes of British `railway overhead electrification installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
@@ -22,8 +22,7 @@ from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_u
 
 class Electrification:
     """
-    A class for collecting codes
-    associated with British railway overhead electrification installations.
+    A class for collecting section codes for OLE installations.
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
@@ -83,16 +82,13 @@ class Electrification:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Electrification``
         :rtype: str
-
-        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
-    def collect_codes_for_national_network(self, confirmation_required=True,
-                                           verbose=False):
+    def collect_national_network_codes(self, confirmation_required=True, verbose=False):
         """
         Collect OLE section codes for `national network
         <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
@@ -113,12 +109,11 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> nn_ole_dat = \
-            ...     elec.collect_codes_for_national_network(confirmation_required=False)
+            >>> nn_dat = elec.collect_national_network_codes(confirmation_required=False)
 
-            >>> type(nn_ole_dat)
+            >>> type(nn_dat)
             <class 'dict'>
-            >>> print(list(nn_ole_dat.keys()))
+            >>> print(list(nn_dat.keys()))
             ['National network', 'Last updated date']
         """
 
@@ -197,8 +192,8 @@ class Electrification:
 
             return national_network_ole
 
-    def fetch_codes_for_national_network(self, update=False, pickle_it=False,
-                                         data_dir=None, verbose=False):
+    def fetch_national_network_codes(self, update=False, pickle_it=False, data_dir=None,
+                                     verbose=False):
         """
         Fetch OLE section codes for `national network
         <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
@@ -224,7 +219,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> nn_ole_dat = elec.fetch_codes_for_national_network()
+            >>> nn_ole_dat = elec.fetch_national_network_codes()
 
             >>> type(nn_ole_dat)
             <class 'dict'>
@@ -238,7 +233,7 @@ class Electrification:
             national_network_ole = load_pickle(path_to_pickle)
 
         else:
-            national_network_ole = self.collect_codes_for_national_network(
+            national_network_ole = self.collect_national_network_codes(
                 confirmation_required=False,
                 verbose=False if data_dir or not verbose else True)
 
@@ -254,7 +249,7 @@ class Electrification:
 
         return national_network_ole
 
-    def get_names_of_independent_lines(self):
+    def get_indep_line_names(self):
         """
         Get names of `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
@@ -268,7 +263,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> l_names = elec.get_names_of_independent_lines()
+            >>> l_names = elec.get_indep_line_names()
 
             >>> print(l_names[:5])
             ['Beamish Tramway',
@@ -286,8 +281,7 @@ class Electrification:
                 line_names = x.text.replace('Jump to: ', '').split('\xa0| ')
                 return line_names
 
-    def collect_codes_for_independent_lines(self, confirmation_required=True,
-                                            verbose=False):
+    def collect_indep_lines_codes(self, confirmation_required=True, verbose=False):
         """
         Collect OLE section codes for `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
@@ -308,7 +302,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> il_ole_dat = elec.collect_codes_for_independent_lines(False)
+            >>> il_ole_dat = elec.collect_indep_lines_codes(confirmation_required=False)
 
             >>> type(il_ole_dat)
             <class 'dict'>
@@ -403,8 +397,8 @@ class Electrification:
 
             return independent_lines_ole
 
-    def fetch_codes_for_independent_lines(self, update=False, pickle_it=False,
-                                          data_dir=None, verbose=False):
+    def fetch_indep_lines_codes(self, update=False, pickle_it=False, data_dir=None,
+                                verbose=False):
         """
         Fetch OLE section codes for `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
@@ -430,7 +424,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> il_ole_dat = elec.fetch_codes_for_independent_lines()
+            >>> il_ole_dat = elec.fetch_indep_lines_codes()
 
             >>> type(il_ole_dat)
             <class 'dict'>
@@ -445,7 +439,7 @@ class Electrification:
             independent_lines_ole = load_pickle(path_to_pickle)
 
         else:
-            independent_lines_ole = self.collect_codes_for_independent_lines(
+            independent_lines_ole = self.collect_indep_lines_codes(
                 confirmation_required=False,
                 verbose=False if data_dir or not verbose else True)
 
@@ -460,7 +454,7 @@ class Electrification:
 
         return independent_lines_ole
 
-    def collect_codes_for_ohns(self, confirmation_required=True, verbose=False):
+    def collect_ohns_codes(self, confirmation_required=True, verbose=False):
         """
         Collect codes for `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
@@ -481,7 +475,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> ohns_dat = elec.collect_codes_for_ohns(confirmation_required=False)
+            >>> ohns_dat = elec.collect_ohns_codes(confirmation_required=False)
 
             >>> type(ohns_dat)
             <class 'dict'>
@@ -515,8 +509,8 @@ class Electrification:
 
             return ohns_codes
 
-    def fetch_codes_for_ohns(self, update=False, pickle_it=False, data_dir=None,
-                             verbose=False):
+    def fetch_ohns_codes(self, update=False, pickle_it=False, data_dir=None,
+                         verbose=False):
         """
         Fetch codes for `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
@@ -542,7 +536,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> ohns_dat = elec.fetch_codes_for_ohns()
+            >>> ohns_dat = elec.fetch_ohns_codes()
 
             >>> type(ohns_dat)
             <class 'dict'>
@@ -556,7 +550,7 @@ class Electrification:
             ohns_codes = load_pickle(path_to_pickle)
 
         else:
-            ohns_codes = self.collect_codes_for_ohns(
+            ohns_codes = self.collect_ohns_codes(
                 confirmation_required=False,
                 verbose=False if data_dir or not verbose else True)
 
@@ -572,8 +566,7 @@ class Electrification:
 
         return ohns_codes
 
-    def collect_codes_for_energy_tariff_zones(self, confirmation_required=True,
-                                              verbose=False):
+    def collect_etz_codes(self, confirmation_required=True, verbose=False):
         """
         Collect OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
@@ -594,8 +587,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> etz_ole_dat = \
-            ...     elec.collect_codes_for_energy_tariff_zones(confirmation_required=False)
+            >>> etz_ole_dat = elec.collect_etz_codes(confirmation_required=False)
 
             >>> type(etz_ole_dat)
             <class 'dict'>
@@ -665,8 +657,8 @@ class Electrification:
 
             return etz_ole
 
-    def fetch_codes_for_energy_tariff_zones(self, update=False, pickle_it=False,
-                                            data_dir=None, verbose=False):
+    def fetch_etz_codes(self, update=False, pickle_it=False, data_dir=None,
+                        verbose=False):
         """
         Fetch OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
@@ -692,7 +684,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> etz_ole_dat = elec.fetch_codes_for_energy_tariff_zones()
+            >>> etz_ole_dat = elec.fetch_etz_codes()
 
             >>> type(etz_ole_dat)
             <class 'dict'>
@@ -706,7 +698,7 @@ class Electrification:
             etz_ole = load_pickle(path_to_pickle)
 
         else:
-            etz_ole = self.collect_codes_for_energy_tariff_zones(
+            etz_ole = self.collect_etz_codes(
                 confirmation_required=False,
                 verbose=False if data_dir or not verbose else True)
 
@@ -717,12 +709,13 @@ class Electrification:
                                                   self.TariffZonesPickle + ".pickle")
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been collected.".format(self.TariffZonesKey.lower()))
+                print("No data of {} has been collected.".format(
+                    self.TariffZonesKey.lower()))
 
         return etz_ole
 
-    def fetch_electrification_codes(self, update=False, pickle_it=False, data_dir=None,
-                                    verbose=False):
+    def fetch_elec_codes(self, update=False, pickle_it=False, data_dir=None,
+                         verbose=False):
         """
         Fetch OLE section codes in `electrification
         <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_ catalogue.
@@ -747,7 +740,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> electrification_codes = elec.fetch_electrification_codes()
+            >>> electrification_codes = elec.fetch_elec_codes()
 
             >>> type(electrification_codes)
             <class 'dict'>
