@@ -1,7 +1,7 @@
 from pyhelpers.dir import cd
 from pyhelpers.store import load_json
 
-from pyrcs.line_data.elrs_mileages import ELRMileages
+from pyrcs.line_data.elr_mileage import ELRMileages
 
 if __name__ == '__main__':
     em = ELRMileages()
@@ -20,21 +20,24 @@ if __name__ == '__main__':
     elrs_data2_ = elrs_data2[em.Key]
     print("\n    {} data is consistent:".format(em.Key), elrs_data1_.equals(elrs_data2_))
 
-    # Mileage files --------------------------------------------------------------------------------------------------
+    # Mileage files --------------------------------------------------------------------
     elr = 'AAL'
     elr_ = em.fetch_mileage_file(elr)
     elr_mileages = elr_['Mileage']
-    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, {elr_mileages.shape}")
+    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, "
+          f"{elr_mileages.shape}")
 
     elr = 'AAM'
     elr_ = em.fetch_mileage_file(elr)
     elr_mileages = elr_['Mileage']
-    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, {elr_mileages.shape}")
+    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, "
+          f"{elr_mileages.shape}")
 
     elr = 'ABK'
     elr_ = em.fetch_mileage_file(elr)
     elr_mileages = elr_['Mileage']
-    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, {elr_mileages.shape}")
+    print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, "
+          f"{elr_mileages.shape}")
 
     problematic_elrs = load_json(cd(test_data_dir, "problematic-ELRs.json"))['ELR']
     i = 0
@@ -44,7 +47,8 @@ if __name__ == '__main__':
             elr_ = em.fetch_mileage_file(problematic_elrs[i])
             if elr_ is not None:
                 elr_mileages = elr_['Mileage']
-                print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, {elr_mileages.shape}")
+                print(f"\n    Mileage file for '{elr}':\n      {type(elr_mileages)}, "
+                      f"{elr_mileages.shape}")
             else:
                 print(f"\n    Mileage file for '{elr}':\n      {type(elr_)}")
         except AssertionError:
