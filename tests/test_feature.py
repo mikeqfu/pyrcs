@@ -1,4 +1,4 @@
-from pyrcs.other_assets.features import Features
+from pyrcs.other_assets.feature import Features
 
 if __name__ == '__main__':
     features = Features()
@@ -22,10 +22,12 @@ if __name__ == '__main__':
     #     WILD:
     #       <class 'pandas.core.frame.DataFrame'>, (44, 5)
 
-    habds_and_wilds_codes_data2 = features.fetch_habds_and_wilds(update=True, pickle_it=True, data_dir=test_data_dir)
+    habds_and_wilds_codes_data2 = features.fetch_habds_and_wilds(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     habds_and_wilds_codes_data2_ = habds_and_wilds_codes_data2[features.HabdWildKey]
     print("\n    {} data is consistent:".format(features.HabdWildKey),
-          all((x == y) for x, y in zip(habds_and_wilds_codes_data1_, habds_and_wilds_codes_data2_)))
+          all((x == y) for x, y in
+              zip(habds_and_wilds_codes_data1_, habds_and_wilds_codes_data2_)))
     #     HABD and WILD data is consistent: True
 
     water_troughs_locations1 = features.fetch_water_troughs()
@@ -42,7 +44,8 @@ if __name__ == '__main__':
     #     Unofficial codes:
     #       <class 'pandas.core.frame.DataFrame'>, (7, 2)
 
-    water_troughs_locations2 = features.fetch_water_troughs(update=True, pickle_it=True, data_dir=test_data_dir)
+    water_troughs_locations2 = features.fetch_water_troughs(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     water_troughs_locations2_ = water_troughs_locations2[features.WaterTroughsKey]
     print("\n    {} data is consistent:".format(features.WaterTroughsKey),
           water_troughs_locations1_.equals(water_troughs_locations2_))
@@ -62,7 +65,8 @@ if __name__ == '__main__':
     #     Unofficial codes:
     #     <class 'pandas.core.frame.DataFrame'>, (7, 2)
 
-    telegraph_code_words2 = features.fetch_telegraph_codes(update=True, pickle_it=True, data_dir=test_data_dir)
+    telegraph_code_words2 = features.fetch_telegraph_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     telegraph_code_words2_ = telegraph_code_words2[features.TelegraphKey]
     print("\n    {} data is consistent:".format(features.TelegraphKey),
           all((x == y) for x, y in zip(telegraph_code_words1_, telegraph_code_words2_)))
@@ -71,16 +75,19 @@ if __name__ == '__main__':
     buzzer_codes_data1 = features.fetch_buzzer_codes()
     buzzer_codes_data1_ = buzzer_codes_data1[features.BuzzerKey]
 
-    print(f"\n  {features.BuzzerKey}:\n    {type(buzzer_codes_data1_)}, {buzzer_codes_data1_.shape}")
+    print(f"\n  {features.BuzzerKey}:\n    {type(buzzer_codes_data1_)}, "
+          f"{buzzer_codes_data1_.shape}")
     print(f"\n    {features.LUDKey}: {buzzer_codes_data1[features.LUDKey]}")
     #   Buzzer codes:
     #     <class 'pandas.core.frame.DataFrame'>, (13, 2)
     #
     #     Last updated date: 2019-11-24
 
-    buzzer_codes_data2 = features.fetch_buzzer_codes(update=True, pickle_it=True, data_dir=test_data_dir)
+    buzzer_codes_data2 = features.fetch_buzzer_codes(
+        update=True, pickle_it=True, data_dir=test_data_dir)
     buzzer_codes_data2_ = buzzer_codes_data2[features.BuzzerKey]
-    print("\n    {} data is consistent:".format(features.BuzzerKey), buzzer_codes_data1_.equals(buzzer_codes_data2_))
+    print("\n    {} data is consistent:".format(features.BuzzerKey),
+          buzzer_codes_data1_.equals(buzzer_codes_data2_))
     #     Buzzer codes data is consistent: True
 
     features_codes = features.fetch_features_codes()
