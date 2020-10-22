@@ -1,12 +1,13 @@
-""" Collecting codes of infrastructure features.
+"""
+Collect codes of infrastructure features.
 
 This category includes:
 
-    - OLE neutral sections
-    - HABD and WILD
-    - Water troughs
-    - Telegraph codes
-    - Driver/guard buzzer codes
+    - `OLE neutral sections <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_
+    - `HABD and WILD <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
+    - `Water troughs <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_
+    - `Telegraph codes <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
+    - `Driver/guard buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
 """
 
 import copy
@@ -24,7 +25,7 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.line_data.electrification import Electrification
+from pyrcs.line_data.elec import Electrification
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url
 
 
@@ -710,7 +711,7 @@ class Features:
                 features_codes.append(getattr(self, func)(update=update, verbose=verbose))
 
         elec = Electrification()
-        ohns_codes = elec.fetch_codes_for_ohns(update=update, verbose=verbose)
+        ohns_codes = elec.fetch_ohns_codes(update=update, verbose=verbose)
         features_codes.append(ohns_codes)
 
         features_codes_data = {
