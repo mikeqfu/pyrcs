@@ -1,22 +1,40 @@
-.. _pyrcs-modules:
+.. py:module:: pyrcs
 
-=======
-Modules
-=======
+=======================
+Subpackages and modules
+=======================
 
-.. py:currentmodule:: pyrcs
+Subpackages
+===========
 
 .. toctree::
-   :hidden:
+    :maxdepth: 2
+    :hidden:
 
-   line-data
-   other-assets
-   updater
-   utils
+    line-data
+    other-assets
 
 .. autosummary::
 
-   _line_data
-   _other_assets
-   updater
-   utils
+    line_data
+    other_assets
+
+
+Modules
+=======
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    linedata
+    otherassets
+    updater
+    utils
+
+.. autosummary::
+
+    _line_data
+    _other_assets
+    updater
+    utils
