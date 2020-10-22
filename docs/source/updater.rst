@@ -1,20 +1,28 @@
-.. _pyrcs-updater:
-
 .. py:module:: pyrcs.updater
 
 updater
--------
+=======
 
-A module for updating package data.
+.. automodule:: pyrcs.updater
+    :noindex:
+    :no-members:
+    :no-inherited-members:
+
+Site map
+--------
 
 .. autosummary::
+    :toctree: _generated/
+    :template: function.rst
 
-   collect_site_map
-   fetch_site_map
-   update_backup_data
+    collect_site_map
+    fetch_site_map
 
-.. autofunction:: collect_site_map
+Local backup
+------------
 
-.. autofunction:: fetch_site_map
+.. autosummary::
+    :toctree: _generated/
+    :template: function.rst
 
-.. autofunction:: update_backup_data
+    update_backup_data
