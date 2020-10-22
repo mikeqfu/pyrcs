@@ -1,6 +1,6 @@
 """
-Collecting
-`British railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+Collect
+British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
 import copy
@@ -23,7 +23,7 @@ class TrackDiagrams:
     A class for collecting British railway track diagrams.
 
     :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str, None
+    :type data_dir: str or None
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
@@ -69,16 +69,14 @@ class TrackDiagrams:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
-
-        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
-    def collect_sample_track_diagrams_catalogue(self, confirmation_required=True,
-                                                verbose=False):
+    def collect_sample_catalogue(self, confirmation_required=True,
+                                 verbose=False):
         """
         Collect catalogue of sample railway track diagrams from source web page.
 
@@ -98,7 +96,7 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> track_diagrams_catalog = td.collect_sample_track_diagrams_catalogue()
+            >>> track_diagrams_catalog = td.collect_sample_catalogue()
             To collect the catalogue of sample track diagrams? [No]|Yes: yes
 
             >>> type(track_diagrams_catalog)
@@ -168,8 +166,8 @@ class TrackDiagrams:
 
             return track_diagrams_catalogue
 
-    def fetch_sample_track_diagrams_catalogue(self, update=False, pickle_it=False,
-                                              data_dir=None, verbose=False):
+    def fetch_sample_catalogue(self, update=False, pickle_it=False,
+                               data_dir=None, verbose=False):
         """
         Fetch catalogue of sample railway track diagrams from local backup.
 
@@ -180,7 +178,7 @@ class TrackDiagrams:
             with newly collected data, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
+        :type data_dir: str or None
         :param verbose: whether to print relevant information in console
             as the function runs, defaults to ``False``
         :type verbose: bool
@@ -194,7 +192,7 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> track_diagrams_catalog = td.fetch_sample_track_diagrams_catalogue()
+            >>> track_diagrams_catalog = td.fetch_sample_catalogue()
 
             >>> td_dat = track_diagrams_catalog['Track diagrams']
 
@@ -212,7 +210,7 @@ class TrackDiagrams:
 
         else:
             verbose_ = False if data_dir or not verbose else True
-            track_diagrams_catalogue = self.collect_sample_track_diagrams_catalogue(
+            track_diagrams_catalogue = self.collect_sample_catalogue(
                 confirmation_required=False, verbose=verbose_)
             if track_diagrams_catalogue:
                 if pickle_it and data_dir:
