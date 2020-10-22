@@ -1,36 +1,28 @@
-.. _pyrcs-line-data:
+.. py:module:: pyrcs.line_data
 
 line_data
----------
+=========
 
-Classes for collecting line data.
+.. automodule:: pyrcs.line_data
+    :noindex:
+    :no-members:
+    :no-inherited-members:
 
 .. toctree::
-   :hidden:
+    :hidden:
 
-   crs-nlc-tiploc-stanox
-   electrification
-   elrs-mileages
-   line-names
-   lor-codes
-   track-diagrams
-
-.. py:module:: line_data.*
+    elr-mileage
+    elec
+    loc-id
+    lor-code
+    line-name
+    trk-diagr
 
 .. autosummary::
 
-   crs_nlc_tiploc_stanox
-   electrification
-   elrs_mileages
-   line_names
-   lor_codes
-   track_diagrams
-
-|
-
-.. _pyrcs-_line-data:
-
-.. py:module:: pyrcs._line_data
-
-.. autoclass:: LineData
-   :members:
+    elr_mileage
+    elec
+    loc_id
+    lor_code
+    line_name
+    trk_diagr
