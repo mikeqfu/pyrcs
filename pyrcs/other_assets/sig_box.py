@@ -1,5 +1,5 @@
 """
-Collecting
+Collect
 `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
 
 .. todo::
