@@ -1,5 +1,5 @@
 """
-Collecting codes of
+Collect codes of
 `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
@@ -90,7 +90,7 @@ class Tunnels:
         return path
 
     @staticmethod
-    def parse_tunnel_length(x):
+    def parse_length(x):
         """
         Parse data in ``'Length'`` column, i.e. convert miles/yards to metres.
 
@@ -105,19 +105,19 @@ class Tunnels:
 
             >>> tunnels = Tunnels()
 
-            >>> tunnels.parse_tunnel_length('')
+            >>> tunnels.parse_length('')
             (nan, 'Unavailable')
 
-            >>> tunnels.parse_tunnel_length('1m 182y')
+            >>> tunnels.parse_length('1m 182y')
             (1775.7648, None)
 
-            >>> tunnels.parse_tunnel_length('formerly 0m236y')
+            >>> tunnels.parse_length('formerly 0m236y')
             (215.7984, 'Formerly')
 
-            >>> tunnels.parse_tunnel_length('0.325km (0m 356y)')
+            >>> tunnels.parse_length('0.325km (0m 356y)')
             (325.5264, '0.325km')
 
-            >>> tunnels.parse_tunnel_length("0m 48yd- (['0m 58yd'])")
+            >>> tunnels.parse_length("0m 48yd- (['0m 58yd'])")
             (48.4632, '43.89-53.04 metres')
         """
 
@@ -164,8 +164,7 @@ class Tunnels:
                 measurement.measures.Distance(yd=yards).m
         return length, add_info
 
-    def collect_railway_tunnel_lengths_by_page(self, page_no, update=False,
-                                               verbose=False):
+    def collect_tunnel_lengths_by_page(self, page_no, update=False, verbose=False):
         """
         Collect data of railway tunnel lengths for a page number from source web page.
 
@@ -187,13 +186,13 @@ class Tunnels:
 
             >>> tunnels = Tunnels()
 
-            >>> tunnel_len_1 = tunnels.collect_railway_tunnel_lengths_by_page(page_no=1)
+            >>> tunnel_len_1 = tunnels.collect_tunnel_lengths_by_page(page_no=1)
             >>> type(tunnel_len_1)
             <class 'dict'>
             >>> print(list(tunnel_len_1.keys()))
             ['Page 1 (A-F)', 'Last updated date']
 
-            >>> tunnel_len_4 = tunnels.collect_railway_tunnel_lengths_by_page(page_no=4)
+            >>> tunnel_len_4 = tunnels.collect_tunnel_lengths_by_page(page_no=4)
             >>> type(tunnel_len_4)
             <class 'dict'>
             >>> print(list(tunnel_len_4.keys()))
@@ -252,7 +251,7 @@ class Tunnels:
                 for i in range(len(tunnel_lengths)):
                     tunnel_lengths[i][['Length_metres', 'Length_notes']] = \
                         tunnel_lengths[i].Length.map(
-                            self.parse_tunnel_length).apply(pd.Series)
+                            self.parse_length).apply(pd.Series)
 
                 if len(tunnel_lengths) == 1:
                     tunnel_lengths_data = tunnel_lengths[0]
@@ -272,8 +271,8 @@ class Tunnels:
 
         return page_railway_tunnel_lengths
 
-    def fetch_railway_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None,
-                                     verbose=False):
+    def fetch_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None,
+                             verbose=False):
         """
         Fetch data of railway tunnel lengths from local backup.
 
@@ -299,7 +298,7 @@ class Tunnels:
 
             >>> tunnels = Tunnels()
 
-            >>> tunnel_lengths_data = tunnels.fetch_railway_tunnel_lengths()
+            >>> tunnel_lengths_data = tunnels.fetch_tunnel_lengths()
 
             >>> type(tunnel_lengths_data)
             <class 'dict'>
@@ -315,7 +314,7 @@ class Tunnels:
 
         verbose_ = False if data_dir or not verbose else True
         page_data = [
-            self.collect_railway_tunnel_lengths_by_page(page_no, update, verbose=verbose_)
+            self.collect_tunnel_lengths_by_page(page_no, update, verbose=verbose_)
             for page_no in range(1, 5)]
 
         railway_tunnel_lengths = {
