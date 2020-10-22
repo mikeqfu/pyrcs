@@ -1,4 +1,4 @@
-from pyrcs.line_data.line_names import LineNames
+from pyrcs.line_data.line_name import LineNames
 
 if __name__ == '__main__':
     line_names = LineNames()
