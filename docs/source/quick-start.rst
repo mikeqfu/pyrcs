@@ -2,17 +2,8 @@
 Quick start
 ===========
 
-To demonstrate how PyRCS works, this part of the documentation provides a quick guide and a few examples as follows:
+To demonstrate how PyRCS works, this part of the documentation provides a quick guide with examples of getting `location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_, `ELRs <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and `railway stations data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 
-- :ref:`Get location codes: CRS, NLC, TIPLOC and STANOX<qs-crs-nlc-tiploc-and-stanox>`
-    - :ref:`Location codes for a given initial letter<qs-locations-beginning-with-a-given-letter>`
-    - :ref:`All available location codes<qs-all-available-location-codes>`
-- :ref:`Get ELRs and mileages<qs-elrs>`
-    - :ref:`ELR codes<qs-elr-codes>`
-    - :ref:`Mileage files<qs-mileage-files>`
-- :ref:`Get railway stations data<qs-railway-stations-data>`
-
-|
 
 .. _qs-crs-nlc-tiploc-and-stanox:
 
@@ -108,7 +99,6 @@ Their corresponding values are
 -  ``loc_codes['Additional notes']``: some additional information on the web page (if available);
 -  ``loc_codes['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
-|
 
 .. _qs-elrs:
 
@@ -204,7 +194,6 @@ Their corresponding values are
 -  ``em_amm['AAM']``: a `pandas.DataFrame`_ of the mileage file data;
 -  ``em_amm['Notes']``: additional information/notes (if any).
 
-|
 
 .. _qs-railway-stations-data:
 
@@ -293,6 +282,5 @@ Their corresponding values are
 
 **(The end of the quick start)**
 
-|
 
-For more details and examples, check :ref:`Subpackages and modules<modules>`.
+For more details and examples, check :ref:`Sub-packages and modules<modules>`.
