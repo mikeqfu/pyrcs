@@ -1,11 +1,11 @@
 .. py:module:: pyrcs
 
-=======================
-Subpackages and modules
-=======================
+========================
+Sub-packages and modules
+========================
 
-Subpackages
-===========
+Sub-packages
+============
 
 .. toctree::
     :maxdepth: 2
