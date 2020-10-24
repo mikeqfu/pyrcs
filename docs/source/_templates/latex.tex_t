@@ -10,6 +10,8 @@
   \endinput\fi\fi}
 <% endif -%>
 \documentclass[<%= papersize %>,<%= pointsize %><%= classoptions %>]{<%= wrapperclass %>}
+\usepackage[table]{xcolor}
+\definecolor{anti-flashwhite}{rgb}{0.95, 0.95, 0.96}
 \ifdefined\pdfpxdimen
    \let\sphinxpxdimen\pdfpxdimen\else\newdimen\sphinxpxdimen
 \fi \sphinxpxdimen=<%= pxunit %>\relax
