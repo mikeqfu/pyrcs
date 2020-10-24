@@ -84,6 +84,12 @@ pygments_style = 'sphinx'  # or 'default'
 # Paths containing custom static files (e.g. style sheets), relative to this directory.
 html_static_path = ['_static']
 
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
+
 # Output file base name for HTML help builder. Default is 'pydoc'.
 htmlhelp_basename = project + 'doc'
 
@@ -95,7 +101,7 @@ from sphinx.highlighting import PygmentsBridge
 class CustomLatexFormatter(LatexFormatter):
     def __init__(self, **options):
         super(CustomLatexFormatter, self).__init__(**options)
-        self.verboptions = r"formatcom=\footnotesize"
+        self.verboptions = r"formatcom=\small"
 
 
 PygmentsBridge.latex_formatter = CustomLatexFormatter
@@ -117,12 +123,12 @@ latex_documents = [
 # LaTeX customization.
 latex_elements = {
     'papersize': 'a4paper',  # The paper size ('letterpaper' or 'a4paper').
-    'pointsize': '10pt',  # The font size ('10pt', '11pt' or '12pt').
+    'pointsize': '11pt',  # The font size ('10pt', '11pt' or '12pt').
     'pxunit': '0.25bp',
     'preamble': r'''
         \setlength{\headheight}{14pt}
         \DeclareUnicodeCharacter{229E}{\ensuremath{\boxplus}}
-        \setcounter{tocdepth}{2}
+        \setcounter{tocdepth}{3}
         \usepackage[none]{hyphenat}
         \usepackage[document]{ragged2e}
         \usepackage[utf8]{inputenc}
@@ -131,12 +137,35 @@ latex_elements = {
         \usepackage{textgreek}
         \usepackage{graphicx}
         \usepackage{svg}
+        \usepackage{booktabs}
+        \usepackage[sc,osf]{mathpazo}
+        \linespread{1.05}
+        \renewcommand{\sfdefault}{pplj}
+        \IfFileExists{zlmtt.sty}
+                     {\usepackage[light,scaled=1.05]{zlmtt}}
+                     {\renewcommand{\ttdefault}{lmtt}}
+        \let\oldlongtable\longtable
+        \let\endoldlongtable\endlongtable
+        \renewenvironment{longtable}{\rowcolors{1}{anti-flashwhite}{white}\oldlongtable}{\endoldlongtable}
+        ''',
+    'sphinxsetup': r'''
+        %verbatimwithframe=false,
+        %verbatimwrapslines=false,
+        %verbatimhintsturnover=false,
+        VerbatimColor={HTML}{F5F5F5},
+        VerbatimBorderColor={HTML}{E0E0E0},
+        noteBorderColor={HTML}{E0E0E0},
+        noteborder=1.5pt,
+        warningBorderColor={HTML}{E0E0E0},
+        warningborder=1.5pt,
+        warningBgColor={HTML}{FBFBFB},
+        hmargin={0.7in,0.7in}, vmargin={1.1in,1.1in},
         ''',
     'printindex': r'''
         \IfFileExists{\jobname.ind}
                      {\footnotesize\raggedright\printindex}
                      {\begin{sphinxtheindex}\end{sphinxtheindex}}
-    ''',
+        ''',
     'passoptionstopackages': r'\PassOptionsToPackage{svgnames}{xcolor}',
     'fvset': r'\fvset{fontsize=auto}',
     'figure_align': 'H'  # Latex figure (float) alignment
