@@ -2,7 +2,7 @@
 Quick start
 ===========
 
-To demonstrate how PyRCS works, this part of the documentation provides a quick guide with examples of getting `location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_, `ELRs <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and `railway stations data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+To demonstrate how PyRCS works, this part of the documentation provides a quick guide with examples of getting `location codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_, `ELRs <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and `railway stations data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 
 
 .. _qs-crs-nlc-tiploc-and-stanox:
@@ -34,11 +34,11 @@ Now we can create an instance for getting the location codes:
     >>> from pyrcs import LineData
 
     >>> ld = LineData()
-    >>> lid = ld.LocationIdentifiers
+    >>> lid_ = ld.LocationIdentifiers
 
 .. note::
 
-    The instance ``ld`` contains all classes under the category of `line data`_. Here ``ld.LocationIdentifiers`` is equivalent to ``lid``.
+    The instance ``ld`` contains all classes under the category of `line data`_. Here ``lid_`` is equivalent to ``lid``.
 
 .. _qs-locations-beginning-with-a-given-letter:
 
@@ -219,11 +219,11 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
     >>> from pyrcs import OtherAssets
 
     >>> oa = OtherAssets()
-    >>> stn = oa.Stations
+    >>> stn_ = oa.Stations
 
 .. note::
 
-    ``oa.Stations`` is equivalent to ``stn``.
+    ``stn_`` is equivalent to ``stn``.
 
 To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :py:meth:`Stations.collect_railway_station_data_by_initial()<station.Stations.collect_railway_station_data_by_initial>`:
 
