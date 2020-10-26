@@ -27,7 +27,7 @@ Documentation contents
 ######################
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
     :includehidden:
 
     installation
