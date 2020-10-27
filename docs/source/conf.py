@@ -27,13 +27,10 @@ copyright = u'2019-{}, {}'.format(datetime.datetime.now().year, pyrcs.__author__
 version = pyrcs.__version__  # The short X.Y version.
 release = version  # The full version, including alpha/beta/rc tags.
 
-
 # General configuration ================================================================
+import sphinx_rtd_theme
 
-
-def setup(app):
-    app.add_js_file('copybutton.js')
-
+_ = sphinx_rtd_theme.get_html_theme_path()
 
 # Sphinx extension module names,
 #   which can be extensions coming with Sphinx (named 'sphinx.ext.*') or custom ones.
@@ -78,17 +75,22 @@ templates_path = ['_templates']
 # Options for HTML and HTMLHelp output =================================================
 html_theme = 'sphinx_rtd_theme'  # The theme to use for HTML & HTML Help pages.
 
+html_theme_options = {
+    'collapse_navigation': False,
+    'navigation_depth': 3,
+}
+
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'  # or 'default'
 
 # Paths containing custom static files (e.g. style sheets), relative to this directory.
 html_static_path = ['_static']
 
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-    ],
-}
+# Add custom CSS
+html_css_files = ['theme_overrides.css']
+
+# Add custom JavaScript
+html_js_files = ['copybutton.js']
 
 # Output file base name for HTML help builder. Default is 'pydoc'.
 htmlhelp_basename = project + 'doc'
@@ -146,7 +148,9 @@ latex_elements = {
                      {\renewcommand{\ttdefault}{lmtt}}
         \let\oldlongtable\longtable
         \let\endoldlongtable\endlongtable
-        \renewenvironment{longtable}{\rowcolors{1}{anti-flashwhite}{white}\oldlongtable}{\endoldlongtable}
+        \renewenvironment{longtable}
+                         {\rowcolors{1}{anti-flashwhite}{white}\oldlongtable}
+                         {\endoldlongtable}
         ''',
     'sphinxsetup': r'''
         %verbatimwithframe=false,
