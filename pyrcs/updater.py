@@ -12,9 +12,9 @@ import requests
 from pyhelpers.ops import confirmed
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs._line_data import LineData
-from pyrcs._other_assets import OtherAssets
-from pyrcs.utils import cd_dat, fake_requests_headers, homepage_url
+from ._line_data import LineData
+from ._other_assets import OtherAssets
+from .utils import cd_dat, fake_requests_headers, homepage_url
 
 
 def collect_site_map(confirmation_required=True):
