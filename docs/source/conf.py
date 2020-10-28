@@ -18,10 +18,8 @@ import datetime
 import pyrcs
 
 # General information about the project.
-project = u'PyRCS'
+project = u'{}'.format(pyrcs.__package_name_alt__)
 copyright = u'2019-{}, {}'.format(datetime.datetime.now().year, pyrcs.__author__)
-
-""" The version info for the project """
 
 # The version info for the project
 version = pyrcs.__version__  # The short X.Y version.
