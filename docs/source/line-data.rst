@@ -18,6 +18,7 @@ line_data
     line-name
     trk-diagr
 
+.. rubric:: Submodules
 .. autosummary::
 
     elr_mileage
