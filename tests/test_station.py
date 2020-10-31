@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     test_data_dir = "dat"
 
-    railway_station_data1 = stations.fetch_railway_station_data()
+    railway_station_data1 = stations.fetch_station_data()
 
     railway_station_data1_ = railway_station_data1[stations.StnKey]
     print("\n{}: ".format(stations.Name))
@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     print("")
 
-    railway_station_data2 = stations.fetch_railway_station_data(
+    railway_station_data2 = stations.fetch_station_data(
         update=True, pickle_it=True, data_dir=test_data_dir)
     # No data is available for signal box codes beginning with "X".
     # No data is available for signal box codes beginning with "Z".
