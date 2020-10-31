@@ -177,26 +177,31 @@ def update_backup_data(verbose=False, time_gap=5):
     if confirmed("To update resources? "):
 
         # Site map
+        print("Site map:")
         _ = fetch_site_map(update=True, confirmation_required=False, verbose=verbose)
 
         line_dat = LineData(update=True)
 
         # ELR and mileages
+        print(f"\n{line_dat.ELRMileages.Name}:")
         _ = line_dat.ELRMileages.fetch_elr(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Electrification
+        print(f"\n{line_dat.Electrification.Name}:")
         _ = line_dat.Electrification.fetch_elec_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Location
+        print(f"\n{line_dat.LocationIdentifiers.Name}:")
         _ = line_dat.LocationIdentifiers.fetch_location_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Line of routes
+        print(f"\n{line_dat.LOR.Name}:")
         _ = line_dat.LOR.get_keys_to_prefixes(prefixes_only=True, update=True,
                                               verbose=verbose)
         _ = line_dat.LOR.get_keys_to_prefixes(prefixes_only=False, update=True,
@@ -208,11 +213,13 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Line names
+        print(f"\n{line_dat.LineNames.Name}:")
         _ = line_dat.LineNames.fetch_line_names(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Track diagrams
+        print(f"\n{line_dat.TrackDiagrams.Name}:")
         _ = line_dat.TrackDiagrams.fetch_sample_catalogue(update=True, verbose=verbose)
 
         time.sleep(time_gap)
@@ -220,6 +227,7 @@ def update_backup_data(verbose=False, time_gap=5):
         other_assets = OtherAssets(update=True)
 
         # Signal boxes
+        print(f"\n{other_assets.SignalBoxes.Name}:")
         _ = other_assets.SignalBoxes.fetch_signal_box_prefix_codes(update=True,
                                                                    verbose=verbose)
         _ = other_assets.SignalBoxes.fetch_non_national_rail_codes(update=True,
@@ -228,26 +236,31 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Tunnels
+        print(f"\n{other_assets.Tunnels.Name}:")
         _ = other_assets.Tunnels.fetch_tunnel_lengths(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Viaducts
+        print(f"\n{other_assets.Viaducts.Name}:")
         _ = other_assets.Viaducts.fetch_railway_viaducts(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Stations
+        print(f"\n{other_assets.Stations.Name}:")
         _ = other_assets.Stations.fetch_station_data(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Depots
+        print(f"\n{other_assets.Depots.Name}:")
         _ = other_assets.Depots.fetch_depot_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Features
+        print(f"\n{other_assets.Features.Name}:")
         _ = other_assets.Features.fetch_features_codes(update=True, verbose=verbose)
 
         if verbose:
