@@ -124,8 +124,7 @@ class Stations:
 
         return operators
 
-    def collect_railway_station_data_by_initial(self, initial, update=False,
-                                                verbose=False):
+    def collect_station_data_by_initial(self, initial, update=False, verbose=False):
         """
         Collect railway station data for the given ``initial`` letter.
 
@@ -149,7 +148,7 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> stn_data_a = stn.collect_railway_station_data_by_initial(initial='a')
+            >>> stn_data_a = stn.collect_station_data_by_initial(initial='a')
 
             >>> type(stn_data_a)
             <class 'dict'>
@@ -207,8 +206,8 @@ class Stations:
                         itertools.chain.from_iterable(
                             itertools.repeat(x, 2) for x in list(range(1, length))))
                     col_names = zip(col_names_current * (length - 1), prev_no)
-                    col_names = col_names_current + \
-                                ['_'.join(['Prev', x, str(d)]) for x, d in col_names]
+                    col_names = col_names_current + [
+                        '_'.join(['Prev', x, str(d)]) for x, d in col_names]
 
                     for i in range(len(temp)):
                         if len(temp[i]) < length:
@@ -243,8 +242,8 @@ class Stations:
 
         return railway_station_data
 
-    def fetch_railway_station_data(self, update=False, pickle_it=False, data_dir=None,
-                                   verbose=False):
+    def fetch_station_data(self, update=False, pickle_it=False, data_dir=None,
+                           verbose=False):
         """
         Fetch railway station data from local backup.
 
@@ -260,7 +259,7 @@ class Stations:
             as the function runs, defaults to ``False``
         :type verbose: bool, int
         :return: railway station data
-            (incl. the station name, ELR, mileage, status, owner, operator,
+            (including the station name, ELR, mileage, status, owner, operator,
             degrees of longitude and latitude, and grid reference) and
             date of when the data was last updated
         :rtype: dict
@@ -271,7 +270,7 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> stn_data = stn.fetch_railway_station_data()
+            >>> stn_data = stn.fetch_station_data()
 
             >>> type(stn_data)
             <class 'dict'>
@@ -293,7 +292,7 @@ class Stations:
         """
 
         verbose_ = False if data_dir or not verbose else True
-        data_sets = [self.collect_railway_station_data_by_initial(x, update, verbose_)
+        data_sets = [self.collect_station_data_by_initial(x, update, verbose_)
                      for x in string.ascii_lowercase]
 
         railway_station_tables = (
