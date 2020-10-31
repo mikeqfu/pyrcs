@@ -225,11 +225,11 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
 
     ``stn_`` is equivalent to ``stn``.
 
-To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :py:meth:`Stations.collect_railway_station_data_by_initial()<station.Stations.collect_railway_station_data_by_initial>`:
+To get the data of railway stations whose names start with a specific letter, e.g. ``'A'``, use the method :py:meth:`Stations.collect_station_data_by_initial()<station.Stations.collect_station_data_by_initial>`:
 
 .. code-block:: python
 
-    >>> stn_data_a = stn.collect_railway_station_data_by_initial('A')
+    >>> stn_data_a = stn.collect_station_data_by_initial('A')
 
     >>> type(stn_data_a)
     <class 'dict'>
@@ -246,11 +246,11 @@ The corresponding values are
 -  ``stn_data_a['A']``: a `pandas.DataFrame`_ of the data of railway stations whose names begin with 'A'. We may compare it with the table on the web page of `Stations beginning with 'A'`_;
 -  ``stn_data_a['Last updated date']``: the date when the web page was last updated.
 
-To get available railway station data (from 'A' to 'Z') in this category, use the method :py:meth:`Stations.fetch_railway_station_data()<station.Stations.fetch_railway_station_data>`
+To get available railway station data (from 'A' to 'Z') in this category, use the method :py:meth:`Stations.fetch_station_data()<station.Stations.fetch_station_data>`
 
 .. code-block:: python
 
-    >>> stn_data = stn.fetch_railway_station_data()
+    >>> stn_data = stn.fetch_station_data()
 
     >>> type(stn_data)
     <class 'dict'>
@@ -283,4 +283,4 @@ Their corresponding values are
 **(The end of the quick start)**
 
 
-For more details and examples, check :ref:`Sub-packages and modules<modules>`.
+For more details and examples, check :ref:`Subpackages and modules<modules>`.
