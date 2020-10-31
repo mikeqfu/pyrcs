@@ -18,6 +18,7 @@ other_assets
     depot
     feature
 
+.. rubric:: Submodules
 .. autosummary::
 
     sig_box
