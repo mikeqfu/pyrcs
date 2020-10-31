@@ -116,3 +116,4 @@ dmypy.json
 .idea/
 pyrcs/dat/
 tests/dat/
+tests/update_pkg_dat.py
