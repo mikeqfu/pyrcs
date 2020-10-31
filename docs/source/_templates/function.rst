@@ -1,4 +1,4 @@
-{{ fullname | escape | underline }}
+{{ "{}.{}".format(module, objname).replace("pyrcs.", "", 1) | escape | underline }}
 
 .. currentmodule:: {{module}}
 
