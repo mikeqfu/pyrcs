@@ -238,7 +238,7 @@ def update_backup_data(verbose=False, time_gap=5):
         time.sleep(time_gap)
 
         # Stations
-        _ = other_assets.Stations.fetch_railway_station_data(update=True, verbose=verbose)
+        _ = other_assets.Stations.fetch_station_data(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
