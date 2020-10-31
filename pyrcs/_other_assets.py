@@ -24,7 +24,7 @@ class OtherAssets:
         >>> oa = OtherAssets()
 
         >>> # To get data of railway stations
-        >>> railway_station_data = oa.Stations.fetch_railway_station_data()
+        >>> railway_station_data = oa.Stations.fetch_station_data()
 
         >>> type(railway_station_data)
         <class 'dict'>
