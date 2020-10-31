@@ -14,10 +14,7 @@ PyRCS
 .. |DOI| image:: https://zenodo.org/badge/92501006.svg
    :target: https://zenodo.org/badge/latestdoi/92501006
 
-**Author**: Qian Fu |Twitter|
-
-.. |Twitter| image:: https://img.shields.io/twitter/url/https/twitter.com/Qian_Fu?label=Follow&style=social
-   :target: https://twitter.com/Qian_Fu
+**Author**: Qian Fu
 
 PyRCS is a web-scraping tool for collecting `railway codes <http://www.railwaycodes.org.uk/>`_ used in different UK rail industry systems.
 
