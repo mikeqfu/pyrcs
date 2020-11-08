@@ -19,14 +19,17 @@ setuptools.setup(
     url='https://github.com/mikeqfu/pyrcs',
 
     install_requires=[
+        'beautifulsoup4~=4.9.3',
         'fake_useragent',
-        'beautifulsoup4',
+        'fuzzywuzzy~=0.18.0',
         'html5lib',
         'lxml',
-        'measurement',
-        'more-itertools',
-        'pandas~=1.1.3',
-        'pyhelpers>=1.2.5',
+        'measurement~=3.2.0',
+        'more-itertools~=8.6.0',
+        'numpy~=1.19.4',
+        'pandas~=1.1.4',
+        'pyhelpers>=1.2.6',
+        'requests~=2.24.0',
     ],
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
