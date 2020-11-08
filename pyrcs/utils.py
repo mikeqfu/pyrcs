@@ -19,6 +19,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 
 
+# -- Specification of resource homepage ------------------------------------------------
+
 def homepage_url():
     """
     Specify the homepage URL of the data source.
@@ -26,10 +28,11 @@ def homepage_url():
     :return: URL of the data source homepage
     :rtype: str
     """
+
     return 'http://www.railwaycodes.org.uk/'
 
 
-# -- Directory -------------------------------------------------------------------------
+# -- Specification of directory/file paths ---------------------------------------------
 
 def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
@@ -60,16 +63,18 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     path = pkg_resources.resource_filename(__name__, dat_dir)
     for x in sub_dir:
         path = os.path.join(path, x)
+
     if mkdir:
         path_to_file, ext = os.path.splitext(path)
         if ext == '':
             os.makedirs(path_to_file, exist_ok=True, **kwargs)
         else:
             os.makedirs(os.path.dirname(path_to_file), exist_ok=True, **kwargs)
+
     return path
 
 
-# -- Converters ------------------------------------------------------------------------
+# -- Data converters -------------------------------------------------------------------
 
 def mile_chain_to_nr_mileage(miles_chains):
     """
@@ -101,6 +106,7 @@ def mile_chain_to_nr_mileage(miles_chains):
         network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
     else:
         network_rail_mileage = ''
+
     return network_rail_mileage
 
 
@@ -134,6 +140,7 @@ def nr_mileage_to_mile_chain(str_mileage):
         miles_chains = '%.2f' % (int(miles) + round(chains / (10 ** 2), 2))
     else:
         miles_chains = ''
+
     return miles_chains
 
 
@@ -162,6 +169,7 @@ def nr_mileage_str_to_num(str_mileage):
     """
 
     num_mileage = np.nan if str_mileage == '' else round(float(str_mileage), 4)
+
     return num_mileage
 
 
@@ -228,11 +236,11 @@ def nr_mileage_to_yards(nr_mileage):
 
     if isinstance(nr_mileage, (float, np.float, int, np.integer)):
         nr_mileage = nr_mileage_num_to_str(nr_mileage)
-    else:
-        pass
+
     miles = int(nr_mileage.split('.')[0])
     yards = int(nr_mileage.split('.')[1])
     yards += int(measurement.measures.Distance(mi=miles).yd)
+
     return yards
 
 
@@ -278,6 +286,7 @@ def yards_to_nr_mileage(yards):
         mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
     else:
         mileage = ''
+
     return mileage
 
 
@@ -312,6 +321,7 @@ def shift_num_nr_mileage(nr_mileage, shift_yards):
     yards = nr_mileage_to_yards(nr_mileage) + shift_yards
     shifted_nr_mileage = yards_to_nr_mileage(yards)
     shifted_num_mileage = nr_mileage_str_to_num(shifted_nr_mileage)
+
     return shifted_num_mileage
 
 
@@ -335,10 +345,11 @@ def year_to_financial_year(date):
     """
 
     financial_date = date + pd.DateOffset(months=-3)
+
     return financial_date.year
 
 
-# -- Parsers ---------------------------------------------------------------------------
+# -- Data parsers ----------------------------------------------------------------------
 
 def parse_tr(header, trs):
     """
@@ -474,6 +485,7 @@ def parse_table(source, parser='lxml'):
     header = [header.text for header in headers.find_all('th')]
     # Get a list of lists, each of which corresponds to a piece of record
     trs = table_temp[1:]
+
     # Return a list of parsed tr's, each of which corresponds to one df row
     return parse_tr(header, trs), header
 
@@ -611,7 +623,7 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-# -- Get useful information ------------------------------------------------------------
+# -- Retrieval of useful information ---------------------------------------------------
 
 
 def get_last_updated_date(url, parsed=True, as_date_type=False):
@@ -1032,7 +1044,7 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-# -- Fixers -------------------------------------------------------------------------------------------
+# -- Data fixers -----------------------------------------------------------------------
 
 def fix_num_stanox(stanox_code):
     """
@@ -1111,7 +1123,7 @@ def fix_nr_mileage_str(nr_mileage):
     return nr_mileage_
 
 
-# -- Misc ---------------------------------------------------------------------------------------------
+# -- Miscellaneous helpers -------------------------------------------------------------
 
 def is_str_float(str_val):
     """
@@ -1144,4 +1156,5 @@ def is_str_float(str_val):
         test_res = True
     except ValueError:
         test_res = False
+
     return test_res
