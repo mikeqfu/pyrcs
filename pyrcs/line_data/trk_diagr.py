@@ -14,8 +14,7 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, \
-    get_track_diagrams_items, homepage_url
+from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url
 
 
 class TrackDiagrams:
@@ -24,9 +23,6 @@ class TrackDiagrams:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
-    :type update: bool
 
     **Example**::
 
@@ -41,22 +37,24 @@ class TrackDiagrams:
         http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None):
         self.Name = 'Railway track diagrams (some samples)'
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/track/diagrams0.shtm')
 
         self.Key = 'Track diagrams'
         self.LUDKey = 'Last updated date'
-        self.Items = get_track_diagrams_items(self.SourceURL, self.Key, update=update)
+
         self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_td(self, *sub_dir, **kwargs):
+    def _cdd_td(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -69,14 +67,52 @@ class TrackDiagrams:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
+
+        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
-    def collect_sample_catalogue(self, confirmation_required=True,
-                                 verbose=False):
+    def get_track_diagrams_items(self, update=False):
+        """
+        Get catalogue of track diagrams.
+
+        :param update: whether to check on update and proceed to update the package data,
+            defaults to ``False``
+        :type update: bool
+        :return: catalogue of railway station data
+        :rtype: dict
+
+        See :py:class:`pyrcs.line_data.TrackDiagrams()
+        <pyrcs.line_data.track_diagrams.TrackDiagrams>`
+        """
+
+        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
+            '.shtm', '.json').split('/') if x)
+        path_to_cat = cd_dat("catalogue", cat_json)
+
+        if os.path.isfile(path_to_cat) and not update:
+            items = load_pickle(path_to_cat)
+
+        else:
+            try:
+                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed to establish a connection.")
+                return None
+
+            soup = bs4.BeautifulSoup(source.text, 'lxml')
+            h3 = {x.get_text(strip=True)
+                  for x in soup.find_all('h3', text=True, attrs={'class': None})}
+            items = {self.Key: h3}
+
+            save_pickle(items, path_to_cat)
+
+        return items
+
+    def collect_sample_catalogue(self, confirmation_required=True, verbose=False):
         """
         Collect catalogue of sample railway track diagrams from source web page.
 
@@ -114,7 +150,11 @@ class TrackDiagrams:
 
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed to establish a connection.")
+                return None
 
+            try:
                 track_diagrams_catalogue_ = {}
 
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
@@ -157,7 +197,7 @@ class TrackDiagrams:
                 print("Done. ") if verbose == 2 else ""
 
                 pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self.cdd_td(pickle_filename)
+                path_to_pickle = self._cdd_td(pickle_filename)
                 save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -166,8 +206,8 @@ class TrackDiagrams:
 
             return track_diagrams_catalogue
 
-    def fetch_sample_catalogue(self, update=False, pickle_it=False,
-                               data_dir=None, verbose=False):
+    def fetch_sample_catalogue(self, update=False, pickle_it=False, data_dir=None,
+                               verbose=False):
         """
         Fetch catalogue of sample railway track diagrams from local backup.
 
@@ -203,20 +243,23 @@ class TrackDiagrams:
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-        path_to_pickle = self.cdd_td(pickle_filename)
+        path_to_pickle = self._cdd_td(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             track_diagrams_catalogue = load_pickle(path_to_pickle)
 
         else:
             verbose_ = False if data_dir or not verbose else True
+
             track_diagrams_catalogue = self.collect_sample_catalogue(
                 confirmation_required=False, verbose=verbose_)
+
             if track_diagrams_catalogue:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
+
             else:
                 print("No data of the sample {} catalogue has been collected.".format(
                     self.Key.lower()))
