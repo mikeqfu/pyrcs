@@ -14,7 +14,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, parse_table
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    parse_table, print_conn_err
 
 
 class LineNames:
@@ -26,6 +27,9 @@ class LineNames:
     :param update: whether to check on update and proceed to update the package data, 
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -40,7 +44,7 @@ class LineNames:
         http://www.railwaycodes.org.uk/misc/line_names.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
@@ -48,10 +52,12 @@ class LineNames:
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/misc/line_names.shtm')
 
-        self.Catalogue = get_catalogue(
-            self.SourceURL, update=update, confirmation_required=False)
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
 
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+                                       confirmation_required=False)
+
         self.Key = 'Line names'
         self.LUDKey = 'Last updated date'
 
@@ -59,10 +65,9 @@ class LineNames:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
-
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_ln(self, *sub_dir, **kwargs):
+    def _cdd_ln(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -117,6 +122,12 @@ class LineNames:
 
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 row_lst, header = parse_table(source, parser='lxml')
                 line_names = pd.DataFrame(
                     [[r.replace('\xa0', '').strip() for r in row] for row in row_lst],
@@ -152,7 +163,7 @@ class LineNames:
                 print("Done. ") if verbose == 2 else ""
 
                 pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self.cdd_ln(pickle_filename)
+                path_to_pickle = self._cdd_ln(pickle_filename)
                 save_pickle(line_names_data, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -196,22 +207,25 @@ class LineNames:
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-        path_to_pickle = self.cdd_ln(pickle_filename)
+        path_to_pickle = self._cdd_ln(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             line_names_data = load_pickle(path_to_pickle)
 
         else:
-            line_names_data = self.collect_line_names(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            line_names_data = self.collect_line_names(confirmation_required=False,
+                                                      verbose=verbose_)
+
             if line_names_data:  # line-names is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(line_names_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of the railway {} has been collected.".format(
+                print("No data of the railway {} has been freshly collected.".format(
                     self.Key.lower()))
+                line_names_data = load_pickle(path_to_pickle)
 
         return line_names_data
