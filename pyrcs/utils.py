@@ -58,6 +58,8 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
         >>> path_to_dat_dir = cd_dat("line-data", dat_dir="dat", mkdir=False)
         >>> print(os.path.relpath(path_to_dat_dir))
         pyrcs\\dat\\line-data
+
+    :meta private:
     """
 
     path = pkg_resources.resource_filename(__name__, dat_dir)
@@ -558,7 +560,7 @@ def parse_location_name(location_name):
                 r' \(definition unknown\)|'
                 r' \(reopened |'
                 r'( portion])$')
-            x_tmp = re.search(r'(?=[\[(]).*(?<=[\])])|(?=\().*(?<=\) \[)', location_name)
+            x_tmp = re.search(r'(?=[\[(]).*(?<=[])])|(?=\().*(?<=\) \[)', location_name)
             x_tmp = x_tmp.group() if x_tmp is not None else location_name
             if re.search(m_pattern, location_name):
                 dat = ' '.join(location_name.replace(x_tmp, '').split())
@@ -574,7 +576,7 @@ def parse_location_name(location_name):
             if n is None:
                 n = re.search(
                     r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*'
-                    r'(?=(\)[\'\"]\])|(\][\'\"]\))|\])', y)
+                    r'(?=(\)[\'\"]])|(][\'\"]\))|])', y)
             elif '"now deleted"' in y and y.startswith('(') and y.endswith(')'):
                 n = re.search(r'(?<=\().*(?=\))', y)
             note = n.group() if n is not None else ''
@@ -625,6 +627,142 @@ def parse_date(str_date, as_date_type=False):
 
 # -- Retrieval of useful information ---------------------------------------------------
 
+def get_site_map(update=False, confirmation_required=True, verbose=False):
+    """
+    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
+    from the package data.
+
+    :param update: whether to check on update and proceed to update the package data,
+        defaults to ``False``
+    :type update: bool
+    :param confirmation_required: whether to prompt a message for confirmation to proceed,
+        defaults to ``True``
+    :type confirmation_required: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``False``
+    :type verbose: bool, int
+    :return: dictionary of site map data
+    :rtype: dict
+
+    **Examples**::
+
+        >>> from pyrcs.utils import get_site_map
+
+        >>> site_map_dat = get_site_map()
+
+        >>> type(site_map_dat)
+        <class 'dict'>
+        >>> print(list(site_map_dat.keys()))
+        ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
+        >>> print(site_map_dat['Home'])
+        http://www.railwaycodes.org.uk/index.shtml
+
+        >>> site_map_dat = get_site_map(update=True, verbose=2)
+    """
+
+    path_to_pickle = cd_dat("site-map.pickle", mkdir=True)
+
+    if os.path.isfile(path_to_pickle) and not update:
+        site_map = load_pickle(path_to_pickle)
+
+    else:
+        try:
+            if confirmed("To collect the site map?",
+                         confirmation_required=confirmation_required):
+
+                if verbose == 2:
+                    print("Updating the package data", end=" ... ")
+
+                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
+
+                try:
+                    source = requests.get(url, headers=fake_requests_headers())
+
+                except requests.exceptions.ConnectionError:
+                    print("Failed to establish a connection.")
+                    return None
+
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+
+                # <h3>
+                h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
+
+                site_map = {}
+
+                # Next <ol>
+                next_ol = soup.find('h3').find_next('ol')
+
+                for i in range(len(h3)):
+
+                    li_tag = next_ol.findChildren('li')
+                    ol_tag = next_ol.findChildren('ol')
+
+                    if not ol_tag:
+                        dat_ = [x.find('a').get('href') for x in li_tag]
+                        if len(dat_) == 1:
+                            dat = urllib.parse.urljoin(homepage_url(), dat_[0])
+                        else:
+                            dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_]
+                        site_map.update({h3[i]: dat})
+
+                    else:
+                        site_map_ = {}
+                        for ol in ol_tag:
+                            k = ol.find_parent('ol').find_previous('li').get_text(
+                                strip=True)
+
+                            if k not in site_map_.keys():
+                                sub_li = ol.findChildren('li')
+                                sub_ol = ol.findChildren('ol')
+
+                                if sub_ol:
+                                    cat0 = [x.get_text(strip=True) for x in sub_li
+                                            if not x.find('a')]
+                                    dat0 = [[urllib.parse.urljoin(homepage_url(),
+                                                                  a.get('href'))
+                                             for a in x.find_all('a')] for x in sub_ol]
+                                    cat_name = ol.find_previous('li').get_text(strip=True)
+                                    if cat0:
+                                        site_map_.update(
+                                            {cat_name: dict(zip(cat0, dat0))})
+                                    else:
+                                        site_map_.update(
+                                            {cat_name: [x_ for x in dat0 for x_ in x]})
+                                    # cat_ = [x for x in cat_ if x not in cat0]
+
+                                else:
+                                    cat_name_ = ol.find_previous('li').get_text(
+                                        strip=True)
+                                    pat = r'.+(?= \(the thousands of mileage files)'
+                                    cat_name = re.search(pat, cat_name_).group(0) \
+                                        if re.match(pat, cat_name_) else cat_name_
+
+                                    dat0 = [urllib.parse.urljoin(homepage_url(),
+                                                                 x.a.get('href'))
+                                            for x in sub_li]
+
+                                    site_map_.update({cat_name: dat0})
+
+                        site_map.update({h3[i]: site_map_})
+
+                    if i < len(h3) - 1:
+                        next_ol = next_ol.find_next('h3').find_next('ol')
+
+                print("Done. ") if verbose == 2 else ""
+
+            else:
+                print("Cancelled. ") if verbose == 2 else ""
+                site_map = load_pickle(path_to_pickle)
+
+        except Exception as e:
+            site_map = None
+            print("Failed. {}".format(e))
+
+        if site_map is not None:
+            save_pickle(site_map, path_to_pickle, verbose=verbose)
+
+    return site_map
+
 
 def get_last_updated_date(url, parsed=True, as_date_type=False):
     """
@@ -665,7 +803,12 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
     """
 
     # Request to get connected to the given url
-    source = requests.get(url, headers=fake_requests_headers())
+    try:
+        source = requests.get(url, headers=fake_requests_headers())
+    except requests.exceptions.ConnectionError:
+        print("Failed to establish a connection.")
+        return None
+
     web_page_text = source.text
 
     # Parse the text scraped from the requested web page
@@ -737,33 +880,37 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
         catalogue = load_json(path_to_cat_json, verbose=verbose)
 
     else:
-        if confirmed("To collect/update catalogue? ",
+        if confirmed("To collect/update catalogue?",
                      confirmation_required=confirmation_required):
 
-            source = requests.get(page_url, headers=fake_requests_headers())
+            try:
+                source = requests.get(page_url, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed to establish a connection.")
+                return None
+
             source_text = source.text
             source.close()
 
             try:
-                cold_soup = \
-                    bs4.BeautifulSoup(source_text, 'lxml').find(
-                        'div', attrs={'class': 'fixed'})
+                cold_soup = bs4.BeautifulSoup(
+                    source_text, 'lxml').find('div', attrs={'class': 'fixed'})
                 catalogue = {
                     a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
                     for a in cold_soup.find_all('a')}
             except AttributeError:
-                cold_soup = \
-                    bs4.BeautifulSoup(source_text, 'lxml').find('h1').find_all_next('a')
+                cold_soup = bs4.BeautifulSoup(
+                    source_text, 'lxml').find('h1').find_all_next('a')
                 catalogue = {
                     a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
                     for a in cold_soup}
 
-            if json_it:
-                save_json(catalogue, path_to_cat_json, verbose=verbose)
-
         else:
             print("The catalogue for the requested data has not been acquired.")
             catalogue = None
+
+        if json_it and catalogue is not None:
+            save_json(catalogue, path_to_cat_json, verbose=verbose)
 
     return catalogue
 
@@ -810,10 +957,14 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
         cls_menu = load_json(path_to_menu_json, verbose=verbose)
 
     else:
-        if confirmed("To collect/update category menu? ",
+        if confirmed("To collect/update category menu?",
                      confirmation_required=confirmation_required):
 
-            source = requests.get(menu_url, headers=fake_requests_headers())
+            try:
+                source = requests.get(menu_url, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed to establish a connection.")
+                return None
 
             soup = bs4.BeautifulSoup(source.text, 'lxml')
             h1, h2s = soup.find('h1'), soup.find_all('h2')
@@ -848,108 +999,19 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
 
             cls_menu = {cls_name: cls_elem}
 
-            if json_it:
-                save_json(cls_menu, path_to_menu_json, verbose=verbose)
-
         else:
             print("The category menu has not been acquired.")
             cls_menu = None
 
+        if json_it and cls_menu is not None:
+            save_json(cls_menu, path_to_menu_json, verbose=verbose)
+
     return cls_menu
-
-
-def get_station_data_catalogue(source_url, source_key, update=False):
-    """
-    Get catalogue of railway station data.
-
-    :param source_url: URL to the source web page
-    :type source_url: str
-    :param source_key: key of the returned catalogue (which is a dictionary)
-    :type source_key: str
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
-    :type update: bool
-    :return: catalogue of railway station data
-    :rtype: dict
-
-    See :py:class:`pyrcs.other_assets.Stations()
-    <pyrcs.other_assets.stations.Stations>`
-    """
-
-    cat_json = '-'.join(x for x in urllib.parse.urlparse(source_url).path.replace(
-        '.shtm', '.json').split('/') if x)
-    path_to_cat = cd_dat("catalogue", cat_json)
-
-    if os.path.isfile(path_to_cat) and not update:
-        catalogue = load_json(path_to_cat)
-
-    else:
-        source = requests.get(source_url, headers=fake_requests_headers())
-        cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find(
-            'p', {'class': 'appeal'}).find_next('p').find_next('p')
-        hot_soup = {a.text: urllib.parse.urljoin(source_url, a.get('href'))
-                    for a in cold_soup.find_all('a')}
-
-        catalogue = {source_key: None}
-        for k, v in hot_soup.items():
-            sub_cat = get_catalogue(v, update=True, confirmation_required=False,
-                                    json_it=False)
-            if sub_cat != hot_soup:
-                if k == 'Introduction':
-                    catalogue.update({source_key: {k: v, **sub_cat}})
-                else:
-                    catalogue.update({k: sub_cat})
-            else:
-                if k in ('Bilingual names', 'Not served by SFO'):
-                    catalogue[source_key].update({k: v})
-                else:
-                    catalogue.update({k: v})
-
-        save_json(catalogue, path_to_cat)
-
-    return catalogue
-
-
-def get_track_diagrams_items(source_url, source_key, update=False):
-    """
-    Get catalogue of track diagrams.
-
-    :param source_url: URL to the source web page
-    :type source_url: str
-    :param source_key: key of the returned catalogue (which is a dictionary)
-    :type source_key: str
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
-    :type update: bool
-    :return: catalogue of railway station data
-    :rtype: dict
-
-    See :py:class:`pyrcs.line_data.TrackDiagrams()
-    <pyrcs.line_data.track_diagrams.TrackDiagrams>`
-    """
-
-    cat_json = '-'.join(x for x in urllib.parse.urlparse(source_url).path.replace(
-        '.shtm', '.json').split('/') if x)
-    path_to_cat = cd_dat("catalogue", cat_json)
-
-    if os.path.isfile(path_to_cat) and not update:
-        items = load_pickle(path_to_cat)
-
-    else:
-        source = requests.get(source_url, headers=fake_requests_headers())
-        soup = bs4.BeautifulSoup(source.text, 'lxml')
-        h3 = {x.get_text(strip=True)
-              for x in soup.find_all('h3', text=True, attrs={'class': None})}
-        items = {source_key: h3}
-
-        save_pickle(items, path_to_cat)
-
-    return items
 
 
 # -- Rectification of location names ---------------------------------------------------
 
-def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
+def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
     """
     Create a dictionary for rectifying location names.
 
@@ -966,9 +1028,9 @@ def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
 
     **Examples**::
 
-        >>> from pyrcs.utils import fetch_location_names_repl_dict
+        >>> from pyrcs.utils import fetch_loc_names_repl_dict
 
-        >>> repl_dict = fetch_location_names_repl_dict()
+        >>> repl_dict = fetch_loc_names_repl_dict()
         >>> type(repl_dict)
         <class 'dict'>
         >>> print(list(repl_dict.keys())[:5])
@@ -978,7 +1040,7 @@ def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
          'Aberdeen Craiginches',
          'Aberdeen Craiginches T.C.']
 
-        >>> repl_dict = fetch_location_names_repl_dict(regex=True, as_dataframe=True)
+        >>> repl_dict = fetch_loc_names_repl_dict(regex=True, as_dataframe=True)
         >>> type(repl_dict)
         <class 'pandas.core.frame.DataFrame'>
         >>> print(repl_dict.head())
@@ -1006,9 +1068,9 @@ def fetch_location_names_repl_dict(k=None, regex=False, as_dataframe=False):
     return replacement_dict
 
 
-def update_location_name_repl_dict(new_items, regex, verbose=False):
+def update_loc_names_repl_dict(new_items, regex, verbose=False):
     """
-    Update the location-name replacement dictionary in the package data.
+    Update the location-names replacement dictionary in the package data.
 
     :param new_items: new items to replace
     :type new_items: dict
@@ -1020,10 +1082,10 @@ def update_location_name_repl_dict(new_items, regex, verbose=False):
 
     **Example**:
 
-        >>> from pyrcs.utils import update_location_name_repl_dict
+        >>> from pyrcs.utils import update_loc_names_repl_dict
 
         >>> new_items_ = {}
-        >>> update_location_name_repl_dict(new_items_, regex=False)
+        >>> update_loc_names_repl_dict(new_items_, regex=False)
     """
 
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
