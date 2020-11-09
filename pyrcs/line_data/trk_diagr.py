@@ -25,7 +25,7 @@ class TrackDiagrams:
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
     :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+        defaults to ``True``
     :type verbose: bool or int
 
     **Example**::
