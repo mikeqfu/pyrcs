@@ -445,7 +445,7 @@ class ELRMileages:
 
             if verbose == 2:
                 print("Collecting data of ELRs beginning with \"{}\"".format(
-                    beginning_with.upper()), end=" ... ")
+                    beginning_with), end=" ... ")
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
