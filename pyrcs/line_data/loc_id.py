@@ -17,7 +17,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 from pyhelpers.store import load_json, load_pickle, save, save_pickle
 
 from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_date, \
-    parse_date, parse_location_name, parse_table, parse_tr
+    parse_date, parse_location_name, parse_table, parse_tr, print_conn_err, \
+    is_internet_connected
 
 
 class LocationIdentifiers:
@@ -30,6 +31,9 @@ class LocationIdentifiers:
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -44,17 +48,20 @@ class LocationIdentifiers:
         http://www.railwaycodes.org.uk/crs/CRS0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/crs/CRS0.shtm')
+
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
+                                          as_date_type=False, verbose=verbose)
+
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
+
         self.Key = 'Location codes'  # key to location codes
         self.LUDKey = 'Last updated date'  # key to last updated date
 
@@ -64,15 +71,15 @@ class LocationIdentifiers:
             self.DataDir = cd_dat(
                 "line-data",
                 re.sub(r',| codes| and', '', self.Name.lower()).replace(" ", "-"))
-
         self.CurrentDataDir = copy.copy(self.DataDir)
+
         self.OSKey = 'Other systems'  # key to other systems codes
         self.OSPickle = self.OSKey.lower().replace(" ", "-")
         self.ANKey = 'Additional notes'  # key to additional notes
         self.MSCENKey = 'Multiple station codes explanatory note'
         self.MSCENPickle = self.MSCENKey.lower().replace(" ", "-")
 
-    def cdd_lc(self, *sub_dir, **kwargs):
+    def _cdd_locid(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -130,7 +137,7 @@ class LocationIdentifiers:
         return location_name_amendment_dict
 
     @staticmethod
-    def parse_note_page(note_url, parser='lxml'):
+    def parse_note_page(note_url, parser='lxml', verbose=False):
         """
         Parse addition note page.
 
@@ -139,6 +146,9 @@ class LocationIdentifiers:
         :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_,
             defaults to ``'lxml'``
         :type parser: str
+        :param verbose: whether to print relevant information in console
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
         :return: parsed texts
         :rtype: list
 
@@ -167,7 +177,12 @@ class LocationIdentifiers:
             4  Lichfield Trent Valley   LTV      LIF
         """
 
-        source = requests.get(note_url, headers=fake_requests_headers())
+        try:
+            source = requests.get(note_url, headers=fake_requests_headers())
+        except requests.ConnectionError:
+            print_conn_err(verbose=verbose)
+            return None
+
         web_page_text = bs4.BeautifulSoup(source.text, parser).find_all(['p', 'pre'])
         parsed_text = [x.text for x in web_page_text if isinstance(x.next_element, str)]
 
@@ -178,6 +193,7 @@ class LocationIdentifiers:
                     replace('\xa0', '').split('\n')
             else:
                 text = x.replace('\t', ' ').replace('\xa0', '')
+
             if isinstance(text, list):
                 text = [t.split(',') for t in text if t != '']
                 temp = pd.DataFrame(
@@ -190,6 +206,7 @@ class LocationIdentifiers:
                              'shown below']
                 if text != '' and not any(t in text for t in to_remove):
                     parsed_note.append(text)
+
         return parsed_note
 
     def collect_explanatory_note(self, confirmation_required=True, verbose=False):
@@ -229,7 +246,14 @@ class LocationIdentifiers:
             try:
                 note_url = self.HomeURL + '/crs/CRS2.shtm'
 
-                explanatory_note_ = self.parse_note_page(note_url)
+                explanatory_note_ = self.parse_note_page(note_url, verbose=False)
+
+                if explanatory_note_ is None:
+                    print("Failed. ") if verbose == 2 else ""
+                    if not is_internet_connected():
+                        print_conn_err(verbose=verbose)
+                    return None
+
                 explanatory_note, notes = {}, []
 
                 for x in explanatory_note_:
@@ -250,7 +274,8 @@ class LocationIdentifiers:
 
                 print("Done.") if verbose == 2 else ""
 
-                save_pickle(explanatory_note, self.cdd_lc(self.MSCENPickle + ".pickle"),
+                save_pickle(explanatory_note,
+                            self._cdd_locid(self.MSCENPickle + ".pickle"),
                             verbose=verbose)
 
             except Exception as e:
@@ -293,15 +318,15 @@ class LocationIdentifiers:
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_lc(self.MSCENPickle + ".pickle")
+        path_to_pickle = self._cdd_locid(self.MSCENPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             explanatory_note = load_pickle(path_to_pickle)
 
         else:
-            explanatory_note = self.collect_explanatory_note(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+            explanatory_note = self.collect_explanatory_note(confirmation_required=False,
+                                                             verbose=verbose_)
 
             if explanatory_note:  # additional_note is not None
                 if pickle_it and data_dir:
@@ -310,7 +335,9 @@ class LocationIdentifiers:
                                                   self.MSCENPickle + ".pickle")
                     save_pickle(explanatory_note, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been collected.".format(self.MSCENKey.lower()))
+                print("No data of {} has been freshly collected.".format(
+                    self.MSCENKey.lower()))
+                explanatory_note = load_pickle(path_to_pickle)
 
         return explanatory_note
 
@@ -345,13 +372,19 @@ class LocationIdentifiers:
         if confirmed("To collect data of {}?".format(self.OSKey.lower()),
                      confirmation_required=confirmation_required):
 
+            url = self.Catalogue['Other systems']
+
             if verbose == 2:
-                print("To collect data of {}".format(self.OSKey.lower()), end=" ... ")
+                print("Collecting data of {}".format(self.OSKey.lower()), end=" ... ")
 
             try:
-                url = self.Catalogue['Other systems']
-
                 source = requests.get(url, headers=fake_requests_headers())
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
 
                 # Get system name
@@ -374,7 +407,7 @@ class LocationIdentifiers:
 
                 print("Done.") if verbose == 2 else ""
 
-                save_pickle(other_systems_codes, self.cdd_lc(self.OSPickle + ".pickle"),
+                save_pickle(other_systems_codes, self._cdd_locid(self.OSPickle + ".pickle"),
                             verbose=verbose)
 
             except Exception as e:
@@ -417,23 +450,28 @@ class LocationIdentifiers:
             ['Other systems', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_lc(self.OSPickle + ".pickle")
+        path_to_pickle = self._cdd_locid(self.OSPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             other_systems_codes = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             other_systems_codes = self.collect_other_systems_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
+
             if other_systems_codes:  # other_systems_codes is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(
                         self.CurrentDataDir, self.OSPickle + ".pickle")
                     save_pickle(other_systems_codes, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of {} has been collected.".format(self.OSKey.lower()))
+                print("No data of {} has been freshly collected.".format(
+                    self.OSKey.lower()))
+                other_systems_codes = load_pickle(path_to_pickle)
 
         return other_systems_codes
 
@@ -470,30 +508,28 @@ class LocationIdentifiers:
         """
 
         assert initial in string.ascii_letters
-        path_to_pickle = self.cdd_lc("a-z", initial.lower() + ".pickle")
+        beginning_with = initial.upper()
+
+        path_to_pickle = self._cdd_locid("a-z", initial.lower() + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             location_codes_initial = load_pickle(path_to_pickle)
 
         else:
-            url = self.Catalogue[initial.upper()]
+            url = self.Catalogue[beginning_with]
 
             if verbose == 2:
-                print("To get the last update date for codes "
-                      "starting with \"{}\" ... ".format(initial.upper()), end="")
-            try:
-                last_updated_date = get_last_updated_date(url)
-                print("Done.") if verbose == 2 else ""
-            except Exception as e:
-                print("Failed. {}".format(e))
-                last_updated_date = None
+                print("Collecting data of locations starting with \"{}\"".format(
+                    beginning_with), end=" ... ")
 
-            if verbose == 2:
-                print(
-                    "To collect the codes of locations starting with \"{}\" ... ".format(
-                        initial.upper()), end="")
             try:
                 source = requests.get(url, headers=fake_requests_headers())
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 tbl_lst, header = parse_table(source, parser='lxml')
 
                 # Get a raw DataFrame
@@ -563,7 +599,7 @@ class LocationIdentifiers:
                                if 'see note' in crs_note]
                     web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
                     note_urls = [
-                        urllib.parse.urljoin(self.Catalogue[initial.upper()], x['href'])
+                        urllib.parse.urljoin(self.Catalogue[beginning_with], x['href'])
                         for x in web_page_text.find_all('a', href=True, text='note')]
                     additional_notes = [
                         self.parse_note_page(note_url)
@@ -587,8 +623,8 @@ class LocationIdentifiers:
                 location_codes, additional_notes = None, None
 
             location_codes_initial = dict(
-                zip([initial.upper(), self.ANKey, self.LUDKey],
-                    [location_codes, additional_notes, last_updated_date]))
+                zip([beginning_with, self.ANKey, self.LUDKey],
+                    [location_codes, additional_notes, get_last_updated_date(url)]))
 
             save_pickle(location_codes_initial, path_to_pickle, verbose=verbose)
 
@@ -631,11 +667,21 @@ class LocationIdentifiers:
              'Last updated date']
         """
 
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
         # Get every data table
         data = [
             self.collect_loc_codes_by_initial(
-                x, update, verbose=False if data_dir or not verbose else True)
+                x, update, verbose=verbose_ if is_internet_connected() else False)
             for x in string.ascii_lowercase]
+
+        if all(x is None for x in data):
+            if update:
+                print_conn_err(verbose=verbose)
+                print("No data of the {} has been freshly collected.".format(
+                    self.Key.lower()))
+            data = [self.collect_loc_codes_by_initial(x, update=False, verbose=verbose_)
+                    for x in string.ascii_lowercase]
 
         # Select DataFrames only
         location_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
@@ -658,11 +704,11 @@ class LocationIdentifiers:
 
         # Get other systems codes
         other_systems_codes = self.fetch_other_systems_codes(
-            update=update, verbose=verbose)[self.OSKey]
+            update=update, verbose=verbose_)[self.OSKey]
 
         # Get additional note
         additional_notes = self.fetch_explanatory_note(
-            update=update, verbose=verbose)
+            update=update, verbose=verbose_)
 
         # Create a dict to include all information
         location_codes = {self.Key: location_codes_data_table,
