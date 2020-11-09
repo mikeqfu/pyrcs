@@ -88,3 +88,4 @@ Miscellaneous utilities
     print_connection_error
     print_conn_err
     is_str_float
+    is_internet_connected
