@@ -6,6 +6,7 @@ import collections
 import datetime
 import os
 import re
+import socket
 import urllib.parse
 
 import bs4
@@ -1256,3 +1257,27 @@ def is_str_float(str_val):
         test_res = False
 
     return test_res
+
+
+def is_internet_connected():
+    """
+    Check the Internet connection.
+
+    :return: whether the machine is currently connected to the Internet
+    :rtype: bool
+
+    **Examples**::
+
+        >>> from pyrcs.utils import is_internet_connected
+
+        >>> is_internet_connected()
+    """
+
+    try:
+        netloc = urllib.parse.urlparse(homepage_url()).netloc
+        host = socket.gethostbyname(netloc)
+        s = socket.create_connection((host, 80))
+        s.close()
+        return True
+    except (socket.gaierror, OSError):
+        return False
