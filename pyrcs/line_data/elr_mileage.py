@@ -517,7 +517,7 @@ class ELRMileages:
             [5 rows x 5 columns]
         """
 
-        verbose_ = False if (data_dir or not verbose) else True
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
 
         data = [
             self.collect_elr_by_initial(
@@ -845,7 +845,7 @@ class ELRMileages:
             mileage_file = load_pickle(path_to_pickle)
 
         else:
-            verbose_ = False if data_dir or not verbose else True
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
             mileage_file = self.collect_mileage_file(
                 elr, parsed=True, confirmation_required=False, pickle_it=pickle_it,
                 verbose=verbose_)
