@@ -7,6 +7,8 @@ import copy
 import itertools
 import os
 import re
+import socket
+import urllib.error
 import urllib.parse
 
 import bs4
@@ -17,7 +19,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_tr
+    parse_tr, print_conn_err
 
 
 class Electrification:
@@ -29,6 +31,9 @@ class Electrification:
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -43,23 +48,31 @@ class Electrification:
         http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
-        self.Name = 'Electrification masts and related features'
-        self.HomeURL = homepage_url()
-        self.SourceURL = \
-            urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
+        self.Name = 'Electrification masts and related features'  #: Name of data category
+
+        self.HomeURL = homepage_url()  #: URL to the homepage
+        self.SourceURL = urllib.parse.urljoin(
+            self.HomeURL, '/electrification/mast_prefix0.shtm')
+
+        self.Date = get_last_updated_date(
+            url=self.SourceURL, parsed=True, as_date_type=False, verbose=verbose)
+
         self.Catalogue = get_catalogue(
             page_url=self.SourceURL, update=update, confirmation_required=False)
-        self.Date = get_last_updated_date(
-            url=self.SourceURL, parsed=True, as_date_type=False)
+
         self.Key = 'Electrification'
-        self.LUDKey = 'Last updated date'  # key to last updated date
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("line-data", self.Key.lower())
+        self.LUDKey = 'Last updated date'  #: Key to last updated date
+
+        if data_dir:
+            self.DataDir = validate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("line-data", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
+
         self.NationalNetworkKey = 'National network'
         self.NationalNetworkPickle = self.NationalNetworkKey.lower().replace(" ", "-")
         self.IndependentLinesKey = 'Independent lines'
@@ -69,7 +82,7 @@ class Electrification:
         self.TariffZonesKey = 'National network energy tariff zones'
         self.TariffZonesPickle = self.TariffZonesKey.lower().replace(" ", "-")
 
-    def cdd_elec(self, *sub_dir, **kwargs):
+    def _cdd_elec(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -82,6 +95,8 @@ class Electrification:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Electrification``
         :rtype: str
+
+        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
@@ -128,6 +143,12 @@ class Electrification:
             try:
                 source = requests.get(self.Catalogue[self.NationalNetworkKey],
                                       headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 national_network_ole_, h3 = {}, soup.find('h3')
@@ -167,7 +188,7 @@ class Electrification:
 
                     # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
                     data_key = h3.text.strip()
-                    
+
                     national_network_ole_.update({data_key: {'Codes': table, **notes}})
 
                     h3 = h3.find_next_sibling('h3')
@@ -176,14 +197,14 @@ class Electrification:
 
                 last_updated_date = \
                     get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
-                
+
                 national_network_ole = {
-                    self.NationalNetworkKey: national_network_ole_, 
+                    self.NationalNetworkKey: national_network_ole_,
                     self.LUDKey: last_updated_date}
 
                 print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(self.NationalNetworkPickle + ".pickle")
+                path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
                 save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -227,7 +248,7 @@ class Electrification:
             ['National network', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_elec(self.NationalNetworkPickle + ".pickle")
+        path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             national_network_ole = load_pickle(path_to_pickle)
@@ -243,17 +264,22 @@ class Electrification:
                     path_to_pickle = os.path.join(
                         self.CurrentDataDir, self.NationalNetworkPickle + ".pickle")
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of {} has been collected.".format(
+                print("No data of {} has been freshly collected.".format(
                     self.NationalNetworkKey.lower()))
+                national_network_ole = load_pickle(path_to_pickle)
 
         return national_network_ole
 
-    def get_indep_line_names(self):
+    def get_indep_line_names(self, verbose=False):
         """
         Get names of `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
+        :param verbose: whether to print relevant information in console
+            as the function runs, defaults to ``False``
+        :type verbose: bool
         :return: a list of independent line names
         :rtype: list
 
@@ -273,8 +299,13 @@ class Electrification:
              'Brighton and Rottingdean Seashore Electric Railway']
         """
 
-        source = requests.get(self.Catalogue[self.IndependentLinesKey],
-                              headers=fake_requests_headers())
+        try:
+            source = requests.get(self.Catalogue[self.IndependentLinesKey],
+                                  headers=fake_requests_headers())
+        except requests.exceptions.ConnectionError:
+            print_conn_err(verbose=verbose)
+            return None
+
         soup = bs4.BeautifulSoup(source.text, 'lxml')
         for x in soup.find_all('p'):
             if re.match(r'^Jump to: ', x.text):
@@ -321,6 +352,12 @@ class Electrification:
             try:
                 source = requests.get(self.Catalogue[self.IndependentLinesKey],
                                       headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 independent_lines_ole_ = {}
@@ -388,7 +425,7 @@ class Electrification:
 
                 pickle_filename = \
                     self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self.cdd_elec(pickle_filename)
+                path_to_pickle = self._cdd_elec(pickle_filename)
                 save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -433,7 +470,7 @@ class Electrification:
         """
 
         pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
-        path_to_pickle = self.cdd_elec(pickle_filename)
+        path_to_pickle = self._cdd_elec(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             independent_lines_ole = load_pickle(path_to_pickle)
@@ -448,9 +485,11 @@ class Electrification:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of {} has been collected.".format(
+                print("No data of {} has been freshly collected.".format(
                     self.IndependentLinesKey.lower()))
+                independent_lines_ole = load_pickle(path_to_pickle)
 
         return independent_lines_ole
 
@@ -491,6 +530,12 @@ class Electrification:
 
             try:
                 header, neutral_sections_data = pd.read_html(self.Catalogue[self.OhnsKey])
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 neutral_sections_data.columns = header.columns.to_list()
                 neutral_sections_data.fillna('', inplace=True)
 
@@ -500,7 +545,7 @@ class Electrification:
 
                 print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(self.OhnsPickle + ".pickle")
+                path_to_pickle = self._cdd_elec(self.OhnsPickle + ".pickle")
                 save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -544,7 +589,7 @@ class Electrification:
             ['National network neutral sections', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_elec(self.OhnsPickle + ".pickle")
+        path_to_pickle = self._cdd_elec(self.OhnsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             ohns_codes = load_pickle(path_to_pickle)
@@ -561,8 +606,9 @@ class Electrification:
                         os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes for {} has been collected.".format(
-                    self.OhnsKey.lower()))
+                print("No data of section codes for {} "
+                      "has been freshly collected.".format(self.OhnsKey.lower()))
+                ohns_codes = load_pickle(path_to_pickle)
 
         return ohns_codes
 
@@ -606,6 +652,12 @@ class Electrification:
             try:
                 source = requests.get(self.Catalogue[self.TariffZonesKey],
                                       headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
 
                 etz_ole_ = {}
@@ -648,7 +700,7 @@ class Electrification:
 
                 print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_elec(self.TariffZonesPickle + ".pickle")
+                path_to_pickle = self._cdd_elec(self.TariffZonesPickle + ".pickle")
                 save_pickle(etz_ole, path_to_pickle, verbose=verbose)
 
             except Exception as e:
@@ -692,7 +744,7 @@ class Electrification:
             ['National network energy tariff zones', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_elec(self.TariffZonesPickle + ".pickle")
+        path_to_pickle = self._cdd_elec(self.TariffZonesPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             etz_ole = load_pickle(path_to_pickle)
@@ -708,9 +760,11 @@ class Electrification:
                     path_to_pickle = os.path.join(self.CurrentDataDir,
                                                   self.TariffZonesPickle + ".pickle")
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
+
             else:
-                print("No data of {} has been collected.".format(
+                print("No data of {} has been freshly collected.".format(
                     self.TariffZonesKey.lower()))
+                etz_ole = load_pickle(path_to_pickle)
 
         return etz_ole
 
