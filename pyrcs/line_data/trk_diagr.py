@@ -14,7 +14,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url
+from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url, \
+    print_conn_err
 
 
 class TrackDiagrams:
@@ -23,6 +24,9 @@ class TrackDiagrams:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``False``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -37,16 +41,17 @@ class TrackDiagrams:
         http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """
 
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir=None, verbose=True):
         self.Name = 'Railway track diagrams (some samples)'
 
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/track/diagrams0.shtm')
 
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
+
         self.Key = 'Track diagrams'
         self.LUDKey = 'Last updated date'
-
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -75,7 +80,7 @@ class TrackDiagrams:
 
         return path
 
-    def get_track_diagrams_items(self, update=False):
+    def get_track_diagrams_items(self, update=False, verbose=False):
         """
         Get catalogue of track diagrams.
 
@@ -84,9 +89,22 @@ class TrackDiagrams:
         :type update: bool
         :return: catalogue of railway station data
         :rtype: dict
+        :param verbose: whether to print relevant information in console
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
 
-        See :py:class:`pyrcs.line_data.TrackDiagrams()
-        <pyrcs.line_data.track_diagrams.TrackDiagrams>`
+        **Example**::
+
+            >>> from pyrcs.line_data import TrackDiagrams
+
+            >>> td = TrackDiagrams()
+
+            >>> track_diagrams_items = td.get_track_diagrams_items()
+
+            >>> type(track_diagrams_items)
+            <class 'dict'>
+            >>> print(list(track_diagrams_items.keys())[0])
+            Track diagrams
         """
 
         cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
@@ -100,8 +118,9 @@ class TrackDiagrams:
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
-                print("Failed to establish a connection.")
-                return None
+                print_conn_err(update=update, verbose=verbose)
+                items = load_pickle(path_to_cat)
+                return items
 
             soup = bs4.BeautifulSoup(source.text, 'lxml')
             h3 = {x.get_text(strip=True)
@@ -151,13 +170,14 @@ class TrackDiagrams:
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
-                print("Failed to establish a connection.")
+                print_conn_err(verbose=verbose)
                 return None
 
             try:
                 track_diagrams_catalogue_ = {}
 
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
+
                 h3 = soup.find('h3', text=True, attrs={'class': None})
                 while h3:
                     # Description
@@ -196,13 +216,14 @@ class TrackDiagrams:
 
                 print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self._cdd_td(pickle_filename)
-                save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
-
             except Exception as e:
                 print("Failed. {}".format(e))
                 track_diagrams_catalogue = None
+
+            if track_diagrams_catalogue is not None:
+                pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+                path_to_pickle = self._cdd_td(pickle_filename)
+                save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
             return track_diagrams_catalogue
 
@@ -261,7 +282,8 @@ class TrackDiagrams:
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
             else:
-                print("No data of the sample {} catalogue has been collected.".format(
-                    self.Key.lower()))
+                print("No data of the sample {} catalogue "
+                      "has been freshly collected.".format(self.Key.lower()))
+                track_diagrams_catalogue = load_pickle(path_to_pickle)
 
         return track_diagrams_catalogue
