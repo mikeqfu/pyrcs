@@ -275,7 +275,7 @@ class TrackDiagrams:
             track_diagrams_catalogue = load_pickle(path_to_pickle)
 
         else:
-            verbose_ = False if data_dir or not verbose else True
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
 
             track_diagrams_catalogue = self.collect_sample_catalogue(
                 confirmation_required=False, verbose=verbose_)
