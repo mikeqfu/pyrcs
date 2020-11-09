@@ -1,15 +1,16 @@
 .. py:module:: pyrcs.utils
 
 utils
-=====
+-----
 
 .. automodule:: pyrcs.utils
     :noindex:
     :no-members:
+    :no-undoc-members:
     :no-inherited-members:
 
-Source homepage
----------------
+Specification of resource homepage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
@@ -17,17 +18,8 @@ Source homepage
 
     homepage_url
 
-Data directory
---------------
-
-.. autosummary::
-    :toctree: _generated/
-    :template: function.rst
-
-    cd_dat
-
-Converters
-----------
+Data converters
+~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
@@ -42,8 +34,8 @@ Converters
     shift_num_nr_mileage
     year_to_financial_year
 
-Parsers
--------
+Data parsers
+~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
@@ -55,40 +47,39 @@ Parsers
     parse_date
 
 Retrieval of useful information
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
     :template: function.rst
 
-    fake_requests_headers
+    get_site_map
     get_last_updated_date
     get_catalogue
     get_category_menu
-    get_station_data_catalogue
-    get_track_diagrams_items
 
 Rectification of location names
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
     :template: function.rst
 
-    fetch_location_names_repl_dict
-    update_location_name_repl_dict
+    fetch_loc_names_repl_dict
+    update_loc_names_repl_dict
 
-Fixers
-------
+Data fixers
+~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
     :template: function.rst
 
     fix_num_stanox
+    fix_nr_mileage_str
 
-Misc
-----
+Miscellaneous utilities
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
