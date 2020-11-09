@@ -1203,6 +1203,26 @@ def print_connection_error(verbose=False):
               "The current instance relies on local backup.")
 
 
+def print_conn_err(update=False, verbose=False):
+    """
+    Print a message about unsuccessful attempts to establish a connection to the Internet
+    for an instance of a class.
+
+    :param update: defaults to ``False``
+        (mostly complies with ``update`` in a parent function that uses this function)
+    :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``False``
+    :type verbose: bool or int
+    """
+
+    msg = "The Internet connection is not available."
+    if update and verbose:
+        print(msg + " Failed to update the data.")
+    elif verbose:
+        print(msg)
+
+
 def is_str_float(str_val):
     """
     Check if a string-type variable can express a float-type value.
