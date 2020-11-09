@@ -251,7 +251,7 @@ def yards_to_nr_mileage(yards):
     Convert yards to Network Rail mileages.
 
     :param yards: yards
-    :type yards: int or float, numpy.nan, None
+    :type yards: int or float or numpy.nan or None
     :return: Network Rail mileage in the form '<miles>.<yards>'
     :rtype: str
 
@@ -600,7 +600,7 @@ def parse_date(str_date, as_date_type=False):
         defaults to ``False``
     :type as_date_type: bool
     :return: parsed date as a string or `datetime.date`_
-    :rtype: str, datetime.date
+    :rtype: str or datetime.date
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
 
@@ -640,7 +640,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     :type confirmation_required: bool
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
-    :type verbose: bool, int
+    :type verbose: bool or int
     :return: dictionary of site map data
     :rtype: dict
 
@@ -677,9 +677,8 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
 
                 try:
                     source = requests.get(url, headers=fake_requests_headers())
-
                 except requests.exceptions.ConnectionError:
-                    print("Failed to establish a connection.")
+                    print_connection_error(verbose=verbose)
                     return None
 
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
@@ -764,7 +763,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     return site_map
 
 
-def get_last_updated_date(url, parsed=True, as_date_type=False):
+def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     """
     Get last update date.
 
@@ -776,7 +775,10 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
         defaults to ``False``
     :type as_date_type: bool
     :return: date of when the specified web page was last updated
-    :rtype: str, datetime.date, None
+    :rtype: str or datetime.date or None
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``False``
+    :type verbose: bool or int
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
 
@@ -806,7 +808,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False):
     try:
         source = requests.get(url, headers=fake_requests_headers())
     except requests.exceptions.ConnectionError:
-        print("Failed to establish a connection.")
+        print_connection_error(verbose=verbose)
         return None
 
     web_page_text = source.text
@@ -847,7 +849,7 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
     :type json_it: bool
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
-    :type verbose: bool
+    :type verbose: bool or int
     :return: catalogue in the form {'<title>': '<URL>'}
     :rtype: dict
 
@@ -886,7 +888,7 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
             try:
                 source = requests.get(page_url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
-                print("Failed to establish a connection.")
+                print_connection_error(verbose=verbose)
                 return None
 
             source_text = source.text
@@ -932,7 +934,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
     :type json_it: bool
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
-    :type verbose: bool
+    :type verbose: bool or int
     :return:
     :rtype: dict
 
@@ -963,7 +965,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
             try:
                 source = requests.get(menu_url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
-                print("Failed to establish a connection.")
+                print_connection_error(verbose=verbose)
                 return None
 
             soup = bs4.BeautifulSoup(source.text, 'lxml')
@@ -1078,7 +1080,7 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
     :type regex: bool
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
-    :type verbose: bool
+    :type verbose: bool or int
 
     **Example**:
 
@@ -1186,6 +1188,20 @@ def fix_nr_mileage_str(nr_mileage):
 
 
 # -- Miscellaneous helpers -------------------------------------------------------------
+
+def print_connection_error(verbose=False):
+    """
+    Print a message about unsuccessful attempts to establish a connection to the Internet.
+
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``False``
+    :type verbose: bool or int
+    """
+
+    if verbose:
+        print("Failed to establish an Internet connection. "
+              "The current instance relies on local backup.")
+
 
 def is_str_float(str_val):
     """
