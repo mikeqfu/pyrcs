@@ -122,12 +122,17 @@ class TrackDiagrams:
                 items = load_pickle(path_to_cat)
                 return items
 
-            soup = bs4.BeautifulSoup(source.text, 'lxml')
-            h3 = {x.get_text(strip=True)
-                  for x in soup.find_all('h3', text=True, attrs={'class': None})}
-            items = {self.Key: h3}
+            try:
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                h3 = {x.get_text(strip=True)
+                      for x in soup.find_all('h3', text=True, attrs={'class': None})}
+                items = {self.Key: h3}
 
-            save_pickle(items, path_to_cat)
+                save_pickle(items, path_to_cat)
+
+            except Exception as e:
+                print("Failed. {}".format(e))
+                items = None
 
         return items
 
@@ -170,6 +175,7 @@ class TrackDiagrams:
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
                 return None
 
@@ -216,14 +222,13 @@ class TrackDiagrams:
 
                 print("Done. ") if verbose == 2 else ""
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                track_diagrams_catalogue = None
-
-            if track_diagrams_catalogue is not None:
                 pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
                 path_to_pickle = self._cdd_td(pickle_filename)
                 save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
+
+            except Exception as e:
+                print("Failed. {}".format(e))
+                track_diagrams_catalogue = None
 
             return track_diagrams_catalogue
 
