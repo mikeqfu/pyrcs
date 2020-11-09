@@ -22,7 +22,7 @@ from pyhelpers.text import remove_punctuation
 
 from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_date, \
     is_str_float, parse_table, mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, \
-    yards_to_nr_mileage
+    yards_to_nr_mileage, print_conn_err, is_internet_connected
 
 
 class ELRMileages:
@@ -34,6 +34,9 @@ class ELRMileages:
     :param update: whether to check on update and proceed to update the package data, 
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -48,16 +51,20 @@ class ELRMileages:
         http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
         self.Name = "ELRs and mileages"
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/elrs/elr0.shtm')
-        self.Catalogue = get_catalogue(
-            self.SourceURL, update=update, confirmation_required=False)
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
+
+        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+                                       confirmation_required=False)
+
         self.Key = 'ELRs'  # key to ELRs and mileages
         self.LUDKey = 'Last updated date'  # key to last updated date
         if data_dir:
@@ -66,7 +73,7 @@ class ELRMileages:
             self.DataDir = cd_dat("line-data", self.Name.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_em(self, *sub_dir, mkdir=False, **kwargs):
+    def _cdd_em(self, *sub_dir, mkdir=False, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -81,6 +88,8 @@ class ELRMileages:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``ELRMileages``
         :rtype: str
+
+        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=mkdir, **kwargs)
@@ -427,7 +436,7 @@ class ELRMileages:
         assert initial in string.ascii_letters
         beginning_with = initial.upper()
 
-        path_to_pickle = self.cdd_em("a-z", beginning_with.lower() + ".pickle")
+        path_to_pickle = self._cdd_em("a-z", beginning_with.lower() + ".pickle")
         if os.path.isfile(path_to_pickle) and not update:
             elrs = load_pickle(path_to_pickle)
 
@@ -440,6 +449,12 @@ class ELRMileages:
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
+                return None
+
+            try:
                 records, header = parse_table(source, parser='lxml')
                 # Create a DataFrame of the requested table
                 data = pd.DataFrame(
@@ -502,10 +517,19 @@ class ELRMileages:
             [5 rows x 5 columns]
         """
 
+        verbose_ = False if (data_dir or not verbose) else True
+
         data = [
             self.collect_elr_by_initial(
-                x, update, verbose=False if data_dir or not verbose else True)
+                x, update, verbose=verbose_ if is_internet_connected() else False)
             for x in string.ascii_lowercase]
+
+        if all(x is None for x in data):
+            if update:
+                print_conn_err(verbose=verbose)
+                print("No data of the {} has been freshly collected.".format(self.Key))
+            data = [self.collect_elr_by_initial(x, update=False, verbose=verbose_)
+                    for x in string.ascii_lowercase]
 
         # Select DataFrames only
         elrs_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
@@ -606,15 +630,22 @@ class ELRMileages:
             if confirmed("To collect mileage file of \"{}\"?".format(elr.upper()),
                          confirmation_required=confirmation_required):
 
+                # The URL of the mileage file for the ELR
+                url = self.HomeURL + \
+                      '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
+
                 if verbose == 2:
                     print("Collecting mileage file of \"{}\"".format(elr.upper()),
                           end=" ... ")
-                try:
 
-                    # The URL of the mileage file for the ELR
-                    url = self.HomeURL + \
-                          '/elrs/_mileages/{}/{}.shtm'.format(elr[0].lower(), elr.lower())
+                try:
                     source = requests.get(url, headers=fake_requests_headers())
+                except requests.ConnectionError:
+                    print("Failed. ") if verbose == 2 else ""
+                    print_conn_err(verbose=verbose)
+                    return None
+
+                try:
                     source_text = bs4.BeautifulSoup(source.text, 'lxml')
 
                     line_name = source_text.find('h3').text
@@ -752,7 +783,7 @@ class ELRMileages:
                     print("Done. ") if verbose == 2 else ""
 
                     if pickle_it:
-                        path_to_pickle = self.cdd_em(
+                        path_to_pickle = self._cdd_em(
                             "mileage-files", elr[0].lower(), elr + ".pickle", mkdir=True)
 
                         if os.path.basename(path_to_pickle) == "prn.pickle":
@@ -805,7 +836,7 @@ class ELRMileages:
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
         """
 
-        path_to_pickle = self.cdd_em("mileage-files", elr[0].lower(), elr + ".pickle")
+        path_to_pickle = self._cdd_em("mileage-files", elr[0].lower(), elr + ".pickle")
 
         if os.path.basename(path_to_pickle) == "prn.pickle":
             path_to_pickle = path_to_pickle.replace("prn.pickle", "prn_x.pickle")
@@ -825,9 +856,10 @@ class ELRMileages:
                     path_to_pickle = os.path.join(self.CurrentDataDir,
                                                   os.path.basename(path_to_pickle))
                     save_pickle(mileage_file, path_to_pickle, verbose=verbose)
+
             else:
-                print(
-                    "No mileage file has been collected for \"{}\".".format(elr.upper()))
+                print("No mileage file of \"{}\" has been {}collected.".format(
+                    elr.upper(), "freshly " if update else ""))
 
         return mileage_file
 
