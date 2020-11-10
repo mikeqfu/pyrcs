@@ -17,15 +17,16 @@ import re
 import string
 import urllib.parse
 
+import bs4
 import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.store import load_pickle, save_pickle, save_json, load_json
 
-from pyrcs.utils import cd_dat, get_last_updated_date, get_station_data_catalogue, \
-    homepage_url, parse_location_name, parse_table
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    parse_location_name, parse_table, is_internet_connected, print_conn_err
 
 
 class Stations:
@@ -34,9 +35,9 @@ class Stations:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str, None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
-    :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -51,13 +52,17 @@ class Stations:
         http://www.railwaycodes.org.uk/stations/station0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, verbose=True):
         """
         Constructor method.
         """
         self.Name = 'Stations'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/stations/station0.shtm')
+
+        self.LUDKey = 'Last updated date'  # key to last updated date
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
 
         self.StnKey = 'Railway station data'
         self.BilingualKey = 'Bilingual names'
@@ -68,17 +73,13 @@ class Stations:
         self.ARKey = 'Access rights'
         self.BarrierErrKey = 'Barrier error codes'
 
-        self.LUDKey = 'Last updated date'  # key to last updated date
-
-        self.Catalogue = get_station_data_catalogue(
-            self.SourceURL, self.StnKey, update=update)
-
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("other-assets", self.Name.lower())
+        if data_dir:
+            self.DataDir = validate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_stn(self, *sub_dir, **kwargs):
+    def _cdd_stn(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -98,6 +99,91 @@ class Stations:
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
 
         return path
+
+    def get_station_data_catalogue(self, update=False, verbose=False):
+        """
+        Get catalogue of railway station data.
+
+        :param update: whether to check on update and proceed to update the package data,
+            defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console
+            as the function runs, defaults to ``False``
+        :type verbose: bool or int
+        :return: catalogue of railway station data
+        :rtype: dict
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import Stations
+
+            >>> stn = Stations()
+
+            >>> stn_data_catalogue = stn.get_station_data_catalogue()
+
+            >>> type(stn_data_catalogue)
+            <class 'dict'>
+            >>> print(list(stn_data_catalogue.keys()))
+            ['Railway station data',
+             'Sponsored signs',
+             'International',
+             'Trivia',
+             'Access rights',
+             'Barrier error codes']
+        """
+
+        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
+            '.shtm', '.json').split('/') if x)
+        path_to_cat = cd_dat("catalogue", cat_json)
+
+        if os.path.isfile(path_to_cat) and not update:
+            catalogue = load_json(path_to_cat)
+
+        else:
+            if verbose == 2:
+                print("Collecting a catalogue of {} data".format(self.StnKey.lower()),
+                      end=" ... ")
+
+            try:
+                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(update=update, verbose=verbose)
+                catalogue = load_json(path_to_cat)
+
+            else:
+                try:
+                    cold_soup = bs4.BeautifulSoup(source.text, 'lxml').find(
+                        'p', {'class': 'appeal'}).find_next('p').find_next('p')
+                    hot_soup = {
+                        a.text: urllib.parse.urljoin(self.SourceURL, a.get('href'))
+                        for a in cold_soup.find_all('a')}
+
+                    catalogue = {self.StnKey: None}
+                    for k, v in hot_soup.items():
+                        sub_cat = get_catalogue(v, update=True,
+                                                confirmation_required=False,
+                                                json_it=False)
+                        if sub_cat != hot_soup:
+                            if k == 'Introduction':
+                                catalogue.update({self.StnKey: {k: v, **sub_cat}})
+                            else:
+                                catalogue.update({k: sub_cat})
+                        else:
+                            if k in ('Bilingual names', 'Not served by SFO'):
+                                catalogue[self.StnKey].update({k: v})
+                            else:
+                                catalogue.update({k: v})
+
+                    print("Done. ") if verbose == 2 else ""
+
+                    save_json(catalogue, path_to_cat, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
+                    catalogue = None
+
+        return catalogue
 
     @staticmethod
     def parse_current_operator(x):
@@ -156,7 +242,9 @@ class Stations:
             ['A', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_stn("a-z", initial.lower() + ".pickle")
+        path_to_pickle = self._cdd_stn("a-z", initial.lower() + ".pickle")
+
+        beginning_with = initial.upper()
 
         if os.path.isfile(path_to_pickle) and not update:
             railway_station_data = load_pickle(path_to_pickle)
@@ -164,81 +252,93 @@ class Stations:
         else:
             url = self.SourceURL.replace('station0', 'station{}'.format(initial.lower()))
 
-            if initial.upper() not in list(self.Catalogue[self.StnKey].keys()):
-                print("No data is available for signal box codes "
-                      "beginning with \"{}\".".format(initial.upper()))
-                railway_station_table, last_updated_date = None, None
+            railway_station_data = {beginning_with: None, self.LUDKey: None}
+
+            if verbose == 2:
+                print("Collecting data of {} beginning with \"{}\"".format(
+                    self.StnKey.lower(), beginning_with), end=" ... ")
+
+            stn_data_catalogue = self.get_station_data_catalogue()
+
+            if beginning_with not in list(stn_data_catalogue[self.StnKey].keys()):
+                if verbose == 2:
+                    print("No data is available.")
+                    # print("No data is available for signal box codes "
+                    #       "beginning with \"{}\".".format(beginning_with))
+                # railway_station_table, last_updated_date = None, None
+                pass
 
             else:
                 try:
                     source = requests.get(url, headers=fake_requests_headers())
-                    records, header = parse_table(source, parser='lxml')
-                    # Create a DataFrame of the requested table
-                    dat = [[x.replace('=', 'See').strip('\xa0') for x in i]
-                           for i in records]
-                    col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
-                    railway_station_table = pd.DataFrame(dat, columns=col)
+                except requests.exceptions.ConnectionError:
+                    print("Failed. ") if verbose == 2 else ""
+                    print_conn_err(verbose=verbose)
 
-                    def parse_degrees(x):
-                        if x == '':
-                            y = np.nan
-                        else:
-                            y = float(x.replace('c.', '') if x.startswith('c.') else x)
-                        return y
+                else:
+                    try:
+                        records, header = parse_table(source, parser='lxml')
+                        # Create a DataFrame of the requested table
+                        dat = [[x.replace('=', 'See').strip('\xa0') for x in i]
+                               for i in records]
+                        col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
+                        railway_station_table = pd.DataFrame(dat, columns=col)
 
-                    degrees_col = ['Degrees Longitude', 'Degrees Latitude']
-                    railway_station_table[degrees_col] = \
-                        railway_station_table[degrees_col].applymap(parse_degrees)
-                    railway_station_table['Grid Reference'] = \
-                        railway_station_table['Grid Reference'].map(
-                            lambda x: x.replace('c.', '') if x.startswith('c.') else x)
+                        def parse_degrees(x):
+                            if x == '':
+                                y = np.nan
+                            else:
+                                y = float(x.replace('c.', '') if x.startswith('c.') else x)
+                            return y
 
-                    railway_station_table[['Station', 'Station_Note']] = \
-                        railway_station_table.Station.map(parse_location_name).apply(
-                            pd.Series)
+                        degrees_col = ['Degrees Longitude', 'Degrees Latitude']
+                        railway_station_table[degrees_col] = \
+                            railway_station_table[degrees_col].applymap(parse_degrees)
+                        railway_station_table['Grid Reference'] = \
+                            railway_station_table['Grid Reference'].map(
+                                lambda x: x.replace('c.', '') if x.startswith('c.') else x)
 
-                    # Operator
-                    temp = list(
-                        railway_station_table.Operator.map(self.parse_current_operator))
-                    length = len(max(temp, key=len))
-                    col_names_current = ['Operator', 'Date']
-                    prev_no = list(
-                        itertools.chain.from_iterable(
-                            itertools.repeat(x, 2) for x in list(range(1, length))))
-                    col_names = zip(col_names_current * (length - 1), prev_no)
-                    col_names = col_names_current + [
-                        '_'.join(['Prev', x, str(d)]) for x, d in col_names]
+                        railway_station_table[['Station', 'Station_Note']] = \
+                            railway_station_table.Station.map(parse_location_name).apply(
+                                pd.Series)
 
-                    for i in range(len(temp)):
-                        if len(temp[i]) < length:
-                            temp[i] += [(None, None)] * (length - len(temp[i]))
+                        # Operator
+                        temp = list(
+                            railway_station_table.Operator.map(self.parse_current_operator))
+                        length = len(max(temp, key=len))
+                        col_names_current = ['Operator', 'Date']
+                        prev_no = list(
+                            itertools.chain.from_iterable(
+                                itertools.repeat(x, 2) for x in list(range(1, length))))
+                        col_names = zip(col_names_current * (length - 1), prev_no)
+                        col_names = col_names_current + [
+                            '_'.join(['Prev', x, str(d)]) for x, d in col_names]
 
-                    temp = pd.DataFrame(temp)
-                    operators = [pd.DataFrame(temp)[col].apply(pd.Series)
-                                 for col in temp.columns]
-                    operators = pd.concat(operators, axis=1, sort=False)
-                    operators.columns = col_names
+                        for i in range(len(temp)):
+                            if len(temp[i]) < length:
+                                temp[i] += [(None, None)] * (length - len(temp[i]))
 
-                    railway_station_table.drop('Operator', axis=1, inplace=True)
-                    railway_station_table = railway_station_table.join(operators)
+                        temp = pd.DataFrame(temp)
+                        operators = [pd.DataFrame(temp)[col].apply(pd.Series)
+                                     for col in temp.columns]
+                        operators = pd.concat(operators, axis=1, sort=False)
+                        operators.columns = col_names
 
-                except Exception as e:
-                    print("Failed to collect station location codes "
-                          "beginning with \"{}\". {}".format(initial.upper(), e))
-                    railway_station_table = None
+                        railway_station_table.drop('Operator', axis=1, inplace=True)
+                        railway_station_table = railway_station_table.join(operators)
 
-                try:
-                    last_updated_date = get_last_updated_date(url)
-                except Exception as e:
-                    print("Failed to find the last updated date "
-                          "of the station location codes beginning with "
-                          "\"{}\" {}".format(initial.upper(), e))
-                    last_updated_date = None
+                        last_updated_date = get_last_updated_date(url)
 
-            railway_station_data = {initial.upper(): railway_station_table,
-                                    self.LUDKey: last_updated_date}
+                        railway_station_data.update(
+                            {beginning_with: railway_station_table,
+                             self.LUDKey: last_updated_date})
 
-            save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
+                        print("Done. ") if verbose == 2 else ""
+
+                        save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
+
+                    except Exception as e:
+                        print("Failed. {}".format(e))
 
         return railway_station_data
 
@@ -291,9 +391,21 @@ class Stations:
             [5 rows x 25 columns]
         """
 
-        verbose_ = False if data_dir or not verbose else True
-        data_sets = [self.collect_station_data_by_initial(x, update, verbose_)
-                     for x in string.ascii_lowercase]
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
+        data_sets = [
+            self.collect_station_data_by_initial(
+                x, update=update, verbose=verbose_ if is_internet_connected() else False)
+            for x in string.ascii_lowercase]
+
+        if all(d[x] is None for d, x in zip(data_sets, string.ascii_uppercase)):
+            if update:
+                print_conn_err(verbose=verbose)
+                print("No data of the {} has been freshly collected.".format(
+                    self.StnKey.lower()))
+            data_sets = [
+                self.collect_station_data_by_initial(x, update=False, verbose=verbose_)
+                for x in string.ascii_lowercase]
 
         railway_station_tables = (
             item[x] for item, x in zip(data_sets, string.ascii_uppercase))
