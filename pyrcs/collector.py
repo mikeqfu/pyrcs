@@ -135,11 +135,7 @@ class LineData:
 
             # Line of routes
             print(f"\n{self.LOR.Name}:")
-            _ = self.LOR.get_keys_to_prefixes(prefixes_only=True, update=True,
-                                              verbose=verbose)
-            _ = self.LOR.get_keys_to_prefixes(prefixes_only=False, update=True,
-                                              verbose=verbose)
-            _ = self.LOR.get_lor_page_urls(update=True, verbose=verbose)
+            _ = self.LOR.update_catalogue(confirmation_required=False, verbose=verbose)
             _ = self.LOR.fetch_lor_codes(update=True, verbose=verbose)
             _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
 
@@ -191,7 +187,7 @@ class OtherAssets:
         [5 rows x 25 columns]
 
         >>> # To get data of signal boxes
-        >>> signal_boxes_data = oa.SignalBoxes.fetch_signal_box_prefix_codes()
+        >>> signal_boxes_data = oa.SignalBoxes.fetch_prefix_codes()
         >>> type(signal_boxes_data)
         <class 'dict'>
         >>> print(list(signal_boxes_data.keys()))
@@ -223,7 +219,7 @@ class OtherAssets:
         self.SignalBoxes = sig_box.SignalBoxes(update=update)
         self.Tunnels = tunnel.Tunnels(update=update)
         self.Viaducts = viaduct.Viaducts(update=update)
-        self.Stations = station.Stations(update=update)
+        self.Stations = station.Stations()
         self.Depots = depot.Depots(update=update)
         self.Features = feature.Features(update=update)
 
@@ -253,7 +249,7 @@ class OtherAssets:
 
         # Signal boxes
         print(f"\n{self.SignalBoxes.Name}:")
-        _ = self.SignalBoxes.fetch_signal_box_prefix_codes(update=True, verbose=verbose)
+        _ = self.SignalBoxes.fetch_prefix_codes(update=True, verbose=verbose)
         _ = self.SignalBoxes.fetch_non_national_rail_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
@@ -266,12 +262,13 @@ class OtherAssets:
 
         # Viaducts
         print(f"\n{self.Viaducts.Name}:")
-        _ = self.Viaducts.fetch_railway_viaducts(update=True, verbose=verbose)
+        _ = self.Viaducts.fetch_viaduct_codes(update=True, verbose=verbose)
 
         time.sleep(time_gap)
 
         # Stations
         print(f"\n{self.Stations.Name}:")
+        _ = self.Stations.get_station_data_catalogue(update=True, verbose=verbose)
         _ = self.Stations.fetch_station_data(update=True, verbose=verbose)
 
         time.sleep(time_gap)
