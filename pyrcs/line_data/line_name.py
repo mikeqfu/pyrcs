@@ -122,55 +122,56 @@ class LineNames:
             if verbose == 2:
                 print("Collecting the railway {}".format(self.Key.lower()), end=" ... ")
 
+            line_names_data = None
+
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                row_lst, header = parse_table(source, parser='lxml')
-                line_names = pd.DataFrame(
-                    [[r.replace('\xa0', '').strip() for r in row] for row in row_lst],
-                    columns=header)
+            else:
+                try:
+                    row_lst, header = parse_table(source, parser='lxml')
+                    line_names = pd.DataFrame(
+                        [[r.replace('\xa0', '').strip() for r in row] for row in row_lst],
+                        columns=header)
 
-                # Parse route column
-                def parse_route_column(x):
-                    if 'Watford - Euston suburban route' in x:
-                        route, route_note = 'Watford - Euston suburban route', x
-                    elif ', including Moorgate - Farringdon' in x:
-                        route_note = 'including Moorgate - Farringdon'
-                        route = x.replace(', including Moorgate - Farringdon', '')
-                    elif re.match(r'.+(?= \[\')', x):
-                        route, route_note = re.split(r' \[\'\(?', x)
-                        route_note = route_note.strip(")']")
-                    elif re.match(r'.+\)$', x):
-                        if re.match(r'.+(?= - \()', x):
-                            route, route_note = x, None
+                    # Parse route column
+                    def parse_route_column(x):
+                        if 'Watford - Euston suburban route' in x:
+                            route, route_note = 'Watford - Euston suburban route', x
+                        elif ', including Moorgate - Farringdon' in x:
+                            route_note = 'including Moorgate - Farringdon'
+                            route = x.replace(', including Moorgate - Farringdon', '')
+                        elif re.match(r'.+(?= \[\')', x):
+                            route, route_note = re.split(r' \[\'\(?', x)
+                            route_note = route_note.strip(")']")
+                        elif re.match(r'.+\)$', x):
+                            if re.match(r'.+(?= - \()', x):
+                                route, route_note = x, None
+                            else:
+                                route, route_note = re.split(r' \(\[?\'?', x)
+                                route_note = route_note.rstrip('\'])')
                         else:
-                            route, route_note = re.split(r' \(\[?\'?', x)
-                            route_note = route_note.rstrip('\'])')
-                    else:
-                        route, route_note = x, None
-                    return route, route_note
+                            route, route_note = x, None
+                        return route, route_note
 
-                line_names[['Route', 'Route_note']] = \
-                    line_names.Route.map(parse_route_column).apply(pd.Series)
+                    line_names[['Route', 'Route_note']] = \
+                        line_names.Route.map(parse_route_column).apply(pd.Series)
 
-                last_updated_date = get_last_updated_date(self.SourceURL)
+                    last_updated_date = get_last_updated_date(self.SourceURL)
 
-                line_names_data = {self.Key: line_names, self.LUDKey: last_updated_date}
+                    line_names_data = {self.Key: line_names, self.LUDKey: last_updated_date}
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self._cdd_ln(pickle_filename)
-                save_pickle(line_names_data, path_to_pickle, verbose=verbose)
+                    pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+                    path_to_pickle = self._cdd_ln(pickle_filename)
+                    save_pickle(line_names_data, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                line_names_data = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return line_names_data
 
