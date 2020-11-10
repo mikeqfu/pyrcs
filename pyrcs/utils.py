@@ -643,7 +643,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
         defaults to ``False``
     :type verbose: bool or int
     :return: dictionary of site map data
-    :rtype: dict
+    :rtype: dict or None
 
     **Examples**::
 
@@ -667,99 +667,100 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
         site_map = load_pickle(path_to_pickle)
 
     else:
-        try:
-            if confirmed("To collect the site map?",
-                         confirmation_required=confirmation_required):
+        site_map = None
 
-                if verbose == 2:
-                    print("Updating the package data", end=" ... ")
+        if confirmed("To collect the site map?",
+                     confirmation_required=confirmation_required):
 
-                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
+            if verbose == 2:
+                print("Updating the package data", end=" ... ")
 
-                try:
-                    source = requests.get(url, headers=fake_requests_headers())
-                except requests.exceptions.ConnectionError:
-                    print_connection_error(verbose=verbose)
-                    return None
+            url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
 
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
-
-                # <h3>
-                h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
-
-                site_map = {}
-
-                # Next <ol>
-                next_ol = soup.find('h3').find_next('ol')
-
-                for i in range(len(h3)):
-
-                    li_tag = next_ol.findChildren('li')
-                    ol_tag = next_ol.findChildren('ol')
-
-                    if not ol_tag:
-                        dat_ = [x.find('a').get('href') for x in li_tag]
-                        if len(dat_) == 1:
-                            dat = urllib.parse.urljoin(homepage_url(), dat_[0])
-                        else:
-                            dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_]
-                        site_map.update({h3[i]: dat})
-
-                    else:
-                        site_map_ = {}
-                        for ol in ol_tag:
-                            k = ol.find_parent('ol').find_previous('li').get_text(
-                                strip=True)
-
-                            if k not in site_map_.keys():
-                                sub_li = ol.findChildren('li')
-                                sub_ol = ol.findChildren('ol')
-
-                                if sub_ol:
-                                    cat0 = [x.get_text(strip=True) for x in sub_li
-                                            if not x.find('a')]
-                                    dat0 = [[urllib.parse.urljoin(homepage_url(),
-                                                                  a.get('href'))
-                                             for a in x.find_all('a')] for x in sub_ol]
-                                    cat_name = ol.find_previous('li').get_text(strip=True)
-                                    if cat0:
-                                        site_map_.update(
-                                            {cat_name: dict(zip(cat0, dat0))})
-                                    else:
-                                        site_map_.update(
-                                            {cat_name: [x_ for x in dat0 for x_ in x]})
-                                    # cat_ = [x for x in cat_ if x not in cat0]
-
-                                else:
-                                    cat_name_ = ol.find_previous('li').get_text(
-                                        strip=True)
-                                    pat = r'.+(?= \(the thousands of mileage files)'
-                                    cat_name = re.search(pat, cat_name_).group(0) \
-                                        if re.match(pat, cat_name_) else cat_name_
-
-                                    dat0 = [urllib.parse.urljoin(homepage_url(),
-                                                                 x.a.get('href'))
-                                            for x in sub_li]
-
-                                    site_map_.update({cat_name: dat0})
-
-                        site_map.update({h3[i]: site_map_})
-
-                    if i < len(h3) - 1:
-                        next_ol = next_ol.find_next('h3').find_next('ol')
-
-                print("Done. ") if verbose == 2 else ""
+            try:
+                source = requests.get(url, headers=fake_requests_headers())
+            except requests.exceptions.ConnectionError:
+                print_conn_err(update=update, verbose=True if update else verbose)
 
             else:
-                print("Cancelled. ") if verbose == 2 else ""
-                site_map = load_pickle(path_to_pickle)
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-        except Exception as e:
-            site_map = None
-            print("Failed. {}".format(e))
+                    # <h3>
+                    h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
 
-        if site_map is not None:
-            save_pickle(site_map, path_to_pickle, verbose=verbose)
+                    site_map = {}
+
+                    # Next <ol>
+                    next_ol = soup.find('h3').find_next('ol')
+
+                    for i in range(len(h3)):
+
+                        li_tag = next_ol.findChildren('li')
+                        ol_tag = next_ol.findChildren('ol')
+
+                        if not ol_tag:
+                            dat_ = [x.find('a').get('href') for x in li_tag]
+                            if len(dat_) == 1:
+                                dat = urllib.parse.urljoin(homepage_url(), dat_[0])
+                            else:
+                                dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_]
+                            site_map.update({h3[i]: dat})
+
+                        else:
+                            site_map_ = {}
+                            for ol in ol_tag:
+                                k = ol.find_parent('ol').find_previous('li').get_text(
+                                    strip=True)
+
+                                if k not in site_map_.keys():
+                                    sub_li = ol.findChildren('li')
+                                    sub_ol = ol.findChildren('ol')
+
+                                    if sub_ol:
+                                        cat0 = [x.get_text(strip=True) for x in sub_li
+                                                if not x.find('a')]
+                                        dat0 = [[urllib.parse.urljoin(homepage_url(),
+                                                                      a.get('href'))
+                                                 for a in x.find_all('a')] for x in sub_ol]
+                                        cat_name = ol.find_previous('li').get_text(strip=True)
+                                        if cat0:
+                                            site_map_.update(
+                                                {cat_name: dict(zip(cat0, dat0))})
+                                        else:
+                                            site_map_.update(
+                                                {cat_name: [x_ for x in dat0 for x_ in x]})
+                                        # cat_ = [x for x in cat_ if x not in cat0]
+
+                                    else:
+                                        cat_name_ = ol.find_previous('li').get_text(
+                                            strip=True)
+                                        pat = r'.+(?= \(the thousands of mileage files)'
+                                        cat_name = re.search(pat, cat_name_).group(0) \
+                                            if re.match(pat, cat_name_) else cat_name_
+
+                                        dat0 = [urllib.parse.urljoin(homepage_url(),
+                                                                     x.a.get('href'))
+                                                for x in sub_li]
+
+                                        site_map_.update({cat_name: dat0})
+
+                            site_map.update({h3[i]: site_map_})
+
+                        if i < len(h3) - 1:
+                            next_ol = next_ol.find_next('h3').find_next('ol')
+
+                    print("Done. ") if verbose == 2 else ""
+
+                    if site_map is not None:
+                        save_pickle(site_map, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
+
+        else:
+            print("Cancelled. ") if verbose == 2 else ""
+            site_map = load_pickle(path_to_pickle)
 
     return site_map
 
@@ -775,11 +776,11 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     :param as_date_type: whether to return the date as `datetime.date`_,
         defaults to ``False``
     :type as_date_type: bool
-    :return: date of when the specified web page was last updated
-    :rtype: str or datetime.date or None
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
     :type verbose: bool or int
+    :return: date of when the specified web page was last updated
+    :rtype: str or datetime.date or None
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
 
@@ -787,48 +788,50 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
 
         >>> from pyrcs.utils import get_last_updated_date
 
-        >>> last_update_date_ = get_last_updated_date(
+        >>> last_upd_date = get_last_updated_date(
         ...     url='http://www.railwaycodes.org.uk/crs/CRSa.shtm', parsed=True,
         ...     as_date_type=False)
-        >>> type(last_update_date_)
+        >>> type(last_upd_date)
         <class 'str'>
 
-        >>> last_update_date_ = get_last_updated_date(
+        >>> last_upd_date = get_last_updated_date(
         ...     url='http://www.railwaycodes.org.uk/crs/CRSa.shtm', parsed=True,
         ...     as_date_type=True)
-        >>> type(last_update_date_)
+        >>> type(last_upd_date)
         <class 'datetime.date'>
 
-        >>> last_update_date_ = get_last_updated_date(
+        >>> last_upd_date = get_last_updated_date(
         ...     url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
-        >>> print(last_update_date_)
+        >>> print(last_upd_date)
         None
     """
+
+    last_update_date = None
 
     # Request to get connected to the given url
     try:
         source = requests.get(url, headers=fake_requests_headers())
     except requests.exceptions.ConnectionError:
         print_connection_error(verbose=verbose)
-        return None
-
-    web_page_text = source.text
-
-    # Parse the text scraped from the requested web page
-    parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')
-    # Find 'Last update date'
-    update_tag = parsed_text.find('p', {'class': 'update'})
-
-    if update_tag is not None:
-        last_update_date = update_tag.text
-
-        # Decide whether to convert the date's format
-        if parsed:
-            # Convert the date to "yyyy-mm-dd" format
-            last_update_date = parse_date(last_update_date, as_date_type)
 
     else:
-        last_update_date = None  # print('Information not available.')
+        web_page_text = source.text
+
+        # Parse the text scraped from the requested web page
+        parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')
+        # Find 'Last update date'
+        update_tag = parsed_text.find('p', {'class': 'update'})
+
+        if update_tag is not None:
+            last_update_date = update_tag.text
+
+            # Decide whether to convert the date's format
+            if parsed:
+                # Convert the date to "yyyy-mm-dd" format
+                last_update_date = parse_date(last_update_date, as_date_type)
+
+        # else:
+        #     last_update_date = None  # print('Information not available.')
 
     return last_update_date
 
@@ -852,7 +855,7 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
         defaults to ``False``
     :type verbose: bool or int
     :return: catalogue in the form {'<title>': '<URL>'}
-    :rtype: dict
+    :rtype: dict or None
 
     **Examples**::
 
@@ -880,9 +883,11 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
     path_to_cat_json = cd_dat("catalogue", cat_json, mkdir=True)
 
     if os.path.isfile(path_to_cat_json) and not update:
-        catalogue = load_json(path_to_cat_json, verbose=verbose)
+        catalogue = load_json(path_to_cat_json)
 
     else:
+        catalogue = None
+
         if confirmed("To collect/update catalogue?",
                      confirmation_required=confirmation_required):
 
@@ -890,30 +895,35 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
                 source = requests.get(page_url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_connection_error(verbose=verbose)
-                return None
 
-            source_text = source.text
-            source.close()
+            else:
+                try:
+                    source_text = source.text
+                    source.close()
 
-            try:
-                cold_soup = bs4.BeautifulSoup(
-                    source_text, 'lxml').find('div', attrs={'class': 'fixed'})
-                catalogue = {
-                    a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
-                    for a in cold_soup.find_all('a')}
-            except AttributeError:
-                cold_soup = bs4.BeautifulSoup(
-                    source_text, 'lxml').find('h1').find_all_next('a')
-                catalogue = {
-                    a.get_text(strip=True): urllib.parse.urljoin(page_url, a.get('href'))
-                    for a in cold_soup}
+                    try:
+                        cold_soup = bs4.BeautifulSoup(
+                            source_text, 'lxml').find('div', attrs={'class': 'fixed'})
+                        catalogue = {
+                            a.get_text(strip=True):
+                                urllib.parse.urljoin(page_url, a.get('href'))
+                            for a in cold_soup.find_all('a')}
+                    except AttributeError:
+                        cold_soup = bs4.BeautifulSoup(
+                            source_text, 'lxml').find('h1').find_all_next('a')
+                        catalogue = {
+                            a.get_text(strip=True):
+                                urllib.parse.urljoin(page_url, a.get('href'))
+                            for a in cold_soup}
+
+                    if json_it and catalogue is not None:
+                        save_json(catalogue, path_to_cat_json, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed to get the category menu. {}".format(e))
 
         else:
             print("The catalogue for the requested data has not been acquired.")
-            catalogue = None
-
-        if json_it and catalogue is not None:
-            save_json(catalogue, path_to_cat_json, verbose=verbose)
 
     return catalogue
 
@@ -936,8 +946,8 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``False``
     :type verbose: bool or int
-    :return:
-    :rtype: dict
+    :return: a category menu
+    :rtype: dict or None
 
     **Example**::
 
@@ -957,9 +967,11 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
     path_to_menu_json = cd_dat("catalogue", menu_json, mkdir=True)
 
     if os.path.isfile(path_to_menu_json) and not update:
-        cls_menu = load_json(path_to_menu_json, verbose=verbose)
+        cls_menu = load_json(path_to_menu_json)
 
     else:
+        cls_menu = None
+
         if confirmed("To collect/update category menu?",
                      confirmation_required=confirmation_required):
 
@@ -967,47 +979,55 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
                 source = requests.get(menu_url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_connection_error(verbose=verbose)
-                return None
-
-            soup = bs4.BeautifulSoup(source.text, 'lxml')
-            h1, h2s = soup.find('h1'), soup.find_all('h2')
-
-            cls_name = h1.text.replace(' menu', '')
-
-            if len(h2s) == 0:
-                cls_elem = dict((x.text, urllib.parse.urljoin(menu_url, x.get('href')))
-                                for x in h1.find_all_next('a'))
 
             else:
-                all_next = [x.replace(':', '') for x in h1.find_all_next(string=True)
-                            if x != '\n' and x != '\xa0'][2:]
-                h2s_list = [x.text.replace(':', '') for x in h2s]
-                all_next_a = [(x.text, urllib.parse.urljoin(menu_url, x.get('href')))
-                              for x in h1.find_all_next('a', href=True)]
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    h1, h2s = soup.find('h1'), soup.find_all('h2')
 
-                idx = [all_next.index(x) for x in h2s_list]
-                for i in idx:
-                    all_next_a.insert(i, all_next[i])
+                    cls_name = h1.text.replace(' menu', '')
 
-                cls_elem, i = {}, 0
-                while i <= len(idx):
-                    if i == 0:
-                        d = dict(all_next_a[i:idx[i]])
-                    elif i < len(idx):
-                        d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:idx[i]])}
+                    if len(h2s) == 0:
+                        cls_elem = dict(
+                            (x.text, urllib.parse.urljoin(menu_url, x.get('href')))
+                            for x in h1.find_all_next('a'))
+
                     else:
-                        d = {h2s_list[i - 1]: dict(all_next_a[idx[i - 1] + 1:])}
-                    i += 1
-                    cls_elem.update(d)
+                        all_next = [x.replace(':', '')
+                                    for x in h1.find_all_next(string=True)
+                                    if x != '\n' and x != '\xa0'][2:]
+                        h2s_list = [x.text.replace(':', '') for x in h2s]
+                        all_next_a = [
+                            (x.text, urllib.parse.urljoin(menu_url, x.get('href')))
+                            for x in h1.find_all_next('a', href=True)]
 
-            cls_menu = {cls_name: cls_elem}
+                        idx = [all_next.index(x) for x in h2s_list]
+                        for i in idx:
+                            all_next_a.insert(i, all_next[i])
+
+                        cls_elem, i = {}, 0
+                        while i <= len(idx):
+                            if i == 0:
+                                d = dict(all_next_a[i:idx[i]])
+                            elif i < len(idx):
+                                d = {h2s_list[i - 1]: dict(
+                                    all_next_a[idx[i - 1] + 1:idx[i]])}
+                            else:
+                                d = {h2s_list[i - 1]: dict(
+                                    all_next_a[idx[i - 1] + 1:])}
+                            i += 1
+                            cls_elem.update(d)
+
+                    cls_menu = {cls_name: cls_elem}
+
+                    if json_it and cls_menu is not None:
+                        save_json(cls_menu, path_to_menu_json, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed to get the category menu. {}".format(e))
 
         else:
             print("The category menu has not been acquired.")
-            cls_menu = None
-
-        if json_it and cls_menu is not None:
-            save_json(cls_menu, path_to_menu_json, verbose=verbose)
 
     return cls_menu
 
