@@ -26,7 +26,8 @@ from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle, save_json, load_json
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_location_name, parse_table, is_internet_connected, print_conn_err
+    parse_location_name, parse_table, is_internet_connected, print_conn_err, \
+    print_connection_error
 
 
 class Stations:
@@ -56,13 +57,17 @@ class Stations:
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'Stations'
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/stations/station0.shtm')
 
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
-                                          verbose=verbose)
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
+                                          as_date_type=False)
 
         self.StnKey = 'Railway station data'
         self.BilingualKey = 'Bilingual names'
