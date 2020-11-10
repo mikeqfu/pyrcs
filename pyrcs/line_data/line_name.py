@@ -80,6 +80,8 @@ class LineNames:
             e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LineNames``
         :rtype: str
+
+        :meta private:
         """
 
         path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
