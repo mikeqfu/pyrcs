@@ -1,8 +1,6 @@
 """
-A collection of modules for collecting `line data`_.
-See also :py:mod:`pyrcs._line_data<pyrcs._line_data>`.
-
-.. _line data: http://www.railwaycodes.org.uk/linedatamenu.shtm
+A collection of modules for collecting `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+See also :py:class:`pyrcs.collector.LineData`.
 """
 
 from .elec import Electrification
