@@ -86,7 +86,7 @@ class LineData:
         self.LocationIdentifiers = loc_id.LocationIdentifiers(update=update)
         self.LOR = lor_code.LOR(update=update)
         self.LineNames = line_name.LineNames(update=update)
-        self.TrackDiagrams = trk_diagr.TrackDiagrams(update=update)
+        self.TrackDiagrams = trk_diagr.TrackDiagrams()
 
     def update(self, verbose=False, time_gap=2, init_update=False):
         """
@@ -153,6 +153,7 @@ class LineData:
 
             # Track diagrams
             print(f"\n{self.TrackDiagrams.Name}:")
+            _ = self.TrackDiagrams.get_track_diagrams_items(update=True, verbose=verbose)
             _ = self.TrackDiagrams.fetch_sample_catalogue(update=True, verbose=verbose)
 
 
