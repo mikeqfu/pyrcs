@@ -6,22 +6,23 @@ other_assets
 .. automodule:: pyrcs.other_assets
     :noindex:
     :no-members:
+    :no-undoc-members:
     :no-inherited-members:
 
-.. toctree::
-    :hidden:
+.. rubric:: Submodules
+.. autosummary::
 
-    sig-box
+    sig_box
     tunnel
     viaduct
     station
     depot
     feature
 
-.. rubric:: Submodules
-.. autosummary::
+.. toctree::
+    :hidden:
 
-    sig_box
+    sig-box
     tunnel
     viaduct
     station
