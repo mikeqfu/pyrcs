@@ -59,13 +59,13 @@ class Features:
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'Infrastructure features'
         self.HomeURL = homepage_url()
         self.Key = 'Features'
         self.LUDKey = 'Last updated date'  # key to last updated date
-
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
         self.Catalogue = get_catalogue(
             urllib.parse.urljoin(self.HomeURL, '/misc/habdwild.shtm'),
