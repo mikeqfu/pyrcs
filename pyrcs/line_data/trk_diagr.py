@@ -172,63 +172,64 @@ class TrackDiagrams:
                 print("Collecting the catalogue of sample {}".format(self.Key.lower()),
                       end=" ... ")
 
+            track_diagrams_catalogue = None
+
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                track_diagrams_catalogue_ = {}
+            else:
+                try:
+                    track_diagrams_catalogue_ = {}
 
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                h3 = soup.find('h3', text=True, attrs={'class': None})
-                while h3:
-                    # Description
-                    if h3.text == 'Miscellaneous':
-                        desc = [x.text for x in h3.find_next_siblings('p')]
-                    else:
-                        desc = h3.find_next_sibling('p').text.replace('\xa0', '')
-                    # Extract details
-                    cold_soup = h3.find_next('div', attrs={'class': 'columns'})
-                    if cold_soup:
-                        info = [x.text for x in cold_soup.find_all('p')
-                                if x.string != '\xa0']
-                        urls = [urllib.parse.urljoin(self.SourceURL, a.get('href'))
-                                for a in cold_soup.find_all('a')]
-                    else:
-                        cold_soup = h3.find_next('a', attrs={'target': '_blank'})
-                        info, urls = [], []
+                    h3 = soup.find('h3', text=True, attrs={'class': None})
+                    while h3:
+                        # Description
+                        if h3.text == 'Miscellaneous':
+                            desc = [x.text for x in h3.find_next_siblings('p')]
+                        else:
+                            desc = h3.find_next_sibling('p').text.replace('\xa0', '')
+                        # Extract details
+                        cold_soup = h3.find_next('div', attrs={'class': 'columns'})
+                        if cold_soup:
+                            info = [x.text for x in cold_soup.find_all('p')
+                                    if x.string != '\xa0']
+                            urls = [urllib.parse.urljoin(self.SourceURL, a.get('href'))
+                                    for a in cold_soup.find_all('a')]
+                        else:
+                            cold_soup = h3.find_next('a', attrs={'target': '_blank'})
+                            info, urls = [], []
 
-                        while cold_soup:
-                            info.append(cold_soup.text)
-                            urls.append(urllib.parse.urljoin(
-                                self.SourceURL, cold_soup['href']))
-                            cold_soup = cold_soup.find_next('a') \
-                                if h3.text == 'Miscellaneous' \
-                                else cold_soup.find_next_sibling('a')
+                            while cold_soup:
+                                info.append(cold_soup.text)
+                                urls.append(urllib.parse.urljoin(
+                                    self.SourceURL, cold_soup['href']))
+                                cold_soup = cold_soup.find_next('a') \
+                                    if h3.text == 'Miscellaneous' \
+                                    else cold_soup.find_next_sibling('a')
 
-                    meta = pd.DataFrame(zip(info, urls),
-                                        columns=['Description', 'FileURL'])
+                        meta = pd.DataFrame(zip(info, urls),
+                                            columns=['Description', 'FileURL'])
 
-                    track_diagrams_catalogue_.update({h3.text: (desc, meta)})  # Update
+                        track_diagrams_catalogue_.update({h3.text: (desc, meta)})
 
-                    h3 = h3.find_next_sibling('h3')
+                        h3 = h3.find_next_sibling('h3')
 
-                track_diagrams_catalogue = {self.Key: track_diagrams_catalogue_,
-                                            self.LUDKey: self.Date}
+                    track_diagrams_catalogue = {self.Key: track_diagrams_catalogue_,
+                                                self.LUDKey: self.Date}
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self._cdd_td(pickle_filename)
-                save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
+                    pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+                    path_to_pickle = self._cdd_td(pickle_filename)
+                    save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                track_diagrams_catalogue = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return track_diagrams_catalogue
 
