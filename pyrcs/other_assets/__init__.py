@@ -1,8 +1,6 @@
 """
-A collection of modules for collecting `other assets`_.
-See also :py:mod:`pyrcs._other_assets<pyrcs._other_assets>`.
-
-.. _other assets: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
+A collection of modules for collecting `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+See also :py:class:`pyrcs.collector.OtherAssets`.
 """
 
 from .depot import Depots
