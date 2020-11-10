@@ -15,7 +15,7 @@ from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url, \
-    print_conn_err
+    print_conn_err, is_internet_connected, print_connection_error
 
 
 class TrackDiagrams:
@@ -42,16 +42,18 @@ class TrackDiagrams:
     """
 
     def __init__(self, data_dir=None, verbose=True):
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'Railway track diagrams (some samples)'
+        self.Key = 'Track diagrams'
 
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/track/diagrams0.shtm')
 
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
-                                          verbose=verbose)
-
-        self.Key = 'Track diagrams'
         self.LUDKey = 'Last updated date'
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
+                                          as_date_type=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
