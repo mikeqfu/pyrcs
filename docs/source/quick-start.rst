@@ -27,7 +27,7 @@ Now we can create an instance for getting the location codes:
 
 .. note::
 
-    An alternative way of creating the instance is through the class :ref:`LineData()<_line_data>` (see below).
+    An alternative way of creating the instance is through the class :py:class:`LineData()<pyrcs.collector.LineData>` (see below).
 
 .. code-block:: python
 
@@ -212,7 +212,7 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
 
 .. note::
 
-    Alternatively, the instance ``stn`` can also be defined through :ref:`OtherAssets()<_other_assets>` that contains all classes under the category of `other assets`_ (see below).
+    Alternatively, the instance ``stn`` can also be defined through :py:class:`OtherAssets()<pyrcs.collector.OtherAssets>` that contains all classes under the category of `other assets`_ (see below).
 
 .. code-block:: python
 
