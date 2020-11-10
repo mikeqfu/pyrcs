@@ -75,7 +75,7 @@ html_theme = 'sphinx_rtd_theme'  # The theme to use for HTML & HTML Help pages.
 
 html_theme_options = {
     'collapse_navigation': False,
-    'navigation_depth': 3,
+    'navigation_depth': 4,
 }
 
 # The name of the Pygments (syntax highlighting) style to use.
