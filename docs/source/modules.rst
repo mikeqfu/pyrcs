@@ -7,6 +7,11 @@ Subpackages and modules
 Subpackages
 ===========
 
+.. autosummary::
+
+    line_data
+    other_assets
+
 .. toctree::
     :maxdepth: 2
     :hidden:
@@ -14,27 +19,19 @@ Subpackages
     line-data
     other-assets
 
-.. autosummary::
-
-    line_data
-    other_assets
-
-
 Modules
 =======
+
+.. autosummary::
+
+    collector
+    updater
+    utils
 
 .. toctree::
     :maxdepth: 2
     :hidden:
 
-    linedata
-    otherassets
-    updater
-    utils
-
-.. autosummary::
-
-    _line_data
-    _other_assets
+    collector
     updater
     utils
