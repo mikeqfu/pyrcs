@@ -7,6 +7,8 @@ import copy
 import itertools
 import os
 import re
+import socket
+import urllib.error
 import urllib.parse
 
 import pandas as pd
@@ -14,7 +16,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    print_conn_err, is_internet_connected
 
 
 class Viaducts:
@@ -26,6 +29,9 @@ class Viaducts:
     :param update: whether to check on update and proceed to update the package data, 
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -40,25 +46,33 @@ class Viaducts:
         http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
         self.Name = 'Railway viaducts'
         self.Key = 'Viaducts'
-        self.LUDKey = 'Last updated date'
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/viaducts/viaducts0.shtm')
-        self.Catalogue = \
-            get_catalogue(self.SourceURL, update=update, confirmation_required=False)
+
+        self.LUDKey = 'Last updated date'
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
+
+        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+                                       confirmation_required=False)
+
         self.P1Key, self.P2Key, self.P3Key, self.P4Key, self.P5Key, self.P6Key = \
             list(self.Catalogue.keys())[1:]
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("other-assets", self.Key.lower())
+
+        if data_dir:
+            self.DataDir = validate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_viaducts(self, *sub_dir, **kwargs):
+    def _cdd_vdct(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -79,7 +93,7 @@ class Viaducts:
 
         return path
 
-    def collect_railway_viaducts_by_page(self, page_no, update=False, verbose=False):
+    def collect_viaduct_codes_by_page(self, page_no, update=False, verbose=False):
         """
         Collect data of railway viaducts for a given page number from source web page.
 
@@ -102,7 +116,7 @@ class Viaducts:
 
             >>> viaducts = Viaducts()
 
-            >>> viaducts_1 = viaducts.collect_railway_viaducts_by_page(page_no=1)
+            >>> viaducts_1 = viaducts.collect_viaduct_codes_by_page(page_no=1)
 
             >>> type(viaducts_1)
             <class 'dict'>
@@ -117,7 +131,7 @@ class Viaducts:
 
         pickle_filename = re.sub(
             r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower() + ".pickle"
-        path_to_pickle = self.cdd_viaducts(pickle_filename)
+        path_to_pickle = self._cdd_vdct(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             page_railway_viaducts = load_pickle(path_to_pickle)
@@ -125,31 +139,40 @@ class Viaducts:
         else:
             url = self.Catalogue[page_name]
 
-            try:
-                last_updated_date = get_last_updated_date(url)
-            except Exception as e:
-                print("Failed to find the last updated date for viaducts data of "
-                      "{}. {}".format(page_name, e))
-                last_updated_date = None
+            page_railway_viaducts = None
+
+            if verbose == 2:
+                print("Collecting data of {} on {}".format(self.Key.lower(), page_name),
+                      end=" ... ")
 
             try:
-                header, viaducts_table = \
-                    pd.read_html(url, na_values=[''], keep_default_na=False)
-                viaducts_table.columns = header.columns.to_list()
-                viaducts_table.fillna('', inplace=True)
-            except Exception as e:
-                print("Failed to collect viaducts data of {}. {}".format(page_name, e))
-                viaducts_table = None
+                header, viaducts_table = pd.read_html(
+                    url, na_values=[''], keep_default_na=False)
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-            page_railway_viaducts = {page_name: viaducts_table,
-                                     self.LUDKey: last_updated_date}
+            else:
+                try:
+                    viaducts_table.columns = header.columns.to_list()
+                    viaducts_table.fillna('', inplace=True)
 
-            save_pickle(page_railway_viaducts, path_to_pickle, verbose=verbose)
+                    last_updated_date = get_last_updated_date(url)
+
+                    print("Done. ") if verbose == 2 else ""
+
+                    page_railway_viaducts = {page_name: viaducts_table,
+                                             self.LUDKey: last_updated_date}
+
+                    save_pickle(page_railway_viaducts, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(page_name, e))
 
         return page_railway_viaducts
 
-    def fetch_railway_viaducts(self, update=False, pickle_it=False, data_dir=None,
-                               verbose=False):
+    def fetch_viaduct_codes(self, update=False, pickle_it=False, data_dir=None,
+                            verbose=False):
         """
         Fetch data of railway viaducts from local backup.
 
@@ -173,7 +196,7 @@ class Viaducts:
 
             >>> viaducts = Viaducts()
 
-            >>> viaducts_data = viaducts.fetch_railway_viaducts()
+            >>> viaducts_data = viaducts.fetch_viaduct_codes()
 
             >>> type(viaducts_data)
             <class 'dict'>
@@ -192,14 +215,26 @@ class Viaducts:
              'Page 6 (T-Z)']
         """
 
-        verbose_ = False if data_dir or not verbose else True
-        codes = [self.collect_railway_viaducts_by_page(page_no, update, verbose=verbose_)
-                 for page_no in range(1, 7)]
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
+        page_data = [
+            self.collect_viaduct_codes_by_page(
+                page_no, update, verbose=verbose_ if is_internet_connected() else False)
+            for page_no in range(1, 7)]
+
+        if all(x is None for x in page_data):
+            if update:
+                print_conn_err(verbose=verbose)
+                print("No data of the {} has been freshly collected.".format(
+                    self.Key.lower()))
+            page_data = [
+                self.collect_viaduct_codes_by_page(x, update=False, verbose=verbose_)
+                for x in range(1, 7)]
 
         railways_viaducts_data = {
-            self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
+            self.Key: {next(iter(x)): next(iter(x.values())) for x in page_data},
             self.LUDKey:
-                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes)}
+                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
