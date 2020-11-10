@@ -87,11 +87,11 @@ class TrackDiagrams:
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :return: catalogue of railway station data
-        :rtype: dict
         :param verbose: whether to print relevant information in console
             as the function runs, defaults to ``False``
         :type verbose: bool or int
+        :return: catalogue of railway station data
+        :rtype: dict
 
         **Example**::
 
@@ -115,24 +115,31 @@ class TrackDiagrams:
             items = load_pickle(path_to_cat)
 
         else:
+            if verbose == 2:
+                print("Collecting a list of {} items".format(self.Key.lower()),
+                      end=" ... ")
+
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
                 print_conn_err(update=update, verbose=verbose)
                 items = load_pickle(path_to_cat)
-                return items
 
-            try:
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
-                h3 = {x.get_text(strip=True)
-                      for x in soup.find_all('h3', text=True, attrs={'class': None})}
-                items = {self.Key: h3}
+            else:
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    h3 = {x.get_text(strip=True)
+                          for x in soup.find_all('h3', text=True, attrs={'class': None})}
+                    items = {self.Key: h3}
 
-                save_pickle(items, path_to_cat)
+                    print("Done. ") if verbose == 2 else ""
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                items = None
+                    save_pickle(items, path_to_cat, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
+                    items = None
 
         return items
 
