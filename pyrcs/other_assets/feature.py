@@ -14,7 +14,9 @@ import copy
 import itertools
 import os
 import re
+import socket
 import unicodedata
+import urllib.error
 import urllib.parse
 
 import bs4
@@ -26,7 +28,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.line_data.elec import Electrification
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    is_internet_connected, print_connection_error, print_conn_err
 
 
 class Features:
@@ -38,6 +41,9 @@ class Features:
     :param update: whether to check on update and proceed to update the package data, 
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -49,7 +55,7 @@ class Features:
         Infrastructure features
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
@@ -57,6 +63,9 @@ class Features:
         self.HomeURL = homepage_url()
         self.Key = 'Features'
         self.LUDKey = 'Last updated date'  # key to last updated date
+
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
 
         self.Catalogue = get_catalogue(
             urllib.parse.urljoin(self.HomeURL, '/misc/habdwild.shtm'),
@@ -72,12 +81,13 @@ class Features:
         self.BuzzerKey = 'Buzzer codes'
         self.BuzzerPickle = self.BuzzerKey.lower().replace(" ", "-")
 
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("other-assets", self.Name.lower())
-
+        if data_dir:
+            self.DataDir = validate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("other-assets", self.Name.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-    def cdd_features(self, *sub_dir, **kwargs):
+    def _cdd_feat(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -176,35 +186,44 @@ class Features:
             if verbose == 2:
                 print("Collecting data of {}".format(self.HabdWildKey), end=" ... ")
 
-            try:
-                sub_keys = self.HabdWildKey.split(' and ')
-            except ValueError:
-                sub_keys = [self.HabdWildKey + ' 1', self.HabdWildKey + ' 2']
+            habds_and_wilds_codes_data = None
 
             try:
                 habds_and_wilds_codes = iter(
                     pd.read_html(url, na_values=[''], keep_default_na=False))
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                habds_and_wilds_codes_list = []
-                for x in habds_and_wilds_codes:
-                    header, data = x, next(habds_and_wilds_codes)
-                    data.columns = header.columns.to_list()
-                    data.fillna('', inplace=True)
-                    habds_and_wilds_codes_list.append(data)
+            else:
+                try:
+                    sub_keys = self.HabdWildKey.split(' and ')
+                except ValueError:
+                    sub_keys = [self.HabdWildKey + ' 1', self.HabdWildKey + ' 2']
 
-                habds_and_wilds_codes_data = {
-                    self.HabdWildKey: dict(zip(sub_keys, habds_and_wilds_codes_list)),
-                    self.LUDKey: get_last_updated_date(url)}
+                try:
+                    habds_and_wilds_codes_list = []
+                    for x in habds_and_wilds_codes:
+                        header, data = x, next(habds_and_wilds_codes)
+                        data.columns = header.columns.to_list()
+                        data.fillna('', inplace=True)
+                        habds_and_wilds_codes_list.append(data)
 
-                print("Done. ") if verbose == 2 else ""
+                    last_updated_date = get_last_updated_date(url)
 
-                pickle_filename = self.HabdWildPickle + ".pickle"
-                path_to_pickle = self.cdd_features(pickle_filename)
-                save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=verbose)
+                    print("Done. ") if verbose == 2 else ""
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                habds_and_wilds_codes_data = None
+                    habds_and_wilds_codes_data = {
+                        self.HabdWildKey: dict(zip(sub_keys, habds_and_wilds_codes_list)),
+                        self.LUDKey: last_updated_date}
+
+                    pickle_filename = self.HabdWildPickle + ".pickle"
+                    path_to_pickle = self._cdd_feat(pickle_filename)
+                    save_pickle(habds_and_wilds_codes_data, path_to_pickle,
+                                verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return habds_and_wilds_codes_data
 
@@ -257,15 +276,16 @@ class Features:
         """
 
         pickle_filename = self.HabdWildPickle + ".pickle"
-        path_to_pickle = self.cdd_features(pickle_filename)
+        path_to_pickle = self._cdd_feat(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             habds_and_wilds_codes_data = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             habds_and_wilds_codes_data = self.collect_habds_and_wilds(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if habds_and_wilds_codes_data:
                 if pickle_it and data_dir:
@@ -279,6 +299,7 @@ class Features:
             else:
                 print("No data of {} has been collected.".format(
                     self.HabdWildKey.replace("and", "or")))
+                habds_and_wilds_codes_data = load_pickle(path_to_pickle)
 
         return habds_and_wilds_codes_data
 
@@ -320,29 +341,35 @@ class Features:
                 print("Collecting data of {}".format(self.WaterTroughsKey.lower()),
                       end=" ... ")
 
+            water_troughs_data = None
+
             try:
                 header, water_troughs_codes = pd.read_html(url)
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                water_troughs_codes.columns = header.columns.to_list()
-                water_troughs_codes.fillna('', inplace=True)
-                water_troughs_codes.Length = water_troughs_codes.Length.map(
-                    self.parse_vulgar_fraction_in_length)
-                water_troughs_codes.rename(
-                    columns={'Length': 'Length_yard'}, inplace=True)
+            else:
+                try:
+                    water_troughs_codes.columns = header.columns.to_list()
+                    water_troughs_codes.fillna('', inplace=True)
+                    water_troughs_codes.Length = water_troughs_codes.Length.map(
+                        self.parse_vulgar_fraction_in_length)
+                    water_troughs_codes.rename(
+                        columns={'Length': 'Length_yard'}, inplace=True)
 
-                last_updated_date = get_last_updated_date(url)
+                    last_updated_date = get_last_updated_date(url)
 
-                water_troughs_data = {self.WaterTroughsKey: water_troughs_codes,
-                                      self.LUDKey: last_updated_date}
+                    print("Done. ") if verbose == 2 else ""
 
-                print("Done. ") if verbose == 2 else ""
+                    water_troughs_data = {self.WaterTroughsKey: water_troughs_codes,
+                                          self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
-                save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
+                    path_to_pickle = self._cdd_feat(self.WaterTroughsPickle + ".pickle")
+                    save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                water_troughs_data = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return water_troughs_data
 
@@ -388,15 +415,16 @@ class Features:
             [5 rows x 5 columns]
         """
 
-        path_to_pickle = self.cdd_features(self.WaterTroughsPickle + ".pickle")
+        path_to_pickle = self._cdd_feat(self.WaterTroughsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             water_troughs_data = load_pickle(path_to_pickle)
 
         else:
-            water_troughs_data = self.collect_water_troughs(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            water_troughs_data = self.collect_water_troughs(confirmation_required=False,
+                                                            verbose=verbose_)
 
             if water_troughs_data:
                 if pickle_it and data_dir:
@@ -409,6 +437,7 @@ class Features:
             else:
                 print("No data of {} has been collected.".format(
                     self.WaterTroughsKey.lower()))
+                water_troughs_data = load_pickle(path_to_pickle)
 
         return water_troughs_data
 
@@ -450,33 +479,39 @@ class Features:
                 print("Collecting data of {}".format(self.TelegraphKey.lower()),
                       end=" ... ")
 
+            telegraph_code_words = None
+
             try:
                 source = requests.get(url, headers=fake_requests_headers())
-                #
-                sub_keys = [
-                    x.text for x in bs4.BeautifulSoup(source.text, 'lxml').find_all('h3')]
-                #
-                data_sets = iter(pd.read_html(source.text))
-                telegraph_codes_list = []
-                for x in data_sets:
-                    header, telegraph_codes = x, next(data_sets)
-                    telegraph_codes.columns = header.columns.to_list()
-                    telegraph_codes_list.append(telegraph_codes)
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                last_updated_date = get_last_updated_date(url)
+            else:
+                try:
+                    sub_keys = [x.text for x in
+                                bs4.BeautifulSoup(source.text, 'lxml').find_all('h3')]
+                    #
+                    data_sets = iter(pd.read_html(source.text))
+                    telegraph_codes_list = []
+                    for x in data_sets:
+                        header, telegraph_codes = x, next(data_sets)
+                        telegraph_codes.columns = header.columns.to_list()
+                        telegraph_codes_list.append(telegraph_codes)
 
-                telegraph_code_words = {
-                    self.TelegraphKey: dict(zip(sub_keys, telegraph_codes_list)),
-                    self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    telegraph_code_words = {
+                        self.TelegraphKey: dict(zip(sub_keys, telegraph_codes_list)),
+                        self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
-                save_pickle(telegraph_code_words, path_to_pickle, verbose=verbose)
+                    print("Done. ") if verbose == 2 else ""
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                telegraph_code_words = None
+                    path_to_pickle = self._cdd_feat(self.TelegraphPickle + ".pickle")
+                    save_pickle(telegraph_code_words, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return telegraph_code_words
 
@@ -528,15 +563,16 @@ class Features:
             [5 rows x 3 columns]
         """
 
-        path_to_pickle = self.cdd_features(self.TelegraphPickle + ".pickle")
+        path_to_pickle = self._cdd_feat(self.TelegraphPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             telegraph_code_words = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             telegraph_code_words = self.collect_telegraph_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if telegraph_code_words:
                 if pickle_it and data_dir:
@@ -548,6 +584,7 @@ class Features:
             else:
                 print("No data of {} has been collected.".format(
                     self.TelegraphKey.lower()))
+                telegraph_code_words = load_pickle(path_to_pickle)
 
         return telegraph_code_words
 
@@ -588,24 +625,31 @@ class Features:
             if verbose == 2:
                 print("Collecting data of {}".format(self.BuzzerKey), end=" ... ")
 
+            buzzer_codes_data = None
+
             try:
                 header, buzzer_codes = pd.read_html(url)
-                buzzer_codes.columns = header.columns.to_list()
-                buzzer_codes.fillna('', inplace=True)
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                last_updated_date = get_last_updated_date(url)
+            else:
+                try:
+                    buzzer_codes.columns = header.columns.to_list()
+                    buzzer_codes.fillna('', inplace=True)
 
-                buzzer_codes_data = {self.BuzzerKey: buzzer_codes,
-                                     self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    buzzer_codes_data = {self.BuzzerKey: buzzer_codes,
+                                         self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cdd_features(self.BuzzerPickle + ".pickle")
-                save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
+                    print("Done. ") if verbose == 2 else ""
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                buzzer_codes_data = None
+                    path_to_pickle = self._cdd_feat(self.BuzzerPickle + ".pickle")
+                    save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return buzzer_codes_data
 
@@ -649,15 +693,16 @@ class Features:
             4                                                   3             Set back
         """
 
-        path_to_pickle = self.cdd_features(self.BuzzerPickle + ".pickle")
+        path_to_pickle = self._cdd_feat(self.BuzzerPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             buzzer_codes_data = load_pickle(path_to_pickle)
 
         else:
-            buzzer_codes_data = self.collect_buzzer_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            buzzer_codes_data = self.collect_buzzer_codes(confirmation_required=False,
+                                                          verbose=verbose_)
 
             if buzzer_codes_data:
                 if pickle_it and data_dir:
@@ -669,6 +714,7 @@ class Features:
 
             else:
                 print("No data of {} has been collected.".format(self.BuzzerKey.lower()))
+                buzzer_codes_data = load_pickle(path_to_pickle)
 
         return buzzer_codes_data
 
@@ -705,14 +751,18 @@ class Features:
             ['Features', 'Last updated date']
         """
 
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
         features_codes = []
+
+        elec = Electrification(verbose=False)
+        ohns_codes = elec.fetch_ohns_codes(update=update, verbose=verbose_)
+        features_codes.append(ohns_codes)
+
         for func in dir(self):
             if func.startswith('fetch_') and func != 'fetch_features_codes':
-                features_codes.append(getattr(self, func)(update=update, verbose=verbose))
-
-        elec = Electrification()
-        ohns_codes = elec.fetch_ohns_codes(update=update, verbose=verbose)
-        features_codes.append(ohns_codes)
+                features_codes.append(getattr(self, func)(
+                    update=update, verbose=verbose_ if is_internet_connected() else False))
 
         features_codes_data = {
             self.Key: {next(iter(x)): next(iter(x.values())) for x in features_codes},
