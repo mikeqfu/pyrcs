@@ -18,7 +18,7 @@ from pyhelpers.store import load_json, load_pickle, save, save_pickle
 
 from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_date, \
     parse_date, parse_location_name, parse_table, parse_tr, print_conn_err, \
-    is_internet_connected
+    is_internet_connected, print_connection_error
 
 
 class LocationIdentifiers:
@@ -52,18 +52,21 @@ class LocationIdentifiers:
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'CRS, NLC, TIPLOC and STANOX codes'
+        self.Key = 'Location codes'  # key to location codes
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/crs/CRS0.shtm')
 
+        self.LUDKey = 'Last updated date'  # key to last updated date
         self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False, verbose=verbose)
+                                          as_date_type=False)
 
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
-
-        self.Key = 'Location codes'  # key to location codes
-        self.LUDKey = 'Last updated date'  # key to last updated date
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
