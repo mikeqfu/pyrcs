@@ -162,7 +162,8 @@ class LineNames:
 
                     last_updated_date = get_last_updated_date(self.SourceURL)
 
-                    line_names_data = {self.Key: line_names, self.LUDKey: last_updated_date}
+                    line_names_data = {self.Key: line_names,
+                                       self.LUDKey: last_updated_date}
 
                     print("Done. ") if verbose == 2 else ""
 
