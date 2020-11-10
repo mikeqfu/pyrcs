@@ -22,7 +22,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    is_internet_connected, parse_table, parse_tr, print_conn_err
+    is_internet_connected, parse_table, parse_tr, print_conn_err, print_connection_error
 
 
 class SignalBoxes:
@@ -55,18 +55,21 @@ class SignalBoxes:
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'Signal box prefix codes'
+        self.Key = 'Signal boxes'
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/signal/signal_boxes0.shtm')
 
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
-                                          verbose=verbose)
-
-        self.Catalogue = get_catalogue(self.SourceURL, update=update,
-                                       confirmation_required=False)
-
-        self.Key = 'Signal boxes'
         self.LUDKey = 'Last updated date'  # key to last updated date
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
+                                          as_date_type=False)
+
+        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
+                                       confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
