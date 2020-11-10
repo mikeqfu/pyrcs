@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     test_data_dir = "dat"
 
-    railways_viaducts_data = viaducts.fetch_railway_viaducts()
+    railways_viaducts_data = viaducts.fetch_viaduct_codes()
 
     railways_viaducts_dat = railways_viaducts_data[viaducts.Key]
     print("\n{}: ".format(viaducts.Name))
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     print("\n{}: {}".format(viaducts.LUDKey, railways_viaducts_data[viaducts.LUDKey]))
     # Last updated date: xxxx-xx-xx
 
-    railways_viaducts_data_ = viaducts.fetch_railway_viaducts(
+    railways_viaducts_data_ = viaducts.fetch_viaduct_codes(
         update=True, pickle_it=True, data_dir=test_data_dir)
 
     railways_viaducts_dat_ = railways_viaducts_data[viaducts.Key]
