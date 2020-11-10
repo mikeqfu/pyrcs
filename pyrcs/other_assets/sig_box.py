@@ -21,8 +21,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_date, \
-    parse_table, parse_tr
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    is_internet_connected, parse_table, parse_tr, print_conn_err
 
 
 class SignalBoxes:
@@ -34,6 +34,9 @@ class SignalBoxes:
     :param update: whether to check on update and proceed to update the package data, 
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Example**::
 
@@ -48,18 +51,20 @@ class SignalBoxes:
         http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
         self.Name = 'Signal box prefix codes'
         self.HomeURL = homepage_url()
-
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/signal/signal_boxes0.shtm')
-        self.Catalogue = get_catalogue(
-            self.SourceURL, update=update, confirmation_required=False)
 
-        self.Date = get_last_updated_date(self.SourceURL)
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
+
+        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+                                       confirmation_required=False)
+
         self.Key = 'Signal boxes'
         self.LUDKey = 'Last updated date'  # key to last updated date
 
@@ -67,15 +72,15 @@ class SignalBoxes:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
-
         self.CurrentDataDir = copy.copy(self.DataDir)
+
         self.NonNationalRailKey = 'Non-National Rail'
         self.NonNationalRailPickle = self.NonNationalRailKey.lower().replace(" ", "-")
         self.IrelandKey = 'Ireland'
         self.WMASDKey = 'Western region MAS dates'
         self.MSBKey = 'Mechanical signalling bell codes'
 
-    def cdd_sigbox(self, *sub_dir, **kwargs):
+    def _cdd_sigbox(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
@@ -96,7 +101,7 @@ class SignalBoxes:
 
         return path
 
-    def collect_signal_box_prefix_codes(self, initial, update=False, verbose=False):
+    def collect_prefix_codes(self, initial, update=False, verbose=False):
         """
         Collect signal box prefix codes for the given ``initial`` from source web page.
 
@@ -118,7 +123,7 @@ class SignalBoxes:
 
             >>> sb = SignalBoxes()
 
-            >>> signal_boxes_a = sb.collect_signal_box_prefix_codes(initial='a')
+            >>> signal_boxes_a = sb.collect_prefix_codes(initial='a')
 
             >>> type(signal_boxes_a)
             <class 'dict'>
@@ -139,54 +144,61 @@ class SignalBoxes:
             [5 rows x 8 columns]
         """
 
-        path_to_pickle = self.cdd_sigbox("a-z", initial.lower() + ".pickle")
+        path_to_pickle = self._cdd_sigbox("a-z", initial.lower() + ".pickle")
+
+        beginning_with = initial.upper()
 
         if os.path.isfile(path_to_pickle) and not update:
             signal_box_prefix_codes = load_pickle(path_to_pickle)
 
         else:
-            sig_keys = [initial.upper(), self.LUDKey]
+            signal_box_prefix_codes = {beginning_with: None, self.LUDKey: None}
 
-            if initial.upper() not in list(self.Catalogue.keys()):
+            if beginning_with not in list(self.Catalogue.keys()):
                 if verbose:
-                    print("No data is available for signal box codes "
-                          "beginning with \"{}\".".format(initial.upper()))
-
-                signal_box_prefix_codes = dict(zip(sig_keys, [None, None]))
+                    print("No data is available for {} codes beginning "
+                          "with \"{}\".".format(self.Key.lower(), beginning_with))
 
             else:
                 url = self.SourceURL.replace('0', initial.lower())
 
+                if verbose == 2:
+                    print("Collecting data of {} beginning with \"{}\"".format(
+                        self.Key.lower(), beginning_with), end=" ... ")
+
                 try:
                     source = requests.get(url, headers=fake_requests_headers())
-                    # Get table data and its column names
-                    records, header = parse_table(source, 'lxml')
-                    # Create a DataFrame of the requested table
-                    signal_boxes_data_table = pd.DataFrame(
-                        [[x.strip('\xa0') for x in i] for i in records],
-                        columns=[h.replace('Signal box', 'Signal Box') for h in header])
+                except requests.ConnectionError:
+                    print("Failed. ") if verbose == 2 else ""
+                    print_conn_err(verbose=verbose)
 
-                except IndexError:
-                    print("Failed to collect signal box prefix codes "
-                          "beginning with \"{}\".".format(initial.upper()))
-                    signal_boxes_data_table = None
+                else:
+                    try:
+                        # Get table data and its column names
+                        records, header = parse_table(source, 'lxml')
+                        # Create a DataFrame of the requested table
+                        dat = [[x.strip('\xa0') for x in i] for i in records]
+                        col = [h.replace('Signal box', 'Signal Box') for h in header]
+                        signal_boxes_data_table = pd.DataFrame(dat, columns=col)
 
-                try:
-                    last_updated_date = get_last_updated_date(url)
-                except Exception as e:
-                    print("Failed to find the last updated date of the signal boxes codes"
-                          " beginning with \"{}\". {}".format(initial.upper(), e))
-                    last_updated_date = None
+                        last_updated_date = get_last_updated_date(url)
 
-                signal_box_prefix_codes = dict(
-                    zip(sig_keys, [signal_boxes_data_table, last_updated_date]))
+                        print("Done.") if verbose == 2 else ""
 
-            save_pickle(signal_box_prefix_codes, path_to_pickle, verbose=verbose)
+                        signal_box_prefix_codes.update(
+                            {beginning_with: signal_boxes_data_table,
+                             self.LUDKey: last_updated_date})
+
+                        save_pickle(signal_box_prefix_codes, path_to_pickle,
+                                    verbose=verbose)
+
+                    except Exception as e:
+                        print("Failed. {}".format(e))
 
         return signal_box_prefix_codes
 
-    def fetch_signal_box_prefix_codes(self, update=False, pickle_it=False, data_dir=None,
-                                      verbose=False):
+    def fetch_prefix_codes(self, update=False, pickle_it=False, data_dir=None,
+                           verbose=False):
         """
         Fetch signal box prefix codes from local backup.
 
@@ -210,7 +222,7 @@ class SignalBoxes:
 
             >>> sb = SignalBoxes()
 
-            >>> signal_box_prefix_codes_dat = sb.fetch_signal_box_prefix_codes()
+            >>> signal_box_prefix_codes_dat = sb.fetch_prefix_codes()
 
             >>> type(signal_box_prefix_codes_dat)
             <class 'dict'>
@@ -231,10 +243,21 @@ class SignalBoxes:
             [5 rows x 8 columns]
         """
 
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
         # Get every data table
-        data = [self.collect_signal_box_prefix_codes(
-            x, update, verbose=False if data_dir or not verbose else True)
+        data = [
+            self.collect_prefix_codes(
+                x, update=update, verbose=verbose_ if is_internet_connected() else False)
             for x in string.ascii_lowercase]
+
+        if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
+            if update:
+                print_conn_err(verbose=verbose)
+                print("No data of the {} has been freshly collected.".format(
+                    self.Key.lower()))
+            data = [self.collect_prefix_codes(x, update=False, verbose=verbose_)
+                    for x in string.ascii_lowercase]
 
         # Select DataFrames only
         signal_boxes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
@@ -296,56 +319,63 @@ class SignalBoxes:
                 print("Collecting signal box data of {}".format(
                     self.NonNationalRailKey.lower()), end=" ... ")
 
+            non_national_rail_codes_data = None
+
             try:
                 source = requests.get(url, headers=fake_requests_headers())
-                web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
-                non_national_rail, non_national_rail_codes = [], {}
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                for h in web_page_text.find_all('h3'):
-                    # Get the name of the non-national rail
-                    non_national_rail_name = h.text
+            else:
+                try:
+                    web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
+                    non_national_rail, non_national_rail_codes = [], {}
 
-                    # Find text descriptions
-                    desc = h.find_next('p')
-                    desc_text = desc.text.replace('\xa0', '')
-                    more_desc = desc.find_next('p')
-                    while more_desc.find_previous('h3') == h:
-                        desc_text = '\n'.join(
-                            [desc_text, more_desc.text.replace('\xa0', '')])
-                        more_desc = more_desc.find_next('p')
-                        if more_desc is None:
-                            break
+                    for h in web_page_text.find_all('h3'):
+                        # Get the name of the non-national rail
+                        non_national_rail_name = h.text
 
-                    # Get table data
-                    tbl_dat = desc.find_next('table')
-                    if tbl_dat.find_previous('h3').text == non_national_rail_name:
-                        header = [th.text for th in tbl_dat.find_all('th')]  # header
-                        data = pd.DataFrame(
-                            parse_tr(header, tbl_dat.find_next('table').find_all('tr')),
-                            columns=header)
-                    else:
-                        data = None
+                        # Find text descriptions
+                        desc = h.find_next('p')
+                        desc_text = desc.text.replace('\xa0', '')
+                        more_desc = desc.find_next('p')
+                        while more_desc.find_previous('h3') == h:
+                            desc_text = '\n'.join(
+                                [desc_text, more_desc.text.replace('\xa0', '')])
+                            more_desc = more_desc.find_next('p')
+                            if more_desc is None:
+                                break
 
-                    # Update data dict
-                    non_national_rail_codes.update({
-                        non_national_rail_name:
-                            [data, desc_text.replace('\xa0', '').strip()]})
+                        # Get table data
+                        tbl_dat = desc.find_next('table')
+                        if tbl_dat.find_previous('h3').text == non_national_rail_name:
+                            header = [th.text for th in tbl_dat.find_all('th')]  # header
+                            data = pd.DataFrame(
+                                parse_tr(header, tbl_dat.find_next('table').find_all('tr')),
+                                columns=header)
+                        else:
+                            data = None
 
-                last_updated_date = get_last_updated_date(url)
+                        # Update data dict
+                        non_national_rail_codes.update({
+                            non_national_rail_name:
+                                [data, desc_text.replace('\xa0', '').strip()]})
 
-                non_national_rail_codes_data = {
-                    self.NonNationalRailKey: non_national_rail_codes,
-                    self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = self.NonNationalRailPickle + ".pickle"
-                save_pickle(non_national_rail_codes_data,
-                            self.cdd_sigbox(pickle_filename), verbose=verbose)
+                    non_national_rail_codes_data = {
+                        self.NonNationalRailKey: non_national_rail_codes,
+                        self.LUDKey: last_updated_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                non_national_rail_codes_data = None
+                    pickle_filename = self.NonNationalRailPickle + ".pickle"
+                    save_pickle(non_national_rail_codes_data,
+                                self._cdd_sigbox(pickle_filename), verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return non_national_rail_codes_data
 
@@ -397,21 +427,27 @@ class SignalBoxes:
         """
 
         pickle_filename = self.NonNationalRailPickle + ".pickle"
-        path_to_pickle = self.cdd_sigbox(pickle_filename)
+        path_to_pickle = self._cdd_sigbox(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
             non_national_rail_codes_data = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             non_national_rail_codes_data = self.collect_non_national_rail_codes(
-                confirmation_required=False, verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if non_national_rail_codes_data:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
-                    save_pickle(non_national_rail_codes_data, path_to_pickle, verbose=verbose)
+                    save_pickle(non_national_rail_codes_data, path_to_pickle,
+                                verbose=verbose)
+
             else:
-                print("No data of {} has been collected.".format(self.NonNationalRailKey.lower()))
+                print("No data of {} has been collected.".format(
+                    self.NonNationalRailKey.lower()))
+                non_national_rail_codes_data = load_pickle(path_to_pickle)
 
         return non_national_rail_codes_data
