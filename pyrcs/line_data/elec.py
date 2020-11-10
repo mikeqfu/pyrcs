@@ -19,7 +19,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_tr, print_conn_err
+    parse_tr, print_conn_err, is_internet_connected
 
 
 class Electrification:
@@ -136,6 +136,8 @@ class Electrification:
                 self.NationalNetworkKey.lower()),
                 confirmation_required=confirmation_required):
 
+            national_network_ole = None
+
             if verbose == 2:
                 print("Collecting the codes for {}".format(
                     self.NationalNetworkKey.lower()), end=" ... ")
@@ -146,70 +148,69 @@ class Electrification:
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
+            else:
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                national_network_ole_, h3 = {}, soup.find('h3')
-                while h3:
-                    header_tag = h3.find_next('table')
-                    if header_tag:
-                        header = [x.text for x in header_tag.find_all('th')]
+                    national_network_ole_, h3 = {}, soup.find('h3')
+                    while h3:
+                        header_tag = h3.find_next('table')
+                        if header_tag:
+                            header = [x.text for x in header_tag.find_all('th')]
 
-                        temp = parse_tr(
-                            header, header_tag.find_next('table').find_all('tr'))
-                        table = pd.DataFrame(temp, columns=header)
-                        table = table.applymap(
-                            lambda x:
-                            re.sub(r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
-                                '\\xa0', ''))
-                    else:
-                        table = pd.DataFrame((x.text for x in h3.find_all_next('li')),
-                                             columns=['Unknown_codes'])
-
-                    # Notes
-                    notes = {'Notes': None}
-                    if h3.find_next_sibling().name == 'p':
-                        next_p = h3.find_next('p')
-                        if next_p.find_previous('h3') == h3:
-                            notes['Notes'] = next_p.text.replace('\xa0', '')
-
-                    note_tag = h3.find_next('h4')
-                    if note_tag and note_tag.text == 'Notes':
-                        notes_ = dict(
-                            (x.a.get('id').title(),
-                             x.get_text(strip=True).replace('\xa0', ''))
-                            for x in soup.find('ol') if x != '\n')
-                        if notes['Notes'] is None:
-                            notes['Notes'] = notes_
+                            temp = parse_tr(
+                                header, header_tag.find_next('table').find_all('tr'))
+                            table = pd.DataFrame(temp, columns=header)
+                            table = table.applymap(
+                                lambda x:
+                                re.sub(r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
+                                    '\\xa0', ''))
                         else:
-                            notes['Notes'] = [notes['Notes'], notes_]
+                            table = pd.DataFrame((x.text for x in h3.find_all_next('li')),
+                                                 columns=['Unknown_codes'])
 
-                    # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
-                    data_key = h3.text.strip()
+                        # Notes
+                        notes = {'Notes': None}
+                        if h3.find_next_sibling().name == 'p':
+                            next_p = h3.find_next('p')
+                            if next_p.find_previous('h3') == h3:
+                                notes['Notes'] = next_p.text.replace('\xa0', '')
 
-                    national_network_ole_.update({data_key: {'Codes': table, **notes}})
+                        note_tag = h3.find_next('h4')
+                        if note_tag and note_tag.text == 'Notes':
+                            notes_ = dict(
+                                (x.a.get('id').title(),
+                                 x.get_text(strip=True).replace('\xa0', ''))
+                                for x in soup.find('ol') if x != '\n')
+                            if notes['Notes'] is None:
+                                notes['Notes'] = notes_
+                            else:
+                                notes['Notes'] = [notes['Notes'], notes_]
 
-                    h3 = h3.find_next_sibling('h3')
+                        # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
+                        data_key = h3.text.strip()
 
-                source.close()
+                        national_network_ole_.update({data_key: {'Codes': table, **notes}})
 
-                last_updated_date = \
-                    get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
+                        h3 = h3.find_next_sibling('h3')
 
-                national_network_ole = {
-                    self.NationalNetworkKey: national_network_ole_,
-                    self.LUDKey: last_updated_date}
+                    source.close()
 
-                print("Done. ") if verbose == 2 else ""
+                    last_updated_date = \
+                        get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
 
-                path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
-                save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
+                    national_network_ole = {
+                        self.NationalNetworkKey: national_network_ole_,
+                        self.LUDKey: last_updated_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                national_network_ole = None
+                    print("Done. ") if verbose == 2 else ""
+
+                    path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
+                    save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return national_network_ole
 
@@ -254,9 +255,10 @@ class Electrification:
             national_network_ole = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             national_network_ole = self.collect_national_network_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if national_network_ole:  # codes_for_ole is not None
                 if pickle_it and data_dir:
@@ -304,13 +306,13 @@ class Electrification:
                                   headers=fake_requests_headers())
         except requests.exceptions.ConnectionError:
             print_conn_err(verbose=verbose)
-            return None
 
-        soup = bs4.BeautifulSoup(source.text, 'lxml')
-        for x in soup.find_all('p'):
-            if re.match(r'^Jump to: ', x.text):
-                line_names = x.text.replace('Jump to: ', '').split('\xa0| ')
-                return line_names
+        else:
+            soup = bs4.BeautifulSoup(source.text, 'lxml')
+            for x in soup.find_all('p'):
+                if re.match(r'^Jump to: ', x.text):
+                    line_names = x.text.replace('Jump to: ', '').split('\xa0| ')
+                    return line_names
 
     def collect_indep_lines_codes(self, confirmation_required=True, verbose=False):
         """
@@ -349,88 +351,90 @@ class Electrification:
                 print("Collecting the codes for {}".format(
                     self.IndependentLinesKey.lower()), end=" ... ")
 
+            independent_lines_ole = None
+
             try:
                 source = requests.get(self.Catalogue[self.IndependentLinesKey],
                                       headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
+            else:
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                independent_lines_ole_ = {}
-                h3 = soup.find('h3')
-                while h3:
-                    header_tag, table = h3.find_next('table'), None
-                    if header_tag:
-                        if header_tag.find_previous('h3') == h3:
-                            header = [x.text for x in header_tag.find_all('th')]
-                            temp = parse_tr(
-                                header, header_tag.find_next('table').find_all('tr'))
-                            table = pd.DataFrame(temp, columns=header)
-                            table = table.applymap(
-                                lambda x:
-                                re.sub(
-                                    r'\']\)?', ']',
-                                    re.sub(r'\(?\[\'', '[', x)).replace(
-                                    '\\xa0', '').strip())
+                    independent_lines_ole_ = {}
+                    h3 = soup.find('h3')
+                    while h3:
+                        header_tag, table = h3.find_next('table'), None
+                        if header_tag:
+                            if header_tag.find_previous('h3') == h3:
+                                header = [x.text for x in header_tag.find_all('th')]
+                                temp = parse_tr(
+                                    header, header_tag.find_next('table').find_all('tr'))
+                                table = pd.DataFrame(temp, columns=header)
+                                table = table.applymap(
+                                    lambda x:
+                                    re.sub(
+                                        r'\']\)?', ']',
+                                        re.sub(r'\(?\[\'', '[', x)).replace(
+                                        '\\xa0', '').strip())
 
-                    notes = {'Notes': None}
-                    h4 = h3.find_next('h4')
-                    if h4:
-                        previous_h3 = h4.find_previous('h3')
-                        if previous_h3 == h3 and h4.text == 'Notes':
-                            notes_ = dict(
-                                (x.a.get('id').title(),
-                                 x.get_text(strip=True).replace('\xa0', ''))
-                                for x in h4.find_next('ol') if x != '\n')
-                            if notes['Notes'] is None:
-                                notes['Notes'] = notes_
+                        notes = {'Notes': None}
+                        h4 = h3.find_next('h4')
+                        if h4:
+                            previous_h3 = h4.find_previous('h3')
+                            if previous_h3 == h3 and h4.text == 'Notes':
+                                notes_ = dict(
+                                    (x.a.get('id').title(),
+                                     x.get_text(strip=True).replace('\xa0', ''))
+                                    for x in h4.find_next('ol') if x != '\n')
+                                if notes['Notes'] is None:
+                                    notes['Notes'] = notes_
 
-                    note_tag, note_txt = h3.find_next('p'), ''
-                    if note_tag:
-                        previous_h3 = note_tag.find_previous('h3')
-                        if previous_h3 == h3:
-                            note_txt = note_tag.text.replace('\xa0', '')
-                            if notes['Notes'] is None:
-                                notes['Notes'] = note_txt
-                            else:
-                                notes['Notes'] = [notes['Notes'], note_txt]
+                        note_tag, note_txt = h3.find_next('p'), ''
+                        if note_tag:
+                            previous_h3 = note_tag.find_previous('h3')
+                            if previous_h3 == h3:
+                                note_txt = note_tag.text.replace('\xa0', '')
+                                if notes['Notes'] is None:
+                                    notes['Notes'] = note_txt
+                                else:
+                                    notes['Notes'] = [notes['Notes'], note_txt]
 
-                    ex_note_tag = note_tag.find_next('ol')
-                    if ex_note_tag:
-                        previous_h3 = ex_note_tag.find_previous('h3')
-                        if previous_h3 == h3:
-                            li = pd.DataFrame(
-                                list(re.sub(r'[()]', '', x.text).split(' ', 1)
-                                     for x in ex_note_tag.find_all('li')),
-                                columns=['Initial', 'Code'])
-                            notes.update({'Section codes known at present': li})
+                        ex_note_tag = note_tag.find_next('ol')
+                        if ex_note_tag:
+                            previous_h3 = ex_note_tag.find_previous('h3')
+                            if previous_h3 == h3:
+                                li = pd.DataFrame(
+                                    list(re.sub(r'[()]', '', x.text).split(' ', 1)
+                                         for x in ex_note_tag.find_all('li')),
+                                    columns=['Initial', 'Code'])
+                                notes.update({'Section codes known at present': li})
 
-                    independent_lines_ole_.update({h3.text: {'Codes': table, **notes}})
+                        independent_lines_ole_.update(
+                            {h3.text: {'Codes': table, **notes}})
 
-                    h3 = h3.find_next_sibling('h3')
+                        h3 = h3.find_next_sibling('h3')
 
-                source.close()
+                    source.close()
 
-                last_updated_date = \
-                    get_last_updated_date(self.Catalogue[self.IndependentLinesKey])
+                    last_updated_date = get_last_updated_date(
+                        self.Catalogue[self.IndependentLinesKey])
 
-                independent_lines_ole = {self.IndependentLinesKey: independent_lines_ole_,
-                                         self.LUDKey: last_updated_date}
+                    print("Done. ") if verbose == 2 else ""
 
-                print("Done. ") if verbose == 2 else ""
+                    independent_lines_ole = {
+                        self.IndependentLinesKey: independent_lines_ole_,
+                        self.LUDKey: last_updated_date}
 
-                pickle_filename = \
-                    self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
-                path_to_pickle = self._cdd_elec(pickle_filename)
-                save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
+                    pickle_filename_ = self.IndependentLinesKey.lower().replace(" ", "-")
+                    path_to_pickle = self._cdd_elec(pickle_filename_ + ".pickle")
+                    save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                independent_lines_ole = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return independent_lines_ole
 
@@ -476,9 +480,10 @@ class Electrification:
             independent_lines_ole = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             independent_lines_ole = self.collect_indep_lines_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if independent_lines_ole:  # codes_for_independent_lines is not None
                 if pickle_it and data_dir:
@@ -528,29 +533,31 @@ class Electrification:
             if verbose == 2:
                 print("Collecting data of {}".format(self.OhnsKey.lower()), end=" ... ")
 
+            ohns_codes = None
+
             try:
                 header, neutral_sections_data = pd.read_html(self.Catalogue[self.OhnsKey])
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                neutral_sections_data.columns = header.columns.to_list()
-                neutral_sections_data.fillna('', inplace=True)
+            else:
+                try:
+                    neutral_sections_data.columns = header.columns.to_list()
+                    neutral_sections_data.fillna('', inplace=True)
 
-                ohns_codes = {
-                    self.OhnsKey: neutral_sections_data,
-                    self.LUDKey: get_last_updated_date(self.Catalogue[self.OhnsKey])}
+                    last_up_date = get_last_updated_date(self.Catalogue[self.OhnsKey])
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self._cdd_elec(self.OhnsPickle + ".pickle")
-                save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
+                    ohns_codes = {self.OhnsKey: neutral_sections_data,
+                                  self.LUDKey: last_up_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                ohns_codes = None
+                    path_to_pickle = self._cdd_elec(self.OhnsPickle + ".pickle")
+                    save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return ohns_codes
 
@@ -595,9 +602,10 @@ class Electrification:
             ohns_codes = load_pickle(path_to_pickle)
 
         else:
-            ohns_codes = self.collect_ohns_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            ohns_codes = self.collect_ohns_codes(confirmation_required=False,
+                                                 verbose=verbose_)
 
             if ohns_codes:  # ohns is not None
                 if pickle_it and data_dir:
@@ -649,63 +657,63 @@ class Electrification:
                 print("Collecting the codes for {}".format(self.TariffZonesKey.lower()),
                       end=" ... ")
 
+            etz_ole = None
+
             try:
                 source = requests.get(self.Catalogue[self.TariffZonesKey],
                                       headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
+            else:
+                try:
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                etz_ole_ = {}
-                h3 = soup.find('h3')
-                while h3:
-                    header_tag, table = h3.find_next('table'), None
-                    if header_tag:
-                        if header_tag.find_previous('h3') == h3:
-                            header = [x.text for x in header_tag.find_all('th')]
-                            temp = parse_tr(
-                                header, header_tag.find_next('table').find_all('tr'))
-                            table = pd.DataFrame(temp, columns=header)
-                            table = table.applymap(
-                                lambda x:
-                                re.sub(
-                                    r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
-                                    '\\xa0', '').strip())
+                    etz_ole_ = {}
+                    h3 = soup.find('h3')
+                    while h3:
+                        header_tag, table = h3.find_next('table'), None
+                        if header_tag:
+                            if header_tag.find_previous('h3') == h3:
+                                header = [x.text for x in header_tag.find_all('th')]
+                                temp = parse_tr(
+                                    header, header_tag.find_next('table').find_all('tr'))
+                                table = pd.DataFrame(temp, columns=header)
+                                table = table.applymap(
+                                    lambda x:
+                                    re.sub(
+                                        r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
+                                        '\\xa0', '').strip())
 
-                    notes, next_p = [], h3.find_next('p')
-                    previous_h3 = next_p.find_previous('h3')
-                    while previous_h3 == h3:
-                        notes.append(next_p.text.replace('\xa0', ''))
-                        next_p = next_p.find_next('p')
-                        try:
-                            previous_h3 = next_p.find_previous('h3')
-                        except AttributeError:
-                            break
-                    notes = ' '.join(notes).strip()
+                        notes, next_p = [], h3.find_next('p')
+                        previous_h3 = next_p.find_previous('h3')
+                        while previous_h3 == h3:
+                            notes.append(next_p.text.replace('\xa0', ''))
+                            next_p = next_p.find_next('p')
+                            try:
+                                previous_h3 = next_p.find_previous('h3')
+                            except AttributeError:
+                                break
+                        notes = ' '.join(notes).strip()
 
-                    etz_ole_.update({h3.text: table, 'Notes': notes})
+                        etz_ole_.update({h3.text: table, 'Notes': notes})
 
-                    h3 = h3.find_next_sibling('h3')
+                        h3 = h3.find_next_sibling('h3')
 
-                source.close()
+                    source.close()
 
-                etz_ole = {
-                    self.TariffZonesKey: etz_ole_,
-                    self.LUDKey:
-                        get_last_updated_date(self.Catalogue[self.TariffZonesKey])}
+                    last_upd = get_last_updated_date(self.Catalogue[self.TariffZonesKey])
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self._cdd_elec(self.TariffZonesPickle + ".pickle")
-                save_pickle(etz_ole, path_to_pickle, verbose=verbose)
+                    etz_ole = {self.TariffZonesKey: etz_ole_, self.LUDKey: last_upd}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                etz_ole = None
+                    path_to_pickle = self._cdd_elec(self.TariffZonesPickle + ".pickle")
+                    save_pickle(etz_ole, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return etz_ole
 
@@ -750,9 +758,9 @@ class Electrification:
             etz_ole = load_pickle(path_to_pickle)
 
         else:
-            etz_ole = self.collect_etz_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            etz_ole = self.collect_etz_codes(confirmation_required=False, verbose=verbose_)
 
             if etz_ole:  # codes_for_energy_tariff_zones is not None
                 if pickle_it and data_dir:
@@ -802,10 +810,13 @@ class Electrification:
             ['Electrification', 'Last updated date']
         """
 
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
         codes = []
         for func in dir(self):
             if func.startswith('fetch_') and func != 'fetch_elec_codes':
-                codes.append(getattr(self, func)(update=update, verbose=verbose))
+                codes.append(getattr(self, func)(
+                    update=update, verbose=verbose_ if is_internet_connected() else False))
 
         ole_section_codes = {
             self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
