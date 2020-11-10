@@ -21,7 +21,7 @@ from pyhelpers.store import load_pickle, save_pickle
 from pyhelpers.text import find_similar_str
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_tr, print_conn_err, is_internet_connected
+    parse_tr, print_conn_err, is_internet_connected, print_connection_error
 
 
 class Tunnels:
@@ -54,17 +54,20 @@ class Tunnels:
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            print_connection_error(verbose=verbose)
+
         self.Name = 'Railway tunnel lengths'
+        self.Key = 'Tunnels'
+
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/tunnels/tunnels0.shtm')
 
-        self.Key = 'Tunnels'
-
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
-                                          verbose=verbose)
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
+                                          as_date_type=False)
 
-        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
 
         self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.Catalogue.keys())[1:]
