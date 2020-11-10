@@ -14,7 +14,8 @@ from pyhelpers.ops import confirmed
 
 from .line_data import *
 from .other_assets import *
-from .utils import get_category_menu, homepage_url
+from .utils import get_category_menu, homepage_url, is_internet_connected, \
+    print_connection_error, print_conn_err
 
 
 class LineData:
@@ -25,6 +26,9 @@ class LineData:
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Examples**::
 
@@ -69,29 +73,41 @@ class LineData:
         [5 rows x 3 columns]
     """
 
-    def __init__(self, update=False):
+    def __init__(self, update=False, verbose=True):
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            self.Connected = False
+            print_connection_error(verbose=verbose)
+        else:
+            self.Connected = True
+
         # Basic info
         self.Name = 'Line data'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(
             self.HomeURL, '{}menu.shtm'.format(self.Name.lower().replace(' ', '')))
-        self.Catalogue = \
-            get_category_menu(self.SourceURL, update=update, confirmation_required=False)
-        # Classes
-        self.ELRMileages = elr_mileage.ELRMileages(update=update)
-        self.Electrification = elec.Electrification(update=update)
-        self.LocationIdentifiers = loc_id.LocationIdentifiers(update=update)
-        self.LOR = lor_code.LOR(update=update)
-        self.LineNames = line_name.LineNames(update=update)
-        self.TrackDiagrams = trk_diagr.TrackDiagrams()
 
-    def update(self, verbose=False, time_gap=2, init_update=False):
+        self.Catalogue = get_category_menu(menu_url=self.SourceURL, update=update,
+                                           confirmation_required=False)
+
+        # Classes
+        self.ELRMileages = elr_mileage.ELRMileages(update=update, verbose=False)
+        self.Electrification = elec.Electrification(update=update, verbose=False)
+        self.LocationIdentifiers = loc_id.LocationIdentifiers(update=update, verbose=False)
+        self.LOR = lor_code.LOR(update=update, verbose=False)
+        self.LineNames = line_name.LineNames(update=update, verbose=False)
+        self.TrackDiagrams = trk_diagr.TrackDiagrams(verbose=False)
+
+    def update(self, confirmation_required=True, verbose=False, time_gap=2,
+               init_update=False):
         """
         Update local backup of the line data.
 
+        :param confirmation_required: whether to prompt a message
+            for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
         :param verbose: whether to print relevant information in console
             as the function runs, defaults to ``False``
         :type verbose: bool
@@ -109,48 +125,59 @@ class LineData:
             >>> ld.update(verbose=True)
         """
 
-        if confirmed("To update line data?"):
+        if not self.Connected:
+            print_conn_err(verbose=verbose)
 
-            if init_update:
-                self.__init__(update=init_update)
+        else:
+            if confirmed("To update line data?",
+                         confirmation_required=confirmation_required):
 
-            # ELR and mileages
-            print(f"{self.ELRMileages.Name}:")
-            _ = self.ELRMileages.fetch_elr(update=True, verbose=verbose)
+                if init_update:
+                    self.__init__(update=init_update)
 
-            time.sleep(time_gap)
+                # ELR and mileages
+                print(f"{self.ELRMileages.Name}:")
+                _ = self.ELRMileages.fetch_elr(update=True, verbose=verbose)
 
-            # Electrification
-            print(f"\n{self.Electrification.Name}:")
-            _ = self.Electrification.fetch_elec_codes(update=True, verbose=verbose)
+                time.sleep(time_gap)
 
-            time.sleep(time_gap)
+                # Electrification
+                print(f"\n{self.Electrification.Name}:")
+                _ = self.Electrification.fetch_elec_codes(update=True, verbose=verbose)
 
-            # Location
-            print(f"\n{self.LocationIdentifiers.Name}:")
-            _ = self.LocationIdentifiers.fetch_location_codes(update=True,
-                                                              verbose=verbose)
+                time.sleep(time_gap)
 
-            time.sleep(time_gap)
+                # Location
+                print(f"\n{self.LocationIdentifiers.Name}:")
+                _ = self.LocationIdentifiers.fetch_location_codes(
+                    update=True, verbose=verbose)
 
-            # Line of routes
-            print(f"\n{self.LOR.Name}:")
-            _ = self.LOR.update_catalogue(confirmation_required=False, verbose=verbose)
-            _ = self.LOR.fetch_lor_codes(update=True, verbose=verbose)
-            _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
+                time.sleep(time_gap)
 
-            time.sleep(time_gap)
+                # Line of routes
+                print(f"\n{self.LOR.Name}:")
+                _ = self.LOR.get_keys_to_prefixes(
+                    prefixes_only=True, update=True, verbose=verbose)
+                _ = self.LOR.get_keys_to_prefixes(
+                    prefixes_only=False, update=True, verbose=verbose)
+                _ = self.LOR.get_lor_page_urls(update=True, verbose=verbose)
+                _ = self.LOR.fetch_lor_codes(update=True, verbose=verbose)
+                _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
 
-            # Line names
-            print(f"\n{self.LineNames.Name}:")
-            _ = self.LineNames.fetch_line_names(update=True, verbose=verbose)
+                time.sleep(time_gap)
 
-            time.sleep(time_gap)
+                # Line names
+                print(f"\n{self.LineNames.Name}:")
+                _ = self.LineNames.fetch_line_names(update=True, verbose=verbose)
 
-            # Track diagrams
-            print(f"\n{self.TrackDiagrams.Name}:")
-            _ = self.TrackDiagrams.get_track_diagrams_items(update=True, verbose=verbose)
-            _ = self.TrackDiagrams.fetch_sample_catalogue(update=True, verbose=verbose)
+                time.sleep(time_gap)
+
+                # Track diagrams
+                print(f"\n{self.TrackDiagrams.Name}:")
+                _ = self.TrackDiagrams.get_track_diagrams_items(
+                    update=True, verbose=verbose)
+                _ = self.TrackDiagrams.fetch_sample_catalogue(
+                    update=True, verbose=verbose)
 
 
 class OtherAssets:
@@ -161,6 +188,9 @@ class OtherAssets:
     :param update: whether to check on update and proceed to update the package data,
         defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console as the function runs,
+        defaults to ``True``
+    :type verbose: bool or int
 
     **Examples**::
 
@@ -204,29 +234,41 @@ class OtherAssets:
         [5 rows x 8 columns]
     """
 
-    def __init__(self, update=False):
+    def __init__(self, update=False, verbose=True):
         """
         Constructor method.
         """
+        if not is_internet_connected():
+            self.Connected = False
+            print_connection_error(verbose=verbose)
+        else:
+            self.Connected = True
+
         # Basic info
         self.Name = 'Other assets'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(
             self.HomeURL, '{}menu.shtm'.format(self.Name.lower().replace(' ', '')))
-        self.Catalogue = \
-            get_category_menu(self.SourceURL, update=update, confirmation_required=False)
-        # Classes
-        self.SignalBoxes = sig_box.SignalBoxes(update=update)
-        self.Tunnels = tunnel.Tunnels(update=update)
-        self.Viaducts = viaduct.Viaducts(update=update)
-        self.Stations = station.Stations()
-        self.Depots = depot.Depots(update=update)
-        self.Features = feature.Features(update=update)
 
-    def update(self, verbose=False, time_gap=2, init_update=False):
+        self.Catalogue = get_category_menu(menu_url=self.SourceURL, update=update,
+                                           confirmation_required=False)
+
+        # Classes
+        self.SignalBoxes = sig_box.SignalBoxes(update=update, verbose=False)
+        self.Tunnels = tunnel.Tunnels(update=update, verbose=False)
+        self.Viaducts = viaduct.Viaducts(update=update, verbose=False)
+        self.Stations = station.Stations(verbose=False)
+        self.Depots = depot.Depots(update=update, verbose=False)
+        self.Features = feature.Features(update=update, verbose=False)
+
+    def update(self, confirmation_required=True, verbose=False, time_gap=2,
+               init_update=False):
         """
         Update local backup of the other assets data.
 
+        :param confirmation_required: whether to prompt a message
+            for confirmation to proceed, defaults to ``True``
+        :type confirmation_required: bool
         :param verbose: whether to print relevant information in console
             as the function runs, defaults to ``False``
         :type verbose: bool
@@ -244,41 +286,49 @@ class OtherAssets:
             >>> oa.update(verbose=True)
         """
 
-        if init_update:
-            self.__init__(update=init_update)
+        if not self.Connected:
+            print_conn_err(verbose=verbose)
 
-        # Signal boxes
-        print(f"\n{self.SignalBoxes.Name}:")
-        _ = self.SignalBoxes.fetch_prefix_codes(update=True, verbose=verbose)
-        _ = self.SignalBoxes.fetch_non_national_rail_codes(update=True, verbose=verbose)
+        else:
+            if confirmed("To update data of other assets?",
+                         confirmation_required=confirmation_required):
 
-        time.sleep(time_gap)
+                if init_update:
+                    self.__init__(update=init_update)
 
-        # Tunnels
-        print(f"\n{self.Tunnels.Name}:")
-        _ = self.Tunnels.fetch_tunnel_lengths(update=True, verbose=verbose)
+                # Signal boxes
+                print(f"\n{self.SignalBoxes.Name}:")
+                _ = self.SignalBoxes.fetch_prefix_codes(update=True, verbose=verbose)
+                _ = self.SignalBoxes.fetch_non_national_rail_codes(
+                    update=True, verbose=verbose)
 
-        time.sleep(time_gap)
+                time.sleep(time_gap)
 
-        # Viaducts
-        print(f"\n{self.Viaducts.Name}:")
-        _ = self.Viaducts.fetch_viaduct_codes(update=True, verbose=verbose)
+                # Tunnels
+                print(f"\n{self.Tunnels.Name}:")
+                _ = self.Tunnels.fetch_tunnel_lengths(update=True, verbose=verbose)
 
-        time.sleep(time_gap)
+                time.sleep(time_gap)
 
-        # Stations
-        print(f"\n{self.Stations.Name}:")
-        _ = self.Stations.get_station_data_catalogue(update=True, verbose=verbose)
-        _ = self.Stations.fetch_station_data(update=True, verbose=verbose)
+                # Viaducts
+                print(f"\n{self.Viaducts.Name}:")
+                _ = self.Viaducts.fetch_viaduct_codes(update=True, verbose=verbose)
 
-        time.sleep(time_gap)
+                time.sleep(time_gap)
 
-        # Depots
-        print(f"\n{self.Depots.Name}:")
-        _ = self.Depots.fetch_depot_codes(update=True, verbose=verbose)
+                # Stations
+                print(f"\n{self.Stations.Name}:")
+                _ = self.Stations.get_station_data_catalogue(update=True, verbose=verbose)
+                _ = self.Stations.fetch_station_data(update=True, verbose=verbose)
 
-        time.sleep(time_gap)
+                time.sleep(time_gap)
 
-        # Features
-        print(f"\n{self.Features.Name}:")
-        _ = self.Features.fetch_features_codes(update=True, verbose=verbose)
+                # Depots
+                print(f"\n{self.Depots.Name}:")
+                _ = self.Depots.fetch_depot_codes(update=True, verbose=verbose)
+
+                time.sleep(time_gap)
+
+                # Features
+                print(f"\n{self.Features.Name}:")
+                _ = self.Features.fetch_features_codes(update=True, verbose=verbose)
