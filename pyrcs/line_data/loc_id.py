@@ -243,44 +243,44 @@ class LocationIdentifiers:
             if verbose == 2:
                 print("Collecting data of {}".format(self.MSCENKey.lower()), end=" ... ")
 
-            try:
-                note_url = self.HomeURL + '/crs/CRS2.shtm'
+            note_url = self.HomeURL + '/crs/CRS2.shtm'
 
-                explanatory_note_ = self.parse_note_page(note_url, verbose=False)
-
-                if explanatory_note_ is None:
-                    print("Failed. ") if verbose == 2 else ""
-                    if not is_internet_connected():
-                        print_conn_err(verbose=verbose)
-                    return None
-
-                explanatory_note, notes = {}, []
-
-                for x in explanatory_note_:
-                    if isinstance(x, str):
-                        if 'Last update' in x:
-                            explanatory_note.update(
-                                {self.LUDKey: parse_date(x, as_date_type=False)})
-                        else:
-                            notes.append(x)
-                    else:
-                        explanatory_note.update({self.MSCENKey: x})
-
-                explanatory_note.update({'Notes': notes})
-
-                # Rearrange the dict
-                explanatory_note = {
-                    k: explanatory_note[k] for k in [self.MSCENKey, 'Notes', self.LUDKey]}
-
-                print("Done.") if verbose == 2 else ""
-
-                save_pickle(explanatory_note,
-                            self._cdd_locid(self.MSCENPickle + ".pickle"),
-                            verbose=verbose)
-
-            except Exception as e:
-                print("Failed. {}.".format(e))
+            explanatory_note_ = self.parse_note_page(note_url, verbose=False)
+            if explanatory_note_ is None:
+                print("Failed. ") if verbose == 2 else ""
+                if not is_internet_connected():
+                    print_conn_err(verbose=verbose)
                 explanatory_note = None
+
+            else:
+                try:
+                    explanatory_note, notes = {}, []
+
+                    for x in explanatory_note_:
+                        if isinstance(x, str):
+                            if 'Last update' in x:
+                                explanatory_note.update(
+                                    {self.LUDKey: parse_date(x, as_date_type=False)})
+                            else:
+                                notes.append(x)
+                        else:
+                            explanatory_note.update({self.MSCENKey: x})
+
+                    explanatory_note.update({'Notes': notes})
+
+                    # Rearrange the dict
+                    explanatory_note = {k: explanatory_note[k]
+                                        for k in [self.MSCENKey, 'Notes', self.LUDKey]}
+
+                    print("Done.") if verbose == 2 else ""
+
+                    save_pickle(explanatory_note,
+                                self._cdd_locid(self.MSCENPickle + ".pickle"),
+                                verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}.".format(e))
+                    explanatory_note = None
 
             return explanatory_note
 
@@ -377,42 +377,45 @@ class LocationIdentifiers:
             if verbose == 2:
                 print("Collecting data of {}".format(self.OSKey.lower()), end=" ... ")
 
+            other_systems_codes = None
+
             try:
                 source = requests.get(url, headers=fake_requests_headers())
             except requests.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
+            else:
+                try:
+                    web_page_text = bs4.BeautifulSoup(source.text, 'lxml')
 
-                # Get system name
-                system_names = [k.text for k in web_page_text.find_all('h3')]
+                    # Get system name
+                    system_names = [k.text for k in web_page_text.find_all('h3')]
 
-                # Parse table data for each system
-                table_data = list(
-                    split_list_by_size(web_page_text.find_all('table'), sub_len=2))
+                    # Parse table data for each system
+                    table_data = list(
+                        split_list_by_size(web_page_text.find_all('table'), sub_len=2))
 
-                tables = []
-                for table in table_data:
-                    headers = [x.text for x in table[0].find_all('th')]
-                    tbl_dat = table[1].find_all('tr')
-                    tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat), columns=headers)
-                    tables.append(tbl_data)
+                    tables = []
+                    for table in table_data:
+                        headers = [x.text for x in table[0].find_all('th')]
+                        tbl_dat = table[1].find_all('tr')
+                        tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat),
+                                                columns=headers)
+                        tables.append(tbl_data)
 
-                # Make a dict
-                other_systems_codes = {self.OSKey: dict(zip(system_names, tables)),
-                                       self.LUDKey: get_last_updated_date(url)}
+                    # Make a dict
+                    other_systems_codes = {self.OSKey: dict(zip(system_names, tables)),
+                                           self.LUDKey: get_last_updated_date(url)}
 
-                print("Done.") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
-                save_pickle(other_systems_codes, self._cdd_locid(self.OSPickle + ".pickle"),
-                            verbose=verbose)
+                    save_pickle(other_systems_codes,
+                                self._cdd_locid(self.OSPickle + ".pickle"),
+                                verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}.".format(e))
-                other_systems_codes = None
+                except Exception as e:
+                    print("Failed. {}.".format(e))
 
             return other_systems_codes
 
