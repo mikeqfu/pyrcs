@@ -444,8 +444,7 @@ class LOR:
             <class 'dict'>
         """
 
-        prefixes = self.get_keys_to_prefixes(prefixes_only=True, update=update,
-                                             verbose=verbose)
+        prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
 
