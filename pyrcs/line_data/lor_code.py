@@ -332,69 +332,73 @@ class LOR:
                 print("To collect LOR codes prefixed by \"{}\". ".format(prefix_),
                       end=" ... ")
 
+            lor_codes_by_initials = None
+
             try:
                 source = requests.get(url, headers=fake_requests_headers())
             except requests.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                source_text = source.text
-                source.close()
+            else:
+                try:
+                    source_text = source.text
+                    source.close()
 
-                soup = bs4.BeautifulSoup(source_text, 'lxml')
+                    soup = bs4.BeautifulSoup(source_text, 'lxml')
 
-                # Parse the column of Line Name
-                def parse_line_name(x):
-                    # re.search('\w+.*(?= \(\[\')', x).group()
-                    # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
-                    try:
-                        line_name, line_name_note = x.split(' ([\'')
-                        line_name_note = line_name_note.strip('\'])')
-                    except ValueError:
-                        line_name, line_name_note = x, None
-                    return line_name, line_name_note
+                    # Parse the column of Line Name
+                    def parse_line_name(x):
+                        # re.search('\w+.*(?= \(\[\')', x).group()
+                        # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
+                        try:
+                            line_name, line_name_note = x.split(' ([\'')
+                            line_name_note = line_name_note.strip('\'])')
+                        except ValueError:
+                            line_name, line_name_note = x, None
+                        return line_name, line_name_note
 
-                def parse_h3_table(tbl_soup):
-                    header, code = tbl_soup
-                    header_text = [
-                        h.text.replace('\n', ' ') for h in header.find_all('th')]
-                    code_dat = pd.DataFrame(
-                        parse_tr(header_text, code.find_all('tr')), columns=header_text)
-                    line_name_info = \
-                        code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
-                    line_name_info.columns = ['Line Name', 'Line Name Note']
-                    code_dat = pd.concat([code_dat, line_name_info], axis=1, sort=False)
-                    try:
-                        note_dat = dict(
-                            [(x['id'].title(), x.text.replace('\xa0', ''))
-                             for x in soup.find('ol').findChildren('a')])
-                    except AttributeError:
-                        note_dat = dict([('Note', None)])
-                    return code_dat, note_dat
+                    def parse_h3_table(tbl_soup):
+                        header, code = tbl_soup
+                        header_text = [
+                            h.text.replace('\n', ' ') for h in header.find_all('th')]
+                        code_dat = pd.DataFrame(
+                            parse_tr(header_text, code.find_all('tr')),
+                            columns=header_text)
+                        line_name_info = \
+                            code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
+                        line_name_info.columns = ['Line Name', 'Line Name Note']
+                        code_dat = pd.concat([code_dat, line_name_info], axis=1,
+                                             sort=False)
+                        try:
+                            note_dat = dict(
+                                [(x['id'].title(), x.text.replace('\xa0', ''))
+                                 for x in soup.find('ol').findChildren('a')])
+                        except AttributeError:
+                            note_dat = dict([('Note', None)])
+                        return code_dat, note_dat
 
-                h3, table_soup = soup.find_all('h3'), soup.find_all('table')
-                if len(h3) == 0:
-                    code_data, code_data_notes = parse_h3_table(table_soup)
-                    lor_codes_by_initials = {prefix_: code_data, 'Notes': code_data_notes}
-                else:
-                    code_data_and_notes = [
-                        dict(zip([prefix_, 'Notes'], parse_h3_table(x)))
-                        for x in zip(*[iter(table_soup)] * 2)]
-                    lor_codes_by_initials = {
-                        prefix_: dict(zip([x.text for x in h3], code_data_and_notes))}
+                    h3, table_soup = soup.find_all('h3'), soup.find_all('table')
+                    if len(h3) == 0:
+                        code_data, code_data_notes = parse_h3_table(table_soup)
+                        lor_codes_by_initials = {prefix_: code_data,
+                                                 'Notes': code_data_notes}
+                    else:
+                        code_data_and_notes = [
+                            dict(zip([prefix_, 'Notes'], parse_h3_table(x)))
+                            for x in zip(*[iter(table_soup)] * 2)]
+                        lor_codes_by_initials = {
+                            prefix_: dict(zip([x.text for x in h3], code_data_and_notes))}
 
-                last_updated_date = get_last_updated_date(url)
-                lor_codes_by_initials.update({self.LUDKey: last_updated_date})
+                    last_updated_date = get_last_updated_date(url)
+                    lor_codes_by_initials.update({self.LUDKey: last_updated_date})
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                save_pickle(lor_codes_by_initials, path_to_pickle, verbose=verbose)
+                    save_pickle(lor_codes_by_initials, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                lor_codes_by_initials = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
         return lor_codes_by_initials
 
@@ -520,50 +524,53 @@ class LOR:
             if verbose == 2:
                 print("Collecting data of {}".format(self.ELCKey), end=" ... ")
 
+            elr_lor_converter = None
+
             try:
                 headers, elr_lor_dat = pd.read_html(url)
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
-                return None
 
-            try:
-                elr_lor_dat.columns = list(headers)
-                #
-                source = requests.get(url, headers=fake_requests_headers())
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
-                tds = soup.find_all('td')
-                links = [x.get('href') for x in [x.find('a', href=True) for x in tds]
-                         if x is not None]
-                elr_links, lor_links = [x for x in links[::2]], [x for x in links[1::2]]
-                #
-                if len(elr_links) != len(elr_lor_dat):
-                    duplicates = elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'],
-                                                                    keep=False)]
-                    for i in duplicates.index:
-                        if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
-                            elr_links.insert(i, elr_links[i - 1])
-                        if not lor_links[i].endswith(
-                                duplicates['LOR code'].loc[i].lower()):
-                            lor_links.insert(i, lor_links[i - 1])
-                #
-                elr_lor_dat['ELR_URL'] = [
-                    urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
-                elr_lor_dat['LOR_URL'] = [
-                    self.HomeURL + 'pride/' + x for x in lor_links]
-                #
-                elr_lor_converter = {self.ELCKey: elr_lor_dat,
-                                     self.LUDKey: get_last_updated_date(url)}
+            else:
+                try:
+                    elr_lor_dat.columns = list(headers)
+                    #
+                    source = requests.get(url, headers=fake_requests_headers())
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    tds = soup.find_all('td')
+                    links = [x.get('href') for x in [x.find('a', href=True) for x in tds]
+                             if x is not None]
+                    elr_links = [x for x in links[::2]]
+                    lor_links = [x for x in links[1::2]]
+                    #
+                    if len(elr_links) != len(elr_lor_dat):
+                        duplicates = elr_lor_dat[elr_lor_dat.duplicated(
+                            ['ELR', 'LOR code'], keep=False)]
+                        for i in duplicates.index:
+                            if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+                                elr_links.insert(i, elr_links[i - 1])
+                            if not lor_links[i].endswith(
+                                    duplicates['LOR code'].loc[i].lower()):
+                                lor_links.insert(i, lor_links[i - 1])
+                    #
+                    elr_lor_dat['ELR_URL'] = [
+                        urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
+                    elr_lor_dat['LOR_URL'] = [
+                        self.HomeURL + 'pride/' + x for x in lor_links]
+                    #
+                    elr_lor_converter = {self.ELCKey: elr_lor_dat,
+                                         self.LUDKey: get_last_updated_date(url)}
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                pickle_filename = re.sub(r"[/ ]", "-", self.ELCKey.lower()) + ".pickle"
-                save_pickle(elr_lor_converter, self._cdd_lor(pickle_filename),
-                            verbose=verbose)
+                    pickle_filename_ = re.sub(r"[/ ]", "-", self.ELCKey.lower())
+                    save_pickle(elr_lor_converter,
+                                self._cdd_lor(pickle_filename_ + ".pickle"),
+                                verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                elr_lor_converter = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return elr_lor_converter
 
@@ -614,9 +621,11 @@ class LOR:
             elr_lor_converter = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if (data_dir or not verbose) \
+                else (2 if verbose == 2 else True)
+
             elr_lor_converter = self.collect_elr_lor_converter(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if elr_lor_converter:  # codes_for_ole is not None
                 if pickle_it and data_dir:
