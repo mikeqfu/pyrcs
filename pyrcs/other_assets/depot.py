@@ -5,6 +5,8 @@ Collect `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 import copy
 import os
 import re
+import socket
+import urllib.error
 import urllib.parse
 
 import bs4
@@ -14,7 +16,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
+    print_conn_err, is_internet_connected
 
 
 class Depots:
@@ -40,21 +43,29 @@ class Depots:
         http://www.railwaycodes.org.uk/depots/depots0.shtm
     """
 
-    def __init__(self, data_dir=None, update=False):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         Constructor method.
         """
         self.Name = 'Depot codes'
         self.HomeURL = homepage_url()
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/depots/depots0.shtm')
-        self.Catalogue = get_catalogue(
-            self.SourceURL, update=update, confirmation_required=False)
-        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False)
+
+        self.Date = get_last_updated_date(self.SourceURL, parsed=True, as_date_type=False,
+                                          verbose=verbose)
+
+        self.Catalogue = get_catalogue(self.SourceURL, update=update,
+                                       confirmation_required=False)
+
         self.Key = 'Depots'
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.DataDir = validate_input_data_dir(data_dir) if data_dir \
-            else cd_dat("other-assets", self.Key.lower())
+
+        if data_dir:
+            self.DataDir = validate_input_data_dir(data_dir)
+        else:
+            self.DataDir = cd_dat("other-assets", self.Key.lower())
         self.CurrentDataDir = copy.copy(self.DataDir)
+
         self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = \
             list(self.Catalogue.keys())[1:]
         self.TCTPickle = self.TCTKey.replace(" ", "-").lower()
@@ -62,7 +73,7 @@ class Depots:
         self.S1950Pickle = re.sub(r' \(|\) | ', '-', self.S1950Key).lower()
         self.GWRPickle = self.GWRKey.replace(" ", "-").lower()
 
-    def cdd_depots(self, *sub_dir, **kwargs):
+    def _cdd_depots(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
         
@@ -123,25 +134,32 @@ class Depots:
                 print("Collecting data of {}".format(
                     self.TCTKey[:1].lower() + self.TCTKey[1:]), end=" ... ")
 
+            two_char_tops_codes_data = None
+
             try:
                 header, two_char_tops_codes = pd.read_html(url, na_values=[''],
                                                            keep_default_na=False)
-                two_char_tops_codes.columns = header.columns.to_list()
-                two_char_tops_codes.fillna('', inplace=True)
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                last_updated_date = get_last_updated_date(url)
+            else:
+                try:
+                    two_char_tops_codes.columns = header.columns.to_list()
+                    two_char_tops_codes.fillna('', inplace=True)
 
-                two_char_tops_codes_data = {self.TCTKey: two_char_tops_codes,
-                                            self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_depots(self.TCTPickle + ".pickle")
-                save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
+                    two_char_tops_codes_data = {self.TCTKey: two_char_tops_codes,
+                                                self.LUDKey: last_updated_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                two_char_tops_codes_data = None
+                    path_to_pickle = self._cdd_depots(self.TCTPickle + ".pickle")
+                    save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return two_char_tops_codes_data
 
@@ -180,15 +198,16 @@ class Depots:
             ['Two character TOPS codes', 'Last updated date']
         """
 
-        path_to_pickle = self.cdd_depots(self.TCTPickle + ".pickle")
+        path_to_pickle = self._cdd_depots(self.TCTPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             two_char_tops_codes_data = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             two_char_tops_codes_data = self.collect_two_char_tops_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if two_char_tops_codes_data:
                 if pickle_it and data_dir:
@@ -197,8 +216,9 @@ class Depots:
                         self.CurrentDataDir, self.TCTPickle + ".pickle")
                     save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been collected.".format(
+                print("No data of {} has been freshly collected.".format(
                     self.TCTKey[:1].lower() + self.TCTKey[1:]))
+                two_char_tops_codes_data = load_pickle(path_to_pickle)
 
         return two_char_tops_codes_data
 
@@ -240,7 +260,7 @@ class Depots:
                 self.FDPTKey[:1].lower() + self.FDPTKey[1:]),
                 confirmation_required=confirmation_required):
 
-            path_to_pickle = self.cdd_depots(self.FDPTPickle + ".pickle")
+            path_to_pickle = self._cdd_depots(self.FDPTPickle + ".pickle")
 
             url = self.Catalogue[self.FDPTKey]
 
@@ -248,35 +268,44 @@ class Depots:
                 print("Collecting data of {}".format(
                     self.FDPTKey[:1].lower() + self.FDPTKey[1:]), end=" ... ")
 
+            four_digit_pre_tops_codes_data = None
+
             try:
                 source = requests.get(url, headers=fake_requests_headers())
-                p_tags = bs4.BeautifulSoup(source.text, 'lxml').find_all('p')
-                region_names = [x.text.replace('Jump to: ', '').strip().split(' | ')
-                                for x in p_tags if x.text.startswith('Jump to: ')][0]
+            except requests.ConnectionError:
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                data_sets = iter(
-                    pd.read_html(source.text, na_values=[''], keep_default_na=False))
+            else:
+                try:
+                    p_tags = bs4.BeautifulSoup(source.text, 'lxml').find_all('p')
+                    region_names = [x.text.replace('Jump to: ', '').strip().split(' | ')
+                                    for x in p_tags if x.text.startswith('Jump to: ')][0]
 
-                four_digit_pre_tops_codes_list = []
-                for x in data_sets:
-                    header, four_digit_pre_tops_codes_data = x, next(data_sets)
-                    four_digit_pre_tops_codes_data.columns = header.columns.to_list()
-                    four_digit_pre_tops_codes_list.append(four_digit_pre_tops_codes_data)
+                    data_sets = iter(
+                        pd.read_html(source.text, na_values=[''], keep_default_na=False))
 
-                last_updated_date = get_last_updated_date(url)
+                    four_digit_pre_tops_codes_list = []
+                    for x in data_sets:
+                        header, four_digit_pre_tops_codes_data = x, next(data_sets)
+                        four_digit_pre_tops_codes_data.columns = header.columns.to_list()
+                        four_digit_pre_tops_codes_list.append(
+                            four_digit_pre_tops_codes_data)
 
-                four_digit_pre_tops_codes_data = {
-                    self.FDPTKey: dict(zip(region_names, four_digit_pre_tops_codes_list)),
-                    self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                save_pickle(four_digit_pre_tops_codes_data, path_to_pickle,
-                            verbose=verbose)
+                    four_digit_pre_tops_codes_data = {
+                        self.FDPTKey: dict(zip(region_names,
+                                               four_digit_pre_tops_codes_list)),
+                        self.LUDKey: last_updated_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                four_digit_pre_tops_codes_data = None
+                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle,
+                                verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return four_digit_pre_tops_codes_data
 
@@ -326,15 +355,16 @@ class Depots:
              'Scottish Region']
         """
 
-        path_to_pickle = self.cdd_depots(self.FDPTPickle + ".pickle")
+        path_to_pickle = self._cdd_depots(self.FDPTPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             four_digit_pre_tops_codes_data = self.collect_four_digit_pre_tops_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if four_digit_pre_tops_codes_data:
                 if pickle_it and data_dir:
@@ -346,8 +376,9 @@ class Depots:
                                 verbose=verbose)
 
             else:
-                print("No data of {} has been collected.".format(
+                print("No data of {} has been freshly collected.".format(
                     self.FDPTKey[:1].lower() + self.FDPTKey[1:]))
+                four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
 
         return four_digit_pre_tops_codes_data
 
@@ -389,24 +420,31 @@ class Depots:
             if verbose == 2:
                 print("Collecting data of {}".format(self.S1950Key), end=" ... ")
 
+            system_1950_codes_data = None
+
             try:
                 header, system_1950_codes = pd.read_html(url, na_values=[''],
                                                          keep_default_na=False)
-                system_1950_codes.columns = header.columns.to_list()
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                last_updated_date = get_last_updated_date(url)
+            else:
+                try:
+                    system_1950_codes.columns = header.columns.to_list()
 
-                system_1950_codes_data = {self.S1950Key: system_1950_codes,
-                                          self.LUDKey: last_updated_date}
+                    last_updated_date = get_last_updated_date(url)
 
-                print("Done. ") if verbose == 2 else ""
+                    print("Done. ") if verbose == 2 else ""
 
-                path_to_pickle = self.cdd_depots(self.S1950Pickle + ".pickle")
-                save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
+                    system_1950_codes_data = {self.S1950Key: system_1950_codes,
+                                              self.LUDKey: last_updated_date}
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                system_1950_codes_data = None
+                    path_to_pickle = self._cdd_depots(self.S1950Pickle + ".pickle")
+                    save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
+
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return system_1950_codes_data
 
@@ -452,15 +490,16 @@ class Depots:
             4   1D        Marylebone  Previously 14F to 31 August 1963. Became ME fr...
         """
 
-        path_to_pickle = self.cdd_depots(self.S1950Pickle + ".pickle")
+        path_to_pickle = self._cdd_depots(self.S1950Pickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             system_1950_codes_data = load_pickle(path_to_pickle)
 
         else:
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
             system_1950_codes_data = self.collect_1950_system_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+                confirmation_required=False, verbose=verbose_)
 
             if system_1950_codes_data:
                 if pickle_it and data_dir:
@@ -470,7 +509,8 @@ class Depots:
                     save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
 
             else:
-                print("No data of {} has been collected.".format(self.S1950Key))
+                print("No data of {} has been freshly collected.".format(self.S1950Key))
+                system_1950_codes_data = load_pickle(path_to_pickle)
 
         return system_1950_codes_data
 
@@ -511,42 +551,48 @@ class Depots:
             if verbose == 2:
                 print("Collecting data of {}".format(self.GWRKey), end=" ... ")
 
+            gwr_codes_data = None
+
             try:
                 header, alphabetical_codes, numerical_codes_1, _, numerical_codes_2 = \
                     pd.read_html(url)
+            except (urllib.error.URLError, socket.gaierror):
+                print("Failed. ") if verbose == 2 else ""
+                print_conn_err(verbose=verbose)
 
-                # Alphabetical codes
-                alphabetical_codes.columns = header.columns.to_list()
+            else:
+                try:
+                    # Alphabetical codes
+                    alphabetical_codes.columns = header.columns.to_list()
 
-                # Numerical codes
-                numerical_codes_1.drop(1, axis=1, inplace=True)
-                numerical_codes_1.columns = header.columns.to_list()
-                numerical_codes_2.columns = header.columns.to_list()
-                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2])
+                    # Numerical codes
+                    numerical_codes_1.drop(1, axis=1, inplace=True)
+                    numerical_codes_1.columns = header.columns.to_list()
+                    numerical_codes_2.columns = header.columns.to_list()
+                    numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2])
 
-                source = requests.get(url)
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    source = requests.get(url)
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
 
-                gwr_codes = dict(zip([x.text for x in soup.find_all('h3')],
-                                     [alphabetical_codes, numerical_codes]))
+                    gwr_codes = dict(zip([x.text for x in soup.find_all('h3')],
+                                         [alphabetical_codes, numerical_codes]))
 
-                last_updated_date = get_last_updated_date(url)
+                    last_updated_date = get_last_updated_date(url)
 
-                gwr_codes_data = {self.GWRKey: gwr_codes, self.LUDKey: last_updated_date}
+                    print("Done. ") if verbose == 2 else ""
 
-                print("Done. ") if verbose == 2 else ""
+                    gwr_codes_data = {self.GWRKey: gwr_codes,
+                                      self.LUDKey: last_updated_date}
 
-                path_to_pickle = self.cdd_depots(self.GWRPickle + ".pickle")
-                save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
+                    path_to_pickle = self._cdd_depots(self.GWRPickle + ".pickle")
+                    save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                gwr_codes_data = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return gwr_codes_data
 
-    def fetch_gwr_codes(self, update=False, pickle_it=False, data_dir=None,
-                        verbose=False):
+    def fetch_gwr_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from local backup.
@@ -591,15 +637,16 @@ class Depots:
             4    ABH  Aberystwyth
         """
 
-        path_to_pickle = self.cdd_depots(self.GWRPickle + ".pickle")
+        path_to_pickle = self._cdd_depots(self.GWRPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             gwr_codes_data = load_pickle(path_to_pickle)
 
         else:
-            gwr_codes_data = self.collect_gwr_codes(
-                confirmation_required=False,
-                verbose=False if data_dir or not verbose else True)
+            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
+
+            gwr_codes_data = self.collect_gwr_codes(confirmation_required=False,
+                                                    verbose=verbose_)
 
             if gwr_codes_data:
                 if pickle_it and data_dir:
@@ -610,7 +657,8 @@ class Depots:
                     save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
 
             else:
-                print("No data of \"{}\" has been collected.".format(self.GWRKey))
+                print("No data of \"{}\" has been freshly collected.".format(self.GWRKey))
+                gwr_codes_data = load_pickle(path_to_pickle)
 
         return gwr_codes_data
 
@@ -648,10 +696,13 @@ class Depots:
             ['Depots', 'Last updated date']
         """
 
+        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
         depot_codes = []
         for func in dir(self):
             if func.startswith('fetch_') and func != 'fetch_depot_codes':
-                depot_codes.append(getattr(self, func)(update=update, verbose=verbose))
+                depot_codes.append(getattr(self, func)(
+                    update=update, verbose=verbose_ if is_internet_connected() else False))
 
         depot_codes_data = {
             self.Key: {next(iter(x)): next(iter(x.values())) for x in depot_codes},
