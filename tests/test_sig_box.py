@@ -9,7 +9,7 @@ if __name__ == '__main__':
     print("\n{}: ".format(signal_boxes.Name))
     # Signal box prefix codes:
 
-    signal_box_prefix_codes1 = signal_boxes.fetch_signal_box_prefix_codes()
+    signal_box_prefix_codes1 = signal_boxes.fetch_prefix_codes()
     signal_box_prefix_codes1_ = signal_box_prefix_codes1[signal_boxes.Key]
 
     print(f"\n  {signal_boxes.Key}:\n    {type(signal_box_prefix_codes1_)}, "
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     #
     #   Last updated date: xxxx-xx-xx
 
-    signal_box_prefix_codes2 = signal_boxes.fetch_signal_box_prefix_codes(
+    signal_box_prefix_codes2 = signal_boxes.fetch_prefix_codes(
         update=True, pickle_it=True, data_dir=test_data_dir)
     signal_box_prefix_codes2_ = signal_box_prefix_codes2[signal_boxes.Key]
     print("\n  {} data is consistent:".format(signal_boxes.Key),
