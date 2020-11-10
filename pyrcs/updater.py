@@ -8,7 +8,7 @@ import time
 from pyhelpers.ops import confirmed
 
 from .collector import LineData, OtherAssets
-from .utils import get_site_map
+from .utils import get_site_map, is_internet_connected, print_connection_error
 
 
 def update_backup_data(verbose=False, time_gap=2):
@@ -28,21 +28,28 @@ def update_backup_data(verbose=False, time_gap=2):
         >>> update_backup_data(verbose=True)
     """
 
-    if confirmed("To update the backup resources?"):
+    if not is_internet_connected():
+        print_connection_error(verbose=verbose)
+        print("Unable to update the data.")
 
-        # Site map
-        print("Site map:")
-        _ = get_site_map(update=True, confirmation_required=False, verbose=verbose)
+    else:
+        if confirmed("To update the backup resources?"):
 
-        # Line data
-        ld = LineData(update=True)
-        ld.update(verbose=verbose, time_gap=time_gap)
+            # Site map
+            print("Site map:")
+            _ = get_site_map(update=True, confirmation_required=False, verbose=verbose)
 
-        time.sleep(time_gap)
+            print("")
 
-        # Other assets
-        oa = OtherAssets(update=True)
-        oa.update(verbose=verbose, time_gap=time_gap)
+            # Line data
+            ld = LineData(update=True)
+            ld.update(confirmation_required=False, verbose=verbose, time_gap=time_gap)
 
-        if verbose:
-            print("\nUpdate finished.")
+            time.sleep(time_gap)
+
+            # Other assets
+            oa = OtherAssets(update=True)
+            oa.update(confirmation_required=False, verbose=verbose, time_gap=time_gap)
+
+            if verbose:
+                print("\nUpdate finished.")
