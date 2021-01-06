@@ -35,6 +35,25 @@ class Electrification:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
+    :ivar str NationalNetworkKey: key of the dict-type data of national network
+    :ivar str NationalNetworkPickle: name of the pickle file of national network data
+    :ivar str IndependentLinesKey: key of the dict-type data of independent lines
+    :ivar str IndependentLinesPickle: name of the pickle file of independent lines data
+    :ivar str OhnsKey: key of the dict-type data of OHNS
+    :ivar str OhnsPickle: name of the pickle file of OHNS data
+    :ivar str TariffZonesKey: key of the dict-type data of tariff zones
+    :ivar str TariffZonesPickle: name of the pickle file of tariff zones data
+
     **Example**::
 
         >>> from pyrcs.line_data import Electrification
@@ -62,7 +81,7 @@ class Electrification:
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
 
         self.LUDKey = 'Last updated date'  #: Key to last updated date
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
