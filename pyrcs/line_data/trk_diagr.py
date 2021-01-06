@@ -1,6 +1,5 @@
 """
-Collect
-British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
 import copy
@@ -28,6 +27,15 @@ class TrackDiagrams:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
     **Example**::
 
         >>> from pyrcs.line_data import TrackDiagrams
@@ -49,11 +57,10 @@ class TrackDiagrams:
         self.Key = 'Track diagrams'
 
         self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/track/diagrams0.shtm')
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/line/diagrams0.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -69,11 +76,11 @@ class TrackDiagrams:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -89,8 +96,8 @@ class TrackDiagrams:
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: catalogue of railway station data
         :rtype: dict
@@ -101,12 +108,13 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
+            >>> # track_diagrams_items = td.get_track_diagrams_items(update=True, verbose=True)
             >>> track_diagrams_items = td.get_track_diagrams_items()
 
             >>> type(track_diagrams_items)
-            <class 'dict'>
-            >>> print(list(track_diagrams_items.keys())[0])
-            Track diagrams
+            dict
+            >>> print(track_diagrams_items.keys())
+            dict_keys(['Track diagrams'])
         """
 
         cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
@@ -118,8 +126,7 @@ class TrackDiagrams:
 
         else:
             if verbose == 2:
-                print("Collecting a list of {} items".format(self.Key.lower()),
-                      end=" ... ")
+                print("Collecting a list of {} items".format(self.Key.lower()), end=" ... ")
 
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
@@ -131,8 +138,7 @@ class TrackDiagrams:
             else:
                 try:
                     soup = bs4.BeautifulSoup(source.text, 'lxml')
-                    h3 = {x.get_text(strip=True)
-                          for x in soup.find_all('h3', text=True, attrs={'class': None})}
+                    h3 = {x.get_text(strip=True) for x in soup.find_all('h3', text=True)}
                     items = {self.Key: h3}
 
                     print("Done. ") if verbose == 2 else ""
@@ -169,17 +175,23 @@ class TrackDiagrams:
             To collect the catalogue of sample track diagrams? [No]|Yes: yes
 
             >>> type(track_diagrams_catalog)
-            <class 'dict'>
-            >>> print(list(track_diagrams_catalog.keys()))
+            dict
+            >>> list(track_diagrams_catalog.keys())
             ['Track diagrams', 'Last updated date']
+
+            >>> td_dat = track_diagrams_catalog['Track diagrams']
+
+            >>> type(td_dat)
+            dict
+            >>> list(td_dat.keys())
+            ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
         """
 
         if confirmed("To collect the catalogue of sample {}?".format(self.Key.lower()),
                      confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the catalogue of sample {}".format(self.Key.lower()),
-                      end=" ... ")
+                print("Collecting the catalogue of sample {}".format(self.Key.lower()), end=" ... ")
 
             track_diagrams_catalogue = None
 
@@ -205,8 +217,7 @@ class TrackDiagrams:
                         # Extract details
                         cold_soup = h3.find_next('div', attrs={'class': 'columns'})
                         if cold_soup:
-                            info = [x.text for x in cold_soup.find_all('p')
-                                    if x.string != '\xa0']
+                            info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
                             urls = [urllib.parse.urljoin(self.SourceURL, a.get('href'))
                                     for a in cold_soup.find_all('a')]
                         else:
@@ -215,21 +226,19 @@ class TrackDiagrams:
 
                             while cold_soup:
                                 info.append(cold_soup.text)
-                                urls.append(urllib.parse.urljoin(
-                                    self.SourceURL, cold_soup['href']))
+                                urls.append(urllib.parse.urljoin(self.SourceURL, cold_soup['href']))
                                 cold_soup = cold_soup.find_next('a') \
                                     if h3.text == 'Miscellaneous' \
                                     else cold_soup.find_next_sibling('a')
 
-                        meta = pd.DataFrame(zip(info, urls),
-                                            columns=['Description', 'FileURL'])
+                        meta = pd.DataFrame(zip(info, urls), columns=['Description', 'FileURL'])
 
                         track_diagrams_catalogue_.update({h3.text: (desc, meta)})
 
                         h3 = h3.find_next_sibling('h3')
 
                     track_diagrams_catalogue = {self.Key: track_diagrams_catalogue_,
-                                                self.LUDKey: self.Date}
+                                                self.LUDKey: self.LUD}
 
                     print("Done. ") if verbose == 2 else ""
 
@@ -250,13 +259,13 @@ class TrackDiagrams:
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: catalogue of sample railway track diagrams and
             date of when the data was last updated
@@ -268,14 +277,25 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
+            >>> # track_diagrams_catalog = td.fetch_sample_catalogue(update=True, verbose=True)
             >>> track_diagrams_catalog = td.fetch_sample_catalogue()
+
+            >>> type(track_diagrams_catalog)
+            dict
+            >>> list(track_diagrams_catalog.keys())
+            ['Track diagrams', 'Last updated date']
 
             >>> td_dat = track_diagrams_catalog['Track diagrams']
 
             >>> type(td_dat)
-            <class 'dict'>
-            >>> print(list(td_dat.keys()))
+            dict
+            >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
+
+            >>> print(td_dat['Main line diagrams'][1])
+                                         Description                                  FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/...
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
@@ -297,8 +317,8 @@ class TrackDiagrams:
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
             else:
-                print("No data of the sample {} catalogue "
-                      "has been freshly collected.".format(self.Key.lower()))
+                print("No data of the sample {} catalogue has been freshly collected.".format(
+                    self.Key.lower()))
                 track_diagrams_catalogue = load_pickle(path_to_pickle)
 
         return track_diagrams_catalogue
