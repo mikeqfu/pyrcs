@@ -1,6 +1,5 @@
 """
-Collect
-British `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+Collect British `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
 """
 
 import copy
