@@ -1,5 +1,5 @@
 """
-Collect `PRIDE/LOR <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
 """
 
 import copy
@@ -22,7 +22,7 @@ from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_u
 
 class LOR:
     """
-    A class for collecting PRIDE/LOR codes.
+    A class for collecting Line of Route (LOR/PRIDE) codes.
 
     - PRIDE: Possession Resource Information Database
     - LOR: Line Of Route
@@ -35,6 +35,18 @@ class LOR:
     :param verbose: whether to print relevant information in console as the function runs,
         defaults to ``True``
     :type verbose: bool or int
+
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type LOR data
+    :ivar str PKey: key of the dict-type prefixes
+    :ivar str ELCKey: key of the dict-type ELR/LOR converter data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
 
     **Example**::
 
@@ -56,8 +68,7 @@ class LOR:
         if not is_internet_connected():
             print_connection_error(verbose=verbose)
 
-        self.Name = 'Possession Resource Information Database (PRIDE)/' \
-                    'Line Of Route (LOR) codes'
+        self.Name = 'Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes'
         self.Key = 'LOR'
         self.PKey = 'Key to prefixes'
         self.ELCKey = 'ELR/LOR converter'
@@ -66,8 +77,7 @@ class LOR:
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/pride/pride0.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
@@ -86,11 +96,11 @@ class LOR:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -108,11 +118,11 @@ class LOR:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: keys to LOR code prefixes
-        :rtype: list, dict
+        :rtype: list or dict
 
         **Examples**::
 
@@ -120,16 +130,20 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> keys_to_prefixes_ = lor.get_keys_to_prefixes()
+            >>> # keys_to_pfx = lor.get_keys_to_prefixes(update=True, verbose=True)
+            >>> keys_to_pfx = lor.get_keys_to_prefixes()
 
-            >>> print(keys_to_prefixes_)
+            >>> print(keys_to_pfx)
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
 
-            >>> keys_to_prefixes_ = lor.get_keys_to_prefixes(prefixes_only=False)
+            >>> keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=False)
 
-            >>> type(keys_to_prefixes_)
-            <class 'dict'>
-            >>> print(keys_to_prefixes_['Key to prefixes'].head())
+            >>> type(keys_to_pfx)
+            dict
+            >>> list(keys_to_pfx.keys())
+            ['Key to prefixes', 'Last updated date']
+
+            >>> print(keys_to_pfx['Key to prefixes'].head())
               Prefixes                                    Name
             0       CY                                   Wales
             1       EA         South Eastern: East Anglia area
@@ -138,8 +152,8 @@ class LOR:
             4       MD       North West: former Midlands lines
         """
 
-        path_to_pickle = self._cdd_lor("{}prefixes.pickle".format(
-            "" if prefixes_only else "keys-to-"))
+        path_to_pickle = self._cdd_lor(
+            "{}prefixes.pickle".format("" if prefixes_only else "keys-to-"))
 
         if os.path.isfile(path_to_pickle) and not update:
             keys_to_prefixes = load_pickle(path_to_pickle)
@@ -149,9 +163,9 @@ class LOR:
                 lor_pref = pd.read_html(self.SourceURL)[0].loc[:, [0, 2]]
 
             except (urllib.error.URLError, socket.gaierror):
-                print_conn_err(update=update,
-                               verbose=True if (update and verbose != 2) else
-                               (False if verbose == 2 else verbose))
+                verbose_ = \
+                    True if (update and verbose != 2) else (False if verbose == 2 else verbose)
+                print_conn_err(update=update, verbose=verbose_)
                 keys_to_prefixes = load_pickle(path_to_pickle)
 
             else:
@@ -161,7 +175,7 @@ class LOR:
                     if prefixes_only:
                         keys_to_prefixes = lor_pref.Prefixes.tolist()
                     else:
-                        keys_to_prefixes = {self.PKey: lor_pref, self.LUDKey: self.Date}
+                        keys_to_prefixes = {self.PKey: lor_pref, self.LUDKey: self.LUD}
 
                     save_pickle(keys_to_prefixes, path_to_pickle, verbose=verbose)
 
@@ -181,8 +195,8 @@ class LOR:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: a list of URLs of web pages hosting LOR codes for each prefix
         :rtype: list
@@ -193,8 +207,10 @@ class LOR:
 
             >>> lor = LOR()
 
+            >>> # lor_page_urls_ = lor.get_lor_page_urls(update=True, verbose=True)
             >>> lor_page_urls_ = lor.get_lor_page_urls()
-            >>> print(lor_page_urls_[:2])
+
+            >>> lor_page_urls_[:2]
             ['http://www.railwaycodes.org.uk/pride/pridecy.shtm',
              'http://www.railwaycodes.org.uk/pride/prideea.shtm']
         """
@@ -233,15 +249,15 @@ class LOR:
 
         return lor_page_urls
 
-    def update_catalogue(self, confirmation_required=True, verbose=False):
+    def _update_catalogue(self, confirmation_required=True, verbose=False):
         """
         Update catalogue data including keys to prefixes and LOR page URLs.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
 
         **Examples**::
@@ -250,7 +266,7 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> lor.update_catalogue(verbose=True)
+            >>> lor._update_catalogue(verbose=True)
 
         :meta private:
         """
@@ -262,16 +278,16 @@ class LOR:
 
     def collect_lor_codes_by_prefix(self, prefix, update=False, verbose=False):
         """
-        Collect `PRIDE/LOR codes
-        <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ by a given prefix.
+        Collect `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        by a given prefix.
 
         :param prefix: prefix of LOR codes
         :type prefix: str
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: LOR codes for the given ``prefix``
         :rtype: dict or None
@@ -285,28 +301,29 @@ class LOR:
             >>> lor_codes_cy = lor.collect_lor_codes_by_prefix(prefix='CY')
 
             >>> type(lor_codes_cy)
-            <class 'dict'>
-            >>> print(list(lor_codes_cy.keys()))
+            dict
+            >>> list(lor_codes_cy.keys())
             ['CY', 'Notes', 'Last updated date']
             >>> type(lor_codes_cy['CY'])
-            <class 'pandas.core.frame.DataFrame'>
+            pandas.core.frame.DataFrame
 
             >>> lor_codes_nw = lor.collect_lor_codes_by_prefix(prefix='NW')
-            >>> print(list(lor_codes_nw.keys()))
+            >>> list(lor_codes_nw.keys())
             ['NW/NZ', 'Notes', 'Last updated date']
 
             >>> lor_codes_ea = lor.collect_lor_codes_by_prefix(prefix='EA')
             >>> ea_dat = lor_codes_ea['EA']
             >>> type(ea_dat)
-            <class 'dict'>
+            dict
+            >>> list(ea_dat.keys())
+            ['Current system', 'Original system']
             >>> print(ea_dat['Current system']['EA'].head())
-                 Code  ...                             Line Name Note
-            0  EA1000  ...                                       None
-            1  EA1010  ...                                       None
-            2  EA1011  ...                                       None
-            3  EA1012  ...                                       None
-            4  EA1013  ...  Replaced by new EA1013 from 19 April 2014
-
+                 Code  ... Line Name Note
+            0  EA1000  ...           None
+            1  EA1010  ...           None
+            2  EA1011  ...           None
+            3  EA1012  ...           None
+            4  EA1013  ...           None
             [5 rows x 5 columns]
         """
 
@@ -314,11 +331,11 @@ class LOR:
 
         prefix_ = prefix.upper()
 
-        assert prefix_ in available_prefixes, "`prefix` must be one of {}".format(
-            ", ".join(available_prefixes))
+        assert prefix_ in available_prefixes, \
+            "`prefix` must be one of {}".format(", ".join(available_prefixes))
 
-        pickle_filename = "{}.pickle".format(
-            "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower())
+        pickle_filename = \
+            "{}.pickle".format("nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower())
         path_to_pickle = self._cdd_lor("prefixes", pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -332,15 +349,14 @@ class LOR:
                 url = self.HomeURL + '/pride/pride{}.shtm'.format(prefix_.lower())
 
             if verbose == 2:
-                print("To collect LOR codes prefixed by \"{}\". ".format(prefix_),
-                      end=" ... ")
+                print("To collect LOR codes prefixed by \"{}\". ".format(prefix_), end=" ... ")
 
             lor_codes_by_initials = None
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
             except requests.ConnectionError:
-                print("Failed. ") if verbose == 2 else ""
+                print("Failed.") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
@@ -366,13 +382,10 @@ class LOR:
                         header_text = [
                             h.text.replace('\n', ' ') for h in header.find_all('th')]
                         code_dat = pd.DataFrame(
-                            parse_tr(header_text, code.find_all('tr')),
-                            columns=header_text)
-                        line_name_info = \
-                            code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
+                            parse_tr(header_text, code.find_all('tr')), columns=header_text)
+                        line_name_info = code_dat['Line Name'].map(parse_line_name).apply(pd.Series)
                         line_name_info.columns = ['Line Name', 'Line Name Note']
-                        code_dat = pd.concat([code_dat, line_name_info], axis=1,
-                                             sort=False)
+                        code_dat = pd.concat([code_dat, line_name_info], axis=1, sort=False)
                         try:
                             note_dat = dict(
                                 [(x['id'].title(), x.text.replace('\xa0', ''))
@@ -384,8 +397,7 @@ class LOR:
                     h3, table_soup = soup.find_all('h3'), soup.find_all('table')
                     if len(h3) == 0:
                         code_data, code_data_notes = parse_h3_table(table_soup)
-                        lor_codes_by_initials = {prefix_: code_data,
-                                                 'Notes': code_data_notes}
+                        lor_codes_by_initials = {prefix_: code_data, 'Notes': code_data_notes}
                     else:
                         code_data_and_notes = [
                             dict(zip([prefix_, 'Notes'], parse_h3_table(x)))
@@ -396,7 +408,7 @@ class LOR:
                     last_updated_date = get_last_updated_date(url)
                     lor_codes_by_initials.update({self.LUDKey: last_updated_date})
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
                     save_pickle(lor_codes_by_initials, path_to_pickle, verbose=verbose)
 
@@ -405,22 +417,21 @@ class LOR:
 
         return lor_codes_by_initials
 
-    def fetch_lor_codes(self, update=False, pickle_it=False, data_dir=None,
-                        verbose=False):
+    def fetch_lor_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
-        Fetch `PRIDE/LOR codes
-        <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ from local backup.
+        Fetch `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: LOR codes
         :rtype: dict
@@ -431,17 +442,18 @@ class LOR:
 
             >>> lor = LOR()
 
+            >>> # lor_codes_dat = lor.fetch_lor_codes(update=True, verbose=True)
             >>> lor_codes_dat = lor.fetch_lor_codes()
 
             >>> type(lor_codes_dat)
-            <class 'dict'>
+            dict
             >>> type(lor_codes_dat['LOR'])
-            <class 'dict'>
-            >>> print(list(lor_codes_dat['LOR'].keys()))
+            dict
+            >>> list(lor_codes_dat['LOR'].keys())
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW/NZ', 'SC', 'SO', 'SW', 'XR']
 
             >>> type(lor_codes_dat['LOR']['CY'])
-            <class 'dict'>
+            dict
         """
 
         prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
@@ -450,15 +462,13 @@ class LOR:
 
         lor_codes = [
             self.collect_lor_codes_by_prefix(
-                prefix=p, update=update,
-                verbose=verbose_ if is_internet_connected() else False)
+                prefix=p, update=update, verbose=verbose_ if is_internet_connected() else False)
             for p in prefixes if p != 'NZ']
 
         if all(x is None for x in lor_codes):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(
-                    self.Key.lower()))
+                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
             lor_codes = [
                 self.collect_lor_codes_by_prefix(prefix=p, update=False, verbose=verbose_)
                 for p in prefixes if p != 'NZ']
@@ -476,22 +486,22 @@ class LOR:
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir,
-                                          self.Key.lower().replace(" ", "-") + ".pickle")
+            path_to_pickle = os.path.join(
+                self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(lor_codes_data, path_to_pickle, verbose=verbose)
 
         return lor_codes_data
 
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
         """
-        Collect `ELR/LOR converter
-        <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_ from source web page.
+        Collect `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: data of ELR/LOR converter
         :rtype: dict or None
@@ -502,19 +512,21 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> elr_lor_converter_ = lor.collect_elr_lor_converter()
+            >>> elr_lor_conv = lor.collect_elr_lor_converter()
             To collect data of ELR/LOR converter? [No]|Yes: yes
 
-            >>> type(elr_lor_converter_)
-            <class 'dict'>
-            >>> print(elr_lor_converter_['ELR/LOR converter'].head())
+            >>> type(elr_lor_conv)
+            dict
+            >>> list(elr_lor_conv.keys())
+            ['ELR/LOR converter', 'Last updated date']
+
+            >>> print(elr_lor_conv['ELR/LOR converter'].head())
                 ELR  ...                                            LOR_URL
             0   AAV  ...  http://www.railwaycodes.org.uk/pride/pridesw.s...
             1   ABD  ...  http://www.railwaycodes.org.uk/pride/pridegw.s...
             2   ABE  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             3  ABE1  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             4  ABE2  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
-
             [5 rows x 6 columns]
         """
 
@@ -526,72 +538,71 @@ class LOR:
             if verbose == 2:
                 print("Collecting data of {}".format(self.ELCKey), end=" ... ")
 
-            elr_lor_converter = None
-
             try:
                 headers, elr_lor_dat = pd.read_html(url)
             except (urllib.error.URLError, socket.gaierror):
-                print("Failed. ") if verbose == 2 else ""
+                print("Failed.")
                 print_conn_err(verbose=verbose)
+                return None
 
-            else:
-                try:
-                    elr_lor_dat.columns = list(headers)
-                    #
-                    source = requests.get(url, headers=fake_requests_headers())
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
-                    tds = soup.find_all('td')
-                    links = [x.get('href') for x in [x.find('a', href=True) for x in tds]
-                             if x is not None]
-                    elr_links = [x for x in links[::2]]
-                    lor_links = [x for x in links[1::2]]
-                    #
-                    if len(elr_links) != len(elr_lor_dat):
-                        duplicates = elr_lor_dat[elr_lor_dat.duplicated(
-                            ['ELR', 'LOR code'], keep=False)]
-                        for i in duplicates.index:
-                            if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
-                                elr_links.insert(i, elr_links[i - 1])
-                            if not lor_links[i].endswith(
-                                    duplicates['LOR code'].loc[i].lower()):
-                                lor_links.insert(i, lor_links[i - 1])
-                    #
-                    elr_lor_dat['ELR_URL'] = [
-                        urllib.parse.urljoin(self.HomeURL, x) for x in elr_links]
-                    elr_lor_dat['LOR_URL'] = [
-                        self.HomeURL + 'pride/' + x for x in lor_links]
-                    #
-                    elr_lor_converter = {self.ELCKey: elr_lor_dat,
-                                         self.LUDKey: get_last_updated_date(url)}
+            try:
+                elr_lor_dat.columns = list(headers)
+                #
+                source = requests.get(url, headers=fake_requests_headers())
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                # tds = soup.find_all('td')
+                # links = [x.get('href') for x in [y.find('a', href=True) for y in tds]
+                #          if x is not None]
+                elr_links = soup.find_all('td', text=re.compile(r'([A-Z]{3})(\d)?'))
+                lor_links = soup.find_all('a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
+                #
+                # if len(elr_links) != len(elr_lor_dat):
+                #     duplicates = \
+                #         elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
+                #     for i in duplicates.index:
+                #         if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+                #             elr_links.insert(i, elr_links[i - 1])
+                #         if not lor_links[i].endswith(
+                #                 duplicates['LOR code'].loc[i].lower()):
+                #             lor_links.insert(i, lor_links[i - 1])
+                #
+                elr_lor_dat['ELR_URL'] = [
+                    urllib.parse.urljoin(self.HomeURL, x.a.get('href')) if x.a else None
+                    for x in elr_links]
+                elr_lor_dat['LOR_URL'] = [
+                    urllib.parse.urljoin(self.HomeURL, 'pride/' + x.get('href')) for x in lor_links]
+                #
+                elr_lor_converter = {self.ELCKey: elr_lor_dat,
+                                     self.LUDKey: get_last_updated_date(url)}
 
-                    print("Done. ") if verbose == 2 else ""
+                print("Done.") if verbose == 2 else ""
 
-                    pickle_filename_ = re.sub(r"[/ ]", "-", self.ELCKey.lower())
-                    save_pickle(elr_lor_converter,
-                                self._cdd_lor(pickle_filename_ + ".pickle"),
-                                verbose=verbose)
+                pickle_filename_ = re.sub(r"[/ ]", "-", self.ELCKey.lower())
+                save_pickle(elr_lor_converter, self._cdd_lor(pickle_filename_ + ".pickle"),
+                            verbose=verbose)
 
-                except Exception as e:
-                    print("Failed. {}".format(e))
+            except Exception as e:
+                print("Failed. {}".format(e))
+                elr_lor_converter = None
 
             return elr_lor_converter
 
     def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None,
                                 verbose=False):
         """
-        Fetch `ELR/LOR converter
-        <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_ from local backup.
+        Fetch `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
+        from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: data of ELR/LOR converter
         :rtype: dict
@@ -602,18 +613,22 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> elr_lor_converter_ = lor.fetch_elr_lor_converter()
+            >>> # elr_lor_conv = lor.fetch_elr_lor_converter(update=True, verbose=True)
+            >>> elr_lor_conv = lor.fetch_elr_lor_converter()
 
-            >>> type(elr_lor_converter_)
-            <class 'dict'>
-            >>> for col in elr_lor_converter_['ELR/LOR converter'].columns:
-            ...     print(col)
-            ELR
-            Miles from
-            Miles to
-            LOR code
-            ELR_URL
-            LOR_URL
+            >>> type(elr_lor_conv)
+            dict
+            >>> list(elr_lor_conv.keys())
+            ['ELR/LOR converter', 'Last updated date']
+
+            >>> print(elr_lor_conv['ELR/LOR converter'].head())
+                ELR  ...                                            LOR_URL
+            0   AAV  ...  http://www.railwaycodes.org.uk/pride/pridesw.s...
+            1   ABD  ...  http://www.railwaycodes.org.uk/pride/pridegw.s...
+            2   ABE  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
+            3  ABE1  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
+            4  ABE2  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
+            [5 rows x 6 columns]
         """
 
         pickle_filename = re.sub(r"[/ ]", "-", self.ELCKey.lower()) + ".pickle"
