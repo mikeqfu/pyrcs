@@ -31,6 +31,16 @@ class LineNames:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
     **Example**::
 
         >>> from pyrcs.line_data import LineNames
@@ -55,14 +65,13 @@ class LineNames:
         self.Key = 'Line names'
 
         self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/misc/line_names.shtm')
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/line/line_names.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(
-            url=self.SourceURL, parsed=True, as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(
-            page_url=self.SourceURL, update=update, confirmation_required=False)
+        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
+                                       confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -78,11 +87,11 @@ class LineNames:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LineNames``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -98,11 +107,10 @@ class LineNames:
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
-        :return: railway line names and routes data and 
-            date of when the data was last updated
+        :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict or None
 
         **Example**::
@@ -114,9 +122,18 @@ class LineNames:
             >>> line_names_dat = ln.collect_line_names(confirmation_required=False)
 
             >>> type(line_names_dat)
-            <class 'dict'>
-            >>> print(list(line_names_dat.keys()))
+            dict
+            >>> list(line_names_dat.keys())
             ['Line names', 'Last updated date']
+
+            >>> print(line_names_dat['Line names'].head())
+                         Line name  ... Route_note
+            0           Abbey Line  ...       None
+            1        Airedale Line  ...       None
+            2          Argyle Line  ...       None
+            3     Arun Valley Line  ...       None
+            4  Atlantic Coast Line  ...       None
+            [5 rows x 3 columns]
         """
 
         if confirmed("To collect British railway {}?".format(self.Key.lower()),
@@ -179,24 +196,22 @@ class LineNames:
 
             return line_names_data
 
-    def fetch_line_names(self, update=False, pickle_it=False, data_dir=None,
-                         verbose=False):
+    def fetch_line_names(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch data of railway line names from local backup.
 
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
-        :return: railway line names and routes data and 
-            date of when the data was last updated
+        :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict
 
         **Example**::
@@ -205,12 +220,22 @@ class LineNames:
 
             >>> ln = LineNames()
 
+            >>> # line_names_dat = ln.fetch_line_names(update=True, verbose=True)
             >>> line_names_dat = ln.fetch_line_names()
 
             >>> type(line_names_dat)
-            <class 'dict'>
-            >>> print(list(line_names_dat.keys()))
+            dict
+            >>> list(line_names_dat.keys())
             ['Line names', 'Last updated date']
+
+            >>> print(line_names_dat['Line names'].head())
+                         Line name  ... Route_note
+            0           Abbey Line  ...       None
+            1        Airedale Line  ...       None
+            2          Argyle Line  ...       None
+            3     Arun Valley Line  ...       None
+            4  Atlantic Coast Line  ...       None
+            [5 rows x 3 columns]
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
