@@ -18,8 +18,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_tr, print_conn_err, is_internet_connected, print_connection_error
+from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, parse_tr, \
+    print_conn_err, is_internet_connected, print_connection_error
 
 
 class Electrification:
@@ -59,15 +59,13 @@ class Electrification:
         self.Key = 'Electrification'
 
         self.HomeURL = homepage_url()  #: URL to the homepage
-        self.SourceURL = urllib.parse.urljoin(
-            self.HomeURL, '/electrification/mast_prefix0.shtm')
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
 
         self.LUDKey = 'Last updated date'  #: Key to last updated date
-        self.Date = get_last_updated_date(
-            url=self.SourceURL, parsed=True, as_date_type=False)
+        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(
-            page_url=self.SourceURL, update=update, confirmation_required=False)
+        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
+                                       confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -92,11 +90,11 @@ class Electrification:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Electrification``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -114,8 +112,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for National network
         :rtype: dict or None
@@ -141,8 +139,8 @@ class Electrification:
             national_network_ole = None
 
             if verbose == 2:
-                print("Collecting the codes for {}".format(
-                    self.NationalNetworkKey.lower()), end=" ... ")
+                print("Collecting the codes for {}".format(self.NationalNetworkKey.lower()),
+                      end=" ... ")
 
             try:
                 source = requests.get(self.Catalogue[self.NationalNetworkKey],
@@ -161,8 +159,7 @@ class Electrification:
                         if header_tag:
                             header = [x.text for x in header_tag.find_all('th')]
 
-                            temp = parse_tr(
-                                header, header_tag.find_next('table').find_all('tr'))
+                            temp = parse_tr(header, header_tag.find_next('table').find_all('tr'))
                             table = pd.DataFrame(temp, columns=header)
                             table = table.applymap(
                                 lambda x:
@@ -181,10 +178,9 @@ class Electrification:
 
                         note_tag = h3.find_next('h4')
                         if note_tag and note_tag.text == 'Notes':
-                            notes_ = dict(
-                                (x.a.get('id').title(),
-                                 x.get_text(strip=True).replace('\xa0', ''))
-                                for x in soup.find('ol') if x != '\n')
+                            notes_ = dict((x.a.get('id').title(),
+                                           x.get_text(strip=True).replace('\xa0', ''))
+                                          for x in soup.find('ol') if x != '\n')
                             if notes['Notes'] is None:
                                 notes['Notes'] = notes_
                             else:
@@ -199,14 +195,14 @@ class Electrification:
 
                     source.close()
 
-                    last_updated_date = \
-                        get_last_updated_date(self.Catalogue[self.NationalNetworkKey])
+                    last_updated_date = get_last_updated_date(
+                        self.Catalogue[self.NationalNetworkKey])
 
                     national_network_ole = {
                         self.NationalNetworkKey: national_network_ole_,
                         self.LUDKey: last_updated_date}
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
                     path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
@@ -231,8 +227,8 @@ class Electrification:
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for National network
         :rtype: dict or None
@@ -281,8 +277,8 @@ class Electrification:
         Get names of `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: a list of independent line names
         :rtype: list
@@ -325,8 +321,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for independent lines
         :rtype: dict or None
@@ -415,8 +411,7 @@ class Electrification:
                                     columns=['Initial', 'Code'])
                                 notes.update({'Section codes known at present': li})
 
-                        independent_lines_ole_.update(
-                            {h3.text: {'Codes': table, **notes}})
+                        independent_lines_ole_.update({h3.text: {'Codes': table, **notes}})
 
                         h3 = h3.find_next_sibling('h3')
 
@@ -425,7 +420,7 @@ class Electrification:
                     last_updated_date = get_last_updated_date(
                         self.Catalogue[self.IndependentLinesKey])
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
                     independent_lines_ole = {
                         self.IndependentLinesKey: independent_lines_ole_,
@@ -455,8 +450,8 @@ class Electrification:
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for independent lines
         :rtype: dict
@@ -509,8 +504,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OHNS codes
         :rtype: dict or None
@@ -550,7 +545,7 @@ class Electrification:
 
                     last_up_date = get_last_updated_date(self.Catalogue[self.OhnsKey])
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
                     ohns_codes = {self.OhnsKey: neutral_sections_data,
                                   self.LUDKey: last_up_date}
@@ -573,13 +568,13 @@ class Electrification:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OHNS codes
         :rtype: dict
@@ -606,18 +601,16 @@ class Electrification:
         else:
             verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
 
-            ohns_codes = self.collect_ohns_codes(confirmation_required=False,
-                                                 verbose=verbose_)
+            ohns_codes = self.collect_ohns_codes(confirmation_required=False, verbose=verbose_)
 
             if ohns_codes:  # ohns is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = \
-                        os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.OhnsPickle + ".pickle")
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
             else:
-                print("No data of section codes for {} "
-                      "has been freshly collected.".format(self.OhnsKey.lower()))
+                print("No data of section codes for {} has been freshly collected.".format(
+                    self.OhnsKey.lower()))
                 ohns_codes = load_pickle(path_to_pickle)
 
         return ohns_codes
@@ -631,8 +624,8 @@ class Electrification:
         :param confirmation_required: whether to require users to confirm and proceed, 
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
         :rtype: dict or None
@@ -707,7 +700,7 @@ class Electrification:
 
                     last_upd = get_last_updated_date(self.Catalogue[self.TariffZonesKey])
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
                     etz_ole = {self.TariffZonesKey: etz_ole_, self.LUDKey: last_upd}
 
@@ -719,8 +712,7 @@ class Electrification:
 
             return etz_ole
 
-    def fetch_etz_codes(self, update=False, pickle_it=False, data_dir=None,
-                        verbose=False):
+    def fetch_etz_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
@@ -734,8 +726,8 @@ class Electrification:
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
         :rtype: dict
@@ -778,8 +770,7 @@ class Electrification:
 
         return etz_ole
 
-    def fetch_elec_codes(self, update=False, pickle_it=False, data_dir=None,
-                         verbose=False):
+    def fetch_elec_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch OLE section codes in `electrification
         <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_ catalogue.
@@ -787,13 +778,13 @@ class Electrification:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
