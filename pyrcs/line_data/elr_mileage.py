@@ -1,6 +1,5 @@
 """
-Collect `Engineer's Line References (ELRs)
-<http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
+Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
 """
 
 import copy
