@@ -1,6 +1,5 @@
 """
-Collect
-`CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
+Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
 """
 
 import copy
@@ -35,6 +34,22 @@ class LocationIdentifiers:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
+    :ivar str OtherSystemsKey: key of the dict-type data of other systems
+    :ivar str OtherSystemsPickle: name of the pickle file of other systems data
+    :ivar str AddNotesKey: key of the dict-type data of additional notes
+    :ivar str MscENKey: key of the dict-type data of multiple station codes explanatory note
+    :ivar str MscENPickle: name of the pickle file of multiple station codes explanatory note
+
     **Example**::
 
         >>> from pyrcs.line_data import LocationIdentifiers
@@ -45,7 +60,7 @@ class LocationIdentifiers:
         CRS, NLC, TIPLOC and STANOX codes
 
         >>> print(lid.SourceURL)
-        http://www.railwaycodes.org.uk/crs/CRS0.shtm
+        http://www.railwaycodes.org.uk/crs/crs0.shtm
     """
 
     def __init__(self, data_dir=None, update=False, verbose=True):
@@ -59,28 +74,28 @@ class LocationIdentifiers:
         self.Key = 'Location codes'  # key to location codes
 
         self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/crs/CRS0.shtm')
+        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/crs/crs0.shtm')
 
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
-
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
             self.DataDir = cd_dat(
-                "line-data",
-                re.sub(r',| codes| and', '', self.Name.lower()).replace(" ", "-"))
+                "line-data", re.sub(r',| codes| and', '', self.Name.lower()).replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
-        self.OSKey = 'Other systems'  # key to other systems codes
-        self.OSPickle = self.OSKey.lower().replace(" ", "-")
-        self.ANKey = 'Additional notes'  # key to additional notes
-        self.MSCENKey = 'Multiple station codes explanatory note'
-        self.MSCENPickle = self.MSCENKey.lower().replace(" ", "-")
+        self.OtherSystemsKey = 'Other systems'  # key to other systems codes
+        self.OtherSystemsPickle = self.OtherSystemsKey.lower().replace(" ", "-")
+        self.AddNotesKey = 'Additional notes'  # key to additional notes
+        self.MscENKey = 'Multiple station codes explanatory note'
+        self.MscENPickle = self.MscENKey.lower().replace(" ", "-")
+
+        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
+                                       confirmation_required=False)
+        self.Catalogue.update(
+            {self.MscENKey: urllib.parse.urljoin(self.HomeURL, '/crs/crs2.shtm')})
 
     def _cdd_locid(self, *sub_dir, **kwargs):
         """
@@ -119,8 +134,8 @@ class LocationIdentifiers:
 
             >>> loc_name_amendment_dict = lid.amendment_to_loc_names()
 
-            >>> print(list(loc_name_amendment_dict.keys()))
-            ['Location']
+            >>> print(loc_name_amendment_dict.keys())
+            dict_keys(['Location'])
         """
 
         location_name_amendment_dict = {
@@ -146,11 +161,10 @@ class LocationIdentifiers:
 
         :param note_url: URL link of the target web page
         :type note_url: str
-        :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_,
-            defaults to ``'lxml'``
+        :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_, defaults to ``'lxml'``
         :type parser: str
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: parsed texts
         :rtype: list
@@ -167,17 +181,16 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> url = lid.HomeURL + '/crs/CRS2.shtm'
+            >>> url = lid.Catalogue[lid.MscENKey]
+            >>> parsed_note_dat = lid.parse_note_page(url, parser='lxml')
 
-            >>> parsed_note_ = lid.parse_note_page(url, parser='lxml')
-
-            >>> print(parsed_note_[3].head())
-                              Location  CRS CRS_alt1 CRS_alt2
-            0  Glasgow Queen Street     GLQ      GQL
-            1  Glasgow Central          GLC      GCL
-            2  Heworth                  HEW      HEZ
-            3  Highbury & Islington     HHY      HII      XHZ
-            4  Lichfield Trent Valley   LTV      LIF
+            >>> print(parsed_note_dat[3].head())
+                             Location  CRS CRS_alt1 CRS_alt2
+            0    Glasgow Queen Street  GLQ      GQL
+            1         Glasgow Central  GLC      GCL
+            2                 Heworth  HEW      HEZ
+            3    Highbury & Islington  HHY      HII      XHZ
+            4  Lichfield Trent Valley  LTV      LIF
         """
 
         try:
@@ -198,7 +211,7 @@ class LocationIdentifiers:
                 text = x.replace('\t', ' ').replace('\xa0', '')
 
             if isinstance(text, list):
-                text = [t.split(',') for t in text if t != '']
+                text = [[x.strip() for x in t.split(',')] for t in text if t != '']
                 temp = pd.DataFrame(
                     text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2']).fillna('')
                 parsed_note.append(temp)
@@ -216,14 +229,14 @@ class LocationIdentifiers:
         """
         Collect note about CRS code from source web page.
 
-        :param confirmation_required: whether to prompt a message 
-            for confirmation to proceed, defaults to ``True``
+        :param confirmation_required: whether to prompt a message for confirmation to proceed,
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: data of multiple station codes explanatory note
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
@@ -231,24 +244,30 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> exp_note = lid.collect_explanatory_note(
-            ...     confirmation_required=False)
+            >>> exp_note = lid.collect_explanatory_note(confirmation_required=False)
 
             >>> type(exp_note)
-            <class 'dict'>
-            >>> print(list(exp_note.keys()))
+            dict
+            >>> list(exp_note.keys())
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
+
+            >>> print(exp_note['Multiple station codes explanatory note'].head())
+                             Location  CRS CRS_alt1 CRS_alt2
+            0    Glasgow Queen Street  GLQ      GQL
+            1         Glasgow Central  GLC      GCL
+            2                 Heworth  HEW      HEZ
+            3    Highbury & Islington  HHY      HII      XHZ
+            4  Lichfield Trent Valley  LTV      LIF
         """
 
-        if confirmed("To collect data of {}?".format(self.MSCENKey.lower()),
+        if confirmed("To collect data of {}?".format(self.MscENKey.lower()),
                      confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting data of {}".format(self.MSCENKey.lower()), end=" ... ")
+                print("Collecting data of {}".format(self.MscENKey.lower()), end=" ... ")
 
-            note_url = self.HomeURL + '/crs/CRS2.shtm'
+            explanatory_note_ = self.parse_note_page(self.Catalogue[self.MscENKey], verbose=False)
 
-            explanatory_note_ = self.parse_note_page(note_url, verbose=False)
             if explanatory_note_ is None:
                 print("Failed. ") if verbose == 2 else ""
                 if not is_internet_connected():
@@ -267,18 +286,17 @@ class LocationIdentifiers:
                             else:
                                 notes.append(x)
                         else:
-                            explanatory_note.update({self.MSCENKey: x})
+                            explanatory_note.update({self.MscENKey: x})
 
                     explanatory_note.update({'Notes': notes})
 
                     # Rearrange the dict
-                    explanatory_note = {k: explanatory_note[k]
-                                        for k in [self.MSCENKey, 'Notes', self.LUDKey]}
+                    explanatory_note = {
+                        k: explanatory_note[k] for k in [self.MscENKey, 'Notes', self.LUDKey]}
 
                     print("Done.") if verbose == 2 else ""
 
-                    save_pickle(explanatory_note,
-                                self._cdd_locid(self.MSCENPickle + ".pickle"),
+                    save_pickle(explanatory_note, self._cdd_locid(self.MscENPickle + ".pickle"),
                                 verbose=verbose)
 
                 except Exception as e:
@@ -292,16 +310,16 @@ class LocationIdentifiers:
         """
         Fetch multiple station codes explanatory note from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
+        :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: data of multiple station codes explanatory note
         :rtype: dict
@@ -312,51 +330,57 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> exp_note = lid.fetch_explanatory_note(
-            ...     update=False, pickle_it=False, data_dir=None, verbose=True)
+            >>> # exp_note = lid.fetch_explanatory_note(update=True, verbose=True)
+            >>> exp_note = lid.fetch_explanatory_note()
 
             >>> type(exp_note)
-            <class 'dict'>
-            >>> print(list(exp_note.keys()))
+            dict
+            >>> list(exp_note.keys())
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
+
+            >>> print(exp_note['Multiple station codes explanatory note'].head())
+                             Location  CRS CRS_alt1 CRS_alt2
+            0    Glasgow Queen Street  GLQ      GQL
+            1         Glasgow Central  GLC      GCL
+            2                 Heworth  HEW      HEZ
+            3    Highbury & Islington  HHY      HII      XHZ
+            4  Lichfield Trent Valley  LTV      LIF
         """
 
-        path_to_pickle = self._cdd_locid(self.MSCENPickle + ".pickle")
+        path_to_pickle = self._cdd_locid(self.MscENPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             explanatory_note = load_pickle(path_to_pickle)
 
         else:
             verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-            explanatory_note = self.collect_explanatory_note(confirmation_required=False,
-                                                             verbose=verbose_)
+            explanatory_note = self.collect_explanatory_note(
+                confirmation_required=False, verbose=verbose_)
 
             if explanatory_note:  # additional_note is not None
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir,
-                                                  self.MSCENPickle + ".pickle")
+                    path_to_pickle = os.path.join(self.CurrentDataDir, self.MscENPickle + ".pickle")
                     save_pickle(explanatory_note, path_to_pickle, verbose=verbose)
             else:
-                print("No data of {} has been freshly collected.".format(
-                    self.MSCENKey.lower()))
+                print("No data of {} has been freshly collected.".format(self.MscENKey.lower()))
                 explanatory_note = load_pickle(path_to_pickle)
 
         return explanatory_note
 
     def collect_other_systems_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `other systems' codes
-        <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_ from source web page.
+        Collect data of `other systems' codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to require users to confirm and proceed,
             defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: codes of other systems
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
@@ -367,18 +391,29 @@ class LocationIdentifiers:
             >>> os_codes = lid.collect_other_systems_codes(confirmation_required=False)
 
             >>> type(os_codes)
-            <class 'dict'>
-            >>> print(list(os_codes.keys()))
+            dict
+            >>> list(os_codes.keys())
             ['Other systems', 'Last updated date']
+
+            >>> type(os_codes['Other systems'])
+            dict
+            >>> list(os_codes['Other systems'].keys())
+            ['Córas Iompair Éireann (Republic of Ireland)',
+             'Crossrail',
+             'Croydon Tramlink',
+             'Docklands Light Railway',
+             'Manchester Metrolink',
+             'Translink (Northern Ireland)',
+             'Tyne & Wear Metro']
         """
 
-        if confirmed("To collect data of {}?".format(self.OSKey.lower()),
+        if confirmed("To collect data of {}?".format(self.OtherSystemsKey.lower()),
                      confirmation_required=confirmation_required):
 
             url = self.Catalogue['Other systems']
 
             if verbose == 2:
-                print("Collecting data of {}".format(self.OSKey.lower()), end=" ... ")
+                print("Collecting data of {}".format(self.OtherSystemsKey.lower()), end=" ... ")
 
             other_systems_codes = None
 
@@ -403,19 +438,18 @@ class LocationIdentifiers:
                     for table in table_data:
                         headers = [x.text for x in table[0].find_all('th')]
                         tbl_dat = table[1].find_all('tr')
-                        tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat),
-                                                columns=headers)
+                        tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat), columns=headers)
                         tables.append(tbl_data)
 
                     # Make a dict
-                    other_systems_codes = {self.OSKey: dict(zip(system_names, tables)),
+                    other_systems_codes = {self.OtherSystemsKey: dict(zip(system_names, tables)),
                                            self.LUDKey: get_last_updated_date(url)}
 
                     print("Done.") if verbose == 2 else ""
 
-                    save_pickle(other_systems_codes,
-                                self._cdd_locid(self.OSPickle + ".pickle"),
-                                verbose=verbose)
+                    save_pickle(
+                        other_systems_codes, self._cdd_locid(self.OtherSystemsPickle + ".pickle"),
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}.".format(e))
@@ -448,15 +482,27 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
+            >>> # os_codes = lid.fetch_other_systems_codes(update=True, verbose=True)
             >>> os_codes = lid.fetch_other_systems_codes()
 
             >>> type(os_codes)
-            <class 'dict'>
-            >>> print(list(os_codes.keys()))
+            dict
+            >>> list(os_codes.keys())
             ['Other systems', 'Last updated date']
+
+            >>> type(os_codes['Other systems'])
+            dict
+            >>> list(os_codes['Other systems'].keys())
+            ['Córas Iompair Éireann (Republic of Ireland)',
+             'Crossrail',
+             'Croydon Tramlink',
+             'Docklands Light Railway',
+             'Manchester Metrolink',
+             'Translink (Northern Ireland)',
+             'Tyne & Wear Metro']
         """
 
-        path_to_pickle = self._cdd_locid(self.OSPickle + ".pickle")
+        path_to_pickle = self._cdd_locid(self.OtherSystemsPickle + ".pickle")
 
         if os.path.isfile(path_to_pickle) and not update:
             other_systems_codes = load_pickle(path_to_pickle)
@@ -471,12 +517,12 @@ class LocationIdentifiers:
                 if pickle_it and data_dir:
                     self.CurrentDataDir = validate_input_data_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, self.OSPickle + ".pickle")
+                        self.CurrentDataDir, self.OtherSystemsPickle + ".pickle")
                     save_pickle(other_systems_codes, path_to_pickle, verbose=verbose)
 
             else:
                 print("No data of {} has been freshly collected.".format(
-                    self.OSKey.lower()))
+                    self.OtherSystemsKey.lower()))
                 other_systems_codes = load_pickle(path_to_pickle)
 
         return other_systems_codes
@@ -492,8 +538,8 @@ class LocationIdentifiers:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: data of location codes for the given ``initial`` letter;
             and date of when the data was last updated
@@ -508,9 +554,18 @@ class LocationIdentifiers:
             >>> location_codes_a = lid.collect_loc_codes_by_initial(initial='a')
 
             >>> type(location_codes_a)
-            <class 'dict'>
-            >>> print(list(location_codes_a.keys()))
+            dict
+            >>> list(location_codes_a.keys())
             ['A', 'Additional notes', 'Last updated date']
+
+            >>> print(location_codes_a['A'].head())
+                                           Location CRS  ... STANME_Note STANOX_Note
+            0                                Aachen      ...
+            1                    Abbeyhill Junction      ...
+            2                 Abbeyhill Signal E811      ...
+            3            Abbeyhill Turnback Sidings      ...
+            4  Abbey Level Crossing (Staffordshire)      ...
+            [5 rows x 12 columns]
         """
 
         assert initial in string.ascii_letters
@@ -529,7 +584,7 @@ class LocationIdentifiers:
                     beginning_with), end=" ... ")
 
             location_codes_initial = {beginning_with: None,
-                                      self.ANKey: None,
+                                      self.AddNotesKey: None,
                                       self.LUDKey: None}
 
             try:
@@ -600,8 +655,7 @@ class LocationIdentifiers:
                         loc_codes[['STANOX', 'STANOX_Note']] = loc_codes.STANOX.map(
                             parse_stanox_note).apply(pd.Series)
                     else:
-                        # It is likely that no data is available on the web page
-                        # for the given 'key_word'
+                        # No data is available on the web page for the given 'key_word'
                         loc_codes['STANOX_Note'] = loc_codes.STANOX
 
                     if any('see note' in crs_note for crs_note in loc_codes.CRS_Note):
@@ -613,17 +667,14 @@ class LocationIdentifiers:
                         note_urls = [urllib.parse.urljoin(
                             self.Catalogue[beginning_with], x['href'])
                             for x in web_page_text.find_all('a', href=True, text='note')]
-                        add_notes = [
-                            self.parse_note_page(note_url) for note_url in note_urls]
+                        add_notes = [self.parse_note_page(note_url) for note_url in note_urls]
 
-                        additional_notes = dict(
-                            zip(loc_codes.CRS.iloc[loc_idx], add_notes))
+                        additional_notes = dict(zip(loc_codes.CRS.iloc[loc_idx], add_notes))
 
                     else:
                         additional_notes = None
 
-                    loc_codes = loc_codes.replace(
-                        self.amendment_to_loc_names(), regex=True)
+                    loc_codes = loc_codes.replace(self.amendment_to_loc_names(), regex=True)
 
                     loc_codes.STANOX = loc_codes.STANOX.replace({'-': ''})
 
@@ -634,7 +685,7 @@ class LocationIdentifiers:
                     print("Done.") if verbose == 2 else ""
 
                     location_codes_initial.update({beginning_with: loc_codes,
-                                                   self.ANKey: additional_notes,
+                                                   self.AddNotesKey: additional_notes,
                                                    self.LUDKey: last_updated_date})
 
                     save_pickle(location_codes_initial, path_to_pickle, verbose=verbose)
@@ -653,13 +704,13 @@ class LocationIdentifiers:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: data of location codes and date of when the data was last updated
         :rtype: dict
@@ -670,15 +721,22 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
+            >>> # loc_codes = lid.fetch_location_codes(update=True, verbose=True)
             >>> loc_codes = lid.fetch_location_codes()
 
             >>> type(loc_codes)
-            <class 'dict'>
-            >>> print(list(loc_codes.keys()))
-            ['Location codes',
-             'Other systems',
-             'Additional notes',
-             'Last updated date']
+            dict
+            >>> list(loc_codes.keys())
+            ['Location codes', 'Other systems', 'Additional notes', 'Last updated date']
+
+            >>> print(loc_codes['Location codes'].head())
+                                           Location CRS  ... STANME_Note STANOX_Note
+            0                                Aachen      ...
+            1                    Abbeyhill Junction      ...
+            2                 Abbeyhill Signal E811      ...
+            3            Abbeyhill Turnback Sidings      ...
+            4  Abbey Level Crossing (Staffordshire)      ...
+            [5 rows x 12 columns]
         """
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
@@ -692,15 +750,14 @@ class LocationIdentifiers:
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(
-                    self.Key.lower()))
+                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
             data = [self.collect_loc_codes_by_initial(x, update=False, verbose=verbose_)
                     for x in string.ascii_lowercase]
 
         # Select DataFrames only
         location_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
-        location_codes_data_table = pd.concat(location_codes_data, axis=0,
-                                              ignore_index=True, sort=False)
+        location_codes_data_table = pd.concat(
+            location_codes_data, axis=0, ignore_index=True, sort=False)
 
         # Likely errors (spotted occasionally)
         idx = location_codes_data_table[
@@ -712,13 +769,12 @@ class LocationIdentifiers:
         location_codes_data_table.loc[idx, 'STANME':'STANOX'] = values
 
         # Get the latest updated date
-        last_updated_dates = (item[self.LUDKey]
-                              for item, _ in zip(data, string.ascii_uppercase))
+        last_updated_dates = (item[self.LUDKey] for item, _ in zip(data, string.ascii_uppercase))
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
         # Get other systems codes
         other_systems_codes = self.fetch_other_systems_codes(
-            update=update, verbose=verbose_)[self.OSKey]
+            update=update, verbose=verbose_)[self.OtherSystemsKey]
 
         # Get additional note
         additional_notes = self.fetch_explanatory_note(
@@ -726,14 +782,14 @@ class LocationIdentifiers:
 
         # Create a dict to include all information
         location_codes = {self.Key: location_codes_data_table,
-                          self.OSKey: other_systems_codes,
-                          self.ANKey: additional_notes,
+                          self.OtherSystemsKey: other_systems_codes,
+                          self.AddNotesKey: additional_notes,
                           self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir,
-                                          self.Key.lower().replace(" ", "-") + ".pickle")
+            path_to_pickle = os.path.join(
+                self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
             save_pickle(location_codes, path_to_pickle, verbose=verbose)
 
         return location_codes
@@ -745,10 +801,10 @@ class LocationIdentifiers:
         Make a dict/dataframe for location code data for the given ``keys``.
 
         :param keys: one or a sublist of ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
-        :type keys: str, list
-        :param initials: one or a sequence of initials
-            for which the location codes are used, defaults to ``None``
-        :type initials: str, list, None
+        :type keys: str or list
+        :param initials: one or a sequence of initials for which the location codes are used,
+            defaults to ``None``
+        :type initials: str or list or None
         :param drop_duplicates: whether to drop duplicates, defaults to ``False``
         :type drop_duplicates: bool
         :param as_dict: whether to return a dictionary, defaults to ``False``
@@ -756,19 +812,18 @@ class LocationIdentifiers:
         :param main_key: key of the returned dictionary if ``as_dict`` is ``True``,
             defaults to ``None``
         :type main_key: str or None
-        :param save_it: whether to save the location codes dictionary,
-            defaults to ``False``
+        :param save_it: whether to save the location codes dictionary, defaults to ``False``
         :type save_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool or int
         :return: dictionary or a data frame for location code data for the given ``keys``
-        :rtype: dict, pandas.DataFrame, None
+        :rtype: dict or pandas.DataFrame or None
 
         **Examples**::
 
@@ -788,10 +843,10 @@ class LocationIdentifiers:
             04308   Abbeyhill Turnback Sidings
             88601                   Abbey Wood
 
-            >>> keys_ = ['STANOX', 'TIPLOC']
-            >>> initial_ = 'a'
+            >>> ks = ['STANOX', 'TIPLOC']
+            >>> ini = 'a'
 
-            >>> stanox_dictionary = lid.make_loc_id_dict(keys_, initial_)
+            >>> stanox_dictionary = lid.make_loc_id_dict(ks, ini)
 
             >>> print(stanox_dictionary.head())
                                               Location
@@ -802,15 +857,14 @@ class LocationIdentifiers:
             04308  ABHLTB   Abbeyhill Turnback Sidings
             88601  ABWD                     Abbey Wood
 
-            >>> keys_ = ['STANOX', 'TIPLOC']
-            >>> initial_ = 'b'
+            >>> ks = ['STANOX', 'TIPLOC']
+            >>> ini = 'b'
 
-            >>> stanox_dictionary = lid.make_loc_id_dict(
-            ...     keys_, initial_, as_dict=True, main_key='Data')
+            >>> stanox_dictionary = lid.make_loc_id_dict(ks, ini, as_dict=True, main_key='Data')
 
             >>> type(stanox_dictionary)
-            <class 'dict'>
-            >>> print(list(stanox_dictionary['Data'].keys())[:5])
+            dict
+            >>> list(stanox_dictionary['Data'].keys())[:5]
             [('55115', ''),
              ('23490', 'BABWTHL'),
              ('38306', 'BACHE'),
