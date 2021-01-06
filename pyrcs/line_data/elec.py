@@ -127,9 +127,20 @@ class Electrification:
             >>> nn_dat = elec.collect_national_network_codes(confirmation_required=False)
 
             >>> type(nn_dat)
-            <class 'dict'>
-            >>> print(list(nn_dat.keys()))
+            dict
+            >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
+
+            >>> type(nn_dat['National network'])
+            dict
+            >>> list(nn_dat['National network'].keys())
+            ['Traditional numbering system distance and sequence',
+             'New numbering system km and decimal',
+             'Codes not certain confirmation is welcome',
+             'Suspicious data',
+             'An odd one to complete the record',
+             'LBSC/Southern Railway overhead system',
+             'Codes not known']
         """
 
         if confirmed("To collect section codes for OLE installations: {}?".format(
@@ -222,8 +233,8 @@ class Electrification:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
@@ -239,12 +250,24 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> nn_ole_dat = elec.fetch_national_network_codes()
+            >>> # nn_ole_dat = elec.fetch_national_network_codes(update=True, verbose=True)
+            >>> nn_dat = elec.fetch_national_network_codes()
 
-            >>> type(nn_ole_dat)
-            <class 'dict'>
-            >>> print(list(nn_ole_dat.keys()))
+            >>> type(nn_dat)
+            dict
+            >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
+
+            >>> type(nn_dat['National network'])
+            dict
+            >>> list(nn_dat['National network'].keys())
+            ['Traditional numbering system distance and sequence',
+             'New numbering system km and decimal',
+             'Codes not certain confirmation is welcome',
+             'Suspicious data',
+             'An odd one to complete the record',
+             'LBSC/Southern Railway overhead system',
+             'Codes not known']
         """
 
         path_to_pickle = self._cdd_elec(self.NationalNetworkPickle + ".pickle")
@@ -291,7 +314,7 @@ class Electrification:
 
             >>> l_names = elec.get_indep_line_names()
 
-            >>> print(l_names[:5])
+            >>> l_names[:5]
             ['Beamish Tramway',
              'Birkenhead Tramway',
              'Black Country Living Museum',
@@ -300,16 +323,17 @@ class Electrification:
         """
 
         try:
-            source = requests.get(self.Catalogue[self.IndependentLinesKey],
-                                  headers=fake_requests_headers())
+            url = self.Catalogue[self.IndependentLinesKey]
+            source = requests.get(url, headers=fake_requests_headers())
         except requests.exceptions.ConnectionError:
             print_conn_err(verbose=verbose)
 
         else:
             soup = bs4.BeautifulSoup(source.text, 'lxml')
-            for x in soup.find_all('p'):
-                if re.match(r'^Jump to: ', x.text):
-                    line_names = x.text.replace('Jump to: ', '').split('\xa0| ')
+            for x in soup.find_all('nav'):
+                txt = x.text.replace('\r\n', '').strip()
+                if re.match(r'^Jump to:', txt):
+                    line_names = txt.replace('Jump to: ', '').split('\xa0| ')
                     return line_names
 
     def collect_indep_lines_codes(self, confirmation_required=True, verbose=False):
@@ -336,9 +360,18 @@ class Electrification:
             >>> il_ole_dat = elec.collect_indep_lines_codes(confirmation_required=False)
 
             >>> type(il_ole_dat)
-            <class 'dict'>
-            >>> print(list(il_ole_dat.keys()))
+            dict
+            >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
+
+            >>> type(il_ole_dat['Independent lines'])
+            dict
+            >>> list(il_ole_dat['Independent lines'].keys())[-5:]
+            ['Seaton Tramway',
+             'Sheffield Supertram',
+             'Snaefell Mountain Railway',
+             'Summerlee, Museum of Scottish Industrial Life Tramway',
+             'Tyne & Wear Metro']
         """
 
         if confirmed("To collect section codes for OLE installations: {}?".format(
@@ -445,8 +478,8 @@ class Electrification:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
@@ -462,12 +495,22 @@ class Electrification:
 
             >>> elec = Electrification()
 
+            >>> # il_ole_dat = elec.fetch_indep_lines_codes(update=True, verbose=True)
             >>> il_ole_dat = elec.fetch_indep_lines_codes()
 
             >>> type(il_ole_dat)
-            <class 'dict'>
-            >>> print(list(il_ole_dat.keys()))
+            dict
+            >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
+
+            >>> type(il_ole_dat['Independent lines'])
+            dict
+            >>> list(il_ole_dat['Independent lines'].keys())[-5:]
+            ['Seaton Tramway',
+             'Sheffield Supertram',
+             'Snaefell Mountain Railway',
+             'Summerlee, Museum of Scottish Industrial Life Tramway',
+             'Tyne & Wear Metro']
         """
 
         pickle_filename = self.IndependentLinesKey.lower().replace(" ", "-") + ".pickle"
@@ -519,9 +562,17 @@ class Electrification:
             >>> ohns_dat = elec.collect_ohns_codes(confirmation_required=False)
 
             >>> type(ohns_dat)
-            <class 'dict'>
-            >>> print(list(ohns_dat.keys()))
+            dict
+            >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
+
+            >>> print(ohns_dat['National network neutral sections'].head())
+                ELR         OHNS Name  Mileage    Tracks Dates
+            0  ARG1        Rutherglen   0m 3ch
+            1  ARG2   Finnieston East  4m 23ch      Down
+            2  ARG2   Finnieston West  4m 57ch        Up
+            3  AYR1  Shields Junction  0m 68ch    Up Ayr
+            4  AYR1  Shields Junction  0m 69ch  Down Ayr
         """
 
         if confirmed("To collect section codes for OLE installations: {}?".format(
@@ -558,8 +609,7 @@ class Electrification:
 
             return ohns_codes
 
-    def fetch_ohns_codes(self, update=False, pickle_it=False, data_dir=None,
-                         verbose=False):
+    def fetch_ohns_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch codes for `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
@@ -585,12 +635,21 @@ class Electrification:
 
             >>> elec = Electrification()
 
+            >>> # ohns_dat = elec.fetch_ohns_codes(update=True, verbose=True)
             >>> ohns_dat = elec.fetch_ohns_codes()
 
             >>> type(ohns_dat)
-            <class 'dict'>
-            >>> print(list(ohns_dat.keys()))
+            dict
+            >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
+
+            >>> print(ohns_dat['National network neutral sections'].head())
+                ELR         OHNS Name  Mileage    Tracks Dates
+            0  ARG1        Rutherglen   0m 3ch
+            1  ARG2   Finnieston East  4m 23ch      Down
+            2  ARG2   Finnieston West  4m 57ch        Up
+            3  AYR1  Shields Junction  0m 68ch    Up Ayr
+            4  AYR1  Shields Junction  0m 69ch  Down Ayr
         """
 
         path_to_pickle = self._cdd_elec(self.OhnsPickle + ".pickle")
@@ -639,9 +698,14 @@ class Electrification:
             >>> etz_ole_dat = elec.collect_etz_codes(confirmation_required=False)
 
             >>> type(etz_ole_dat)
-            <class 'dict'>
-            >>> print(list(etz_ole_dat.keys()))
+            dict
+            >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
+
+            >>> type(etz_ole_dat['National network energy tariff zones'])
+            dict
+            >>> list(etz_ole_dat['National network energy tariff zones'].keys())
+            ['Railtrack', 'Notes', 'Network Rail']
         """
 
         if confirmed("To collect section codes for OLE installations: {}?".format(
@@ -721,8 +785,8 @@ class Electrification:
         :param update: whether to check on update and proceed to update the package data, 
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data 
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
@@ -738,12 +802,18 @@ class Electrification:
 
             >>> elec = Electrification()
 
+            >>> # etz_ole_dat = elec.fetch_etz_codes(update=True, verbose=True)
             >>> etz_ole_dat = elec.fetch_etz_codes()
 
             >>> type(etz_ole_dat)
-            <class 'dict'>
-            >>> print(list(etz_ole_dat.keys()))
+            dict
+            >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
+
+            >>> type(etz_ole_dat['National network energy tariff zones'])
+            dict
+            >>> list(etz_ole_dat['National network energy tariff zones'].keys())
+            ['Railtrack', 'Notes', 'Network Rail']
         """
 
         path_to_pickle = self._cdd_elec(self.TariffZonesPickle + ".pickle")
@@ -795,12 +865,21 @@ class Electrification:
 
             >>> elec = Electrification()
 
+            >>> # electrification_codes = elec.fetch_elec_codes(update=True, verbose=True)
             >>> electrification_codes = elec.fetch_elec_codes()
 
             >>> type(electrification_codes)
-            <class 'dict'>
-            >>> print(list(electrification_codes.keys()))
+            dict
+            >>> list(electrification_codes.keys())
             ['Electrification', 'Last updated date']
+
+            >>> type(electrification_codes['Electrification'])
+            dict
+            >>> list(electrification_codes['Electrification'].keys())
+            ['National network energy tariff zones',
+             'Independent lines',
+             'National network',
+             'National network neutral sections']
         """
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
