@@ -1,5 +1,6 @@
 """
-A collection of modules for collecting `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+A collection of modules for collecting
+`line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
 See also :py:class:`pyrcs.collector.LineData`.
 """
 
