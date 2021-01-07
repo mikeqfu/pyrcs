@@ -2,6 +2,7 @@
 Utilities - Helper functions.
 """
 
+import calendar
 import collections
 import datetime
 import os
@@ -18,6 +19,7 @@ import pkg_resources
 import requests
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
+from pyhelpers.text import find_similar_str
 
 
 # -- Specification of resource homepage ------------------------------------------------
@@ -407,7 +409,6 @@ def parse_tr(header, trs):
     row_spanned = []
     for no, tr in enumerate(trs):
         for td_no, rho in enumerate(tr.find_all('td')):
-            # print(data.has_attr("rowspan"))
             if rho.has_attr('rowspan'):
                 row_spanned.append((no, int(rho['rowspan']), td_no, rho.text))
 
@@ -422,7 +423,7 @@ def parse_tr(header, trs):
             for y in to_repeat:
                 for j in range(1, y[0]):
                     if y[2] in tbl_lst[i] and y[2] != '\xa0':
-                        y[1] += np.abs(tbl_lst[i].index(y[2]) - y[1])
+                        y[1] += np.abs(tbl_lst[i].index(y[2]) - y[1], dtype='int64')
                     tbl_lst[i + j].insert(y[1], y[2])
 
     # if row_spanned:
@@ -618,8 +619,13 @@ def parse_date(str_date, as_date_type=False):
         <class 'datetime.date'>
     """
 
-    temp_date = dateutil.parser.parse(str_date, fuzzy=True)
-    # or, temp_date = datetime.strptime(last_update_date[12:], '%d %B %Y')
+    try:
+        temp_date = dateutil.parser.parse(str_date, fuzzy=True)
+        # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
+    except (TypeError, calendar.IllegalMonthError):
+        month_name = find_similar_str(str_date, calendar.month_name)
+        err_month_ = find_similar_str(month_name, str_date.split(' '))
+        temp_date = dateutil.parser.parse(str_date.replace(err_month_, month_name), fuzzy=True)
 
     parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
 
