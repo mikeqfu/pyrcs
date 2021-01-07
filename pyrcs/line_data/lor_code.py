@@ -538,6 +538,8 @@ class LOR:
             if verbose == 2:
                 print("Collecting data of {}".format(self.ELCKey), end=" ... ")
 
+            elr_lor_converter = None
+
             try:
                 headers, elr_lor_dat = pd.read_html(url)
             except (urllib.error.URLError, socket.gaierror):
@@ -545,45 +547,46 @@ class LOR:
                 print_conn_err(verbose=verbose)
                 return None
 
-            try:
-                elr_lor_dat.columns = list(headers)
-                #
-                source = requests.get(url, headers=fake_requests_headers())
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
-                # tds = soup.find_all('td')
-                # links = [x.get('href') for x in [y.find('a', href=True) for y in tds]
-                #          if x is not None]
-                elr_links = soup.find_all('td', text=re.compile(r'([A-Z]{3})(\d)?'))
-                lor_links = soup.find_all('a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
-                #
-                # if len(elr_links) != len(elr_lor_dat):
-                #     duplicates = \
-                #         elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
-                #     for i in duplicates.index:
-                #         if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
-                #             elr_links.insert(i, elr_links[i - 1])
-                #         if not lor_links[i].endswith(
-                #                 duplicates['LOR code'].loc[i].lower()):
-                #             lor_links.insert(i, lor_links[i - 1])
-                #
-                elr_lor_dat['ELR_URL'] = [
-                    urllib.parse.urljoin(self.HomeURL, x.a.get('href')) if x.a else None
-                    for x in elr_links]
-                elr_lor_dat['LOR_URL'] = [
-                    urllib.parse.urljoin(self.HomeURL, 'pride/' + x.get('href')) for x in lor_links]
-                #
-                elr_lor_converter = {self.ELCKey: elr_lor_dat,
-                                     self.LUDKey: get_last_updated_date(url)}
+            else:
+                try:
+                    elr_lor_dat.columns = list(headers)
+                    #
+                    source = requests.get(url, headers=fake_requests_headers())
+                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    # tds = soup.find_all('td')
+                    # links = [x.get('href') for x in [y.find('a', href=True) for y in tds]
+                    #          if x is not None]
+                    elr_links = soup.find_all('td', text=re.compile(r'([A-Z]{3})(\d)?'))
+                    lor_links = soup.find_all('a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
+                    #
+                    # if len(elr_links) != len(elr_lor_dat):
+                    #     duplicates = \
+                    #         elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
+                    #     for i in duplicates.index:
+                    #         if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+                    #             elr_links.insert(i, elr_links[i - 1])
+                    #         if not lor_links[i].endswith(
+                    #                 duplicates['LOR code'].loc[i].lower()):
+                    #             lor_links.insert(i, lor_links[i - 1])
+                    #
+                    elr_lor_dat['ELR_URL'] = [
+                        urllib.parse.urljoin(self.HomeURL, x.a.get('href')) if x.a else None
+                        for x in elr_links]
+                    elr_lor_dat['LOR_URL'] = [
+                        urllib.parse.urljoin(self.HomeURL, 'pride/' + x.get('href'))
+                        for x in lor_links]
+                    #
+                    elr_lor_converter = {self.ELCKey: elr_lor_dat,
+                                         self.LUDKey: get_last_updated_date(url)}
 
-                print("Done.") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
-                pickle_filename_ = re.sub(r"[/ ]", "-", self.ELCKey.lower())
-                save_pickle(elr_lor_converter, self._cdd_lor(pickle_filename_ + ".pickle"),
-                            verbose=verbose)
+                    pickle_filename_ = re.sub(r"[/ ]", "-", self.ELCKey.lower())
+                    save_pickle(elr_lor_converter, self._cdd_lor(pickle_filename_ + ".pickle"),
+                                verbose=verbose)
 
-            except Exception as e:
-                print("Failed. {}".format(e))
-                elr_lor_converter = None
+                except Exception as e:
+                    print("Failed. {}".format(e))
 
             return elr_lor_converter
 
