@@ -206,16 +206,16 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> tunnel_len_1 = tunl.collect_lengths_by_page(page_no=1)
-            >>> type(tunnel_len_1)
+            >>> tunl_len_1 = tunl.collect_lengths_by_page(page_no=1)
+            >>> type(tunl_len_1)
             dict
-            >>> list(tunnel_len_1.keys())
+            >>> list(tunl_len_1.keys())
             ['Page 1 (A-F)', 'Last updated date']
 
-            >>> tunnel_len_4 = tunl.collect_lengths_by_page(page_no=4)
-            >>> type(tunnel_len_4)
+            >>> tunl_len_4 = tunl.collect_lengths_by_page(page_no=4)
+            >>> type(tunl_len_4)
             dict
-            >>> list(tunnel_len_4.keys())
+            >>> list(tunl_len_4.keys())
             ['Page 4 (others)', 'Last updated date']
         """
 
@@ -321,28 +321,28 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> # tunnel_lengths_data = tunl.fetch_tunnel_lengths(update=True, verbose=True)
-            >>> tunnel_lengths_data = tunl.fetch_tunnel_lengths()
+            >>> # tunl_len_data = tunl.fetch_tunnel_lengths(update=True, verbose=True)
+            >>> tunl_len_data = tunl.fetch_tunnel_lengths()
 
-            >>> type(tunnel_lengths_data)
+            >>> type(tunl_len_data)
             dict
-            >>> list(tunnel_lengths_data.keys())
+            >>> list(tunl_len_data.keys())
             ['Tunnels', 'Last updated date']
 
-            >>> tunnel_lengths_dat = tunnel_lengths_data['Tunnels']
-            >>> type(tunnel_lengths_dat)
+            >>> tunl_len_dat = tunl_len_data['Tunnels']
+            >>> type(tunl_len_dat)
             dict
-            >>> list(tunnel_lengths_dat.keys())
+            >>> list(tunl_len_dat.keys())
             ['Page 1 (A-F)', 'Page 2 (G-P)', 'Page 3 (Q-Z)', 'Page 4 (others)']
 
-            >>> page_1 = tunnel_lengths_dat['Page 1 (A-F)']
+            >>> page_1 = tunl_len_dat['Page 1 (A-F)']
             >>> print(page_1.head())
-                         Name  Other names, remarks   Length  ...   Length_metres Length_notes
-            0    Abbotscliffe                        1m 182y  ...       1775.7648          NaN
-            1      Abercanaid           see Merthyr           ...             NaN  Unavailable
-            2     Aberchalder         see Loch Oich           ...             NaN  Unavailable
-            3  Aberdovey No 1  also called Frongoch  0m 200y  ...        182.8800          NaN
-            4  Aberdovey No 2    also called Morfor  0m 219y  ...        200.2536          NaN
+                         Name  Other names, remarks  ...   Length_metres Length_notes
+            0    Abbotscliffe                        ...       1775.7648          NaN
+            1      Abercanaid           see Merthyr  ...             NaN  Unavailable
+            2     Aberchalder         see Loch Oich  ...             NaN  Unavailable
+            3  Aberdovey No 1  also called Frongoch  ...        182.8800          NaN
+            4  Aberdovey No 2    also called Morfor  ...        200.2536          NaN
             [5 rows x 12 columns]
         """
 
