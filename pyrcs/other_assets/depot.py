@@ -400,15 +400,15 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> # fdpt_codes = depots.fetch_four_digit_pre_tops_codes(update=True, verbose=True)
-            >>> fdpt_codes = depots.fetch_four_digit_pre_tops_codes()
+            >>> # fdpt = depots.fetch_four_digit_pre_tops_codes(update=True, verbose=True)
+            >>> fdpt = depots.fetch_four_digit_pre_tops_codes()
 
-            >>> type(fdpt_codes)
+            >>> type(fdpt)
             dict
-            >>> list(fdpt_codes.keys())
+            >>> list(fdpt.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
 
-            >>> print(fdpt_codes['Four digit pre-TOPS codes'].head())
+            >>> print(fdpt['Four digit pre-TOPS codes'].head())
                Code             Depot name          Region
             0  2000             Accrington  London Midland
             1  2001   Derby Litchurch Lane      Main Works
@@ -542,10 +542,10 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> # system_1950_codes_dat = depots.fetch_1950_system_codes(update=True, verbose=True)
-            >>> system_1950_codes_dat = depots.fetch_1950_system_codes()
+            >>> # s1950_codes = depots.fetch_1950_system_codes(update=True, verbose=True)
+            >>> s1950_codes = depots.fetch_1950_system_codes()
 
-            >>> system_1950_codes = system_1950_codes_dat['1950 system (pre-TOPS) codes']
+            >>> system_1950_codes = s1950_codes['1950 system (pre-TOPS) codes']
 
             >>> type(system_1950_codes)
             pandas.core.frame.DataFrame
