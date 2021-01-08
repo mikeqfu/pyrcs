@@ -138,12 +138,12 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> # stn_data_catalogue = stn.get_station_data_catalogue(update=True, verbose=True)
-            >>> stn_data_catalogue = stn.get_station_data_catalogue()
+            >>> # stn_data_cat = stn.get_station_data_catalogue(update=True, verbose=True)
+            >>> stn_data_cat = stn.get_station_data_catalogue()
 
-            >>> type(stn_data_catalogue)
+            >>> type(stn_data_cat)
             dict
-            >>> list(stn_data_catalogue.keys())
+            >>> list(stn_data_cat.keys())
             ['Railway station data',
              'Sponsored signs',
              'International',
@@ -285,21 +285,21 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> # stn_data_a = stn.collect_station_data_by_initial('a', update=True, verbose=True)
-            >>> stn_data_a = stn.collect_station_data_by_initial(initial='a')
+            >>> # sa = stn.collect_station_data_by_initial('a', update=True, verbose=True)
+            >>> sa = stn.collect_station_data_by_initial(initial='a')
 
-            >>> type(stn_data_a)
+            >>> type(sa)
             dict
-            >>> list(stn_data_a.keys())
+            >>> list(sa.keys())
             ['A', 'Last updated date']
 
-            >>> print(stn_data_a['A'].head())
-                       Station   ELR   Mileage  ... Prev_Date_5 Prev_Operator_6  Prev_Date_6
-            0       Abbey Wood   NKL  11m 43ch  ...        None            None         None
-            1       Abbey Wood  XRS3  24.458km  ...        None            None         None
-            2             Aber   CAR   8m 69ch  ...        None            None         None
-            3  Abercynon North   ABD  16m 40ch  ...        None            None         None
-            4                    ABD  16m 28ch  ...        None            None         None
+            >>> print(sa['A'].head())
+                       Station   ELR   Mileage  ... Prev_Operator_6  Prev_Date_6
+            0       Abbey Wood   NKL  11m 43ch  ...            None         None
+            1       Abbey Wood  XRS3  24.458km  ...            None         None
+            2             Aber   CAR   8m 69ch  ...            None         None
+            3  Abercynon North   ABD  16m 40ch  ...            None         None
+            4                    ABD  16m 28ch  ...            None         None
             [5 rows x 23 columns]
         """
 
@@ -481,12 +481,12 @@ class Stations:
             >>> type(stn_dat)
             pandas.core.frame.DataFrame
             >>> print(stn_dat.head())
-                       Station   ELR   Mileage  ... Prev_Date_5 Prev_Operator_6  Prev_Date_6
-            0       Abbey Wood   NKL  11m 43ch  ...        None            None         None
-            1       Abbey Wood  XRS3  24.458km  ...        None            None         None
-            2             Aber   CAR   8m 69ch  ...        None            None         None
-            3  Abercynon North   ABD  16m 40ch  ...        None            None         None
-            4                    ABD  16m 28ch  ...        None            None         None
+                       Station   ELR   Mileage  ... Prev_Operator_6  Prev_Date_6
+            0       Abbey Wood   NKL  11m 43ch  ...            None         None
+            1       Abbey Wood  XRS3  24.458km  ...            None         None
+            2             Aber   CAR   8m 69ch  ...            None         None
+            3  Abercynon North   ABD  16m 40ch  ...            None         None
+            4                    ABD  16m 28ch  ...            None         None
             [5 rows x 23 columns]
         """
 
