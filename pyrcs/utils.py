@@ -598,8 +598,7 @@ def parse_date(str_date, as_date_type=False):
 
     :param str_date: string-type date
     :type str_date: str
-    :param as_date_type: whether to return the date as `datetime.date`_,
-        defaults to ``False``
+    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
     :type as_date_type: bool
     :return: parsed date as a string or `datetime.date`_
     :rtype: str or datetime.date
@@ -1046,8 +1045,8 @@ def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
 
     :param k: key of the created dictionary, defaults to ``None``
     :type k: str or int or float or bool or None
-    :param regex: whether to create a dictionary for replacement
-        based on regular expressions, defaults to ``False``
+    :param regex: whether to create a dictionary for replacement based on regular expressions,
+        defaults to ``False``
     :type regex: bool
     :param as_dataframe: whether to return the created dictionary as a pandas.DataFrame,
         defaults to ``False``
@@ -1121,14 +1120,12 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
 
     new_items_keys = list(new_items.keys())
 
-    if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(
-            json_filename, new_items_keys[0])):
+    if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
         path_to_json = cd_dat(json_filename)
         location_name_repl_dict = load_json(path_to_json)
 
         if any(isinstance(k, re.Pattern) for k in new_items_keys):
-            new_items = {k.pattern: v for k, v in new_items.items()
-                         if isinstance(k, re.Pattern)}
+            new_items = {k.pattern: v for k, v in new_items.items() if isinstance(k, re.Pattern)}
 
         location_name_repl_dict.update(new_items)
 
