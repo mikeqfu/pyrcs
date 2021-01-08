@@ -134,15 +134,15 @@ class Viaducts:
 
             >>> vdct = Viaducts()
 
-            >>> # viaducts_1 = vdct.collect_viaduct_codes_by_page(1, update=True, verbose=True)
-            >>> viaducts_1_dat = vdct.collect_viaduct_codes_by_page(page_no=1)
+            >>> # vd1 = vdct.collect_viaduct_codes_by_page(1, update=True, verbose=True)
+            >>> vd1 = vdct.collect_viaduct_codes_by_page(page_no=1)
 
-            >>> type(viaducts_1_dat)
+            >>> type(vd1)
             dict
-            >>> list(viaducts_1_dat.keys())
+            >>> list(vd1.keys())
             ['Page 1 (A-C)', 'Last updated date']
 
-            >>> viaducts_1 = viaducts_1_dat['Page 1 (A-C)']
+            >>> viaducts_1 = vd1['Page 1 (A-C)']
             >>> print(viaducts_1.head())
                    Name  ... Spans
             0  7 Arches  ...     7
