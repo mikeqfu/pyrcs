@@ -1,6 +1,5 @@
 """
-Collect codes of
-`railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
 import copy
@@ -33,16 +32,33 @@ class Viaducts:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
+    :ivar str P1Key: key of the dict-type data of Page 1
+    :ivar str P2Key: key of the dict-type data of Page 2
+    :ivar str P3Key: key of the dict-type data of Page 3
+    :ivar str P4Key: key of the dict-type data of Page 4
+    :ivar str P5Key: key of the dict-type data of Page 5
+    :ivar str P6Key: key of the dict-type data of Page 6
+
     **Example**::
 
         >>> from pyrcs.other_assets import Viaducts
 
-        >>> viaducts = Viaducts()
+        >>> vdct = Viaducts()
 
-        >>> print(viaducts.Name)
+        >>> print(vdct.Name)
         Railway viaducts
 
-        >>> print(viaducts.SourceURL)
+        >>> print(vdct.SourceURL)
         http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm
     """
 
@@ -60,8 +76,7 @@ class Viaducts:
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/viaducts/viaducts0.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
@@ -83,11 +98,11 @@ class Viaducts:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Viaducts``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -106,8 +121,8 @@ class Viaducts:
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: railway viaducts data of the given ``page_no`` and
             date of when the data was last updated
@@ -117,23 +132,32 @@ class Viaducts:
 
             >>> from pyrcs.other_assets import Viaducts
 
-            >>> viaducts = Viaducts()
+            >>> vdct = Viaducts()
 
-            >>> viaducts_1 = viaducts.collect_viaduct_codes_by_page(page_no=1)
+            >>> # viaducts_1 = vdct.collect_viaduct_codes_by_page(1, update=True, verbose=True)
+            >>> viaducts_1_dat = vdct.collect_viaduct_codes_by_page(page_no=1)
 
-            >>> type(viaducts_1)
-            <class 'dict'>
-            >>> print(list(viaducts_1.keys()))
+            >>> type(viaducts_1_dat)
+            dict
+            >>> list(viaducts_1_dat.keys())
             ['Page 1 (A-C)', 'Last updated date']
+
+            >>> viaducts_1 = viaducts_1_dat['Page 1 (A-C)']
+            >>> print(viaducts_1.head())
+                   Name  ... Spans
+            0  7 Arches  ...     7
+            1   36 Arch  ...    36
+            2   42 Arch  ...
+            3     A6120  ...
+            4      A698  ...
+            [5 rows x 7 columns]
         """
 
-        assert page_no in range(1, 7), \
-            "Valid \"page_no\" must be one of 1, 2, 3, 4, 5, and 6."
+        assert page_no in range(1, 7), "Valid \"page_no\" must be one of 1, 2, 3, 4, 5, and 6."
 
         page_name = find_similar_str(str(page_no), list(self.Catalogue.keys()))
 
-        pickle_filename = re.sub(
-            r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower() + ".pickle"
+        pickle_filename = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower() + ".pickle"
         path_to_pickle = self._cdd_vdct(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -149,8 +173,7 @@ class Viaducts:
                       end=" ... ")
 
             try:
-                header, viaducts_table = pd.read_html(
-                    url, na_values=[''], keep_default_na=False)
+                header, viaducts_table = pd.read_html(url, na_values=[''], keep_default_na=False)
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -162,10 +185,10 @@ class Viaducts:
 
                     last_updated_date = get_last_updated_date(url)
 
-                    print("Done. ") if verbose == 2 else ""
+                    print("Done.") if verbose == 2 else ""
 
-                    page_railway_viaducts = {page_name: viaducts_table,
-                                             self.LUDKey: last_updated_date}
+                    page_railway_viaducts = {
+                        page_name: viaducts_table, self.LUDKey: last_updated_date}
 
                     save_pickle(page_railway_viaducts, path_to_pickle, verbose=verbose)
 
@@ -174,21 +197,20 @@ class Viaducts:
 
         return page_railway_viaducts
 
-    def fetch_viaduct_codes(self, update=False, pickle_it=False, data_dir=None,
-                            verbose=False):
+    def fetch_viaduct_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch data of railway viaducts from local backup.
 
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :return: railway viaducts data and date of when the data was last updated
         :rtype: dict
@@ -197,25 +219,36 @@ class Viaducts:
 
             >>> from pyrcs.other_assets import Viaducts
 
-            >>> viaducts = Viaducts()
+            >>> vdct = Viaducts()
 
-            >>> viaducts_data = viaducts.fetch_viaduct_codes()
+            >>> # viaducts_codes = vdct.fetch_viaduct_codes(update=True, verbose=True)
+            >>> viaducts_codes = vdct.fetch_viaduct_codes()
 
-            >>> type(viaducts_data)
-            <class 'dict'>
-            >>> print(list(viaducts_data.keys()))
+            >>> type(viaducts_codes)
+            dict
+            >>> list(viaducts_codes.keys())
             ['Viaducts', 'Last updated date']
 
-            >>> viaducts_dat = viaducts_data['Viaducts']
+            >>> viaducts_dat = viaducts_codes['Viaducts']
             >>> type(viaducts_dat)
-            <class 'dict'>
-            >>> print(list(viaducts_dat.keys()))
+            dict
+            >>> list(viaducts_dat.keys())
             ['Page 1 (A-C)',
              'Page 2 (D-G)',
              'Page 3 (H-K)',
              'Page 4 (L-P)',
              'Page 5 (Q-S)',
              'Page 6 (T-Z)']
+
+            >>> viaducts_dat_6 = viaducts_dat['Page 6 (T-Z)']
+            >>> print(viaducts_dat_6.head())
+                     Name  ... Spans
+            0        Taff  ...
+            1        Taff  ...
+            2  Taff River  ...
+            3  Taffs Well  ...
+            4        Tame  ...     4
+            [5 rows x 7 columns]
         """
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
@@ -228,16 +261,13 @@ class Viaducts:
         if all(x is None for x in page_data):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(
-                    self.Key.lower()))
-            page_data = [
-                self.collect_viaduct_codes_by_page(x, update=False, verbose=verbose_)
-                for x in range(1, 7)]
+                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
+            page_data = [self.collect_viaduct_codes_by_page(x, update=False, verbose=verbose_)
+                         for x in range(1, 7)]
 
         railways_viaducts_data = {
             self.Key: {next(iter(x)): next(iter(x.values())) for x in page_data},
-            self.LUDKey:
-                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
+            self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
