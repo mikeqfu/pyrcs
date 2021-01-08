@@ -384,12 +384,12 @@ class Features:
 
             >>> wt_codes = wt_codes_dat['Water troughs']
             >>> print(wt_codes.head())
-                ELR  Trough Name  ... Length_yard                                        Notes
-            0   BEI    Eckington  ...         NaN                               Installed 1904
-            1   BHL  Aldermaston  ...  620.000000                            Installed by 1904
-            2  CGJ2        Moore  ...  506.666667                              Installed 1860s
-            3  CGJ6     Lea Road  ...  561.000000  Installed 1885, taken out of use 8 May 1967
-            4  CGJ6        Brock  ...  560.000000                              Installed 1860s
+                ELR  Trough Name  ...                                        Notes
+            0   BEI    Eckington  ...                               Installed 1904
+            1   BHL  Aldermaston  ...                            Installed by 1904
+            2  CGJ2        Moore  ...                              Installed 1860s
+            3  CGJ6     Lea Road  ...  Installed 1885, taken out of use 8 May 1967
+            4  CGJ6        Brock  ...                              Installed 1860s
             [5 rows x 5 columns]
         """
 
@@ -467,12 +467,12 @@ class Features:
 
             >>> wt_codes = wt_codes_dat['Water troughs']
             >>> print(wt_codes.head())
-                ELR  Trough Name  ... Length_yard                                        Notes
-            0   BEI    Eckington  ...         NaN                               Installed 1904
-            1   BHL  Aldermaston  ...  620.000000                            Installed by 1904
-            2  CGJ2        Moore  ...  506.666667                              Installed 1860s
-            3  CGJ6     Lea Road  ...  561.000000  Installed 1885, taken out of use 8 May 1967
-            4  CGJ6        Brock  ...  560.000000                              Installed 1860s
+                ELR  Trough Name  ...                                        Notes
+            0   BEI    Eckington  ...                               Installed 1904
+            1   BHL  Aldermaston  ...                            Installed by 1904
+            2  CGJ2        Moore  ...                              Installed 1860s
+            3  CGJ6     Lea Road  ...  Installed 1885, taken out of use 8 May 1967
+            4  CGJ6        Brock  ...                              Installed 1860s
             [5 rows x 5 columns]
         """
 
