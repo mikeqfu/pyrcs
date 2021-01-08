@@ -108,12 +108,12 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> # track_diagrams_items = td.get_track_diagrams_items(update=True, verbose=True)
-            >>> track_diagrams_items = td.get_track_diagrams_items()
+            >>> # trk_diagr_items = td.get_track_diagrams_items(update=True, verbose=True)
+            >>> trk_diagr_items = td.get_track_diagrams_items()
 
-            >>> type(track_diagrams_items)
+            >>> type(trk_diagr_items)
             dict
-            >>> print(track_diagrams_items.keys())
+            >>> print(trk_diagr_items.keys())
             dict_keys(['Track diagrams'])
         """
 
@@ -277,15 +277,15 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> # track_diagrams_catalog = td.fetch_sample_catalogue(update=True, verbose=True)
-            >>> track_diagrams_catalog = td.fetch_sample_catalogue()
+            >>> # trk_diagr_cat = td.fetch_sample_catalogue(update=True, verbose=True)
+            >>> trk_diagr_cat = td.fetch_sample_catalogue()
 
-            >>> type(track_diagrams_catalog)
+            >>> type(trk_diagr_cat)
             dict
-            >>> list(track_diagrams_catalog.keys())
+            >>> list(trk_diagr_cat.keys())
             ['Track diagrams', 'Last updated date']
 
-            >>> td_dat = track_diagrams_catalog['Track diagrams']
+            >>> td_dat = trk_diagr_cat['Track diagrams']
 
             >>> type(td_dat)
             dict
@@ -293,9 +293,9 @@ class TrackDiagrams:
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
 
             >>> print(td_dat['Main line diagrams'][1])
-                                         Description                                  FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/...
+                                         Description                             FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/...
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
