@@ -8,9 +8,8 @@ with open("README.rst", 'r', encoding='utf-8') as readme:
 setuptools.setup(
 
     name=pyrcs.__package_name__,
+
     version=pyrcs.__version__,
-    author=pyrcs.__author__,
-    author_email=pyrcs.__email__,
 
     description=pyrcs.__description__,
     long_description=long_description,
@@ -18,28 +17,56 @@ setuptools.setup(
 
     url='https://github.com/mikeqfu/pyrcs',
 
-    install_requires=[
-        'beautifulsoup4~=4.9.3',
-        'fake_useragent',
-        'fuzzywuzzy~=0.18.0',
-        'html5lib',
-        'lxml',
-        'measurement~=3.2.0',
-        'more-itertools~=8.6.0',
-        'numpy~=1.19.4',
-        'pandas~=1.1.4',
-        'pyhelpers>=1.2.6',
-        'requests~=2.24.0',
-    ],
+    author=pyrcs.__author__,
+    author_email=pyrcs.__email__,
 
-    packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
-
-    include_package_data=True,
+    license='GPLv3',
 
     classifiers=[
+        'Intended Audience :: Education',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Information Technology',
+        'Intended Audience :: Science/Research',
+
+        'Topic :: Education',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Utilities',
+
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+
         'Programming Language :: Python :: 3',
+
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux'
     ],
+
+    keywords=['Python', 'Railway Codes', 'Railway', 'CRS', 'NLC', 'TIPLOC', 'STANOX',
+              'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations', 'Signal boxes',
+              'Tunnels', 'Viaducts', 'Depots', 'Tracks'],
+
+    project_urls={
+        'Documentation': 'https://pyrcs.readthedocs.io/en/latest/',
+        'Source': 'https://github.com/mikeqfu/pyrcs',
+        'Tracker': 'https://github.com/mikeqfu/pyrcs/issues',
+    },
+
+    packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
+
+    install_requires=[
+        'beautifulsoup4',
+        'fake_useragent',
+        'fuzzywuzzy',
+        'html5lib',
+        'lxml',
+        'measurement',
+        'more-itertools',
+        'numpy',
+        'pandas>=1.1.0',
+        'pyhelpers>=1.2.9',
+        'requests',
+    ],
+
+    package_data={"": ["requirements.txt", "LICENSE"]},
+    include_package_data=True,
+
 )
