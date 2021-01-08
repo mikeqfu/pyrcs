@@ -105,11 +105,11 @@ class LineData:
         """
         Update local backup of the line data.
 
-        :param confirmation_required: whether to prompt a message
-            for confirmation to proceed, defaults to ``True``
+        :param confirmation_required: whether to prompt a message for confirmation to proceed,
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :param time_gap: time gap (in seconds) between the updating of different classes
         :type time_gap: int
@@ -266,11 +266,11 @@ class OtherAssets:
         """
         Update local backup of the other assets data.
 
-        :param confirmation_required: whether to prompt a message
-            for confirmation to proceed, defaults to ``True``
+        :param confirmation_required: whether to prompt a message for confirmation to proceed,
+            defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool
         :param time_gap: time gap (in seconds) between the updating of different classes
         :type time_gap: int
