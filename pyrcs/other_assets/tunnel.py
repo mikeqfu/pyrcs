@@ -1,6 +1,5 @@
 """
-Collect codes of
-`railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+Collect codes of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
 import copy
@@ -37,16 +36,31 @@ class Tunnels:
         defaults to ``True``
     :type verbose: bool or int
 
+    :ivar str Name: name of the data
+    :ivar str Key: key of the dict-type data
+    :ivar str HomeURL: URL of the main homepage
+    :ivar str SourceURL: URL of the data web page
+    :ivar str LUDKey: key of the last updated date
+    :ivar str LUD: last updated date
+    :ivar dict Catalogue: catalogue of the data
+    :ivar str DataDir: path to the data directory
+    :ivar str CurrentDataDir: path to the current data directory
+
+    :ivar str P1Key: key of the dict-type data of Page 1
+    :ivar str P2Key: key of the dict-type data of Page 2
+    :ivar str P3Key: key of the dict-type data of Page 3
+    :ivar str P4Key: key of the dict-type data of Page 4
+
     **Example**::
 
         >>> from pyrcs.other_assets import Tunnels
 
-        >>> tunnels = Tunnels()
+        >>> tunl = Tunnels()
 
-        >>> print(tunnels.Name)
+        >>> print(tunl.Name)
         Railway tunnel lengths
 
-        >>> print(tunnels.SourceURL)
+        >>> print(tunl.SourceURL)
         http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """
 
@@ -64,8 +78,7 @@ class Tunnels:
         self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/tunnels/tunnels0.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.Date = get_last_updated_date(url=self.SourceURL, parsed=True,
-                                          as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
         self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
                                        confirmation_required=False)
@@ -86,11 +99,11 @@ class Tunnels:
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of
-            `os.makedirs <https://docs.python.org/3/library/os.html#os.makedirs>`_,
-            e.g. ``mode=0o777``
+        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Tunnels``
         :rtype: str
+
+        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
 
         :meta private:
         """
@@ -113,21 +126,21 @@ class Tunnels:
 
             >>> from pyrcs.other_assets import Tunnels
 
-            >>> tunnels = Tunnels()
+            >>> tunl = Tunnels()
 
-            >>> tunnels.parse_length('')
+            >>> tunl.parse_length('')
             (nan, 'Unavailable')
 
-            >>> tunnels.parse_length('1m 182y')
+            >>> tunl.parse_length('1m 182y')
             (1775.7648, None)
 
-            >>> tunnels.parse_length('formerly 0m236y')
+            >>> tunl.parse_length('formerly 0m236y')
             (215.7984, 'Formerly')
 
-            >>> tunnels.parse_length('0.325km (0m 356y)')
+            >>> tunl.parse_length('0.325km (0m 356y)')
             (325.5264, '0.325km')
 
-            >>> tunnels.parse_length("0m 48yd- (['0m 58yd'])")
+            >>> tunl.parse_length("0m 48yd- (['0m 58yd'])")
             (48.4632, '43.89-53.04 metres')
         """
 
@@ -146,14 +159,13 @@ class Tunnels:
                 measurement.measures.Distance(mi=miles_b).m + \
                 measurement.measures.Distance(yd=yards_b).m
             length = (length_a + length_b) / 2
-            add_info = \
-                '-'.join([str(round(length_a, 2)), str(round(length_b, 2))]) + ' metres'
+            add_info = '-'.join([str(round(length_a, 2)), str(round(length_b, 2))]) + ' metres'
         else:
-            if re.match(r'(formerly )?c?\d+m ?\d+y?(ch)?.*', x):
+            if re.match(r'(formerly )?c?≈?\d+m ?\d+y?(ch)?.*', x):
                 miles, yards = re.findall(r'\d+', x)
                 if re.match(r'.*\d+ch$', x):
                     yards = measurement.measures.Distance(chain=yards).yd
-                if re.match(r'^c.*', x):
+                if re.match(r'^c.*|^≈', x):
                     add_info = 'Approximate'
                 elif re.match(r'\d+y$', x):
                     add_info = re.search(r'(?<=\dy).*$', x).group(0)
@@ -162,11 +174,9 @@ class Tunnels:
                 else:
                     add_info = None
             elif re.match(r'\d+\.\d+km(\r)? .*(\[\')?\(\d+m \d+y\).*', x):
-                miles, yards = re.findall(
-                    r'\d+', re.search(r'(?<=\()\d+.*(?=\))', x).group(0))
+                miles, yards = re.findall(r'\d+', re.search(r'(?<=\()\d+.*(?=\))', x).group(0))
                 add_info = re.search(r'.+(?= (\[\')?\()', x.replace('\r', '')).group(0)
             else:
-                print(x)
                 miles, yards = 0, 0
                 add_info = ''
             length = \
@@ -183,8 +193,8 @@ class Tunnels:
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool, int
         :return: tunnel lengths data of the given ``page_no`` and
             date of when the data was last updated
@@ -194,18 +204,18 @@ class Tunnels:
 
             >>> from pyrcs.other_assets import Tunnels
 
-            >>> tunnels = Tunnels()
+            >>> tunl = Tunnels()
 
-            >>> tunnel_len_1 = tunnels.collect_lengths_by_page(page_no=1)
+            >>> tunnel_len_1 = tunl.collect_lengths_by_page(page_no=1)
             >>> type(tunnel_len_1)
-            <class 'dict'>
-            >>> print(list(tunnel_len_1.keys()))
+            dict
+            >>> list(tunnel_len_1.keys())
             ['Page 1 (A-F)', 'Last updated date']
 
-            >>> tunnel_len_4 = tunnels.collect_lengths_by_page(page_no=4)
+            >>> tunnel_len_4 = tunl.collect_lengths_by_page(page_no=4)
             >>> type(tunnel_len_4)
-            <class 'dict'>
-            >>> print(list(tunnel_len_4.keys()))
+            dict
+            >>> list(tunnel_len_4.keys())
             ['Page 4 (others)', 'Last updated date']
         """
 
@@ -252,29 +262,24 @@ class Tunnels:
                         temp_header = temp_header.find_next('table')
 
                     tbl_lst = operator.itemgetter(
-                        1, len(parsed_text.find_all('h3')) + 1)(
-                        parsed_text.find_all('table'))
-                    tbl_lst = [
-                        parse_tr(header, x.find_all('tr'))
-                        for header, x in zip(headers, tbl_lst)]
-                    tbl_lst = [
-                        [[item.replace('\xa0', '') for item in record] for record in tbl]
-                        for tbl in tbl_lst]
+                        1, len(parsed_text.find_all('h3')) + 1)(parsed_text.find_all('table'))
+                    tbl_lst = [parse_tr(header, x.find_all('tr'))
+                               for header, x in zip(headers, tbl_lst)]
+                    tbl_lst = [[[item.replace('\xa0', '') for item in record] for record in tbl]
+                               for tbl in tbl_lst]
 
                     tunnel_lengths = [pd.DataFrame(tbl, columns=header)
                                       for tbl, header in zip(tbl_lst, headers)]
 
                     for i in range(len(tunnel_lengths)):
                         tunnel_lengths[i][['Length_metres', 'Length_notes']] = \
-                            tunnel_lengths[i].Length.map(
-                                self.parse_length).apply(pd.Series)
+                            tunnel_lengths[i].Length.map(self.parse_length).apply(pd.Series)
 
                     if len(tunnel_lengths) == 1:
                         tunnel_lengths_data = tunnel_lengths[0]
                     else:
                         tunnel_lengths_data = dict(
-                            zip([x.text for x in parsed_text.find_all('h3')],
-                                tunnel_lengths))
+                            zip([x.text for x in parsed_text.find_all('h3')], tunnel_lengths))
 
                     last_updated_date = get_last_updated_date(url)
 
@@ -283,29 +288,27 @@ class Tunnels:
                     page_railway_tunnel_lengths = {page_name: tunnel_lengths_data,
                                                    self.LUDKey: last_updated_date}
 
-                    save_pickle(page_railway_tunnel_lengths, path_to_pickle,
-                                verbose=verbose)
+                    save_pickle(page_railway_tunnel_lengths, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
         return page_railway_tunnel_lengths
 
-    def fetch_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None,
-                             verbose=False):
+    def fetch_tunnel_lengths(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch data of railway tunnel lengths from local backup.
 
         :param update: whether to check on update and proceed to update the package data,
             defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to replace the current package data with newly collected data,
+            defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str, None
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console as the function runs,
+            defaults to ``False``
         :type verbose: bool, int
         :return: railway tunnel lengths data
             (including the name, length, owner and relative location) and
@@ -316,20 +319,31 @@ class Tunnels:
 
             >>> from pyrcs.other_assets import Tunnels
 
-            >>> tunnels = Tunnels()
+            >>> tunl = Tunnels()
 
-            >>> tunnel_lengths_data = tunnels.fetch_tunnel_lengths()
+            >>> # tunnel_lengths_data = tunl.fetch_tunnel_lengths(update=True, verbose=True)
+            >>> tunnel_lengths_data = tunl.fetch_tunnel_lengths()
 
             >>> type(tunnel_lengths_data)
-            <class 'dict'>
-            >>> print(list(tunnel_lengths_data.keys()))
+            dict
+            >>> list(tunnel_lengths_data.keys())
             ['Tunnels', 'Last updated date']
 
             >>> tunnel_lengths_dat = tunnel_lengths_data['Tunnels']
             >>> type(tunnel_lengths_dat)
-            <class 'dict'>
-            >>> print(list(tunnel_lengths_dat.keys()))
+            dict
+            >>> list(tunnel_lengths_dat.keys())
             ['Page 1 (A-F)', 'Page 2 (G-P)', 'Page 3 (Q-Z)', 'Page 4 (others)']
+
+            >>> page_1 = tunnel_lengths_dat['Page 1 (A-F)']
+            >>> print(page_1.head())
+                         Name  Other names, remarks   Length  ...   Length_metres Length_notes
+            0    Abbotscliffe                        1m 182y  ...       1775.7648          NaN
+            1      Abercanaid           see Merthyr           ...             NaN  Unavailable
+            2     Aberchalder         see Loch Oich           ...             NaN  Unavailable
+            3  Aberdovey No 1  also called Frongoch  0m 200y  ...        182.8800          NaN
+            4  Aberdovey No 2    also called Morfor  0m 219y  ...        200.2536          NaN
+            [5 rows x 12 columns]
         """
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
@@ -342,15 +356,13 @@ class Tunnels:
         if all(x is None for x in page_data):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(
-                    self.Key.lower()))
+                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
             page_data = [self.collect_lengths_by_page(x, update=False, verbose=verbose_)
                          for x in range(1, 5)]
 
         railway_tunnel_lengths = {
             self.Key: {next(iter(x)): next(iter(x.values())) for x in page_data},
-            self.LUDKey:
-                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
+            self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
