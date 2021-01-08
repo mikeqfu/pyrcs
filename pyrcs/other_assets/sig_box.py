@@ -139,15 +139,15 @@ class SignalBoxes:
 
             >>> sb = SignalBoxes()
 
-            >>> # signal_boxes_a = sb.collect_prefix_codes(initial='a', update=True, verbose=True)
-            >>> signal_boxes_a = sb.collect_prefix_codes(initial='a')
+            >>> # sb_a = sb.collect_prefix_codes(initial='a', update=True, verbose=True)
+            >>> sb_a = sb.collect_prefix_codes(initial='a')
 
-            >>> type(signal_boxes_a)
+            >>> type(sb_a)
             dict
-            >>> list(signal_boxes_a.keys())
+            >>> list(sb_a.keys())
             ['A', 'Last updated date']
 
-            >>> signal_boxes_a_codes = signal_boxes_a['A']
+            >>> signal_boxes_a_codes = sb_a['A']
 
             >>> type(signal_boxes_a_codes)
             pandas.core.frame.DataFrame
@@ -435,18 +435,18 @@ class SignalBoxes:
 
             >>> sb = SignalBoxes()
 
-            >>> # nnr_codes_dat = sb.fetch_non_national_rail_codes(update=True, verbose=True)
-            >>> nnr_codes_dat = sb.fetch_non_national_rail_codes()
+            >>> # nnr_codes = sb.fetch_non_national_rail_codes(update=True, verbose=True)
+            >>> nnr_codes = sb.fetch_non_national_rail_codes()
 
-            >>> type(nnr_codes_dat)
-            dict
-            >>> list(nnr_codes_dat.keys())
-            ['Non-National Rail', 'Last updated date']
-
-            >>> nnr_codes = nnr_codes_dat['Non-National Rail']
             >>> type(nnr_codes)
             dict
             >>> list(nnr_codes.keys())
+            ['Non-National Rail', 'Last updated date']
+
+            >>> nnr_codes_ = nnr_codes['Non-National Rail']
+            >>> type(nnr_codes_)
+            dict
+            >>> list(nnr_codes_.keys())
             ['Croydon Tramlink signals',
              'Docklands Light Railway signals',
              'Edinburgh Tramway signals',
@@ -460,7 +460,7 @@ class SignalBoxes:
              'Tyne & Wear Metro signals',
              'Heritage, minor and miniature railways and other "special" signals']
 
-            >>> lu_signals = nnr_codes['London Underground signals']
+            >>> lu_signals = nnr_codes_['London Underground signals']
             >>> type(lu_signals)
             list
             >>> print(lu_signals[0].head())
