@@ -982,17 +982,17 @@ class ELRMileages:
             >>> em = ELRMileages()
 
             >>> conn = em.get_conn_mileages('NAY', 'LTN2')
-            >>> (s_dest_mileage, c_elr, c_orig_mileage, c_dest_mileage, e_orig_mileage) = conn
+            >>> (s_dest_mlg, c_elr, c_orig_mlg, c_dest_mlg, e_orig_mlg) = conn
 
-            >>> print(s_dest_mileage)
+            >>> print(s_dest_mlg)
             5.1606
             >>> print(c_elr)
             NOL
-            >>> print(c_orig_mileage)
+            >>> print(c_orig_mlg)
             5.1606
-            >>> print(c_dest_mileage)
+            >>> print(c_dest_mlg)
             0.0638
-            >>> print(e_orig_mileage)
+            >>> print(e_orig_mlg)
             123.1320
 
         .. _get_conn_mileages-example-2:
