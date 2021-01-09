@@ -36,7 +36,7 @@ Documentation contents
 
     installation
     quick-start
-    modules
+    subpkg-and-mod
     license
     use-of-data
     acknowledgement
