@@ -18,8 +18,7 @@ from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle, save_json, load_json
 
 from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_location_name, parse_table, is_internet_connected, print_conn_err, \
-    print_connection_error
+    parse_location_name, parse_table, is_internet_connected, print_conn_err, print_connection_error
 
 
 class Stations:
@@ -206,12 +205,12 @@ class Stations:
         return catalogue
 
     @staticmethod
-    def _parse_current_operator(x):
+    def _parse_owner_and_operator(x):
         """
         Parse 'Operator' column
         """
 
-        x_ = x.strip().replace('\'', '').replace('([, ', '').replace('])', '')
+        x_ = x.strip().replace('\'', '').replace('([, ', '').replace('])', '').replace('\xa0', '')
 
         # parsed_txt_ = re.split(r'\\r| \[\'|\\\\r| {2}\']|\', \'|\\n', x_)
         # parsed_text = [y for y in parsed_txt_ if remove_punctuation(y) != '']
@@ -229,10 +228,14 @@ class Stations:
                 current_op, past_op = x_, None
 
         # Current operator
-        current_name_ = re.search(cname_pat, current_op)
-        current_name = current_name_.group(0) if current_name_ is not None else ''
-        current_from_ = re.search(cdate_pat, current_op)
-        current_from = current_from_.group(0) if current_from_ is not None else ''
+        current_name = re.search(cname_pat, current_op)
+        if current_name and current_op != '':
+            current_name = current_name.group(0)
+        else:
+            current_name = current_op
+        current_from = re.search(cdate_pat, current_op)
+        if current_from:
+            current_from = current_from.group(0)
 
         current_operator = [(current_name, current_from)]
 
@@ -259,6 +262,46 @@ class Stations:
         operators = current_operator + past_operators
 
         return operators
+
+    def extended_info(self, info_dat, name):
+        """
+        Get extended information of the owners/operators.
+
+        :param info_dat: raw data of owners/operators
+        :type info_dat: pandas.Series
+        :param name: original column name of the owners/operators data
+        :type name: str
+        :return: extended information of the owners/operators
+        :rtype: pandas.DataFrame
+        """
+
+        temp = list(info_dat.map(self._parse_owner_and_operator))
+        length = len(max(temp, key=len))
+        col_names_current = [name, name + '_since']
+        prev_no = list(
+            itertools.chain.from_iterable(itertools.repeat(x, 2) for x in list(range(1, length))))
+        col_names_ = zip(col_names_current * (length - 1), prev_no)
+        col_names = col_names_current + ['_'.join(['Prev', x, str(d)]).replace('_since', '_Period')
+                                         for x, d in col_names_]
+
+        for i in range(len(temp)):
+            if len(temp[i]) < length:
+                temp[i] += [(None, None)] * (length - len(temp[i]))
+
+        temp2 = pd.DataFrame(temp)
+        extended_info = [temp2[c].apply(pd.Series) for c in temp2.columns]
+        extended_info = pd.concat(extended_info, axis=1, sort=False)
+        extended_info.columns = col_names
+
+        return extended_info
+
+    @staticmethod
+    def _parse_degrees(x):
+        if x == '':
+            z = np.nan
+        else:
+            z = float(x.replace('c.', '') if x.startswith('c.') else x)
+        return z
 
     def collect_station_data_by_initial(self, initial, update=False, verbose=False):
         """
@@ -294,13 +337,13 @@ class Stations:
             ['A', 'Last updated date']
 
             >>> print(sa['A'].head())
-                       Station   ELR   Mileage  ... Prev_Operator_6  Prev_Date_6
-            0       Abbey Wood   NKL  11m 43ch  ...            None         None
-            1       Abbey Wood  XRS3  24.458km  ...            None         None
-            2             Aber   CAR   8m 69ch  ...            None         None
-            3  Abercynon North   ABD  16m 40ch  ...            None         None
-            4                    ABD  16m 28ch  ...            None         None
-            [5 rows x 23 columns]
+                       Station   ELR  ... Prev_Operator_6 Prev_Operator_Period_6
+            0       Abbey Wood   NKL  ...            None                   None
+            1       Abbey Wood  XRS3  ...            None                   None
+            2             Aber   CAR  ...            None                   None
+            3  Abercynon North   ABD  ...            None                   None
+            4                    ABD  ...            None                   None
+            [5 rows x 28 columns]
         """
 
         path_to_pickle = self._cdd_stn("a-z", initial.lower() + ".pickle")
@@ -342,17 +385,17 @@ class Stations:
                         # Create a DataFrame of the requested table
                         dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
                         col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
-                        railway_station_table = pd.DataFrame(dat, columns=col)
+                        stn_dat = pd.DataFrame(dat, columns=col)
 
-                        temp_degree = railway_station_table['Degrees Longitude'].str.split(' ')
+                        temp_degree = stn_dat['Degrees Longitude'].str.split(' ')
                         temp_degree_len = temp_degree.map(len).sum()
-                        temp_elr = railway_station_table['ELR'].map(
+                        temp_elr = stn_dat['ELR'].map(
                             lambda x: x.split(' ') if not re.match('^[Ss]ee ', x) else [x])
                         temp_elr_len = temp_elr.map(len).sum()
-                        if max(temp_degree_len, temp_elr_len) > len(railway_station_table):
+                        if max(temp_degree_len, temp_elr_len) > len(stn_dat):
                             temp_col = ['ELR', 'Degrees Longitude', 'Degrees Latitude',
                                         'Grid Reference']
-                            idx = [j for j in railway_station_table.index
+                            idx = [j for j in stn_dat.index
                                    if max(len(temp_degree[j]), len(temp_elr[j])) > 1]
 
                             temp_vals = []
@@ -361,7 +404,7 @@ class Stations:
                                 t = max(len(temp_degree[i]), len(temp_elr[i]))
                                 temp_val = []
                                 for c in col:
-                                    x_ = railway_station_table.loc[i, c]
+                                    x_ = stn_dat.loc[i, c]
                                     if c in temp_col:
                                         y = x_.split(' ')
                                         if len(y) == 1:
@@ -378,57 +421,55 @@ class Stations:
                                 temp_vals.append(
                                     pd.DataFrame(np.array(temp_val, dtype=object).T, columns=col))
 
-                            railway_station_table.drop(idx, axis='index', inplace=True)
-                            railway_station_table = pd.concat(
-                                [railway_station_table] + temp_vals, axis=0, ignore_index=True)
+                            stn_dat.drop(idx, axis='index', inplace=True)
+                            stn_dat = pd.concat(
+                                [stn_dat] + temp_vals, axis=0, ignore_index=True)
 
-                            railway_station_table.sort_values(['Station'], inplace=True)
+                            stn_dat.sort_values(['Station'], inplace=True)
 
-                            railway_station_table.index = range(len(railway_station_table))
-
-                        def _parse_degrees_(x):
-                            if x == '':
-                                z = np.nan
-                            else:
-                                z = float(x.replace('c.', '') if x.startswith('c.') else x)
-                            return z
+                            stn_dat.index = range(len(stn_dat))
 
                         degrees_col = ['Degrees Longitude', 'Degrees Latitude']
-                        railway_station_table[degrees_col] = \
-                            railway_station_table[degrees_col].applymap(_parse_degrees_)
-                        railway_station_table['Grid Reference'] = \
-                            railway_station_table['Grid Reference'].map(
-                                lambda x: x.replace('c.', '') if x.startswith('c.') else x)
+                        stn_dat[degrees_col] = stn_dat[degrees_col].applymap(self._parse_degrees)
+                        stn_dat['Grid Reference'] = stn_dat['Grid Reference'].map(
+                            lambda x: x.replace('c.', '') if x.startswith('c.') else x)
 
-                        railway_station_table[['Station', 'Station_Note']] = \
-                            railway_station_table.Station.map(parse_location_name).apply(pd.Series)
+                        stn_dat[['Station', 'Station_Note']] = stn_dat.Station.map(
+                            parse_location_name).apply(pd.Series)
+
+                        # Owner
+                        owners = self.extended_info(stn_dat.Owner, name='Owner')
+
+                        stn_dat.drop('Owner', axis=1, inplace=True)
+                        stn_dat = stn_dat.join(owners)
 
                         # Operator
-                        temp = list(
-                            railway_station_table.Operator.map(self._parse_current_operator))
-                        length = len(max(temp, key=len))
-                        col_names_current = ['Operator', 'Date']
-                        prev_no = list(itertools.chain.from_iterable(
-                            itertools.repeat(x, 2) for x in list(range(1, length))))
-                        col_names = zip(col_names_current * (length - 1), prev_no)
-                        col_names = col_names_current + [
-                            '_'.join(['Prev', x, str(d)]) for x, d in col_names]
+                        # temp = list(stn_dat.Operator.map(self._parse_owner_and_operator))
+                        # length = len(max(temp, key=len))
+                        # col_names_current = ['Operator', 'Date']
+                        # prev_no = list(itertools.chain.from_iterable(
+                        #     itertools.repeat(x, 2) for x in list(range(1, length))))
+                        # col_names = zip(col_names_current * (length - 1), prev_no)
+                        # col_names = col_names_current + [
+                        #     '_'.join(['Prev', x, str(d)]) for x, d in col_names]
+                        #
+                        # for i in range(len(temp)):
+                        #     if len(temp[i]) < length:
+                        #         temp[i] += [(None, None)] * (length - len(temp[i]))
+                        #
+                        # temp2 = pd.DataFrame(temp)
+                        # operators = [temp2[c].apply(pd.Series) for c in temp2.columns]
+                        # operators = pd.concat(operators, axis=1, sort=False)
+                        # operators.columns = col_names
 
-                        for i in range(len(temp)):
-                            if len(temp[i]) < length:
-                                temp[i] += [(None, None)] * (length - len(temp[i]))
+                        operators = self.extended_info(stn_dat.Operator, name='Operator')
 
-                        temp2 = pd.DataFrame(temp)
-                        operators = [temp2[col].apply(pd.Series) for col in temp2.columns]
-                        operators = pd.concat(operators, axis=1, sort=False)
-                        operators.columns = col_names
-
-                        railway_station_table.drop('Operator', axis=1, inplace=True)
-                        railway_station_table = railway_station_table.join(operators)
+                        stn_dat.drop('Operator', axis=1, inplace=True)
+                        stn_dat = stn_dat.join(operators)
 
                         last_updated_date = get_last_updated_date(url)
 
-                        railway_station_data.update({beginning_with: railway_station_table,
+                        railway_station_data.update({beginning_with: stn_dat,
                                                      self.LUDKey: last_updated_date})
 
                         print("Done.") if verbose == 2 else ""
@@ -468,26 +509,26 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> # stn_data = stn.fetch_station_data(update=True, verbose=True)
-            >>> stn_data = stn.fetch_station_data()
+            >>> # rail_stn_data = stn.fetch_station_data(update=True, verbose=True)
+            >>> rail_stn_data = stn.fetch_station_data()
 
-            >>> type(stn_data)
+            >>> type(rail_stn_data)
             dict
-            >>> list(stn_data.keys())
+            >>> list(rail_stn_data.keys())
             ['Railway station data', 'Last updated date']
 
-            >>> stn_dat = stn_data['Railway station data']
+            >>> rail_stn_dat = rail_stn_data['Railway station data']
 
-            >>> type(stn_dat)
+            >>> type(rail_stn_dat)
             pandas.core.frame.DataFrame
-            >>> print(stn_dat.head())
-                       Station   ELR   Mileage  ... Prev_Operator_6  Prev_Date_6
-            0       Abbey Wood   NKL  11m 43ch  ...            None         None
-            1       Abbey Wood  XRS3  24.458km  ...            None         None
-            2             Aber   CAR   8m 69ch  ...            None         None
-            3  Abercynon North   ABD  16m 40ch  ...            None         None
-            4                    ABD  16m 28ch  ...            None         None
-            [5 rows x 23 columns]
+            >>> print(rail_stn_dat.head())
+                     Station   ELR  ... Prev_Operator_6 Prev_Operator_Period_6
+            2606              MRL1  ...            None                   None
+            723                TAT  ...            None                   None
+            89                 ABD  ...            None                   None
+            90                 CAM  ...            None                   None
+            85    Abbey Wood   NKL  ...            None                   None
+            [5 rows x 32 columns]
         """
 
         verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
@@ -504,14 +545,18 @@ class Stations:
             data_sets = [self.collect_station_data_by_initial(x, update=False, verbose=verbose_)
                          for x in string.ascii_lowercase]
 
-        railway_station_tables = (item[x] for item, x in zip(data_sets, string.ascii_uppercase))
-        railway_station_data_ = pd.concat(
-            railway_station_tables, axis=0, ignore_index=True, sort=False)
+        stn_dat_tbl_ = (item[x] for item, x in zip(data_sets, string.ascii_uppercase))
+        stn_dat_tbl = sorted([x for x in stn_dat_tbl_ if x is not None], key=lambda x: x.shape[1],
+                             reverse=True)
+        stn_data = pd.concat(stn_dat_tbl, axis=0, ignore_index=True, sort=False)
+
+        stn_data = stn_data.where(pd.notna(stn_data), None)
+        stn_data.sort_values(['Station'], inplace=True)
 
         last_updated_dates = (d[self.LUDKey] for d in data_sets)
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        railway_station_data = {self.StnKey: railway_station_data_, self.LUDKey: latest_update_date}
+        railway_station_data = {self.StnKey: stn_data, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)
