@@ -13,6 +13,10 @@ sys.path.insert(0, os.path.abspath('../../pyrcs'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
+# A list of modules to be mocked up.
+autodoc_mock_imports = ['beautifulsoup4', 'fuzzywuzzy', 'measurement', 'pandas',
+                        'more-itertools', 'numpy', 'requests', 'pyhelpers']
+
 # Project information ==================================================================
 import datetime
 import pyrcs
@@ -59,9 +63,6 @@ exclude_patterns = ['_build', '../_build', '../build']
 
 # Whether to scan all found documents for autosummary directives and generate stub pages for each.
 autosummary_generate = True
-
-# A list of modules to be mocked up.
-autodoc_mock_imports = []
 
 # The suffix(es) of source filenames (For multiple suffix, a list of string.
 source_suffix = '.rst'  # e.g. source_suffix = ['.rst', '.md'])
