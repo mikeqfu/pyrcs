@@ -116,4 +116,6 @@ dmypy.json
 .idea/
 pyrcs/dat/
 tests/dat/
+tests/cmd
+tests/quick-start.py
 tests/update_pkg_dat.py
