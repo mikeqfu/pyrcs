@@ -19,16 +19,25 @@ PyRCS
 
 PyRCS is an open-source tool for collecting |Railway Codes|_ used in different UK rail industry systems.
 
+
+Cite as
+=======
+
+Qian Fu, 2020. PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. `doi:10.5281/zenodo.4026744 <https://doi.org/10.5281/zenodo.4026744>`_
+
+
 Resources
 =========
 
 - `Documentation <https://pyrcs.readthedocs.io/en/latest/>`_
 - `Issue Tracker <https://github.com/mikeqfu/pyrcs/issues>`_
 
+
 License
 =======
 
 PyRCS is licensed under `GNU General Public License v3 (GPLv3) <https://github.com/mikeqfu/pyrcs/blob/master/LICENSE>`_.
+
 
 Acknowledgement
 ===============
@@ -39,10 +48,6 @@ The development of the PyRCS is mainly built on data from the |Railway Codes|_ w
 
 .. |Railway Codes| replace:: *Railway Codes*
 
-Cite as
-=======
-
-Qian Fu, 2020. PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. `doi:10.5281/zenodo.4026744 <https://doi.org/10.5281/zenodo.4026744>`_
 
 Release history
 ===============
@@ -50,10 +55,10 @@ Release history
 `v0.2.1 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1>`_
 ---------------------------------------------------------------
 
-.. rubric:: Main changes (since v0.2.0):
+**Main changes (since v0.2.0):**
 
-- modified utils and elrs_mileages.py with bug fixes
-- renamed the package's backup data
+    - modified utils and elrs_mileages.py with bug fixes
+    - renamed the package's backup data
 
 `v0.2.0 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0>`_
 ---------------------------------------------------------------
