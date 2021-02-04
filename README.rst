@@ -57,12 +57,12 @@ Release history
 
 **Main changes (since v0.2.0):**
 
-    - modified utils and elrs_mileages.py with bug fixes
-    - renamed the package's backup data
+    - modified the modules `utils <https://github.com/mikeqfu/pyrcs/commit/80fed8c2fb3096457a20e543af5f15cb55f40407>`_ and `elrs_mileages <https://github.com/mikeqfu/pyrcs/commit/0dd70c69bea3a8190455cbf36eab659b02d86315>`_ with bug fixes
+    - renamed the backup data of the package
 
 `v0.2.0 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0>`_
 ---------------------------------------------------------------
 
-A brand new release.
+**A brand new release.**
 
 *Note that the initial release and the later versions up to v0.1.28 have been deprecated and permanently removed.*
