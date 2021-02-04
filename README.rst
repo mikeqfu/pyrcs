@@ -60,6 +60,4 @@ Release history
 
 A brand new release.
 
-.. note::
-
-    The *initial release* and the later versions up to *v0.1.28* have been deprecated and permanently removed.
+*Note that the initial release and the later versions up to v0.1.28 have been deprecated and permanently removed.*
