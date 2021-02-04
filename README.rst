@@ -52,24 +52,35 @@ The development of the `PyRCS <https://pyrcs.readthedocs.io/en/latest/>`_ is mai
 Release history
 ===============
 
+`v0.2.3 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3>`_
+---------------------------------------------------------------
+
+**Main changes (since v0.2.2):**
+
+    - updated a few helper functions with `bug fixes <https://github.com/mikeqfu/pyrcs/commit/7872dc917065623f3cb5f7939a065900c6070af4>`__ in the module `utils <https://github.com/mikeqfu/pyrcs/blob/7872dc917065623f3cb5f7939a065900c6070af4/pyrcs/utils.py>`__
+
 `v0.2.2 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2>`_
 ---------------------------------------------------------------
 
-**Main changes (since v0.2.0):**
+**Main changes (since v0.2.1):**
 
-    - modified the following methods of the class ``ELRMileages``, which are used for collecting ELRs and mileages:
+    - modified the following methods of the class `ELRMileages <https://github.com/mikeqfu/pyrcs/blob/bc45055b6d07f83bddadd29c590226d7ddb9a7d3/pyrcs/line_data_cls/elrs_mileages.py#L244>`__, which are used for collecting ELRs and mileages:
 
-      - `.collect_mileage_file_by_elr() <https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200>`_
-      - `.get_conn_mileages() <https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3>`_
+      - `.collect_mileage_file_by_elr() <https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200>`__
+      - `.get_conn_mileages() <https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3>`__
 
-    - fixed a minor issue in the filenames of the package's backup data
+    - fixed a minor `issue <https://github.com/mikeqfu/pyrcs/commit/fe6373d2f7ff73cad893a865879e74b2c54d9e86>`__ in the filenames of the package's backup data
 
 `v0.2.1 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1>`_
 ---------------------------------------------------------------
 
 **Main changes (since v0.2.0):**
 
-    - modified the modules `utils <https://github.com/mikeqfu/pyrcs/commit/80fed8c2fb3096457a20e543af5f15cb55f40407>`_ and `elrs_mileages <https://github.com/mikeqfu/pyrcs/commit/0dd70c69bea3a8190455cbf36eab659b02d86315>`_ with bug fixes
+    - modified the following modules with bug fixes:
+
+      - `utils <https://github.com/mikeqfu/pyrcs/blob/80fed8c2fb3096457a20e543af5f15cb55f40407/pyrcs/utils.py>`__
+      - `elrs_mileages <https://github.com/mikeqfu/pyrcs/blob/0dd70c69bea3a8190455cbf36eab659b02d86315/pyrcs/line_data_cls/elrs_mileages.py>`__
+
     - renamed the backup data of the package
 
 `v0.2.0 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0>`_
