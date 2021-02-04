@@ -57,9 +57,11 @@ Release history
 
 **Main changes (since v0.2.0):**
 
-    - modified the following methods of the class ``ELRMileages``:
-        - `.collect_mileage_file_by_elr() <https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200>`_
-        - `.get_conn_mileages() <https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3>`_
+    - modified the following methods of the class ``ELRMileages``, which are used for collecting ELRs and mileages:
+
+      - `.collect_mileage_file_by_elr() <https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200>`_
+      - `.get_conn_mileages() <https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3>`_
+
     - fixed a minor issue in the filenames of the package's backup data
 
 `v0.2.1 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1>`_
