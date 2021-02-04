@@ -42,7 +42,7 @@ PyRCS is licensed under `GNU General Public License v3 (GPLv3) <https://github.c
 Acknowledgement
 ===============
 
-The development of the PyRCS is mainly built on data from the |Railway Codes|_ website. The author of the package would like to thank the website editor and `all contributors <http://www.railwaycodes.org.uk/misc/acknowledgements.shtm>`_ to the data resources.
+The development of the `PyRCS <https://pyrcs.readthedocs.io/en/latest/>`_ is mainly built on data from the |Railway Codes|_ website. The author of the package would like to thank the website editor and `all contributors <http://www.railwaycodes.org.uk/misc/acknowledgements.shtm>`_ to the data resources.
 
 .. _Railway Codes: http://www.railwaycodes.org.uk/index.shtml
 
@@ -51,6 +51,16 @@ The development of the PyRCS is mainly built on data from the |Railway Codes|_ w
 
 Release history
 ===============
+
+`v0.2.2 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2>`_
+---------------------------------------------------------------
+
+**Main changes (since v0.2.0):**
+
+    - modified the following methods of the class ``ELRMileages``:
+        - `.collect_mileage_file_by_elr() <https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200>`_
+        - `.get_conn_mileages() <https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3>`_
+    - fixed a minor issue in the filenames of the package's backup data
 
 `v0.2.1 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1>`_
 ---------------------------------------------------------------
