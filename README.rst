@@ -52,6 +52,16 @@ The development of the `PyRCS <https://pyrcs.readthedocs.io/en/latest/>`_ is mai
 Release history
 ===============
 
+`v0.2.4 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4>`_
+---------------------------------------------------------------
+
+**Main changes (since v0.2.3):**
+
+    - removed the module `settings <https://github.com/mikeqfu/pyrcs/commit/8e6340bfe078f0cd558f059f89ef1d5029ef62b4>`__
+    - updated imports throughout the package due to changes in the dependency modules from `PyHelpers <https://github.com/mikeqfu/pyhelpers>`__
+    - modified a few classes due to changes on the web pages of the data source
+
+
 `v0.2.3 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3>`_
 ---------------------------------------------------------------
 
