@@ -87,9 +87,9 @@ Release history
 
           * - from
             - to
-          * - |ss| .collect_railway_station_data_by_initial() |se|
+          * - |ss| ``.collect_railway_station_data_by_initial()`` |se|
             - `.collect_station_data_by_initial() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L127>`__
-          * - |ss| .fetch_railway_station_data() |se|
+          * - |ss| ``.fetch_railway_station_data()`` |se|
             - `.fetch_station_data() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L245>`__
 
     - updated `PyRCS Documentation <https://pyrcs.readthedocs.io/en/latest/>`__
@@ -122,7 +122,7 @@ Release history
 
           * - from
             - to
-          * - |ss| `elrs_mileages <https://github.com/mikeqfu/pyrcs/commit/22b05dab9a51ffa69849be04ff26a5d8d444f9ca>`__ |se|
+          * - |ss| ``elrs_mileages`` |se|
             - `elr_mileage <https://github.com/mikeqfu/pyrcs/blob/22b05dab9a51ffa69849be04ff26a5d8d444f9ca/pyrcs/line_data/elr_mileage.py>`__
           * - |ss| `line_names <https://github.com/mikeqfu/pyrcs/commit/0c7130c122cb9f55ce721711cf02935cb0f86e60>`__ |se|
             - `line_name <https://github.com/mikeqfu/pyrcs/blob/0c7130c122cb9f55ce721711cf02935cb0f86e60/pyrcs/line_data/line_name.py>`__
@@ -169,7 +169,7 @@ Release history
 
 **Main changes (since v0.2.5):**
 
-    - added a new function |ss| `fix_num_stanox() <https://github.com/mikeqfu/pyrcs/commit/fd5df3a101aa565bab2b5c1d9ca840dd1b812291>`__ |se| to the module `utils <https://github.com/mikeqfu/pyrcs/blob/fd5df3a101aa565bab2b5c1d9ca840dd1b812291/pyrcs/utils.py>`__
+    - added a new function `fix_num_stanox() <https://github.com/mikeqfu/pyrcs/commit/fd5df3a101aa565bab2b5c1d9ca840dd1b812291>`__ to the module `utils <https://github.com/mikeqfu/pyrcs/blob/fd5df3a101aa565bab2b5c1d9ca840dd1b812291/pyrcs/utils.py>`__
 
 `v0.2.5 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5>`_
 ---------------------------------------------------------------
@@ -181,7 +181,7 @@ Release history
       - `ELRMileages <https://github.com/mikeqfu/pyrcs/blob/48e2b908984f940c3abe3aba5899de5fe8c285cc/pyrcs/line_data_cls/elrs_mileages.py#L244>`__
       - `SignalBoxes <https://github.com/mikeqfu/pyrcs/blob/48e2b908984f940c3abe3aba5899de5fe8c285cc/pyrcs/other_assets_cls/signal_boxes.py#L18>`__
 
-    - renamed the function `update_package_data() <https://github.com/mikeqfu/pyrcs/commit/e46e17002cd048db63dc5c7c0e074b4162377705>`__ to `update_pkg_metadata() <https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py#L11>`__ in the module `update <https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py>`__
+    - renamed the function |ss| `update_package_data() <https://github.com/mikeqfu/pyrcs/commit/e46e17002cd048db63dc5c7c0e074b4162377705>`__ |se| to `update_pkg_metadata() <https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py#L11>`__ in the module `update <https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py>`__
     - tested the package in Python 3.8
 
 `v0.2.4 <https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4>`_
