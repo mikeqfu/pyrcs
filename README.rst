@@ -82,8 +82,15 @@ Release history
 
     - renamed the following methods of the class `Stations <https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c>`__:
 
-      - |ss| .collect_railway_station_data_by_initial() |se| to `.collect_station_data_by_initial() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L127>`__
-      - |ss| .fetch_railway_station_data() |se| to `.fetch_station_data() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L245>`__
+      .. list-table::
+          :header-rows: 1
+
+          * - from
+            - to
+          * - |ss| .collect_railway_station_data_by_initial() |se|
+            - `.collect_station_data_by_initial() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L127>`__
+          * - |ss| .fetch_railway_station_data() |se|
+            - `.fetch_station_data() <https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L245>`__
 
     - updated `PyRCS Documentation <https://pyrcs.readthedocs.io/en/latest/>`__
 
@@ -94,43 +101,43 @@ Release history
 
     - renamed the following modules and a few of their functions
 
-    .. list-table::
-        :header-rows: 1
+      .. list-table::
+          :header-rows: 1
 
-        * - Old
-          - New
-        * - |ss| `crs_nlc_tiploc_stanox <https://github.com/mikeqfu/pyrcs/commit/095b9d946e3c1f4a72b33ee1926f41654914f27c>`__ |se|
-          - `loc_id <https://github.com/mikeqfu/pyrcs/blob/095b9d946e3c1f4a72b33ee1926f41654914f27c/pyrcs/line_data/loc_id.py>`__
-        * - |ss| `electrification <https://github.com/mikeqfu/pyrcs/commit/e3b8bf752403b2d962528723b40977d0172e7182>`__ |se|
-          - `elec <https://github.com/mikeqfu/pyrcs/blob/e3b8bf752403b2d962528723b40977d0172e7182/pyrcs/line_data/elec.py>`__
-        * - |ss| `track_diagrams <https://github.com/mikeqfu/pyrcs/commit/5712990892792d404cb9c883f313abcb0848479b>`__ |se|
-          - `trk_diagr <https://github.com/mikeqfu/pyrcs/blob/5712990892792d404cb9c883f313abcb0848479b/pyrcs/line_data/trk_diagr.py>`__
-        * - |ss| `tunnels <https://github.com/mikeqfu/pyrcs/commit/31854d6d2e98690c5d92ee074cdb8a03e293e987>`__ |se|
-          - `tunnel <https://github.com/mikeqfu/pyrcs/blob/31854d6d2e98690c5d92ee074cdb8a03e293e987/pyrcs/other_assets/tunnel.py>`__
+          * - from
+            - to
+          * - |ss| `crs_nlc_tiploc_stanox <https://github.com/mikeqfu/pyrcs/commit/095b9d946e3c1f4a72b33ee1926f41654914f27c>`__ |se|
+            - `loc_id <https://github.com/mikeqfu/pyrcs/blob/095b9d946e3c1f4a72b33ee1926f41654914f27c/pyrcs/line_data/loc_id.py>`__
+          * - |ss| `electrification <https://github.com/mikeqfu/pyrcs/commit/e3b8bf752403b2d962528723b40977d0172e7182>`__ |se|
+            - `elec <https://github.com/mikeqfu/pyrcs/blob/e3b8bf752403b2d962528723b40977d0172e7182/pyrcs/line_data/elec.py>`__
+          * - |ss| `track_diagrams <https://github.com/mikeqfu/pyrcs/commit/5712990892792d404cb9c883f313abcb0848479b>`__ |se|
+            - `trk_diagr <https://github.com/mikeqfu/pyrcs/blob/5712990892792d404cb9c883f313abcb0848479b/pyrcs/line_data/trk_diagr.py>`__
+          * - |ss| `tunnels <https://github.com/mikeqfu/pyrcs/commit/31854d6d2e98690c5d92ee074cdb8a03e293e987>`__ |se|
+            - `tunnel <https://github.com/mikeqfu/pyrcs/blob/31854d6d2e98690c5d92ee074cdb8a03e293e987/pyrcs/other_assets/tunnel.py>`__
 
     - renamed the following modules without (or with minor) changes:
 
-    .. list-table::
-        :header-rows: 1
+      .. list-table::
+          :header-rows: 1
 
-        * - Old
-          - New
-        * - |ss| `elrs_mileages <https://github.com/mikeqfu/pyrcs/commit/22b05dab9a51ffa69849be04ff26a5d8d444f9ca>`__ |se|
-          - `elr_mileage <https://github.com/mikeqfu/pyrcs/blob/22b05dab9a51ffa69849be04ff26a5d8d444f9ca/pyrcs/line_data/elr_mileage.py>`__
-        * - |ss| `line_names <https://github.com/mikeqfu/pyrcs/commit/0c7130c122cb9f55ce721711cf02935cb0f86e60>`__ |se|
-          - `line_name <https://github.com/mikeqfu/pyrcs/blob/0c7130c122cb9f55ce721711cf02935cb0f86e60/pyrcs/line_data/line_name.py>`__
-        * - |ss| `lor_codes <https://github.com/mikeqfu/pyrcs/commit/12e4cd04e598f9d74a0b4eb7f616b9f9e24e4b5e>`__ |se|
-          - `lor_code <https://github.com/mikeqfu/pyrcs/blob/12e4cd04e598f9d74a0b4eb7f616b9f9e24e4b5e/pyrcs/line_data/lor_code.py>`__
-        * - |ss| `depots <https://github.com/mikeqfu/pyrcs/commit/750e50c52124b2a28c121b88957bdae84eafecf6>`__
-          - `depot <https://github.com/mikeqfu/pyrcs/blob/750e50c52124b2a28c121b88957bdae84eafecf6/pyrcs/other_assets/depot.py>`__
-        * - |ss| `features <https://github.com/mikeqfu/pyrcs/commit/1d9645f9c9b754cf507f0c6b60ea96a26a3d105c>`__ |se|
-          - `feature <https://github.com/mikeqfu/pyrcs/blob/1d9645f9c9b754cf507f0c6b60ea96a26a3d105c/pyrcs/other_assets/feature.py>`__
-        * - |ss| `signal_boxes <https://github.com/mikeqfu/pyrcs/commit/8cd5a1eba435d8a961b2065a1e61a12c04d91248>`__ |se|
-          - `sig_box <https://github.com/mikeqfu/pyrcs/blob/8cd5a1eba435d8a961b2065a1e61a12c04d91248/pyrcs/other_assets/sig_box.py>`__
-        * - |ss| `stations <https://github.com/mikeqfu/pyrcs/commit/e0814219e719b82325dd5ff6c308f4a45cc43818>`__ |se|
-          - `station <https://github.com/mikeqfu/pyrcs/blob/e0814219e719b82325dd5ff6c308f4a45cc43818/pyrcs/other_assets/station.py>`__
-        * - |ss| `viaducts <https://github.com/mikeqfu/pyrcs/commit/b3d89ed5948319fc547737e752debb460b85991c>`__ |se|
-          - `viaduct <https://github.com/mikeqfu/pyrcs/blob/b3d89ed5948319fc547737e752debb460b85991c/pyrcs/other_assets/viaduct.py>`__
+          * - from
+            - to
+          * - |ss| `elrs_mileages <https://github.com/mikeqfu/pyrcs/commit/22b05dab9a51ffa69849be04ff26a5d8d444f9ca>`__ |se|
+            - `elr_mileage <https://github.com/mikeqfu/pyrcs/blob/22b05dab9a51ffa69849be04ff26a5d8d444f9ca/pyrcs/line_data/elr_mileage.py>`__
+          * - |ss| `line_names <https://github.com/mikeqfu/pyrcs/commit/0c7130c122cb9f55ce721711cf02935cb0f86e60>`__ |se|
+            - `line_name <https://github.com/mikeqfu/pyrcs/blob/0c7130c122cb9f55ce721711cf02935cb0f86e60/pyrcs/line_data/line_name.py>`__
+          * - |ss| `lor_codes <https://github.com/mikeqfu/pyrcs/commit/12e4cd04e598f9d74a0b4eb7f616b9f9e24e4b5e>`__ |se|
+            - `lor_code <https://github.com/mikeqfu/pyrcs/blob/12e4cd04e598f9d74a0b4eb7f616b9f9e24e4b5e/pyrcs/line_data/lor_code.py>`__
+          * - |ss| `depots <https://github.com/mikeqfu/pyrcs/commit/750e50c52124b2a28c121b88957bdae84eafecf6>`__
+            - `depot <https://github.com/mikeqfu/pyrcs/blob/750e50c52124b2a28c121b88957bdae84eafecf6/pyrcs/other_assets/depot.py>`__
+          * - |ss| `features <https://github.com/mikeqfu/pyrcs/commit/1d9645f9c9b754cf507f0c6b60ea96a26a3d105c>`__ |se|
+            - `feature <https://github.com/mikeqfu/pyrcs/blob/1d9645f9c9b754cf507f0c6b60ea96a26a3d105c/pyrcs/other_assets/feature.py>`__
+          * - |ss| `signal_boxes <https://github.com/mikeqfu/pyrcs/commit/8cd5a1eba435d8a961b2065a1e61a12c04d91248>`__ |se|
+            - `sig_box <https://github.com/mikeqfu/pyrcs/blob/8cd5a1eba435d8a961b2065a1e61a12c04d91248/pyrcs/other_assets/sig_box.py>`__
+          * - |ss| `stations <https://github.com/mikeqfu/pyrcs/commit/e0814219e719b82325dd5ff6c308f4a45cc43818>`__ |se|
+            - `station <https://github.com/mikeqfu/pyrcs/blob/e0814219e719b82325dd5ff6c308f4a45cc43818/pyrcs/other_assets/station.py>`__
+          * - |ss| `viaducts <https://github.com/mikeqfu/pyrcs/commit/b3d89ed5948319fc547737e752debb460b85991c>`__ |se|
+            - `viaduct <https://github.com/mikeqfu/pyrcs/blob/b3d89ed5948319fc547737e752debb460b85991c/pyrcs/other_assets/viaduct.py>`__
 
     - updated `PyRCS Documentation <https://pyrcs.readthedocs.io/en/latest/>`__ with substantial revisions
 
