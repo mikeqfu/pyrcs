@@ -53,8 +53,6 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - renamed the following methods of the class [Viaducts](https://github.com/mikeqfu/pyrcs/blob/aa5325bc12b84b0f18ef39548efc1f7d268d5347/pyrcs/other_assets/viaduct.py)
 >   - [~~.collect_railway_viaducts_by_page()~~](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efL82) to [.collect_viaduct_codes_by_page()](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efR96)
 >   - [~~.fetch_railway_viaducts()~~](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efL151) to [.fetch_viaduct_codes()](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efR174)
->
->
 >  - updated package data
 >  - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 >
