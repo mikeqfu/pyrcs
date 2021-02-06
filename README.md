@@ -10,39 +10,46 @@
 
 PyRCS is an open-source tool for collecting [*Railway Codes*](http://www.railwaycodes.org.uk/index.shtml) used in different UK rail industry systems.
 
-
-## Cite as
+### Cite as
 
 Qian Fu, 2020. PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. [doi:10.5281/zenodo.4026744](https://doi.org/10.5281/zenodo.4026744)
 
-
-## Resources
+### Resources
 
 - [Documentation](https://pyrcs.readthedocs.io/en/latest/)
 - [Issue Tracker](https://github.com/mikeqfu/pyrcs/issues)
 
-
-## License
+### License
 
 PyRCS is licensed under [GNU General Public License v3 (GPLv3)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE).
 
-
-## Acknowledgement
+### Acknowledgement
 
 The development of PyRCS is mainly built on data from the [*Railway Codes*](http://www.railwaycodes.org.uk/index.shtml) website. The author of the package would like to thank the website editor and [all contributors](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) to the data resources.
 
+### Release history
 
-## Release history
+#### [v0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)
 
-### [v0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)
+##### Main changes (since v0.2.12):
 
-#### Main changes (since v0.2.12):
+> - modified the following classes/methods of the subpackage [line_data](https://github.com/mikeqfu/pyrcs/tree/ab2d79b9ed96f71083bf0656d0b1f1bde214837d/pyrcs/line_data) with bug fixes:
+>   - [Electrification.get_indep_line_names()](https://github.com/mikeqfu/pyrcs/commit/e539d508b97bfa1ca6740fd5bd281e60c23e94dc)
+>   - [ELRMileage.collect_mileage_file()](https://github.com/mikeqfu/pyrcs/commit/d67827f636c9cd5a7bf43c64c1fff226c09f4625)
+>   - [LOR.collect_elr_lor_converter()](https://github.com/mikeqfu/pyrcs/commit/ab2d79b9ed96f71083bf0656d0b1f1bde214837d)
+> - modified the following classes/methods of the subpackage [other_assets](https://github.com/mikeqfu/pyrcs/tree/b6c075026d62e771c40a5f5b4934b72f9682dfc4/pyrcs/other_assets) with bug fixes:
+>   - [Depots.collect_four_digit_pre_tops_codes](https://github.com/mikeqfu/pyrcs/commit/af2c62b1807325351a4f5217c710919d25ffc629)
+>   - [Tunnels.parse_length()](https://github.com/mikeqfu/pyrcs/commit/20b8036d923ea2f36dcb0b9e175afda5182f3e19)
+>   - [Stations](https://github.com/mikeqfu/pyrcs/commit/b6c075026d62e771c40a5f5b4934b72f9682dfc4)
+> - modified the following functions in the module [utils](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b) with bug fixes:
+>   - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R426)
+>   - [parse_date()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R622)
+> - updated package data
+> - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 
+#### [v0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)
 
-
-### [v0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)
-
-#### Main changes (since v0.2.11):
+##### Main changes (since v0.2.11):
 
 > - enabled the offline mode (by loading local backup when network connection is lost)
 > - enabled direct access to all classes from importing the package, without having to specifying the submodules they reside in
@@ -68,9 +75,9 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 >
 
-### [v0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)
+#### [v0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)
 
-#### Main changes (since v0.2.10):
+##### Main changes (since v0.2.10):
 
 > - renamed the following methods of the class [Stations](https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py):
 >   - [~~.collect_railway_station_data_by_initial()~~](https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c#diff-86956d6a0963926f04ed9d7c6bf99fb9763a0c7cabb22c88c3fa8f68e5a31e19L127) to [.collect_station_data_by_initial()](https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L127)
@@ -79,9 +86,9 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 >
 
-### [v0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)
+#### [v0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)
 
-#### Main changes (since v0.2.9):
+##### Main changes (since v0.2.9):
 
 > - renamed the following modules and a few of their functions, with minor code revisions:
 >   - [~~crs_nlc_tiploc_stanox~~](https://github.com/mikeqfu/pyrcs/commit/095b9d946e3c1f4a72b33ee1926f41654914f27c) to [loc_id](https://github.com/mikeqfu/pyrcs/blob/095b9d946e3c1f4a72b33ee1926f41654914f27c/pyrcs/line_data/loc_id.py)
@@ -101,43 +108,43 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) with substantial revisions
 >
 
-### [v0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)
+#### [v0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)
 
-#### Main changes (since v0.2.8):
+##### Main changes (since v0.2.8):
 
 > - updated package data
 > - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 >
 
-### [v0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)
+#### [v0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)
 
-#### Main changes (since v0.2.7):
+##### Main changes (since v0.2.7):
 
 > - modified all modules (including docstrings) with bug fixes
 > - updated package data
 > - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 >
 
-### [v0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)
+#### [v0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)
 
-#### Main changes (since v0.2.6):
+##### Main changes (since v0.2.6):
 
 > - modified all modules (including docstrings) with bug fixes 
 > - updated package data
 > - created [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) being hosted at [Read the Docs](https://readthedocs.org/)
 >
 
-### [v0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)
+#### [v0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)
 
-#### Main changes (since v0.2.5):
+##### Main changes (since v0.2.5):
 
 > - added a new function [fix_num_stanox()](https://github.com/mikeqfu/pyrcs/commit/fd5df3a101aa565bab2b5c1d9ca840dd1b812291) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/fd5df3a101aa565bab2b5c1d9ca840dd1b812291/pyrcs/utils.py)
 > - updated package data
 >
 
-### [v0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)
+#### [v0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)
 
-#### Main changes (since v0.2.4):
+##### Main changes (since v0.2.4):
 
 > - modified the [keys of the dict-type data](https://github.com/mikeqfu/pyrcs/commit/48e2b908984f940c3abe3aba5899de5fe8c285cc) for the two classes: [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/48e2b908984f940c3abe3aba5899de5fe8c285cc/pyrcs/line_data_cls/elrs_mileages.py#L244) and [SignalBoxes](https://github.com/mikeqfu/pyrcs/blob/48e2b908984f940c3abe3aba5899de5fe8c285cc/pyrcs/other_assets_cls/signal_boxes.py#L18)
 > - renamed the function [~~update_package_data()~~](https://github.com/mikeqfu/pyrcs/commit/e46e17002cd048db63dc5c7c0e074b4162377705) in the module [update](https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py) to [update_pkg_metadata()](https://github.com/mikeqfu/pyrcs/blob/e46e17002cd048db63dc5c7c0e074b4162377705/pyrcs/update.py#L11)
@@ -145,9 +152,9 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - tested the package in Python 3.8
 >
 
-### [v0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)
+#### [v0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)
 
-#### Main changes (since v0.2.3):
+##### Main changes (since v0.2.3):
 
 > - removed the module [settings](https://github.com/mikeqfu/pyrcs/commit/8e6340bfe078f0cd558f059f89ef1d5029ef62b4)
 > - updated import statements in all the package modules due to changes in the dependencies from [PyHelpers](https://github.com/mikeqfu/pyhelpers)
@@ -155,17 +162,17 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated package data
 >
 
-### [v0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)
+#### [v0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)
 
-#### Main changes (since v0.2.2):
+##### Main changes (since v0.2.2):
 
 > - updated a few helper functions with [bug fixes](https://github.com/mikeqfu/pyrcs/commit/7872dc917065623f3cb5f7939a065900c6070af4) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/7872dc917065623f3cb5f7939a065900c6070af4/pyrcs/utils.py)
 > - updated package data
 >
 
-### [v0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)
+#### [v0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)
 
-#### Main changes (since v0.2.1):
+##### Main changes (since v0.2.1):
 
 > - modified the following methods of the class [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/bc45055b6d07f83bddadd29c590226d7ddb9a7d3/pyrcs/line_data_cls/elrs_mileages.py#L244):
 >   - [.collect_mileage_file_by_elr()](https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200)
@@ -174,9 +181,9 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated package data
 >
 
-### [v0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)
+#### [v0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)
 
-#### Main changes (since v0.2.0):
+##### Main changes (since v0.2.0):
 
 > - modified the following modules with bug fixes:
 >   - [utils](https://github.com/mikeqfu/pyrcs/blob/80fed8c2fb3096457a20e543af5f15cb55f40407/pyrcs/utils.py)
@@ -184,7 +191,7 @@ The development of PyRCS is mainly built on data from the [*Railway Codes*](http
 > - updated and renamed all files of package data
 >
 
-### [v0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)
+#### [v0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)
 
 **A brand-new release.**
 
