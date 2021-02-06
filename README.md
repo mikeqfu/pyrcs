@@ -27,6 +27,8 @@ PyRCS is licensed under [GNU General Public License v3 (GPLv3)](https://github.c
 
 The development of PyRCS is mainly built on data from the [*Railway Codes*](http://www.railwaycodes.org.uk/index.shtml) website. The author of the package would like to thank the website editor and [all contributors](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) to the data resources.
 
+---
+
 ### Release history
 
 #### [v0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)
