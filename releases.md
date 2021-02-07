@@ -1,7 +1,6 @@
 ### Release history
 
 
-
 #### [v0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)
 
 *9 January 2021*
@@ -21,7 +20,6 @@
   - [parse_date()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R622)
 - updated package data
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
-
 
 
 #### [v0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)
@@ -54,7 +52,6 @@
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 
 
-
 #### [v0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)
 
 *31 October 2020*
@@ -66,7 +63,6 @@
   - [~~.fetch_railway_station_data()~~](https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c#diff-86956d6a0963926f04ed9d7c6bf99fb9763a0c7cabb22c88c3fa8f68e5a31e19L246) to [.fetch_station_data()](https://github.com/mikeqfu/pyrcs/blob/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c/pyrcs/other_assets/station.py#L245)
 - updated package data
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
-
 
 
 #### [v0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)
@@ -93,7 +89,6 @@
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) with substantial revisions
 
 
-
 #### [v0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)
 
 *13 September 2020*
@@ -102,7 +97,6 @@
 
 - updated package data
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
-
 
 
 #### [v0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)
@@ -116,7 +110,6 @@
 - updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
 
 
-
 #### [v0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)
 
 *18 July 2020*
@@ -128,7 +121,6 @@
 - created [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) being hosted at [Read the Docs](https://readthedocs.org/)
 
 
-
 #### [v0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)
 
 *8 March 2020*
@@ -137,7 +129,6 @@
 
 - added a new function [fix_num_stanox()](https://github.com/mikeqfu/pyrcs/commit/fd5df3a101aa565bab2b5c1d9ca840dd1b812291) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/fd5df3a101aa565bab2b5c1d9ca840dd1b812291/pyrcs/utils.py)
 - updated package data
-
 
 
 #### [v0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)
@@ -152,7 +143,6 @@
 - tested the package in Python 3.8
 
 
-
 #### [v0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)
 
 *4 December 2019*
@@ -165,7 +155,6 @@
 - updated package data
 
 
-
 #### [v0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)
 
 *4 October 2019*
@@ -174,7 +163,6 @@
 
 - updated a few helper functions with [bug fixes](https://github.com/mikeqfu/pyrcs/commit/7872dc917065623f3cb5f7939a065900c6070af4) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/7872dc917065623f3cb5f7939a065900c6070af4/pyrcs/utils.py)
 - updated package data
-
 
 
 #### [v0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)
@@ -190,7 +178,6 @@
 - updated package data
 
 
-
 #### [v0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)
 
 *18 September 2019*
@@ -201,7 +188,6 @@
   - [utils](https://github.com/mikeqfu/pyrcs/blob/80fed8c2fb3096457a20e543af5f15cb55f40407/pyrcs/utils.py)
   - [elrs_mileages](https://github.com/mikeqfu/pyrcs/blob/0dd70c69bea3a8190455cbf36eab659b02d86315/pyrcs/line_data_cls/elrs_mileages.py)
 - updated and renamed all files of package data
-
 
 
 #### [v0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)
