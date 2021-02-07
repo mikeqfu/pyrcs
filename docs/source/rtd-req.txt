@@ -3,7 +3,7 @@ fuzzywuzzy
 measurement
 more-itertools
 numpy
-pandas~=1.1.5
-pyhelpers>=1.2.9
+pandas
+pyhelpers>=1.2.10
 requests
 Sphinx~=3.4.3
