@@ -61,8 +61,8 @@ setuptools.setup(
         'measurement',
         'more-itertools',
         'numpy',
-        'pandas>=1.1.0',
-        'pyhelpers>=1.2.9',
+        'pandas',
+        'pyhelpers>=1.2.10',
         'requests',
     ],
 
