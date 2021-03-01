@@ -22,8 +22,8 @@ import datetime
 import pyrcs
 
 # General information about the project.
-project = u'{}'.format(pyrcs.__package_name_alt__)
-copyright = u'2019-{}, {}'.format(datetime.datetime.now().year, pyrcs.__author__)
+project = pyrcs.__package_name_alt__
+copyright = '2019-{}, Qian Fu'.format(datetime.datetime.now().year)
 
 # The version info for the project
 version = pyrcs.__version__  # The short X.Y version.
@@ -122,8 +122,8 @@ latex_engine = 'pdflatex'
 latex_documents = [
     ('index',  # source start file
      '{}.tex'.format(pyrcs.__package_name__),  # target name
-     u'{} Documentation'.format(pyrcs.__package_name_alt__),  # title
-     pyrcs.__author__,  # author
+     '{} Documentation'.format(pyrcs.__package_name_alt__),  # title
+     'Qian Fu',  # author
      'manual',  # document class ['howto', 'manual', or own class]
      1  # toctree only
      ),
@@ -191,8 +191,8 @@ latex_theme = 'manual'
 man_pages = [  # How to group the document tree into manual pages
     ('index',  # startdocname
      pyrcs.__package_name__,  # name
-     u'{} Documentation'.format(pyrcs.__package_name_alt__),  # description
-     [pyrcs.__author__],  # authors
+     '{} Documentation'.format(pyrcs.__package_name_alt__),  # description
+     ['Qian Fu'],  # authors
      1  # section
      )
 ]
@@ -202,8 +202,8 @@ man_pages = [  # How to group the document tree into manual pages
 texinfo_documents = [  # Grouping the document tree into Texinfo files
     (master_doc,  # source start file
      pyrcs.__package_name__,  # target name
-     u'{} Documentation'.format(pyrcs.__package_name_alt__),  # title
-     pyrcs.__author__,  # author
+     '{} Documentation'.format(pyrcs.__package_name_alt__),  # title
+     'Qian Fu',  # author
      pyrcs.__package_name_alt__,  # dir menu entry
      pyrcs.__description__,  # description
      'Web-scraping tool',  # category
