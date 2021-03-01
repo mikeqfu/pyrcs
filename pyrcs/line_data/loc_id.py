@@ -637,18 +637,27 @@ class LocationIdentifiers:
 
                     # Parse STANOX note
                     def parse_stanox_note(x):
-                        if x == '-':
+                        if x in ('-', ''):
                             dat, note = '', ''
                         else:
-                            d = re.search(r'[\w *,]+(?= [\[(\'])', x)
-                            dat = d.group() if d is not None else x
-                            note = 'Pseudo STANOX' if '*' in dat else ''
-                            n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
-                            if n is not None:
-                                note = '; '.join(x for x in [note, n.group()] if x != '')
-                            if '(' not in note and note.endswith(')'):
-                                note = note.rstrip(')')
-                            dat = dat.rstrip('*') if '*' in dat else dat
+                            if re.match(r'\d{5}$', x):
+                                dat = x
+                                note = ''
+                            elif re.match(r'\d{5}\*$', x):
+                                dat = x.rstrip('*')
+                                note = 'Pseudo STANOX'
+                            elif re.match(r'\d{5} \w.*', x):
+                                dat = re.search(r'\d{5}', x).group()
+                                note = re.search(r'(?<= )\w.*', x).group()
+                            else:
+                                d = re.search(r'[\w *,]+(?= [\[(\'])', x)
+                                dat = d.group() if d is not None else x
+                                note = 'Pseudo STANOX' if '*' in dat else ''
+                                n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
+                                if n is not None:
+                                    note = '; '.join(x for x in [note, n.group()] if x != '')
+                                if '(' not in note and note.endswith(')'):
+                                    note = note.rstrip(')')
                         return dat, note
 
                     if not loc_codes.empty:
