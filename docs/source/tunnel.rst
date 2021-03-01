@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.tunnel
-
 tunnel
 ------
+
+.. py:module:: pyrcs.other_assets.tunnel
 
 .. automodule:: tunnel
     :noindex:

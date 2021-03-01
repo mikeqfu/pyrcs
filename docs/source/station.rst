@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.station
-
 station
 -------
+
+.. py:module:: pyrcs.other_assets.station
 
 .. automodule:: station
     :noindex:

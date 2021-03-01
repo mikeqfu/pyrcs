@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data.elr_mileage
-
 elr_mileage
 -----------
+
+.. py:module:: pyrcs.line_data.elr_mileage
 
 .. automodule:: elr_mileage
     :noindex:

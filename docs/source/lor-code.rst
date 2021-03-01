@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data.lor_code
-
 lor_code
 --------
+
+.. py:module:: pyrcs.line_data.lor_code
 
 .. automodule:: lor_code
     :noindex:

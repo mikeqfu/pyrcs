@@ -1,11 +1,13 @@
+.. _sub-pkg-and-mod:
+
+========================
+Sub-packages and modules
+========================
+
 .. py:module:: pyrcs
 
-=======================
-Subpackages and modules
-=======================
-
-Subpackages
-===========
+Sub-packages
+============
 
 .. autosummary::
 

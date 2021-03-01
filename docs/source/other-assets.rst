@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets
-
 other_assets
 ------------
+
+.. py:module:: pyrcs.other_assets
 
 .. automodule:: pyrcs.other_assets
     :noindex:
@@ -9,7 +9,7 @@ other_assets
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Submodules
+.. rubric:: Sub-modules
 .. autosummary::
 
     sig_box

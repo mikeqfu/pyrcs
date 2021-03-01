@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.viaduct
-
 viaduct
 -------
+
+.. py:module:: pyrcs.other_assets.viaduct
 
 .. automodule:: viaduct
     :noindex:

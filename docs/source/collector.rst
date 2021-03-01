@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.collector
-
 collector
 =========
+
+.. py:module:: pyrcs.collector
 
 .. automodule:: pyrcs.collector
     :noindex:

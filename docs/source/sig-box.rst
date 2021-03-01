@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.sig_box
-
 sig_box
 -------
+
+.. py:module:: pyrcs.other_assets.sig_box
 
 .. automodule:: sig_box
     :noindex:

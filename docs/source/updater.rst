@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.updater
-
 updater
 -------
+
+.. py:module:: pyrcs.updater
 
 .. automodule:: pyrcs.updater
     :noindex:

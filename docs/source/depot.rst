@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.depot
-
 depot
 -----
+
+.. py:module:: pyrcs.other_assets.depot
 
 .. automodule:: depot
     :noindex:

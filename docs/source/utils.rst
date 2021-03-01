@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.utils
-
 utils
 -----
+
+.. py:module:: pyrcs.utils
 
 .. automodule:: pyrcs.utils
     :noindex:

@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data.elec
-
 elec
 ----
+
+.. py:module:: pyrcs.line_data.elec
 
 .. automodule:: elec
     :noindex:

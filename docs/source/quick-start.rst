@@ -2,7 +2,7 @@
 Quick start
 ===========
 
-To demonstrate how PyRCS works, this part of the documentation provides a quick guide with examples of getting `location codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_, `ELRs <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and `railway stations data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+To demonstrate how PyRCS works, this part of the documentation provides a quick guide with examples of getting `location codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_, Engineer's Line References `(ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and `railway stations data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 
 
 .. _qs-crs-nlc-tiploc-and-stanox:
@@ -10,13 +10,13 @@ To demonstrate how PyRCS works, this part of the documentation provides a quick 
 Get location codes
 ==================
 
-The location codes (including CRS, NLC, TIPLOC and STANOX) are categorised as `line data`_. Import the class :py:class:`LocationIdentifiers()<loc_id.LocationIdentifiers>` as follows:
+The location codes (including CRS, NLC, TIPLOC and STANOX) are categorised as `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_. Import the class :py:class:`LocationIdentifiers()<loc_id.LocationIdentifiers>` as follows:
 
 .. code-block:: python
 
     >>> from pyrcs.line_data import LocationIdentifiers
 
-    >>> # Or simply
+    >>> # Or,
     >>> # from pyrcs import LocationIdentifiers
 
 Now we can create an instance for getting the location codes:
@@ -38,7 +38,7 @@ Now we can create an instance for getting the location codes:
 
 .. note::
 
-    The instance ``ld`` contains all classes under the category of `line data`_. Here ``lid_`` is equivalent to ``lid``.
+    The instance ``ld`` contains all classes under the category of `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_. Here ``lid_`` is equivalent to ``lid``.
 
 .. _qs-locations-beginning-with-a-given-letter:
 
@@ -57,7 +57,7 @@ By using the method :py:meth:`LocationIdentifiers.collect_loc_codes_by_initial()
     >>> list(loc_codes_a.keys())
     ['A', 'Additional notes', 'Last updated date']
 
-``loc_codes_a`` is a dictionary (i.e. in `dict`_ type), with the following keys:
+``loc_codes_a`` is a dictionary (i.e. `dict`_ type), with the following keys:
 
 -  ``'A'``
 -  ``'Additional notes'``
@@ -65,11 +65,11 @@ By using the method :py:meth:`LocationIdentifiers.collect_loc_codes_by_initial()
 
 Their corresponding values are
 
--  ``loc_codes_a['A']``: a `pandas.DataFrame`_ of the location codes that begin with 'A'. We may compare it with the table on the web page of `Locations beginning with 'A'`_;
+-  ``loc_codes_a['A']``: a data frame (in `pandas.DataFrame`_ type) of the location names that begin with 'A'. We may compare it with the table on the web page of `Locations beginning with 'A' <http://www.railwaycodes.org.uk/crs/CRSa.shtm>`_;
 -  ``loc_codes_a['Additional notes']``: some additional information on the web page (if available);
 -  ``loc_codes_a['Last updated date']``: the date when the web page was last updated.
 
-Below is a snapshot of the data of the location codes beginning with 'A':
+Below is a snapshot of the codes of the location names beginning with 'A':
 
 .. code-block:: python
 
@@ -117,7 +117,7 @@ To get all available location codes in this category, use the method :py:class:`
 Their corresponding values are
 
 -  ``loc_codes['Location codes']``: a `pandas.DataFrame`_ of all location codes (from 'A' to 'Z');
--  ``loc_codes['Other systems']``: a dictionary for `other systems`_;
+-  ``loc_codes['Other systems']``: a dictionary for `other systems <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_;
 -  ``loc_codes['Additional notes']``: some additional information on the web page (if available);
 -  ``loc_codes['Latest update date']``: the latest ``'Last updated date'`` among all initial letter-specific codes.
 
@@ -145,7 +145,7 @@ Below is a snapshot of a random sample of the location codes data:
 Get ELRs and mileages
 =====================
 
-To get `ELRs (Engineer's Line References) and mileages`_, use the class :py:class:`ELRMileages()<elr_mileage.ELRMileages>`:
+To get `ELRs and mileages <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_, use the class :py:class:`ELRMileages()<elr_mileage.ELRMileages>`:
 
 .. code-block:: python
 
@@ -171,14 +171,14 @@ To get ELR codes which start with ``'A'``, use the method :py:meth:`ELRMileages.
     >>> print(list(elrs_a.keys()))
     ['A', 'Last updated date']
 
-The keys of ``elrs_a`` include:
+The keys of the dictionary ``elrs_a`` include:
 
 -  ``'A'``
 -  ``'Last updated date'``
 
 Their corresponding values are
 
--  ``elrs_a['A']``: a `pandas.DataFrame`_ of ELRs that begin with 'A'. We may compare it with the table on the web page of `ELRs beginning with 'A'`_;
+-  ``elrs_a['A']``: a data frame of ELRs that begin with 'A'. We may compare it with the table on the web page of `ELRs beginning with 'A' <http://www.railwaycodes.org.uk/elrs/elra.shtm>`_;
 -  ``elrs_a['Last updated date']``: the date when the web page was last updated.
 
 Below is a snapshot of the data of the ELR codes beginning with 'A':
@@ -247,7 +247,7 @@ Below is a snapshot of a random sample of the ELR codes data:
 Get mileage data for a given ELR
 --------------------------------
 
-To get detailed mileage data for a given ELR, for example, `AAM`_, use the method :py:meth:`ELRMileages.fetch_mileage_file()<elr_mileage.ELRMileages.fetch_mileage_file>`, which returns a dictionary as well:
+To get detailed mileage data for a given ELR, for example, `AAM <http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm>`_, use the method :py:meth:`ELRMileages.fetch_mileage_file()<elr_mileage.ELRMileages.fetch_mileage_file>`, which returns a dictionary as well:
 
 .. code-block:: python
 
@@ -274,7 +274,7 @@ Their corresponding values are
 -  ``em_amm['Mileage']``: a `pandas.DataFrame`_ of the mileage file data;
 -  ``em_amm['Notes']``: additional information/notes (if any).
 
-Below is a snapshot of the mileage data of `AAM`_:
+Below is a snapshot of the mileage data of `AAM <http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm>`_:
 
 .. code-block:: python
 
@@ -297,7 +297,7 @@ Below is a snapshot of the mileage data of `AAM`_:
 Get railway stations data
 =========================
 
-The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets`_ in the source data.
+The `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised into `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_ in the source data.
 
 .. code-block:: python
 
@@ -309,7 +309,7 @@ The `railway station data`_ (incl. the station name, ELR, mileage, status, owner
 
 .. note::
 
-    Alternatively, the instance ``stn`` can also be defined through :py:class:`OtherAssets()<pyrcs.collector.OtherAssets>` that contains all classes under the category of `other assets`_ (see below).
+    Alternatively, the instance ``stn`` can also be defined through :py:class:`OtherAssets()<pyrcs.collector.OtherAssets>` that contains all classes under the category of `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_ (see below).
 
 .. code-block:: python
 
@@ -340,7 +340,7 @@ The keys of ``stn_data_a`` include:
 
 The corresponding values are
 
--  ``stn_data_a['A']``: a `pandas.DataFrame`_ of the data of railway stations whose names begin with 'A'. We may compare it with the table on the web page of `Stations beginning with 'A'`_;
+-  ``stn_data_a['A']``: a `pandas.DataFrame`_ of the data of railway stations whose names begin with 'A'. We may compare it with the table on the web page of `Stations beginning with 'A' <http://www.railwaycodes.org.uk/stations/stationa.shtm>`_;
 -  ``stn_data_a['Last updated date']``: the date when the web page was last updated.
 
 Below is a snapshot of the data of the railway stations beginning with 'A':
@@ -409,16 +409,6 @@ Below is a snapshot of a random sample of the railway station data:
     Last updated date: 2021-01-08
 
 
-.. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
-.. _`CRS, NLC, TIPLOC and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
-.. _`Locations beginning with 'A'`: http://www.railwaycodes.org.uk/crs/CRSa.shtm
-.. _`other systems`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
-.. _`ELRs (Engineer's Line References) and mileages`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
-.. _`ELRs beginning with 'A'`: http://www.railwaycodes.org.uk/elrs/elra.shtm
-.. _`AAM`: http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm
-.. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
-.. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
-.. _`Stations beginning with 'A'`: http://www.railwaycodes.org.uk/stations/stationa.shtm
 .. _`dict`: https://docs.python.org/3/library/stdtypes.html#dict
 .. _`pandas.DataFrame`: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
 
@@ -426,4 +416,4 @@ Below is a snapshot of a random sample of the railway station data:
 
 **(The end of the quick start)**
 
-For more details and examples, check :ref:`Subpackages and modules`.
+For more details and examples, check :ref:`Sub-packages and modules<sub-pkg-and-mod>`.

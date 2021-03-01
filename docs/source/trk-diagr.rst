@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data.trk_diagr
-
 trk_diagr
 ---------
+
+.. py:module:: pyrcs.line_data.trk_diagr
 
 .. automodule:: trk_diagr
     :noindex:

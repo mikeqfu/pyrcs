@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data
-
 line_data
 ---------
+
+.. py:module:: pyrcs.line_data
 
 .. automodule:: pyrcs.line_data
     :noindex:
@@ -9,7 +9,7 @@ line_data
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Submodules
+.. rubric:: Sub-modules
 .. autosummary::
 
     elr_mileage

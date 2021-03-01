@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.line_data.loc_id
-
 loc_id
 ------
+
+.. py:module:: pyrcs.line_data.loc_id
 
 .. automodule:: loc_id
     :noindex:

@@ -1,7 +1,7 @@
-.. py:module:: pyrcs.other_assets.feature
-
 feature
 -------
+
+.. py:module:: pyrcs.other_assets.feature
 
 .. automodule:: feature
     :noindex:
