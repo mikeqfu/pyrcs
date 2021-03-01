@@ -14,8 +14,14 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # A list of modules to be mocked up.
-autodoc_mock_imports = ['beautifulsoup4', 'fuzzywuzzy', 'measurement', 'pandas',
-                        'more-itertools', 'numpy', 'requests', 'pyhelpers']
+autodoc_mock_imports = ['beautifulsoup4',
+                        'fuzzywuzzy',
+                        'measurement',
+                        'pandas',
+                        'more-itertools',
+                        'numpy',
+                        'requests',
+                        'pyhelpers']
 
 # Project information ==================================================================
 import datetime
@@ -23,7 +29,7 @@ import pyrcs
 
 # General information about the project.
 project = pyrcs.__package_name_alt__
-copyright = '2019-{}, Qian Fu'.format(datetime.datetime.now().year)
+copyright = '2019-{}, {}'.format(datetime.datetime.now().year, pyrcs.__author__)
 
 # The version info for the project
 version = pyrcs.__version__  # The short X.Y version.
@@ -123,7 +129,7 @@ latex_documents = [
     ('index',  # source start file
      '{}.tex'.format(pyrcs.__package_name__),  # target name
      '{} Documentation'.format(pyrcs.__package_name_alt__),  # title
-     'Qian Fu',  # author
+     pyrcs.__author__,  # author
      'manual',  # document class ['howto', 'manual', or own class]
      1  # toctree only
      ),
@@ -192,7 +198,7 @@ man_pages = [  # How to group the document tree into manual pages
     ('index',  # startdocname
      pyrcs.__package_name__,  # name
      '{} Documentation'.format(pyrcs.__package_name_alt__),  # description
-     ['Qian Fu'],  # authors
+     [pyrcs.__author__],  # authors
      1  # section
      )
 ]
@@ -203,7 +209,7 @@ texinfo_documents = [  # Grouping the document tree into Texinfo files
     (master_doc,  # source start file
      pyrcs.__package_name__,  # target name
      '{} Documentation'.format(pyrcs.__package_name_alt__),  # title
-     'Qian Fu',  # author
+     pyrcs.__author__,  # author
      pyrcs.__package_name_alt__,  # dir menu entry
      pyrcs.__description__,  # description
      'Web-scraping tool',  # category
