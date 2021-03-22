@@ -7,7 +7,7 @@ __all__ = [
 
 __package_name__ = 'pyrcs'
 __package_name_alt__ = 'PyRCS'
-__version__ = '0.2.14rc1'
+__version__ = '0.2.14rc2'
 __author__ = 'Qian Fu'
 __email__ = 'qian.fu@outlook.com'
 __description__ = \
