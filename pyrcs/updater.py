@@ -15,10 +15,9 @@ def update_backup_data(verbose=False, time_gap=2):
     """
     Update data of the package's local backup.
 
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool
-    :param time_gap: time gap (in seconds) between the updating of different classes
+    :param time_gap: time gap (in seconds) between updating different classes, defaults to ``2``
     :type time_gap: int
 
     **Example**::
@@ -36,7 +35,7 @@ def update_backup_data(verbose=False, time_gap=2):
         if confirmed("To update the backup resources?"):
 
             # Site map
-            print("Site map:")
+            print("\nSite map:")
             _ = get_site_map(update=True, confirmation_required=False, verbose=verbose)
 
             print("")
