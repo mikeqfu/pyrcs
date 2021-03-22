@@ -62,7 +62,7 @@ setuptools.setup(
         'more-itertools',
         'numpy',
         'pandas',
-        'pyhelpers>=1.2.10',
+        'pyhelpers>=1.2.12',
         'requests',
     ],
 
