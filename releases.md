@@ -2,6 +2,23 @@
 
 
 
+#### [0.2.14](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.14)
+
+*22 March 2021*
+
+##### Main [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.13...0.2.14) since [v0.2.13](https://github.com/mikeqfu/pyrcs/tree/19429031fdd3ea8d0bfab8cdea43e2804636e278):
+
+- fixed bugs in the following functions in the module [utils](https://github.com/mikeqfu/pyrcs/blob/fd7e40834af60dc80d334e541cd26fe9d88865bc/pyrcs/utils.py):
+  - [get_site_map()](https://github.com/mikeqfu/pyrcs/commit/1231bdb62914485acead5751ea055e063c0fa711#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L636-R814)
+  - [get_catalogue()](https://github.com/mikeqfu/pyrcs/commit/1231bdb62914485acead5751ea055e063c0fa711#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L844-R991)
+- modified the following methods with bug fixes:
+  - [LocationIdentifiers.collect_loc_codes_by_initial()](https://github.com/mikeqfu/pyrcs/commit/ca7bd7132bfc1c40327425335934a019fd69388e)
+  - [Stations.collect_station_data_by_initial()](https://github.com/mikeqfu/pyrcs/commit/69df19d4e3692ca6f1642c7e029a61fd6ec72fa3)
+- updated offline backup data
+- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/0.2.14/)
+
+
+
 #### [0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)
 
 *9 January 2021*
@@ -20,7 +37,7 @@
   - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R426)
   - [parse_date()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R622)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
+- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/0.2.13/)
 
 
 
