@@ -5,9 +5,11 @@ Utilities - Helper functions.
 import calendar
 import collections
 import datetime
+import itertools
 import os
 import re
 import socket
+import typing
 import urllib.parse
 
 import bs4
@@ -22,7 +24,7 @@ from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 from pyhelpers.text import find_similar_str
 
 
-# -- Specification of resource homepage ------------------------------------------------
+# -- Specification of resource homepage ----------------------------------------------------------
 
 def homepage_url():
     """
@@ -35,11 +37,11 @@ def homepage_url():
     return 'http://www.railwaycodes.org.uk/'
 
 
-# -- Specification of directory/file paths ---------------------------------------------
+# -- Specification of directory/file paths -------------------------------------------------------
 
 def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
-    Change directory to `dat_dir/` and sub-directories within a package.
+    Change directory to ``dat_dir`` and sub-directories within a package.
 
     :param sub_dir: name of directory; names of directories (and/or a filename)
     :type sub_dir: str
@@ -59,6 +61,7 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
         >>> from pyrcs.utils import cd_dat
 
         >>> path_to_dat_dir = cd_dat("line-data", dat_dir="dat", mkdir=False)
+
         >>> print(os.path.relpath(path_to_dat_dir))
         pyrcs\\dat\\line-data
 
@@ -79,7 +82,7 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     return path
 
 
-# -- Data converters -------------------------------------------------------------------
+# -- Data converters -----------------------------------------------------------------------------
 
 def mile_chain_to_nr_mileage(miles_chains):
     """
@@ -94,13 +97,15 @@ def mile_chain_to_nr_mileage(miles_chains):
 
         >>> from pyrcs.utils import mile_chain_to_nr_mileage
 
-        >>> miles_chains_dat = '0.18'  # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
-        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains_dat)
+        >>> # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
+        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains='0.18')
+
         >>> print(mileage_data)
         0.0396
 
-        >>> miles_chains_dat = None  # or np.nan, or ''
-        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains_dat)
+        >>> # None, np.nan or ''
+        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains=None)
+
         >>> print(mileage_data)
 
     """
@@ -128,13 +133,14 @@ def nr_mileage_to_mile_chain(str_mileage):
 
         >>> from pyrcs.utils import nr_mileage_to_mile_chain
 
-        >>> str_mileage_dat = '0.0396'
-        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage_dat)
+        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage='0.0396')
+
         >>> print(miles_chains_dat)
         0.18
 
-        >>> str_mileage_dat = None  # or np.nan, or ''
-        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage_dat)
+        >>> # None, np.nan or ''
+        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage=None)
+
         >>> print(miles_chains_dat)
 
     """
@@ -162,13 +168,11 @@ def nr_mileage_str_to_num(str_mileage):
 
         >>> from pyrcs.utils import nr_mileage_str_to_num
 
-        >>> str_mileage_dat = '0.0396'
-        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage_dat)
+        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='0.0396')
         >>> print(num_mileage_dat)
         0.0396
 
-        >>> str_mileage_dat = ''
-        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage_dat)
+        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='')
         >>> print(num_mileage_dat)
         nan
     """
@@ -189,22 +193,20 @@ def nr_mileage_num_to_str(num_mileage):
 
     **Examples**::
 
-        >>> import numpy as np_
+        >>> import numpy
         >>> from pyrcs.utils import nr_mileage_num_to_str
 
-        >>> num_mileage_dat = 0.0396
-        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage_dat)
+        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=0.0396)
         >>> print(str_mileage_dat)
         0.0396
         >>> type(str_mileage_dat)
-        <class 'str'>
+        str
 
-        >>> num_mileage_dat = np_.nan
-        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage_dat)
+        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=numpy.nan)
         >>> print(str_mileage_dat)
 
         >>> type(str_mileage_dat)
-        <class 'str'>
+        str
     """
 
     if (num_mileage or num_mileage == 0) and pd.notna(num_mileage):
@@ -228,18 +230,16 @@ def nr_mileage_to_yards(nr_mileage):
 
         >>> from pyrcs.utils import nr_mileage_to_yards
 
-        >>> nr_mileage_dat = '0.0396'
-        >>> yards_dat = nr_mileage_to_yards(nr_mileage_dat)
+        >>> yards_dat = nr_mileage_to_yards(nr_mileage='0.0396')
         >>> print(yards_dat)
         396
 
-        >>> nr_mileage_dat = 0.0396
-        >>> yards_dat = nr_mileage_to_yards(nr_mileage_dat)
+        >>> yards_dat = nr_mileage_to_yards(nr_mileage=0.0396)
         >>> print(yards_dat)
         396
     """
 
-    if isinstance(nr_mileage, (float, np.float, int, np.integer)):
+    if isinstance(nr_mileage, (float, typing.SupportsFloat, np.float64, int, np.integer)):
         nr_mileage = nr_mileage_num_to_str(nr_mileage)
 
     miles = int(nr_mileage.split('.')[0])
@@ -262,26 +262,23 @@ def yards_to_nr_mileage(yards):
 
         >>> from pyrcs.utils import yards_to_nr_mileage
 
-        >>> yards_dat = 396
-        >>> mileage_dat = yards_to_nr_mileage(yards_dat)
+        >>> mileage_dat = yards_to_nr_mileage(yards=396)
         >>> print(mileage_dat)
         0.0396
         >>> type(mileage_dat)
-        <class 'str'>
+        str
 
-        >>> yards_dat = 396.0
-        >>> mileage_dat = yards_to_nr_mileage(yards_dat)
+        >>> mileage_dat = yards_to_nr_mileage(yards=396.0)
         >>> print(mileage_dat)
         0.0396
         >>> type(mileage_dat)
-        <class 'str'>
+        str
 
-        >>> yards_dat = None
-        >>> mileage_dat = yards_to_nr_mileage(yards_dat)
+        >>> mileage_dat = yards_to_nr_mileage(yards=None)
         >>> print(mileage_dat)
 
         >>> type(mileage_dat)
-        <class 'str'>
+        str
     """
 
     if pd.notnull(yards) and yards != '':
@@ -310,16 +307,16 @@ def shift_num_nr_mileage(nr_mileage, shift_yards):
 
         >>> from pyrcs.utils import shift_num_nr_mileage
 
-        >>> num_mileage_dat = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220)
-        >>> print(num_mileage_dat)
+        >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220)
+        >>> print(n_mileage)
         0.0616
 
-        >>> shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220.99)
-        >>> print(num_mileage_dat)
+        >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220.99)
+        >>> print(n_mileage)
         0.0617
 
-        >>> shift_num_nr_mileage(nr_mileage=10, shift_yards=220)
-        >>> print(num_mileage_dat)
+        >>> n_mileage = shift_num_nr_mileage(nr_mileage=10, shift_yards=220)
+        >>> print(n_mileage)
         10.022
     """
 
@@ -344,7 +341,7 @@ def year_to_financial_year(date):
         >>> import datetime
         >>> from pyrcs.utils import year_to_financial_year
 
-        >>> financial_year = year_to_financial_year(datetime.datetime.now())
+        >>> financial_year = year_to_financial_year(date=datetime.datetime(2021, 3, 31))
         >>> print(financial_year)
         2020
     """
@@ -354,7 +351,7 @@ def year_to_financial_year(date):
     return financial_date.year
 
 
-# -- Data parsers ----------------------------------------------------------------------
+# -- Data parsers --------------------------------------------------------------------------------
 
 def parse_tr(header, trs):
     """
@@ -377,19 +374,22 @@ def parse_tr(header, trs):
         >>> import requests
         >>> from pyrcs.utils import fake_requests_headers, parse_tr
 
-        >>> source = requests.get('http://www.railwaycodes.org.uk/elrs/elra.shtm',
-        ...                       headers=fake_requests_headers())
+        >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
+        >>> source = requests.get(example_url, headers=fake_requests_headers())
+
         >>> parsed_text = bs4.BeautifulSoup(source.text, 'lxml')
-        >>> header_ = []
-        >>> for th in parsed_text.find_all('th'):
-        ...     header_.append(th.text)
+
+        >>> # noinspection PyUnresolvedReferences
+        >>> header_dat = [th.text for th in parsed_text.find_all('th')]
+
         >>> trs_dat = parsed_text.find_all('tr')
 
-        >>> tables_list = parse_tr(header_, trs_dat)  # returns a list of lists
+        >>> tables_list = parse_tr(header_dat, trs_dat)  # returns a list of lists
+
         >>> type(tables_list)
-        <class 'list'>
-        >>> print(tables_list[-1])
-        ['AYT', 'Aberystwyth Branch', '0.00 - 41.15', 'Pencader Junction', '\xa0']
+        list
+        >>> tables_list[-1]
+        ['AYT', 'Aberystwyth Branch', '0.00 - 41.15', 'Pencader Junction', '']
     """
 
     tbl_lst = []
@@ -466,16 +466,17 @@ def parse_table(source, parser='lxml'):
 
         >>> from pyrcs.utils import fake_requests_headers, parse_table
 
-        >>> source_ = requests.get('http://www.railwaycodes.org.uk/elrs/elra.shtm',
-        ...                        headers=fake_requests_headers())
+        >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
+        >>> source_dat = requests.get(example_url, headers=fake_requests_headers())
 
-        >>> parsed_contents = parse_table(source_, parser='lxml')
+        >>> parsed_contents = parse_table(source_dat, parser='lxml')
+
         >>> type(parsed_contents)
-        <class 'tuple'>
+        tuple
         >>> type(parsed_contents[0])
-        <class 'list'>
+        list
         >>> type(parsed_contents[1])
-        <class 'list'>
+        list
     """
 
     # Get plain text from the source URL
@@ -507,18 +508,15 @@ def parse_location_name(location_name):
 
         >>> from pyrcs.utils import parse_location_name
 
-        >>> location_dat = 'Abbey Wood'
-        >>> dat_and_note = parse_location_name(location_dat)
+        >>> dat_and_note = parse_location_name('Abbey Wood')
         >>> print(dat_and_note)
         ('Abbey Wood', '')
 
-        >>> location_dat = None
-        >>> dat_and_note = parse_location_name(location_dat)
+        >>> dat_and_note = parse_location_name(None)
         >>> print(dat_and_note)
         ('', '')
 
-        >>> location_dat = 'Abercynon (formerly Abercynon South)'
-        >>> dat_and_note = parse_location_name(location_dat)
+        >>> dat_and_note = parse_location_name('Abercynon (formerly Abercynon South)')
         >>> print(dat_and_note)
         ('Abercynon', 'formerly Abercynon South')
 
@@ -612,10 +610,11 @@ def parse_date(str_date, as_date_type=False):
         >>> str_date_dat = '2020-01-01'
 
         >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
+
+        >>> type(parsed_date_dat)
+        datetime.date
         >>> print(parsed_date_dat)
         2020-01-01
-        >>> type(parsed_date_dat)
-        <class 'datetime.date'>
     """
 
     try:
@@ -631,21 +630,17 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-# -- Retrieval of useful information ---------------------------------------------------
+# -- Retrieval of useful information -------------------------------------------------------------
 
 def get_site_map(update=False, confirmation_required=True, verbose=False):
     """
-    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
-    from the package data.
+    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_ from the package data.
 
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param confirmation_required: whether to prompt a message for confirmation to proceed,
-        defaults to ``True``
+    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
     :type confirmation_required: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: dictionary of site map data
     :rtype: dict or None
@@ -657,13 +652,22 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
         >>> site_map_dat = get_site_map()
 
         >>> type(site_map_dat)
-        <class 'dict'>
-        >>> print(list(site_map_dat.keys()))
-        ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
-        >>> print(site_map_dat['Home'])
+        collections.OrderedDict
+
+        >>> list(site_map_dat.keys())
+        ['Home',
+         'Line data',
+         'Other assets',
+         '"Legal/financial" lists',
+         'Miscellaneous']
+
+        >>> site_map_dat['Home']
         http://www.railwaycodes.org.uk/index.shtml
 
-        >>> site_map_dat = get_site_map(update=True, verbose=2)
+        >>> # site_map_dat = get_site_map(update=True, verbose=2)
+        >>> # To collect the site map? [No]|Yes: yes
+        >>> # Updating the package data ... Done.
+        >>> # Updating "site-map.pickle" at "pyrcs\\dat" ... Done.
     """
 
     path_to_pickle = cd_dat("site-map.pickle", mkdir=True)
@@ -674,8 +678,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     else:
         site_map = None
 
-        if confirmed("To collect the site map?",
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect the site map?", confirmation_required=confirmation_required):
 
             if verbose == 2:
                 print("Updating the package data", end=" ... ")
@@ -690,70 +693,125 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
             else:
                 try:
                     soup = bs4.BeautifulSoup(source.text, 'lxml')
-
-                    # <h3>
                     h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
+                    next_dl = soup.find('h3').find_next('dl')
 
-                    site_map = {}
+                    site_map = collections.OrderedDict()
+                    i = 0
+                    while i < len(h3):
+                        # text, data
+                        dts = next_dl.findChildren('dt')
+                        dds = next_dl.findChildren('dd')
 
-                    # Next <ol>
-                    next_ol = soup.find('h3').find_next('ol')
-
-                    for i in range(len(h3)):
-
-                        li_tag = next_ol.findChildren('li')
-                        ol_tag = next_ol.findChildren('ol')
-
-                        if not ol_tag:
-                            dat_ = [x.find('a').get('href') for x in li_tag]
-                            if len(dat_) == 1:
-                                dat = urllib.parse.urljoin(homepage_url(), dat_[0])
+                        if len(dts) == 1 and dts[0].text == '':
+                            dat_temp = [x.find('a').get('href') for x in dds]
+                            if len(dat_temp) == 1:
+                                dat = urllib.parse.urljoin(homepage_url(), dat_temp[0])
                             else:
-                                dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_]
+                                dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_temp]
+
                             site_map.update({h3[i]: dat})
 
                         else:
-                            site_map_ = {}
-                            for ol in ol_tag:
-                                k = ol.find_parent('ol').find_previous('li').get_text(
-                                    strip=True)
 
-                                if k not in site_map_.keys():
-                                    sub_li = ol.findChildren('li')
-                                    sub_ol = ol.findChildren('ol')
+                            def _pair(iterable):
+                                a, b = itertools.tee(iterable)
+                                next(b, None)
+                                return zip(a, b)
 
-                                    if sub_ol:
-                                        cat0 = [x.get_text(strip=True) for x in sub_li
-                                                if not x.find('a')]
-                                        dat0 = [[urllib.parse.urljoin(homepage_url(),
-                                                                      a.get('href'))
-                                                 for a in x.find_all('a')] for x in sub_ol]
-                                        cat_name = ol.find_previous('li').get_text(strip=True)
-                                        if cat0:
-                                            site_map_.update(
-                                                {cat_name: dict(zip(cat0, dat0))})
-                                        else:
-                                            site_map_.update(
-                                                {cat_name: [x_ for x in dat0 for x_ in x]})
-                                        # cat_ = [x for x in cat_ if x not in cat0]
+                            def _get_sub_site_maps(dts_, dds_):
+                                # dts_, dds_ = dts, dds
+                                site_map_ = {}
+                                dtt = []
+                                sep_id = [0]
+                                counter = 0
+                                has_sub_dl = []
+                                under_sub_dl = []
+                                sub_sep_id = []
 
-                                    else:
-                                        cat_name_ = ol.find_previous('li').get_text(
-                                            strip=True)
-                                        pat = r'.+(?= \(the thousands of mileage files)'
-                                        cat_name = re.search(pat, cat_name_).group(0) \
-                                            if re.match(pat, cat_name_) else cat_name_
+                                for dt in dts_:
+                                    if dt.text not in under_sub_dl:
+                                        dtt_temp = dt.get_text(strip=True)
+                                        temp = re.search(r'.*(?= \()', dtt_temp)
 
-                                        dat0 = [urllib.parse.urljoin(homepage_url(),
-                                                                     x.a.get('href'))
-                                                for x in sub_li]
+                                        dtt.append(temp.group() if temp else dtt_temp)
 
-                                        site_map_.update({cat_name: dat0})
+                                        sib_dd = dt
+                                        while True:
+                                            try:
+                                                sib_dd = sib_dd.find_next_sibling()
+                                            except AttributeError:
+                                                break
+                                            try:
+                                                dd_name = sib_dd.name
+                                            except AttributeError:
+                                                dd_name = ''
+                                            if dd_name == 'dd':
+                                                sub_dl = sib_dd.findChild('dl')
 
-                            site_map.update({h3[i]: site_map_})
+                                                if sub_dl is not None:  # sub_dl.name == 'dl':
+                                                    sub_dt = sub_dl.findChildren('dt')
+                                                    sub_dd = sub_dl.findChildren('dd')
+                                                    sub_dl_cat = _get_sub_site_maps(sub_dt, sub_dd)
 
-                        if i < len(h3) - 1:
-                            next_ol = next_ol.find_next('h3').find_next('ol')
+                                                    if sib_dd.next_element.name == 'a':
+                                                        site_map_.update(sub_dl_cat)
+                                                        temp_dd = soup.new_tag("dd")
+                                                        temp_dd.append(
+                                                            sib_dd.next_element.__copy__())
+                                                        dds_[counter] = temp_dd
+                                                        counter += 1
+                                                        sep_id.append(counter)
+                                                        sub_sep_id.append(counter)
+                                                        counter += len(sub_dd)
+                                                        sep_id.append(counter)
+                                                        sub_key = list(sub_dl_cat.keys())[0]
+                                                        dtt.append(sub_key)
+                                                        has_sub_dl.append(sub_key)
+                                                    else:
+                                                        site_map_.update({dt.text: sub_dl_cat})
+                                                        sub_sep_id.append(counter)
+                                                        has_sub_dl.append(dt.text)
+                                                        counter += len(sub_dd) + 1
+                                                        sep_id.append(counter)
+
+                                                    under_sub_dl += [x.text for x in sub_dt]
+
+                                                else:
+                                                    counter += 1
+
+                                            elif dd_name == 'dt':
+                                                sib_dd_ = sib_dd.find_previous_sibling('dd')
+                                                if not sib_dd_.findChild('dl'):
+                                                    sep_id.append(counter)
+                                                break
+
+                                if counter == len(dds_):
+                                    sep_id.append(counter)
+                                else:
+                                    sep_id.append(len(dds_) + 1)
+
+                                dat_ = [[urllib.parse.urljoin(homepage_url(), x.a.get('href'))
+                                         for x in dds_[j:k]]
+                                        for j, k in _pair(sep_id) if j not in sub_sep_id]
+                                dtt_ = [x for x in dtt if x not in has_sub_dl]
+
+                                site_map_.update(dict(zip(dtt_, dat_)))
+
+                                site_map_ = collections.OrderedDict((k, site_map_[k]) for k in dtt)
+
+                                return site_map_
+
+                            sub_site_map = _get_sub_site_maps(dts, dds)
+
+                            site_map.update({h3[i]: sub_site_map})
+
+                        try:
+                            next_dl = next_dl.find_next('h3').find_next('dl')
+                        except AttributeError:
+                            break
+
+                        i += 1
 
                     print("Done. ") if verbose == 2 else ""
 
@@ -778,11 +836,9 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     :type url: str
     :param parsed: whether to reformat the date, defaults to ``True``
     :type parsed: bool
-    :param as_date_type: whether to return the date as `datetime.date`_,
-        defaults to ``False``
+    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
     :type as_date_type: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: date of when the specified web page was last updated
     :rtype: str or datetime.date or None
@@ -793,20 +849,17 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
 
         >>> from pyrcs.utils import get_last_updated_date
 
-        >>> last_upd_date = get_last_updated_date(
-        ...     url='http://www.railwaycodes.org.uk/crs/CRSa.shtm', parsed=True,
-        ...     as_date_type=False)
+        >>> url_a = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+        >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=False)
         >>> type(last_upd_date)
-        <class 'str'>
+        str
 
-        >>> last_upd_date = get_last_updated_date(
-        ...     url='http://www.railwaycodes.org.uk/crs/CRSa.shtm', parsed=True,
-        ...     as_date_type=True)
+        >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=True)
         >>> type(last_upd_date)
-        <class 'datetime.date'>
+        datetime.date
 
-        >>> last_upd_date = get_last_updated_date(
-        ...     url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
+        >>> ldm_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+        >>> last_upd_date = get_last_updated_date(url=ldm_url)
         >>> print(last_upd_date)
         None
     """
@@ -841,23 +894,19 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     return last_update_date
 
 
-def get_catalogue(page_url, update=False, confirmation_required=True, json_it=True,
-                  verbose=False):
+def get_catalogue(url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
     Get the catalogue for a class.
 
-    :param page_url: URL of the main page of a code category
-    :type page_url: str
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param url: URL of the main page of a code category
+    :type url: str
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param confirmation_required: whether to prompt a message for confirmation to proceed,
-        defaults to ``True``
+    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
     :type confirmation_required: bool
-    :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
+    :param json_it: whether to save the catalogue as a JSON file, defaults to ``True``
     :type json_it: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: catalogue in the form {'<title>': '<URL>'}
     :rtype: dict or None
@@ -866,24 +915,29 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
 
         >>> from pyrcs.utils import get_catalogue
 
-        >>> url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
-        >>> catalog = get_catalogue(url)
-        >>> type(catalog)
-        <class 'dict'>
-        >>> print(list(catalog.keys())[:5])
+        >>> cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
+        >>> type(cat)
+        dict
+        >>> list(cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
 
-        >>> url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-        >>> catalog = get_catalogue(url)
-        >>> print(list(catalog.keys())[:5])
+        >>> cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
+        >>> list(cat.keys())[:5]
         ['Line data']
 
-        >>> line_data_catalog = catalog['Line data']
-        >>> type(line_data_catalog)
-        <class 'dict'>
+        >>> line_data_cat = cat['Line data']
+        >>> type(line_data_cat)
+        dict
+        >>> list(line_data_cat.keys())
+        ['ELRs and mileages',
+         'Electrification masts and related features',
+         'CRS, NLC, TIPLOC and STANOX Codes',
+         'Line of Route (LOR/PRIDE) codes',
+         'Line names',
+         'Track diagrams']
     """
 
-    cat_json = '-'.join(x for x in urllib.parse.urlparse(page_url).path.replace(
+    cat_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
         '.shtm', '.json').split('/') if x)
     path_to_cat_json = cd_dat("catalogue", cat_json, mkdir=True)
 
@@ -893,11 +947,10 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
     else:
         catalogue = None
 
-        if confirmed("To collect/update catalogue?",
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect/update catalogue?", confirmation_required=confirmation_required):
 
             try:
-                source = requests.get(page_url, headers=fake_requests_headers())
+                source = requests.get(url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_connection_error(verbose=verbose)
 
@@ -906,19 +959,24 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
                     source_text = source.text
                     source.close()
 
+                    soup = bs4.BeautifulSoup(source_text, 'lxml')
+
                     try:
-                        cold_soup = bs4.BeautifulSoup(
-                            source_text, 'lxml').find('div', attrs={'class': 'fixed'})
+                        try:
+                            cold_soup = soup.find('div', {'class': "background"}).find('nav')
+                            if cold_soup is None:
+                                cold_soup = soup.find_all('span', {'class': "background"})[-1]
+                        except AttributeError:
+                            cold_soup = soup.find('div', attrs={'class': 'fixed'})
+
                         catalogue = {
-                            a.get_text(strip=True):
-                                urllib.parse.urljoin(page_url, a.get('href'))
+                            a.get_text(strip=True): urllib.parse.urljoin(url, a.get('href'))
                             for a in cold_soup.find_all('a')}
+
                     except AttributeError:
-                        cold_soup = bs4.BeautifulSoup(
-                            source_text, 'lxml').find('h1').find_all_next('a')
+                        cold_soup = soup.find('h1').find_all_next('a')
                         catalogue = {
-                            a.get_text(strip=True):
-                                urllib.parse.urljoin(page_url, a.get('href'))
+                            a.get_text(strip=True): urllib.parse.urljoin(url, a.get('href'))
                             for a in cold_soup}
 
                     if json_it and catalogue is not None:
@@ -933,23 +991,19 @@ def get_catalogue(page_url, update=False, confirmation_required=True, json_it=Tr
     return catalogue
 
 
-def get_category_menu(menu_url, update=False, confirmation_required=True, json_it=True,
-                      verbose=False):
+def get_category_menu(url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
     Get a menu of the available classes.
 
-    :param menu_url: URL of the menu page
-    :type menu_url: str
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param url: URL of the menu page
+    :type url: str
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param confirmation_required: whether to prompt a message for confirmation to proceed,
-        defaults to ``True``
+    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
     :type confirmation_required: bool
     :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
     :type json_it: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: a category menu
     :rtype: dict or None
@@ -958,16 +1012,15 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
 
         >>> from pyrcs.utils import get_category_menu
 
-        >>> url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-        >>> menu = get_category_menu(url)
+        >>> menu = get_category_menu('http://www.railwaycodes.org.uk/linedatamenu.shtm')
 
         >>> type(menu)
-        <class 'dict'>
-        >>> print(list(menu.keys()))
+        dict
+        >>> list(menu.keys())
         ['Line data']
     """
 
-    menu_json = '-'.join(x for x in urllib.parse.urlparse(menu_url).path.replace(
+    menu_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
         '.shtm', '.json').split('/') if x)
     path_to_menu_json = cd_dat("catalogue", menu_json, mkdir=True)
 
@@ -981,7 +1034,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
                      confirmation_required=confirmation_required):
 
             try:
-                source = requests.get(menu_url, headers=fake_requests_headers())
+                source = requests.get(url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_connection_error(verbose=verbose)
 
@@ -994,7 +1047,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
 
                     if len(h2s) == 0:
                         cls_elem = dict(
-                            (x.text, urllib.parse.urljoin(menu_url, x.get('href')))
+                            (x.text, urllib.parse.urljoin(url, x.get('href')))
                             for x in h1.find_all_next('a'))
 
                     else:
@@ -1003,7 +1056,7 @@ def get_category_menu(menu_url, update=False, confirmation_required=True, json_i
                                     if x != '\n' and x != '\xa0'][2:]
                         h2s_list = [x.text.replace(':', '') for x in h2s]
                         all_next_a = [
-                            (x.text, urllib.parse.urljoin(menu_url, x.get('href')))
+                            (x.text, urllib.parse.urljoin(url, x.get('href')))
                             for x in h1.find_all_next('a', href=True)]
 
                         idx = [all_next.index(x) for x in h2s_list]
@@ -1059,9 +1112,10 @@ def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
         >>> from pyrcs.utils import fetch_loc_names_repl_dict
 
         >>> repl_dict = fetch_loc_names_repl_dict()
+
         >>> type(repl_dict)
-        <class 'dict'>
-        >>> print(list(repl_dict.keys())[:5])
+        dict
+        >>> list(repl_dict.keys())[:5]
         ['"Tyndrum Upper" (Upper Tyndrum)',
          'AISH EMERGENCY CROSSOVER',
          'ATLBRJN',
@@ -1069,9 +1123,10 @@ def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
          'Aberdeen Craiginches T.C.']
 
         >>> repl_dict = fetch_loc_names_repl_dict(regex=True, as_dataframe=True)
+
         >>> type(repl_dict)
-        <class 'pandas.core.frame.DataFrame'>
-        >>> print(repl_dict.head())
+        pandas.core.frame.DataFrame
+        >>> repl_dict.head()
                                          new_value
         re.compile(' \\(DC lines\\)')   [DC lines]
         re.compile(' And | \\+ ')               &
@@ -1084,14 +1139,14 @@ def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
     location_name_repl_dict = load_json(cd_dat(json_filename))
 
     if regex:
-        location_name_repl_dict = {re.compile(k): v
-                                   for k, v in location_name_repl_dict.items()}
+        location_name_repl_dict = {
+            re.compile(k): v for k, v in location_name_repl_dict.items()}
 
     replacement_dict = {k: location_name_repl_dict} if k else location_name_repl_dict
 
     if as_dataframe:
-        replacement_dict = pd.DataFrame.from_dict(replacement_dict, orient='index',
-                                                  columns=['new_value'])
+        replacement_dict = pd.DataFrame.from_dict(
+            replacement_dict, orient='index', columns=['new_value'])
 
     return replacement_dict
 
@@ -1104,16 +1159,8 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
     :type new_items: dict
     :param regex: whether this update is for regular-expression dictionary
     :type regex: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
-
-    **Example**:
-
-        >>> from pyrcs.utils import update_loc_names_repl_dict
-
-        >>> new_items_ = {}
-        >>> update_loc_names_repl_dict(new_items_, regex=False)
     """
 
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
@@ -1132,7 +1179,7 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-# -- Data fixers -----------------------------------------------------------------------
+# -- Data fixers ---------------------------------------------------------------------------------
 
 def fix_num_stanox(stanox_code):
     """
@@ -1147,15 +1194,17 @@ def fix_num_stanox(stanox_code):
 
         >>> from pyrcs.utils import fix_num_stanox
 
-        >>> stanox = 65630
-        >>> stanox_ = fix_num_stanox(stanox)
-        >>> type(stanox_)
-        <class 'str'>
+        >>> stanox = fix_num_stanox(stanox_code=65630)
+        >>> type(stanox)
+        str
+        >>> stanox
+        '65630'
 
-        >>> stanox = 2071
-        >>> stanox_ = fix_num_stanox(stanox)
-        >>> print(stanox_)
-        02071
+        >>> stanox = fix_num_stanox(stanox_code=2071)
+        >>> type(stanox)
+        str
+        >>> stanox
+        '02071'
     """
 
     if isinstance(stanox_code, (int or float)):
@@ -1180,15 +1229,13 @@ def fix_nr_mileage_str(nr_mileage):
 
         >>> from pyrcs.utils import fix_nr_mileage_str
 
-        >>> mileage = 29.011
-        >>> mileage_ = fix_nr_mileage_str(mileage)
-        >>> print(mileage_)
-        29.0110
+        >>> mileage = fix_nr_mileage_str(nr_mileage=29.011)
+        >>> mileage
+        '29.0110'
 
-        >>> mileage = '.1100'
-        >>> mileage_ = fix_nr_mileage_str(mileage)
-        >>> print(mileage_)
-        0.1100
+        >>> mileage = fix_nr_mileage_str(nr_mileage='.1100')
+        >>> mileage
+        '0.1100'
     """
 
     if isinstance(nr_mileage, float):
@@ -1211,15 +1258,21 @@ def fix_nr_mileage_str(nr_mileage):
     return nr_mileage_
 
 
-# -- Miscellaneous helpers -------------------------------------------------------------
+# -- Miscellaneous helpers -----------------------------------------------------------------------
 
 def print_connection_error(verbose=False):
     """
     Print a message about unsuccessful attempts to establish a connection to the Internet.
 
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
+
+    **Example**::
+
+        >>> from utils import print_connection_error
+
+        >>> print_connection_error()
+
     """
 
     if verbose:
@@ -1235,9 +1288,15 @@ def print_conn_err(update=False, verbose=False):
     :param update: defaults to ``False``
         (mostly complies with ``update`` in a parent function that uses this function)
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``False``
+    :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
+
+    **Example**::
+
+        >>> from utils import print_conn_err
+
+        >>> print_conn_err()
+
     """
 
     msg = "The Internet connection is not available."
@@ -1294,6 +1353,7 @@ def is_internet_connected():
         >>> from pyrcs.utils import is_internet_connected
 
         >>> is_internet_connected()
+        True
     """
 
     try:
