@@ -23,12 +23,10 @@ class SignalBoxes:
     A class for collecting signal box prefix codes.
 
     :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str, None
-    :param update: whether to check on update and proceed to update the package data, 
-        defaults to ``False``
+    :type data_dir: str or None
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -78,8 +76,8 @@ class SignalBoxes:
         self.LUDKey = 'Last updated date'  # key to last updated date
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -100,7 +98,7 @@ class SignalBoxes:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\other-assets\\signal-boxes"``.
+        The directory for this module: ``"dat\\other-assets\\signal-boxes"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -119,17 +117,15 @@ class SignalBoxes:
 
     def collect_prefix_codes(self, initial, update=False, verbose=False):
         """
-        Collect signal box prefix codes for the given ``initial`` from source web page.
+        Collect signal box prefix codes beginning with ``initial`` from source web page.
 
         :param initial: initial letter of signal box name (for specifying a target URL)
         :type initial: str
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
-        :return: data of signal box prefix codes for the given ``initial`` and
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: data of signal box prefix codes beginning with ``initial`` and
             date of when the data was last updated
         :rtype: dict
 
@@ -216,17 +212,14 @@ class SignalBoxes:
         """
         Fetch signal box prefix codes from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of location codes and date of when the data was last updated
         :rtype: dict
 
@@ -244,11 +237,14 @@ class SignalBoxes:
             >>> list(sb_prefix_codes_dat.keys())
             ['Signal boxes', 'Last updated date']
 
-            >>> sb_prefix_codes = sb_prefix_codes_dat['Signal boxes']
+            >>> print(sb.Key)
+            Signal boxes
+
+            >>> sb_prefix_codes = sb_prefix_codes_dat[sb.Key]
 
             >>> type(sb_prefix_codes)
             pandas.core.frame.DataFrame
-            >>> print(sb_prefix_codes.head())
+            >>> sb_prefix_codes.head()
               Code               Signal Box  ...            Closed        Control to
             0   AF  Abbey Foregate Junction  ...
             1   AJ           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
@@ -299,14 +295,12 @@ class SignalBoxes:
         Collect signal box prefix codes of `non-national rail
         <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_ from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: signal box prefix codes of non-national rail
-        :rtype: dict, None
+        :rtype: dict or None
 
         **Example**::
 
@@ -415,17 +409,14 @@ class SignalBoxes:
         `non-national rail <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: signal box prefix codes of non-national rail
         :rtype: dict
 
@@ -443,7 +434,11 @@ class SignalBoxes:
             >>> list(nnr_codes.keys())
             ['Non-National Rail', 'Last updated date']
 
-            >>> nnr_codes_ = nnr_codes['Non-National Rail']
+            >>> print(sb.NonNationalRailKey)
+            Non-National Rail
+
+            >>> nnr_codes_ = nnr_codes[sb.NonNationalRailKey]
+
             >>> type(nnr_codes_)
             dict
             >>> list(nnr_codes_.keys())
@@ -458,12 +453,15 @@ class SignalBoxes:
              'Nottingham Tram signals',
              'Sheffield Supertram signals',
              'Tyne & Wear Metro signals',
-             'Heritage, minor and miniature railways and other "special" signals']
+             "Heritage, minor and miniature railways and other 'special' signals"]
 
             >>> lu_signals = nnr_codes_['London Underground signals']
             >>> type(lu_signals)
             list
-            >>> print(lu_signals[0].head())
+
+            >>> type(lu_signals[0])
+            pandas.core.frame.DataFrame
+            >>> lu_signals[0].head()
               Code  ... Became or taken over by (where known)
             0  BMX  ...                                     -
             1    A  ...                                     -

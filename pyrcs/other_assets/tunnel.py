@@ -28,12 +28,10 @@ class Tunnels:
     A class for collecting railway tunnel lengths.
 
     :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str, None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :type data_dir: str or None
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -80,8 +78,8 @@ class Tunnels:
         self.LUDKey = 'Last updated date'
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.Catalogue.keys())[1:]
 
@@ -95,7 +93,7 @@ class Tunnels:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\other-assets\\tunnels"``.
+        The directory for this module: ``"dat\\other-assets\\tunnels"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -118,7 +116,7 @@ class Tunnels:
         Parse data in ``'Length'`` column, i.e. convert miles/yards to metres.
 
         :param x: raw length data
-        :type x: str, None
+        :type x: str or None
         :return: parsed length data and, if any, additional information associated with it
         :rtype: tuple
 
@@ -189,14 +187,12 @@ class Tunnels:
         Collect data of railway tunnel lengths for a page number from source web page.
 
         :param page_no: page number; valid values include ``1``, ``2``, ``3`` and ``4``
-        :type page_no: int, str
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :type page_no: int or str
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
-        :return: tunnel lengths data of the given ``page_no`` and
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: data of tunnel lengths on page ``page_no`` and
             date of when the data was last updated
         :rtype: dict
 
@@ -207,12 +203,14 @@ class Tunnels:
             >>> tunl = Tunnels()
 
             >>> tunl_len_1 = tunl.collect_lengths_by_page(page_no=1)
+
             >>> type(tunl_len_1)
             dict
             >>> list(tunl_len_1.keys())
             ['Page 1 (A-F)', 'Last updated date']
 
             >>> tunl_len_4 = tunl.collect_lengths_by_page(page_no=4)
+
             >>> type(tunl_len_4)
             dict
             >>> list(tunl_len_4.keys())
@@ -299,18 +297,15 @@ class Tunnels:
         """
         Fetch data of railway tunnel lengths from local backup.
 
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
-        :return: railway tunnel lengths data
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: data of railway tunnel lengths
             (including the name, length, owner and relative location) and
             date of when the data was last updated
         :rtype: dict
@@ -329,14 +324,21 @@ class Tunnels:
             >>> list(tunl_len_data.keys())
             ['Tunnels', 'Last updated date']
 
-            >>> tunl_len_dat = tunl_len_data['Tunnels']
+            >>> print(tunl.Key)
+            Tunnels
+
+            >>> tunl_len_dat = tunl_len_data[tunl.Key]
+
             >>> type(tunl_len_dat)
             dict
             >>> list(tunl_len_dat.keys())
             ['Page 1 (A-F)', 'Page 2 (G-P)', 'Page 3 (Q-Z)', 'Page 4 (others)']
 
             >>> page_1 = tunl_len_dat['Page 1 (A-F)']
-            >>> print(page_1.head())
+
+            >>> type(page_1)
+            pandas.core.frame.DataFrame
+            >>> page_1.head()
                          Name  Other names, remarks  ...   Length_metres Length_notes
             0    Abbotscliffe                        ...       1775.7648          NaN
             1      Abercanaid           see Merthyr  ...             NaN  Unavailable

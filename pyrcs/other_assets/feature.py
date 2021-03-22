@@ -38,11 +38,9 @@ class Features:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data, 
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -86,13 +84,13 @@ class Features:
         self.LUDKey = 'Last updated date'  # key to last updated date
 
         self.Catalogue = get_catalogue(
-            urllib.parse.urljoin(self.HomeURL, '/features/habdwild.shtm'),
+            url=urllib.parse.urljoin(self.HomeURL, '/features/habdwild.shtm'),
             update=update, confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
-            self.DataDir = cd_dat("other-assets", self.Name.lower())
+            self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
         self.HabdWildKey = 'HABD and WILD'
@@ -109,7 +107,7 @@ class Features:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\other-assets\\features"``.
+        The directory for this module: ``"dat\\other-assets\\features"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -172,11 +170,9 @@ class Features:
             - HABDs - Hot axle box detectors
             - WILDs - Wheel impact load detectors
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of HABDs and WILDs, and date of when the data was last updated
         :rtype: dict or None
@@ -195,7 +191,10 @@ class Features:
             >>> list(hw_codes_dat.keys())
             ['HABD and WILD', 'Last updated date']
 
-            >>> hw_codes = hw_codes_dat['HABD and WILD']
+            >>> print(features.HabdWildKey)
+            HABD and WILD
+
+            >>> hw_codes = hw_codes_dat[features.HabdWildKey]
 
             >>> type(hw_codes)
             dict
@@ -203,7 +202,7 @@ class Features:
             ['HABD', 'WILD']
 
             >>> habd = hw_codes['HABD']
-            >>> print(habd.head())
+            >>> habd.head()
                 ELR  ...                                              Notes
             0  BAG2  ...
             1  BAG2  ...  installed 29 September 1997, later adjusted to...
@@ -213,7 +212,7 @@ class Features:
             [5 rows x 5 columns]
 
             >>> wild = hw_codes['WILD']
-            >>> print(wild.head())
+            >>> wild.head()
                 ELR  ...                                Notes
             0  AYR3  ...
             1  BAG2  ...
@@ -271,23 +270,19 @@ class Features:
 
             return habds_and_wilds_codes_data
 
-    def fetch_habds_and_wilds(self, update=False, pickle_it=False, data_dir=None,
-                              verbose=False):
+    def fetch_habds_and_wilds(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of hot axle box detectors (HABDs) and wheel impact load detectors (WILDs),
             and date of when the data was last updated
         :rtype: dict
@@ -301,14 +296,23 @@ class Features:
             >>> # hw_codes_dat = features.fetch_habds_and_wilds(update=True, verbose=True)
             >>> hw_codes_dat = features.fetch_habds_and_wilds()
 
-            >>> hw_codes = hw_codes_dat['HABD and WILD']
+            >>> type(hw_codes_dat)
+            dict
+            >>> list(hw_codes_dat.keys())
+            ['HABD and WILD', 'Last updated date']
+
+            >>> print(features.HabdWildKey)
+            HABD and WILD
+
+            >>> hw_codes = hw_codes_dat[features.HabdWildKey]
+
             >>> type(hw_codes)
             dict
             >>> list(hw_codes.keys())
             ['HABD', 'WILD']
 
             >>> habd = hw_codes['HABD']
-            >>> print(habd.head())
+            >>> habd.head()
                 ELR  ...                                              Notes
             0  BAG2  ...
             1  BAG2  ...  installed 29 September 1997, later adjusted to...
@@ -318,7 +322,7 @@ class Features:
             [5 rows x 5 columns]
 
             >>> wild = hw_codes['WILD']
-            >>> print(wild.head())
+            >>> wild.head()
                 ELR  ...                                Notes
             0  AYR3  ...
             1  BAG2  ...
@@ -359,11 +363,9 @@ class Features:
         Collect codes of `water troughs <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of water troughs, and date of when the data was last updated
         :rtype: dict or None
@@ -382,8 +384,14 @@ class Features:
             >>> list(wt_codes_dat.keys())
             ['Water troughs', 'Last updated date']
 
-            >>> wt_codes = wt_codes_dat['Water troughs']
-            >>> print(wt_codes.head())
+            >>> print(features.WaterTroughsKey)
+            Water troughs
+
+            >>> wt_codes = wt_codes_dat[features.WaterTroughsKey]
+
+            >>> type(wt_codes)
+            pandas.core.frame.DataFrame
+            >>> wt_codes.head()
                 ELR  Trough Name  ...                                        Notes
             0   BEI    Eckington  ...                               Installed 1904
             1   BHL  Aldermaston  ...                            Installed by 1904
@@ -437,17 +445,14 @@ class Features:
         Fetch codes of `water troughs <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of water troughs, and date of when the data was last updated
         :rtype: dict
 
@@ -465,8 +470,14 @@ class Features:
             >>> list(wt_codes_dat.keys())
             ['Water troughs', 'Last updated date']
 
-            >>> wt_codes = wt_codes_dat['Water troughs']
-            >>> print(wt_codes.head())
+            >>> print(features.WaterTroughsKey)
+            Water troughs
+
+            >>> wt_codes = wt_codes_dat[features.WaterTroughsKey]
+
+            >>> type(wt_codes)
+            pandas.core.frame.DataFrame
+            >>> wt_codes.head()
                 ELR  Trough Name  ...                                        Notes
             0   BEI    Eckington  ...                               Installed 1904
             1   BHL  Aldermaston  ...                            Installed by 1904
@@ -506,11 +517,9 @@ class Features:
         Collect `telegraph code words <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of telegraph code words, and date of when the data was last updated
         :rtype: dict or None
@@ -529,21 +538,31 @@ class Features:
             >>> list(tel_codes_dat.keys())
             ['Telegraphic codes', 'Last updated date']
 
-            >>> tel_codes = tel_codes_dat['Telegraphic codes']
+            >>> print(features.TelegraphKey)
+            Telegraphic codes
+
+            >>> tel_codes = tel_codes_dat[features.TelegraphKey]
 
             >>> type(tel_codes)
             dict
             >>> list(tel_codes.keys())
             ['Official codes', 'Unofficial codes']
 
-            >>> print(tel_codes['Official codes'].head())
-                 Code  ...               In use
-            0  ACACIA  ...    'companies', 1939
-            1     ACK  ...            BR, 1980s
-            2    ADEX  ...  GWR, 1939 BR, 1980s
-            3    AJAX  ...            BR, 1980s
-            4   ALERT  ...            BR, 1980s
-            [5 rows x 3 columns]
+            >>> tel_codes['Official codes'].head()
+                  Code                                        Description     In use
+            0    ABACK  How many of the following vehicles have you on...        NaN
+            1    ABASE  Quantity of timber now lying at your station b...  GWR, 1939
+            2  ABREAST  When and for what traffic is the following sto...  GWR, 1939
+            3   ABSENT  Insert the following omitted from our invoice....  GWR, 1939
+            4   ACACIA  Special train as under left (or leaving) at .....          †
+
+            >>> tel_codes['Unofficial codes'].head()
+                  Code                             Unofficial description
+            0  CRANKEX                                        See KRANKEX
+            1  DRUNKEX  Saturday night special train (usually a DMU) t...
+            2  KRANKEX  Special train with interesting routing or trac...
+            3   MYSTEX  Special excursion going somewhere no one reall...
+            4  Q-TRAIN  Special run for the BTP travelling on local li...
         """
 
         url = self.Catalogue[self.TelegraphKey]
@@ -590,23 +609,19 @@ class Features:
 
             return telegraph_code_words
 
-    def fetch_telegraph_codes(self, update=False, pickle_it=False, data_dir=None,
-                              verbose=False):
+    def fetch_telegraph_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `telegraph code words <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of telegraph code words, and date of when the data was last updated
         :rtype: dict
 
@@ -619,23 +634,38 @@ class Features:
             >>> # tel_codes_dat = features.fetch_telegraph_codes(update=True, verbose=True)
             >>> tel_codes_dat = features.fetch_telegraph_codes()
 
-            >>> tel_codes = tel_codes_dat['Telegraphic codes']
+            >>> print(features.TelegraphKey)
+
+            >>> tel_codes = tel_codes_dat[features.TelegraphKey]
+
             >>> type(tel_codes)
             dict
             >>> list(tel_codes.keys())
             ['Official codes', 'Unofficial codes']
 
             >>> official_codes = tel_codes['Official codes']
+
             >>> type(official_codes)
             pandas.core.frame.DataFrame
-            >>> print(official_codes.head())
-                 Code  ...               In use
-            0  ACACIA  ...    'companies', 1939
-            1     ACK  ...            BR, 1980s
-            2    ADEX  ...  GWR, 1939 BR, 1980s
-            3    AJAX  ...            BR, 1980s
-            4   ALERT  ...            BR, 1980s
-            [5 rows x 3 columns]
+            >>> official_codes.head()
+                  Code                                        Description     In use
+            0    ABACK  How many of the following vehicles have you on...        NaN
+            1    ABASE  Quantity of timber now lying at your station b...  GWR, 1939
+            2  ABREAST  When and for what traffic is the following sto...  GWR, 1939
+            3   ABSENT  Insert the following omitted from our invoice....  GWR, 1939
+            4   ACACIA  Special train as under left (or leaving) at .....          †
+
+            >>> unofficial_codes = tel_codes['Unofficial codes']
+
+            >>> type(unofficial_codes)
+            pandas.core.frame.DataFrame
+            >>> unofficial_codes.head()
+                  Code                             Unofficial description
+            0  CRANKEX                                        See KRANKEX
+            1  DRUNKEX  Saturday night special train (usually a DMU) t...
+            2  KRANKEX  Special train with interesting routing or trac...
+            3   MYSTEX  Special excursion going somewhere no one reall...
+            4  Q-TRAIN  Special run for the BTP travelling on local li...
         """
 
         path_to_pickle = self._cdd_feat(self.TelegraphPickle + ".pickle")
@@ -667,11 +697,9 @@ class Features:
         Collect `buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of buzzer codes, and date of when the data was last updated
         :rtype: dict or None
@@ -683,15 +711,21 @@ class Features:
             >>> features = Features()
 
             >>> buz_codes_dat = features.collect_buzzer_codes()
-            To collect data of buzzer codes? [No]|Yes:  yes
+            To collect data of buzzer codes? [No]|Yes: yes
 
             >>> type(buz_codes_dat)
             dict
             >>> list(buz_codes_dat.keys())
             ['Buzzer codes', 'Last updated date']
 
-            >>> buz_codes = buz_codes_dat['Buzzer codes']
-            >>> print(buz_codes.head())
+            >>> print(features.BuzzerKey)
+            Buzzer codes
+
+            >>> buz_codes = buz_codes_dat[features.BuzzerKey]
+
+            >>> type(buz_codes)
+            pandas.core.frame.DataFrame
+            >>> buz_codes.head()
               Code number of buzzes or groups separated by pauses            Meaning
             0                                                  1                Stop
             1                                                1-2         Close doors
@@ -740,17 +774,14 @@ class Features:
         """
         Fetch `buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_ from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of buzzer codes, and date of when the data was last updated
         :rtype: dict
 
@@ -768,11 +799,14 @@ class Features:
             >>> list(buz_codes_dat.keys())
             ['Buzzer codes', 'Last updated date']
 
-            >>> buz_codes = buz_codes_dat['Buzzer codes']
+            >>> print(features.BuzzerKey)
+            Buzzer codes
+
+            >>> buz_codes = buz_codes_dat[features.BuzzerKey]
 
             >>> type(buz_codes)
             pandas.core.frame.DataFrame
-            >>> print(buz_codes.head())
+            >>> buz_codes.head()
              Code (number of buzzes or groups separated by pauses)             Meaning
             0                                                   1                 Stop
             1                                                 1-2          Close doors
@@ -806,22 +840,18 @@ class Features:
 
         return buzzer_codes_data
 
-    def fetch_features_codes(self, update=False, pickle_it=False, data_dir=None,
-                             verbose=False):
+    def fetch_features_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch features codes from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of features codes and date of when the data was last updated
         :rtype: dict
 
@@ -831,15 +861,18 @@ class Features:
 
             >>> features = Features()
 
-            >>> # feat_codes_dat = features.fetch_features_codes(update=True, verbose=True)
-            >>> feat_codes_dat = features.fetch_features_codes()
+            >>> # feat_dat = features.fetch_features_codes(update=True, verbose=True)
+            >>> feat_dat = features.fetch_features_codes()
 
-            >>> type(feat_codes_dat)
+            >>> type(feat_dat)
             dict
-            >>> list(feat_codes_dat.keys())
+            >>> list(feat_dat.keys())
             ['Features', 'Last updated date']
 
-            >>> feat_codes = feat_codes_dat['Features']
+            >>> print(features.Key)
+            Features
+
+            >>> feat_codes = feat_dat[features.Key]
 
             >>> type(feat_codes)
             dict
@@ -850,7 +883,7 @@ class Features:
              'Telegraphic codes',
              'Water troughs']
 
-             >>> print(feat_codes['National network neutral sections'].head())
+            >>> feat_codes['National network neutral sections'].head()
                 ELR         OHNS Name  Mileage    Tracks Dates
             0  ARG1        Rutherglen   0m 3ch
             1  ARG2   Finnieston East  4m 23ch      Down
@@ -873,9 +906,11 @@ class Features:
                     update=update, verbose=verbose_ if is_internet_connected() else False))
 
         features_codes_data = {
-            self.Key: {next(iter(x)): next(iter(x.values())) for x in features_codes},
-            self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2))
-                             for x in features_codes)}
+            self.Key:
+                {next(iter(x)): next(iter(x.values())) for x in features_codes},
+            self.LUDKey:
+                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in features_codes)
+        }
 
         if pickle_it and data_dir:
             self.CurrentDataDir = validate_input_data_dir(data_dir)

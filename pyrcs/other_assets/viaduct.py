@@ -24,12 +24,10 @@ class Viaducts:
     A class for collecting railway viaducts.
 
     :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str, None
-    :param update: whether to check on update and proceed to update the package data, 
-        defaults to ``False``
+    :type data_dir: str or None
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -78,8 +76,8 @@ class Viaducts:
         self.LUDKey = 'Last updated date'
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         self.P1Key, self.P2Key, self.P3Key, self.P4Key, self.P5Key, self.P6Key = \
             list(self.Catalogue.keys())[1:]
@@ -94,7 +92,7 @@ class Viaducts:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\other-assets\\viaducts"``.
+        The directory for this module: ``"dat\\other-assets\\viaducts"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -117,14 +115,12 @@ class Viaducts:
 
         :param page_no: page number;
             valid values include ``1``, ``2``, ``3``, ``4``, ``5``, and ``6``
-        :type page_no: int, str
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :type page_no: int or str
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
-        :return: railway viaducts data of the given ``page_no`` and
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: data of railway viaducts on page ``page_no`` and
             date of when the data was last updated
         :rtype: dict
 
@@ -143,13 +139,16 @@ class Viaducts:
             ['Page 1 (A-C)', 'Last updated date']
 
             >>> viaducts_1 = vd1['Page 1 (A-C)']
-            >>> print(viaducts_1.head())
-                   Name  ... Spans
-            0  7 Arches  ...     7
-            1   36 Arch  ...    36
-            2   42 Arch  ...
-            3     A6120  ...
-            4      A698  ...
+
+            >>> type(viaducts_1)
+            pandas.core.frame.DataFrame
+            >>> viaducts_1.head()
+                        Name  ... Spans
+            0       7 Arches  ...     7
+            1        36 Arch  ...    36
+            2        42 Arch  ...
+            3           A698  ...     5
+            4  Abattoir Road  ...     8
             [5 rows x 7 columns]
         """
 
@@ -201,18 +200,15 @@ class Viaducts:
         """
         Fetch data of railway viaducts from local backup.
 
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
-        :type data_dir: str, None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
-        :return: railway viaducts data and date of when the data was last updated
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: data of railway viaducts and date of when the data was last updated
         :rtype: dict
 
         **Example**::
@@ -221,18 +217,22 @@ class Viaducts:
 
             >>> vdct = Viaducts()
 
-            >>> # viaducts_codes = vdct.fetch_viaduct_codes(update=True, verbose=True)
-            >>> viaducts_codes = vdct.fetch_viaduct_codes()
+            >>> # viaducts_data = vdct.fetch_viaduct_codes(update=True, verbose=True)
+            >>> viaducts_data = vdct.fetch_viaduct_codes()
+
+            >>> type(viaducts_data)
+            dict
+            >>> list(viaducts_data.keys())
+            ['Viaducts', 'Last updated date']
+
+            >>> print(vdct.Key)
+            Viaducts
+
+            >>> viaducts_codes = viaducts_data[vdct.Key]
 
             >>> type(viaducts_codes)
             dict
             >>> list(viaducts_codes.keys())
-            ['Viaducts', 'Last updated date']
-
-            >>> viaducts_dat = viaducts_codes['Viaducts']
-            >>> type(viaducts_dat)
-            dict
-            >>> list(viaducts_dat.keys())
             ['Page 1 (A-C)',
              'Page 2 (D-G)',
              'Page 3 (H-K)',
@@ -240,8 +240,11 @@ class Viaducts:
              'Page 5 (Q-S)',
              'Page 6 (T-Z)']
 
-            >>> viaducts_dat_6 = viaducts_dat['Page 6 (T-Z)']
-            >>> print(viaducts_dat_6.head())
+            >>> viaducts6 = viaducts_codes['Page 6 (T-Z)']
+
+            >>> type(viaducts6)
+            pandas.core.frame.DataFrame
+            >>> viaducts6.head()
                      Name  ... Spans
             0        Taff  ...
             1        Taff  ...

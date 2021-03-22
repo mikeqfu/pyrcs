@@ -26,9 +26,10 @@ class Depots:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the catagloue data), defaults to ``False``
     :type update: bool
+    :param verbose: whether to print relevant information in console, defaults to ``True``
+    :type verbose: bool or int
 
     :ivar str Name: name of the data
     :ivar str Key: key of the dict-type data
@@ -78,8 +79,8 @@ class Depots:
         self.LUDKey = 'Last updated date'  # key to last updated date
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
@@ -97,7 +98,7 @@ class Depots:
         """
         Change directory to package data directory and sub-directories (and/or a file).
         
-        The directory for this module: ``"\\dat\\other-assets\\depots"``.
+        The directory for this module: ``"dat\\other-assets\\depots"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -119,12 +120,10 @@ class Depots:
         Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_ 
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict or None
 
@@ -134,15 +133,22 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> tct_codes = depots.collect_two_char_tops_codes()
+            >>> tct_dat = depots.collect_two_char_tops_codes()
             To collect data of two character TOPS codes? [No]|Yes: yes
 
-            >>> type(tct_codes)
+            >>> type(tct_dat)
             dict
-            >>> list(tct_codes.keys())
+            >>> list(tct_dat.keys())
             ['Two character TOPS codes', 'Last updated date']
 
-            >>> print(tct_codes['Two character TOPS codes'].head())
+            >>> print(depots.TCTKey)
+            Two character TOPS codes
+
+            >>> tct_codes = tct_dat[depots.TCTKey]
+
+            >>> type(tct_codes)
+            pandas.core.frame.DataFrame
+            >>> tct_codes.head()
               Code click to sort  ...                Notes
             0                 AB  ...          Closed 1987
             1                 AB  ...
@@ -190,23 +196,20 @@ class Depots:
 
             return two_char_tops_codes_data
 
-    def fetch_two_char_tops_codes(self, update=False, pickle_it=False, data_dir=None, 
+    def fetch_two_char_tops_codes(self, update=False, pickle_it=False, data_dir=None,
                                   verbose=False):
         """
         Fetch `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict
 
@@ -216,15 +219,22 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> # tct_codes = depots.fetch_two_char_tops_codes(update=True, verbose=True)
-            >>> tct_codes = depots.fetch_two_char_tops_codes()
+            >>> # tct_dat = depots.fetch_two_char_tops_codes(update=True, verbose=True)
+            >>> tct_dat = depots.fetch_two_char_tops_codes()
 
-            >>> type(tct_codes)
+            >>> type(tct_dat)
             dict
-            >>> list(tct_codes.keys())
+            >>> list(tct_dat.keys())
             ['Two character TOPS codes', 'Last updated date']
 
-            >>> print(tct_codes['Two character TOPS codes'].head())
+            >>> print(depots.TCTKey)
+            Two character TOPS codes
+
+            >>> tct_codes = tct_dat[depots.TCTKey]
+
+            >>> type(tct_codes)
+            pandas.core.frame.DataFrame
+            >>> tct_codes.head()
               Code click to sort  ...                Notes
             0                 AB  ...          Closed 1987
             1                 AB  ...
@@ -262,12 +272,10 @@ class Depots:
         Collect `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict or None
 
@@ -277,15 +285,22 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> fdpt_codes = depots.collect_four_digit_pre_tops_codes()
+            >>> fdpt = depots.collect_four_digit_pre_tops_codes()
             To collect data of four digit pre-TOPS codes? [No]|Yes: yes
 
-            >>> type(fdpt_codes)
+            >>> type(fdpt)
             dict
-            >>> list(fdpt_codes.keys())
+            >>> list(fdpt.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
 
-            >>> print(fdpt_codes['Four digit pre-TOPS codes'].head())
+            >>> print(depots.FDPTKey)
+            Four digit pre-TOPS codes
+
+            >>> fdpt_codes = fdpt[depots.FDPTKey]
+
+            >>> type(fdpt_codes)
+            pandas.core.frame.DataFrame
+            >>> fdpt_codes.head()
                Code             Depot name          Region
             0  2000             Accrington  London Midland
             1  2001   Derby Litchurch Lane      Main Works
@@ -308,28 +323,13 @@ class Depots:
             four_digit_pre_tops_codes_data = None
 
             try:
-                # from pyhelpers.ops import fake_requests_headers
-                # source = requests.get(url, headers=fake_requests_headers())
-                _, headers_, four_digit_pre_tops_codes = pd.read_html(url)
+                headers_, four_digit_pre_tops_codes = pd.read_html(url)
             except requests.ConnectionError:
                 print("Failed.") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    # p_tags = bs4.BeautifulSoup(source.text, 'lxml').find_all('p')
-                    # region_names = [x.text.replace('Jump to: ', '').strip().split(' | ')
-                    #                 for x in p_tags if x.text.startswith('Jump to: ')][0]
-                    #
-                    # data_sets = iter(
-                    #     pd.read_html(source.text, na_values=[''], keep_default_na=False))
-                    #
-                    # four_digit_pre_tops_codes_list = []
-                    # for x in data_sets:
-                    #     header, four_digit_pre_tops_codes_data = x, next(data_sets)
-                    #     four_digit_pre_tops_codes_data.columns = header.columns.to_list()
-                    #     four_digit_pre_tops_codes_list.append(four_digit_pre_tops_codes_data)
-
                     four_digit_pre_tops_codes.columns = [
                         x.replace(' click to sort', '') for x in list(headers_)]
 
@@ -380,17 +380,14 @@ class Depots:
         Fetch `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict
 
@@ -408,7 +405,14 @@ class Depots:
             >>> list(fdpt.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
 
-            >>> print(fdpt['Four digit pre-TOPS codes'].head())
+            >>> print(depots.FDPTKey)
+            Four digit pre-TOPS codes
+
+            >>> fdpt_codes = fdpt[depots.FDPTKey]
+
+            >>> type(fdpt_codes)
+            pandas.core.frame.DataFrame
+            >>> fdpt_codes.head()
                Code             Depot name          Region
             0  2000             Accrington  London Midland
             1  2001   Derby Litchurch Lane      Main Works
@@ -448,12 +452,10 @@ class Depots:
         Collect `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
         :rtype: dict or None
 
@@ -463,15 +465,22 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> system_1950_codes_dat = depots.collect_1950_system_codes()
+            >>> s1950_dat = depots.collect_1950_system_codes()
             To collect data of 1950 system (pre-TOPS) codes? [No]|Yes: yes
 
-            >>> type(system_1950_codes_dat)
+            >>> type(s1950_dat)
             dict
-            >>> list(system_1950_codes_dat.keys())
+            >>> list(s1950_dat.keys())
             ['1950 system (pre-TOPS) codes', 'Last updated date']
 
-            >>> print(system_1950_codes_dat['1950 system (pre-TOPS) codes'].head())
+            >>> print(depots.S1950Key)
+            1950 system (pre-TOPS) codes
+
+            >>> s1950_codes = s1950_dat[depots.S1950Key]
+
+            >>> type(s1950_codes)
+            pandas.core.frame.DataFrame
+            >>> s1950_codes.head()
               Code click to sort  ...                                              Notes
             0                 1A  ...               From 1950. Became WN from 6 May 1973
             1                 1B  ...                       From 1950. To 3 January 1966
@@ -516,23 +525,19 @@ class Depots:
 
             return system_1950_codes_data
 
-    def fetch_1950_system_codes(self, update=False, pickle_it=False, data_dir=None,
-                                verbose=False):
+    def fetch_1950_system_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
         :rtype: dict
 
@@ -542,14 +547,17 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> # s1950_codes = depots.fetch_1950_system_codes(update=True, verbose=True)
-            >>> s1950_codes = depots.fetch_1950_system_codes()
+            >>> # s1950_dat = depots.fetch_1950_system_codes(update=True, verbose=True)
+            >>> s1950_dat = depots.fetch_1950_system_codes()
 
-            >>> system_1950_codes = s1950_codes['1950 system (pre-TOPS) codes']
+            >>> print(depots.S1950Key)
+            1950 system (pre-TOPS) codes
 
-            >>> type(system_1950_codes)
+            >>> s1950_codes = s1950_dat[depots.S1950Key]
+
+            >>> type(s1950_codes)
             pandas.core.frame.DataFrame
-            >>> print(system_1950_codes.head())
+            >>> s1950_codes.head()
               Code click to sort  ...                                              Notes
             0                 1A  ...               From 1950. Became WN from 6 May 1973
             1                 1B  ...                       From 1950. To 3 January 1966
@@ -588,12 +596,10 @@ class Depots:
         Collect `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool, int
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of GWR depot codes and date of when the data was last updated
         :rtype: dict or None
 
@@ -611,12 +617,19 @@ class Depots:
             >>> list(gwr_codes_dat.keys())
             ['GWR codes', 'Last updated date']
 
-            >>> type(gwr_codes_dat['GWR codes'])
+            >>> print(depots.GWRKey)
+            GWR codes
+
+            >>> type(gwr_codes_dat[depots.GWRKey])
             dict
-            >>> list(gwr_codes_dat['GWR codes'].keys())
+            >>> list(gwr_codes_dat[depots.GWRKey].keys())
             ['Alphabetical codes', 'Numerical codes']
 
-            >>> print(gwr_codes_dat['GWR codes']['Alphabetical codes'].head())
+            >>> alpha_codes = gwr_codes_dat[depots.GWRKey]['Alphabetical codes']
+
+            >>> type(alpha_codes)
+            pandas.core.frame.DataFrame
+            >>> alpha_codes.head()
                 Code   Depot name
             0  ABEEG     Aberbeeg
             1    ABG     Aberbeeg
@@ -636,27 +649,35 @@ class Depots:
             gwr_codes_data = None
 
             try:
-                header_, alphabetical_codes, numerical_codes_1, _, numerical_codes_2 = \
-                    pd.read_html(url)
+                header_, alphabetical_codes, _, numerical_codes_2 = pd.read_html(url)
                 headers = [x.replace(' click to sort', '') for x in header_.columns]
+
+                # Alphabetical codes
+                alphabetical_codes.columns = headers
+
+                # Numerical codes
+                source = requests.get(url, headers=fake_requests_headers())
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+
+                span_tags = soup.find_all('span', {'class': 'tab2'})
+                num_codes_1 = [
+                    (span_tag.text, span_tag.next_sibling.replace(' = ', '').strip())
+                    for span_tag in span_tags]
+
+                numerical_codes_1 = pd.DataFrame(num_codes_1, columns=headers)
+
+                numerical_codes_2.drop(2, axis=1, inplace=True)
+                numerical_codes_2.columns = headers
+
+                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2],
+                                            ignore_index=True)
+
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed.") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    # Alphabetical codes
-                    alphabetical_codes.columns = headers
-
-                    # Numerical codes
-                    numerical_codes_1.drop(1, axis=1, inplace=True)
-                    numerical_codes_1.columns = headers
-                    numerical_codes_2.columns = headers
-                    numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2])
-
-                    source = requests.get(url, headers=fake_requests_headers())
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
-
                     gwr_codes = dict(zip([x.text for x in soup.find_all('h3')],
                                          [alphabetical_codes, numerical_codes]))
 
@@ -679,17 +700,14 @@ class Depots:
         Fetch `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of GWR depot codes and date of when the data was last updated
         :rtype: dict
 
@@ -702,16 +720,21 @@ class Depots:
             >>> # gwr_codes_dat = depots.fetch_gwr_codes(update=True, verbose=True)
             >>> gwr_codes_dat = depots.fetch_gwr_codes()
 
-            >>> gwr_codes = gwr_codes_dat['GWR codes']
+            >>> print(depots.GWRKey)
+            GWR codes
+
+            >>> gwr_codes = gwr_codes_dat[depots.GWRKey]
+
             >>> type(gwr_codes)
             dict
             >>> list(gwr_codes.keys())
             ['Alphabetical codes', 'Numerical codes']
 
             >>> gwr_codes_alpha = gwr_codes['Alphabetical codes']
+
             >>> type(gwr_codes_alpha)
             pandas.core.frame.DataFrame
-            >>> print(gwr_codes_alpha.head())
+            >>> gwr_codes_alpha.head()
                 Code   Depot name
             0  ABEEG     Aberbeeg
             1    ABG     Aberbeeg
@@ -749,17 +772,14 @@ class Depots:
         Fetch `depots codes
         <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_ from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of depot codes and date of when the data was last updated
         :rtype: dict
 
@@ -777,15 +797,20 @@ class Depots:
             >>> list(depot_codes_dat.keys())
             ['Depots', 'Last updated date']
 
-            >>> type(depot_codes_dat['Depots'])
+            >>> print(depots.Key)
+            Depots
+
+            >>> type(depot_codes_dat[depots.Key])
             dict
-            >>> list(depot_codes_dat['Depots'].keys())
+            >>> list(depot_codes_dat[depots.Key].keys())
             ['1950 system (pre-TOPS) codes',
              'Four digit pre-TOPS codes',
              'GWR codes',
              'Two character TOPS codes']
 
-            >>> print(depot_codes_dat['Depots']['Four digit pre-TOPS codes'].head())
+            >>> print(depots.FDPTKey)
+
+            >>> depot_codes_dat[depots.Key][depots.FDPTKey].head()
                Code             Depot name          Region
             0  2000             Accrington  London Midland
             1  2001   Derby Litchurch Lane      Main Works
