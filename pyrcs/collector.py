@@ -23,11 +23,9 @@ class LineData:
     A class representation of all modules of the subpackage
     :ref:`pyrcs.line_data<line_data>` for collecting line data.
 
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     **Examples**::
@@ -40,36 +38,42 @@ class LineData:
         >>> location_codes_data = ld.LocationIdentifiers.fetch_location_codes()
 
         >>> type(location_codes_data)
-        <class 'dict'>
-        >>> print(list(location_codes_data.keys()))
+        dict
+        >>> list(location_codes_data.keys())
         ['Location codes', 'Other systems', 'Additional notes', 'Last updated date']
-        >>> location_codes_dat = location_codes_data['Location codes']
-        >>> print(location_codes_dat.head())
+
+        >>> location_codes_dat = location_codes_data[ld.LocationIdentifiers.Key]
+
+        >>> type(location_codes_dat)
+        pandas.core.frame.DataFrame
+        >>> location_codes_dat.head()
                                        Location CRS  ... STANME_Note STANOX_Note
         0                                Aachen      ...
         1                    Abbeyhill Junction      ...
         2                 Abbeyhill Signal E811      ...
         3            Abbeyhill Turnback Sidings      ...
         4  Abbey Level Crossing (Staffordshire)      ...
-
         [5 rows x 12 columns]
 
         >>> # To get data of line names
         >>> line_names_data = ld.LineNames.fetch_line_names()
 
         >>> type(line_names_data)
-        <class 'dict'>
-        >>> print(list(line_names_data.keys()))
+        dict
+        >>> list(line_names_data.keys())
         ['Line names', 'Last updated date']
-        >>> line_names_dat = line_names_data['Line names']
-        >>> print(line_names_dat.head())
+
+        >>> line_names_dat = line_names_data[ld.LineNames.Key]
+
+        >>> type(line_names_dat)
+        pandas.core.frame.DataFrame
+        >>> line_names_dat.head()
                      Line name  ... Route_note
         0           Abbey Line  ...       None
         1        Airedale Line  ...       None
         2          Argyle Line  ...       None
         3     Arun Valley Line  ...       None
         4  Atlantic Coast Line  ...       None
-
         [5 rows x 3 columns]
     """
 
@@ -89,7 +93,7 @@ class LineData:
         self.SourceURL = urllib.parse.urljoin(
             self.HomeURL, '{}menu.shtm'.format(self.Name.lower().replace(' ', '')))
 
-        self.Catalogue = get_category_menu(menu_url=self.SourceURL, update=update,
+        self.Catalogue = get_category_menu(url=self.SourceURL, update=update,
                                            confirmation_required=False)
 
         # Classes
@@ -100,18 +104,15 @@ class LineData:
         self.LineNames = line_name.LineNames(update=update, verbose=False)
         self.TrackDiagrams = trk_diagr.TrackDiagrams(verbose=False)
 
-    def update(self, confirmation_required=True, verbose=False, time_gap=2,
-               init_update=False):
+    def update(self, confirmation_required=True, verbose=False, time_gap=2, init_update=False):
         """
         Update local backup of the line data.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
-        :param time_gap: time gap (in seconds) between the updating of different classes
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :param time_gap: time gap (in seconds) between updating different classes, defaults to ``2``
         :type time_gap: int
         :param init_update: whether to update the data for instantiation of each subclass,
             defaults to ``False``
@@ -122,6 +123,7 @@ class LineData:
             >>> from pyrcs import LineData
 
             >>> ld = LineData()
+
             >>> ld.update(verbose=True)
         """
 
@@ -129,8 +131,7 @@ class LineData:
             print_conn_err(verbose=verbose)
 
         else:
-            if confirmed("To update line data?",
-                         confirmation_required=confirmation_required):
+            if confirmed("To update line data?", confirmation_required=confirmation_required):
 
                 if init_update:
                     self.__init__(update=init_update)
@@ -149,17 +150,14 @@ class LineData:
 
                 # Location
                 print(f"\n{self.LocationIdentifiers.Name}:")
-                _ = self.LocationIdentifiers.fetch_location_codes(
-                    update=True, verbose=verbose)
+                _ = self.LocationIdentifiers.fetch_location_codes(update=True, verbose=verbose)
 
                 time.sleep(time_gap)
 
                 # Line of routes
                 print(f"\n{self.LOR.Name}:")
-                _ = self.LOR.get_keys_to_prefixes(
-                    prefixes_only=True, update=True, verbose=verbose)
-                _ = self.LOR.get_keys_to_prefixes(
-                    prefixes_only=False, update=True, verbose=verbose)
+                _ = self.LOR.get_keys_to_prefixes(prefixes_only=True, update=True, verbose=verbose)
+                _ = self.LOR.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=verbose)
                 _ = self.LOR.get_lor_page_urls(update=True, verbose=verbose)
                 _ = self.LOR.fetch_lor_codes(update=True, verbose=verbose)
                 _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
@@ -174,10 +172,8 @@ class LineData:
 
                 # Track diagrams
                 print(f"\n{self.TrackDiagrams.Name}:")
-                _ = self.TrackDiagrams.get_track_diagrams_items(
-                    update=True, verbose=verbose)
-                _ = self.TrackDiagrams.fetch_sample_catalogue(
-                    update=True, verbose=verbose)
+                _ = self.TrackDiagrams.get_track_diagrams_items(update=True, verbose=verbose)
+                _ = self.TrackDiagrams.fetch_sample_catalogue(update=True, verbose=verbose)
 
 
 class OtherAssets:
@@ -185,11 +181,10 @@ class OtherAssets:
     A class representation of all modules of the subpackage
     :ref:`pyrcs.other_assets<other_assets>` for collecting other assets.
 
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
+    :type verbose: bool or int
     :type verbose: bool or int
 
     **Examples**::
@@ -202,35 +197,40 @@ class OtherAssets:
         >>> railway_station_data = oa.Stations.fetch_station_data()
 
         >>> type(railway_station_data)
-        <class 'dict'>
-        >>> print(list(railway_station_data.keys()))
+        dict
+        >>> list(railway_station_data.keys())
         ['Railway station data', 'Last updated date']
-        >>> railway_station_dat = railway_station_data['Railway station data']
-        >>> print(railway_station_dat.head())
-              Station   ELR   Mileage  ... Prev_Date_6 Prev_Operator_7  Prev_Date_7
-        0  Abbey Wood   NKL  11m 43ch  ...         NaN             NaN          NaN
-        1  Abbey Wood  XRS3  24.458km  ...         NaN             NaN          NaN
-        2        Aber   CAR   8m 69ch  ...         NaN             NaN          NaN
-        3   Abercynon   CAM  16m 28ch  ...         NaN             NaN          NaN
-        4   Abercynon   ABD  16m 28ch  ...         NaN             NaN          NaN
 
-        [5 rows x 25 columns]
+        >>> railway_station_dat = railway_station_data[oa.Stations.StnKey]
+
+        >>> type(railway_station_dat)
+        pandas.core.frame.DataFrame
+        >>> railway_station_dat.head()
+              Station   ELR  ... Prev_Operator_6 Prev_Operator_Period_6
+        0  Abbey Wood  XRS3  ...
+        1  Abbey Wood   NKL  ...
+        2        Aber   CAR  ...
+        3   Abercynon   ABD  ...
+        4   Abercynon   CAM  ...
+        [5 rows x 30 columns]
 
         >>> # To get data of signal boxes
         >>> signal_boxes_data = oa.SignalBoxes.fetch_prefix_codes()
+
         >>> type(signal_boxes_data)
-        <class 'dict'>
-        >>> print(list(signal_boxes_data.keys()))
+        dict
+        >>> list(signal_boxes_data.keys())
         ['Signal boxes', 'Last updated date']
-        >>> signal_boxes_dat = signal_boxes_data['Signal boxes']
-        >>> print(signal_boxes_dat.head())
+
+        >>> signal_boxes_dat = signal_boxes_data[oa.SignalBoxes.Key]
+
+        >>> signal_boxes_dat.head()
           Code               Signal Box  ...            Closed        Control to
         0   AF  Abbey Foregate Junction  ...
         1   AJ           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
         2    R           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
         3   AW               Abbey Wood  ...      13 July 1975      Dartford (D)
         4   AE         Abbey Works East  ...   1 November 1987  Port Talbot (PT)
-
         [5 rows x 8 columns]
     """
 
@@ -250,7 +250,7 @@ class OtherAssets:
         self.SourceURL = urllib.parse.urljoin(
             self.HomeURL, '{}menu.shtm'.format(self.Name.lower().replace(' ', '')))
 
-        self.Catalogue = get_category_menu(menu_url=self.SourceURL, update=update,
+        self.Catalogue = get_category_menu(url=self.SourceURL, update=update,
                                            confirmation_required=False)
 
         # Classes
@@ -261,17 +261,14 @@ class OtherAssets:
         self.Depots = depot.Depots(update=update, verbose=False)
         self.Features = feature.Features(update=update, verbose=False)
 
-    def update(self, confirmation_required=True, verbose=False, time_gap=2,
-               init_update=False):
+    def update(self, confirmation_required=True, verbose=False, time_gap=2, init_update=False):
         """
         Update local backup of the other assets data.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :param time_gap: time gap (in seconds) between the updating of different classes
         :type time_gap: int
         :param init_update: whether to update the data for instantiation of each subclass,
@@ -283,6 +280,7 @@ class OtherAssets:
             >>> from pyrcs.collector import OtherAssets
 
             >>> oa = OtherAssets()
+
             >>> oa.update(verbose=True)
         """
 
@@ -299,8 +297,7 @@ class OtherAssets:
                 # Signal boxes
                 print(f"\n{self.SignalBoxes.Name}:")
                 _ = self.SignalBoxes.fetch_prefix_codes(update=True, verbose=verbose)
-                _ = self.SignalBoxes.fetch_non_national_rail_codes(
-                    update=True, verbose=verbose)
+                _ = self.SignalBoxes.fetch_non_national_rail_codes(update=True, verbose=verbose)
 
                 time.sleep(time_gap)
 
