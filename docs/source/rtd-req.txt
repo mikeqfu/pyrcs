@@ -1,3 +1,10 @@
-pyhelpers>=1.2.11
+beautifulsoup4
+fuzzywuzzy
+measurement
+pandas
+more-itertools
+numpy
+requests
+pyhelpers>=1.2.12
 Sphinx~=3.5.3
 sphinx-rtd-theme~=0.5.1
