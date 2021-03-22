@@ -28,11 +28,9 @@ class Electrification:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -83,13 +81,13 @@ class Electrification:
         self.LUDKey = 'Last updated date'  #: Key to last updated date
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
-            self.DataDir = cd_dat("line-data", self.Key.lower())
+            self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
         self.NationalNetworkKey = 'National network'
@@ -105,7 +103,7 @@ class Electrification:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\line-data\\electrification"``.
+        The directory for this module: ``"dat\\line-data\\electrification"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -128,11 +126,9 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for National network
         :rtype: dict or None
@@ -143,16 +139,22 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> nn_dat = elec.collect_national_network_codes(confirmation_required=False)
+            >>> nn_dat = elec.collect_national_network_codes()
+            To collect section codes for OLE installations: national network? ... yes
 
             >>> type(nn_dat)
             dict
             >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
 
-            >>> type(nn_dat['National network'])
+            >>> print(elec.NationalNetworkKey)
+            National network
+
+            >>> national_network_codes = nn_dat[elec.NationalNetworkKey]
+
+            >>> type(national_network_codes)
             dict
-            >>> list(nn_dat['National network'].keys())
+            >>> list(national_network_codes.keys())
             ['Traditional numbering system distance and sequence',
              'New numbering system km and decimal',
              'Codes not certain confirmation is welcome',
@@ -249,16 +251,13 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for National network
         :rtype: dict or None
@@ -269,7 +268,7 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> # nn_ole_dat = elec.fetch_national_network_codes(update=True, verbose=True)
+            >>> # nn_dat = elec.fetch_national_network_codes(update=True, verbose=True)
             >>> nn_dat = elec.fetch_national_network_codes()
 
             >>> type(nn_dat)
@@ -277,9 +276,14 @@ class Electrification:
             >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
 
-            >>> type(nn_dat['National network'])
+            >>> print(elec.NationalNetworkKey)
+            National network
+
+            >>> national_network_codes = nn_dat[elec.NationalNetworkKey]
+
+            >>> type(national_network_codes)
             dict
-            >>> list(nn_dat['National network'].keys())
+            >>> list(national_network_codes.keys())
             ['Traditional numbering system distance and sequence',
              'New numbering system km and decimal',
              'Codes not certain confirmation is welcome',
@@ -319,9 +323,8 @@ class Electrification:
         Get names of `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: a list of independent line names
         :rtype: list
 
@@ -361,11 +364,9 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for independent lines
         :rtype: dict or None
@@ -376,16 +377,22 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> il_ole_dat = elec.collect_indep_lines_codes(confirmation_required=False)
+            >>> il_ole_dat = elec.collect_indep_lines_codes()
+            To collect section codes for OLE installations: independent lines? ... yes
 
             >>> type(il_ole_dat)
             dict
             >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
 
-            >>> type(il_ole_dat['Independent lines'])
+            >>> print(elec.IndependentLinesKey)
+            Independent lines
+
+            >>> il_ole_codes = il_ole_dat[elec.IndependentLinesKey]
+
+            >>> type(il_ole_codes)
             dict
-            >>> list(il_ole_dat['Independent lines'].keys())[-5:]
+            >>> list(il_ole_codes.keys())[-5:]
             ['Seaton Tramway',
              'Sheffield Supertram',
              'Snaefell Mountain Railway',
@@ -398,14 +405,14 @@ class Electrification:
                 confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the codes for {}".format(
-                    self.IndependentLinesKey.lower()), end=" ... ")
+                print("Collecting the codes for {}".format(self.IndependentLinesKey.lower()),
+                      end=" ... ")
 
             independent_lines_ole = None
 
             try:
-                source = requests.get(self.Catalogue[self.IndependentLinesKey],
-                                      headers=fake_requests_headers())
+                source = requests.get(
+                    self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -428,8 +435,7 @@ class Electrification:
                                     lambda x:
                                     re.sub(
                                         r'\']\)?', ']',
-                                        re.sub(r'\(?\[\'', '[', x)).replace(
-                                        '\\xa0', '').strip())
+                                        re.sub(r'\(?\[\'', '[', x)).replace('\\xa0', '').strip())
 
                         notes = {'Notes': None}
                         h4 = h3.find_next('h4')
@@ -487,23 +493,19 @@ class Electrification:
 
             return independent_lines_ole
 
-    def fetch_indep_lines_codes(self, update=False, pickle_it=False, data_dir=None,
-                                verbose=False):
+    def fetch_indep_lines_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch OLE section codes for `independent lines
         <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for independent lines
         :rtype: dict
@@ -522,9 +524,14 @@ class Electrification:
             >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
 
-            >>> type(il_ole_dat['Independent lines'])
+            >>> print(elec.IndependentLinesKey)
+            Independent lines
+
+            >>> il_ole_codes = il_ole_dat[elec.IndependentLinesKey]
+
+            >>> type(il_ole_codes)
             dict
-            >>> list(il_ole_dat['Independent lines'].keys())[-5:]
+            >>> list(il_ole_codes.keys())[-5:]
             ['Seaton Tramway',
              'Sheffield Supertram',
              'Snaefell Mountain Railway',
@@ -563,11 +570,9 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OHNS codes
         :rtype: dict or None
@@ -578,14 +583,22 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> ohns_dat = elec.collect_ohns_codes(confirmation_required=False)
+            >>> ohns_dat = elec.collect_ohns_codes()
+            To collect section codes for OLE installations: national network ... yes
 
             >>> type(ohns_dat)
             dict
             >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
 
-            >>> print(ohns_dat['National network neutral sections'].head())
+            >>> print(elec.OhnsKey)
+            National network neutral sections
+
+            >>> o_codes = ohns_dat[elec.OhnsKey]
+
+            >>> type(o_codes)
+            pandas.core.frame.DataFrame
+            >>> o_codes.head()
                 ELR         OHNS Name  Mileage    Tracks Dates
             0  ARG1        Rutherglen   0m 3ch
             1  ARG2   Finnieston East  4m 23ch      Down
@@ -634,16 +647,13 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OHNS codes
         :rtype: dict
@@ -662,7 +672,14 @@ class Electrification:
             >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
 
-            >>> print(ohns_dat['National network neutral sections'].head())
+            >>> print(elec.OhnsKey)
+            National network neutral sections
+
+            >>> o_codes = ohns_dat[elec.OhnsKey]
+
+            >>> type(o_codes)
+            pandas.core.frame.DataFrame
+            >>> o_codes.head()
                 ELR         OHNS Name  Mileage    Tracks Dates
             0  ARG1        Rutherglen   0m 3ch
             1  ARG2   Finnieston East  4m 23ch      Down
@@ -699,11 +716,9 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
         :rtype: dict or None
@@ -714,16 +729,22 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> etz_ole_dat = elec.collect_etz_codes(confirmation_required=False)
+            >>> etz_ole_dat = elec.collect_etz_codes()
+            To collect section codes for OLE installations: national network energy... yes
 
             >>> type(etz_ole_dat)
             dict
             >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
 
-            >>> type(etz_ole_dat['National network energy tariff zones'])
+            >>> print(elec.TariffZonesKey)
+            National network energy tariff zones
+
+            >>> tariff_zone_codes = etz_ole_dat[elec.TariffZonesKey]
+
+            >>> type(tariff_zone_codes)
             dict
-            >>> list(etz_ole_dat['National network energy tariff zones'].keys())
+            >>> list(tariff_zone_codes.keys())
             ['Railtrack', 'Notes', 'Network Rail']
         """
 
@@ -801,16 +822,13 @@ class Electrification:
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from source web page.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: OLE section codes for national network energy tariff zones
         :rtype: dict
@@ -829,9 +847,14 @@ class Electrification:
             >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
 
-            >>> type(etz_ole_dat['National network energy tariff zones'])
+            >>> print(elec.TariffZonesKey)
+            National network energy tariff zones
+
+            >>> tariff_zone_codes = etz_ole_dat[elec.TariffZonesKey]
+
+            >>> type(tariff_zone_codes)
             dict
-            >>> list(etz_ole_dat['National network energy tariff zones'].keys())
+            >>> list(tariff_zone_codes.keys())
             ['Railtrack', 'Notes', 'Network Rail']
         """
 
@@ -864,16 +887,13 @@ class Electrification:
         Fetch OLE section codes in `electrification
         <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_ catalogue.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
@@ -885,16 +905,21 @@ class Electrification:
             >>> elec = Electrification()
 
             >>> # electrification_codes = elec.fetch_elec_codes(update=True, verbose=True)
-            >>> electrification_codes = elec.fetch_elec_codes()
+            >>> electrification_data = elec.fetch_elec_codes()
+
+            >>> type(electrification_data)
+            dict
+            >>> list(electrification_data.keys())
+            ['Electrification', 'Last updated date']
+
+            >>> print(elec.Key)
+            Electrification
+
+            >>> electrification_codes = electrification_data[elec.Key]
 
             >>> type(electrification_codes)
             dict
             >>> list(electrification_codes.keys())
-            ['Electrification', 'Last updated date']
-
-            >>> type(electrification_codes['Electrification'])
-            dict
-            >>> list(electrification_codes['Electrification'].keys())
             ['National network energy tariff zones',
              'Independent lines',
              'National network',

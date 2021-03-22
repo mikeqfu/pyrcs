@@ -13,8 +13,8 @@ from pyhelpers.dir import cd, validate_input_data_dir
 from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url, \
-    print_conn_err, is_internet_connected, print_connection_error
+from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url, print_conn_err, \
+    is_internet_connected, print_connection_error
 
 
 class TrackDiagrams:
@@ -23,8 +23,7 @@ class TrackDiagrams:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -72,7 +71,7 @@ class TrackDiagrams:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\line-data\\track-diagrams"``.
+        The directory for this module: ``"dat\\line-data\\track-diagrams"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -93,11 +92,9 @@ class TrackDiagrams:
         """
         Get catalogue of track diagrams.
 
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
         :return: catalogue of railway station data
         :rtype: dict
@@ -113,8 +110,8 @@ class TrackDiagrams:
 
             >>> type(trk_diagr_items)
             dict
-            >>> print(trk_diagr_items.keys())
-            dict_keys(['Track diagrams'])
+            >>> list(trk_diagr_items.keys())
+            ['Track diagrams']
         """
 
         cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
@@ -155,15 +152,13 @@ class TrackDiagrams:
         """
         Collect catalogue of sample railway track diagrams from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console
-            as the function runs, defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: catalogue of sample railway track diagrams and
-            date of when the data was last updated
-        :rtype: dict, None
+            date of when the catalogue was last updated
+        :rtype: dict or None
 
         **Example**::
 
@@ -185,13 +180,26 @@ class TrackDiagrams:
             dict
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
+
+            >>> main_line_diagrams = td_dat['Main line diagrams']
+
+            >>> type(main_line_diagrams)
+            tuple
+
+            >>> type(main_line_diagrams[1])
+            pandas.core.frame.DataFrame
+            >>> main_line_diagrams[1].head()
+                                         Description                               FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/li...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
         """
 
         if confirmed("To collect the catalogue of sample {}?".format(self.Key.lower()),
                      confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the catalogue of sample {}".format(self.Key.lower()), end=" ... ")
+                print("Collecting the catalogue of sample {}".format(self.Key.lower()),
+                      end=" ... ")
 
             track_diagrams_catalogue = None
 
@@ -251,24 +259,20 @@ class TrackDiagrams:
 
             return track_diagrams_catalogue
 
-    def fetch_sample_catalogue(self, update=False, pickle_it=False, data_dir=None,
-                               verbose=False):
+    def fetch_sample_catalogue(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch catalogue of sample railway track diagrams from local backup.
 
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: catalogue of sample railway track diagrams and
-            date of when the data was last updated
+            date of when the catalogue was last updated
         :rtype: dict
 
         **Example**::
@@ -292,10 +296,17 @@ class TrackDiagrams:
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
 
-            >>> print(td_dat['Main line diagrams'][1])
-                                         Description                             FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/...
+            >>> main_line_diagrams = td_dat['Main line diagrams']
+
+            >>> type(main_line_diagrams)
+            tuple
+
+            >>> type(main_line_diagrams[1])
+            pandas.core.frame.DataFrame
+            >>> main_line_diagrams[1].head()
+                                         Description                               FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/li...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
         """
 
         pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"

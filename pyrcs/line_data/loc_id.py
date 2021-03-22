@@ -27,11 +27,9 @@ class LocationIdentifiers:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data,
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -92,8 +90,8 @@ class LocationIdentifiers:
         self.MscENKey = 'Multiple station codes explanatory note'
         self.MscENPickle = self.MscENKey.lower().replace(" ", "-")
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
         self.Catalogue.update(
             {self.MscENKey: urllib.parse.urljoin(self.HomeURL, '/crs/crs2.shtm')})
 
@@ -101,7 +99,7 @@ class LocationIdentifiers:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\line-data\\crs-nlc-tiploc-stanox"``.
+        The directory for this module: ``"dat\\line-data\\crs-nlc-tiploc-stanox"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -134,8 +132,8 @@ class LocationIdentifiers:
 
             >>> loc_name_amendment_dict = lid.amendment_to_loc_names()
 
-            >>> print(loc_name_amendment_dict.keys())
-            dict_keys(['Location'])
+            >>> list(loc_name_amendment_dict.keys())
+            ['Location']
         """
 
         location_name_amendment_dict = {
@@ -163,8 +161,7 @@ class LocationIdentifiers:
         :type note_url: str
         :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_, defaults to ``'lxml'``
         :type parser: str
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: parsed texts
         :rtype: list
@@ -229,11 +226,9 @@ class LocationIdentifiers:
         """
         Collect note about CRS code from source web page.
 
-        :param confirmation_required: whether to prompt a message for confirmation to proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of multiple station codes explanatory note
         :rtype: dict or None
@@ -244,14 +239,22 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> exp_note = lid.collect_explanatory_note(confirmation_required=False)
+            >>> exp_note = lid.collect_explanatory_note()
+            To collect data of multiple station codes explanatory note? [No]|Yes: yes
 
             >>> type(exp_note)
             dict
             >>> list(exp_note.keys())
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
 
-            >>> print(exp_note['Multiple station codes explanatory note'].head())
+            >>> print(lid.MscENKey)
+            Multiple station codes explanatory note
+
+            >>> exp_note_dat = exp_note[lid.MscENKey]
+
+            >>> type(exp_note_dat)
+            pandas.core.frame.DataFrame
+            >>> exp_note_dat.head()
                              Location  CRS CRS_alt1 CRS_alt2
             0    Glasgow Queen Street  GLQ      GQL
             1         Glasgow Central  GLC      GCL
@@ -305,21 +308,17 @@ class LocationIdentifiers:
 
             return explanatory_note
 
-    def fetch_explanatory_note(self, update=False, pickle_it=False, data_dir=None,
-                               verbose=False):
+    def fetch_explanatory_note(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch multiple station codes explanatory note from local backup.
 
-        :param update: whether to check on update and proceed to update the package data,
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of multiple station codes explanatory note
         :rtype: dict
@@ -338,7 +337,14 @@ class LocationIdentifiers:
             >>> list(exp_note.keys())
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
 
-            >>> print(exp_note['Multiple station codes explanatory note'].head())
+            >>> print(lid.MscENKey)
+            Multiple station codes explanatory note
+
+            >>> exp_note_dat = exp_note[lid.MscENKey]
+
+            >>> type(exp_note_dat)
+            pandas.core.frame.DataFrame
+            >>> exp_note_dat.head()
                              Location  CRS CRS_alt1 CRS_alt2
             0    Glasgow Queen Street  GLQ      GQL
             1         Glasgow Central  GLC      GCL
@@ -373,11 +379,9 @@ class LocationIdentifiers:
         Collect data of `other systems' codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed,
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: codes of other systems
         :rtype: dict or None
@@ -388,16 +392,22 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> os_codes = lid.collect_other_systems_codes(confirmation_required=False)
+            >>> os_dat = lid.collect_other_systems_codes()
+            To collect data of other systems? [No]|Yes: yes
+
+            >>> type(os_dat)
+            dict
+            >>> list(os_dat.keys())
+            ['Other systems', 'Last updated date']
+
+            >>> print(lid.OtherSystemsKey)
+            Other systems
+
+            >>> os_codes = os_dat[lid.OtherSystemsKey]
 
             >>> type(os_codes)
             dict
             >>> list(os_codes.keys())
-            ['Other systems', 'Last updated date']
-
-            >>> type(os_codes['Other systems'])
-            dict
-            >>> list(os_codes['Other systems'].keys())
             ['Córas Iompair Éireann (Republic of Ireland)',
              'Crossrail',
              'Croydon Tramlink',
@@ -462,16 +472,13 @@ class LocationIdentifiers:
         Fetch data of `other systems' codes
         <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_ from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data
-            with newly collected data, defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console 
-            as the function runs, defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: codes of other systems
         :rtype: dict
@@ -482,17 +489,22 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> # os_codes = lid.fetch_other_systems_codes(update=True, verbose=True)
-            >>> os_codes = lid.fetch_other_systems_codes()
+            >>> # os_dat = lid.fetch_other_systems_codes(update=True, verbose=True)
+            >>> os_dat = lid.fetch_other_systems_codes()
+
+            >>> type(os_dat)
+            dict
+            >>> list(os_dat.keys())
+            ['Other systems', 'Last updated date']
+
+            >>> print(lid.OtherSystemsKey)
+            Other systems
+
+            >>> os_codes = os_dat[lid.OtherSystemsKey]
 
             >>> type(os_codes)
             dict
             >>> list(os_codes.keys())
-            ['Other systems', 'Last updated date']
-
-            >>> type(os_codes['Other systems'])
-            dict
-            >>> list(os_codes['Other systems'].keys())
             ['Córas Iompair Éireann (Republic of Ireland)',
              'Crossrail',
              'Croydon Tramlink',
@@ -532,17 +544,14 @@ class LocationIdentifiers:
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ for a given ``initial`` letter.
 
-        :param initial: initial letter of station/junction name or certain word
-            for specifying URL
+        :param initial: initial letter of station/junction name or certain word for specifying URL
         :type initial: str
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of location codes for the given ``initial`` letter;
-            and date of when the data was last updated
+        :return: data of locations beginning with ``initial`` and
+            date of when the data was last updated
         :rtype: dict
 
         **Example**::
@@ -551,14 +560,19 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> location_codes_a = lid.collect_loc_codes_by_initial(initial='a')
+            >>> # loc_a = lid.collect_loc_codes_by_initial('a', update=True, verbose=True)
+            >>> loc_a = lid.collect_loc_codes_by_initial(initial='a')
 
-            >>> type(location_codes_a)
+            >>> type(loc_a)
             dict
-            >>> list(location_codes_a.keys())
+            >>> list(loc_a.keys())
             ['A', 'Additional notes', 'Last updated date']
 
-            >>> print(location_codes_a['A'].head())
+            >>> loc_a_codes = loc_a['A']
+
+            >>> type(loc_a_codes)
+            pandas.core.frame.DataFrame
+            >>> loc_a_codes.head()
                                            Location CRS  ... STANME_Note STANOX_Note
             0                                Aachen      ...
             1                    Abbeyhill Junction      ...
@@ -704,22 +718,18 @@ class LocationIdentifiers:
 
         return location_codes_initial
 
-    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None,
-                             verbose=False):
+    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of location codes and date of when the data was last updated
         :rtype: dict
@@ -730,15 +740,22 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> # loc_codes = lid.fetch_location_codes(update=True, verbose=True)
-            >>> loc_codes = lid.fetch_location_codes()
+            >>> # loc_dat = lid.fetch_location_codes(update=True, verbose=True)
+            >>> loc_dat = lid.fetch_location_codes()
 
-            >>> type(loc_codes)
+            >>> type(loc_dat)
             dict
-            >>> list(loc_codes.keys())
+            >>> list(loc_dat.keys())
             ['Location codes', 'Other systems', 'Additional notes', 'Last updated date']
 
-            >>> print(loc_codes['Location codes'].head())
+            >>> print(lid.Key)
+            Location codes
+
+            >>> loc_codes = loc_dat['Location codes']
+
+            >>> type(loc_codes)
+            pandas.core.frame.DataFrame
+            >>> loc_codes.head()
                                            Location CRS  ... STANME_Note STANOX_Note
             0                                Aachen      ...
             1                    Abbeyhill Junction      ...
@@ -818,18 +835,16 @@ class LocationIdentifiers:
         :type drop_duplicates: bool
         :param as_dict: whether to return a dictionary, defaults to ``False``
         :type as_dict: bool
-        :param main_key: key of the returned dictionary if ``as_dict`` is ``True``,
+        :param main_key: key of the returned dictionary (if ``as_dict`` is ``True``),
             defaults to ``None``
         :type main_key: str or None
         :param save_it: whether to save the location codes dictionary, defaults to ``False``
         :type save_it: bool
         :param data_dir: name of package data folder, defaults to ``None``
         :type data_dir: str or None
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
+        :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: dictionary or a data frame for location code data for the given ``keys``
         :rtype: dict or pandas.DataFrame or None
@@ -840,10 +855,11 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> key = 'STANOX'
-            >>> stanox_dictionary = lid.make_loc_id_dict(key)
+            >>> stanox_dictionary = lid.make_loc_id_dict(keys='STANOX')
 
-            >>> print(stanox_dictionary.head())
+            >>> type(stanox_dictionary)
+            pandas.core.frame.DataFrame
+            >>> stanox_dictionary.head()
                                       Location
             STANOX
             00005                       Aachen
@@ -852,12 +868,11 @@ class LocationIdentifiers:
             04308   Abbeyhill Turnback Sidings
             88601                   Abbey Wood
 
-            >>> ks = ['STANOX', 'TIPLOC']
-            >>> ini = 'a'
+            >>> s_t_dictionary = lid.make_loc_id_dict(['STANOX', 'TIPLOC'], initials='a')
 
-            >>> stanox_dictionary = lid.make_loc_id_dict(ks, ini)
-
-            >>> print(stanox_dictionary.head())
+            >>> type(s_t_dictionary)
+            pandas.core.frame.DataFrame
+            >>> s_t_dictionary.head()
                                               Location
             STANOX TIPLOC
             00005  AACHEN                       Aachen
@@ -869,11 +884,14 @@ class LocationIdentifiers:
             >>> ks = ['STANOX', 'TIPLOC']
             >>> ini = 'b'
 
-            >>> stanox_dictionary = lid.make_loc_id_dict(ks, ini, as_dict=True, main_key='Data')
+            >>> s_t_dictionary = lid.make_loc_id_dict(['STANOX', 'TIPLOC'], initials='b',
+            ...                                       as_dict=True, main_key='Data')
 
-            >>> type(stanox_dictionary)
+            >>> type(s_t_dictionary)
             dict
-            >>> list(stanox_dictionary['Data'].keys())[:5]
+            >>> list(s_t_dictionary.keys())
+            ['Data']
+            >>> list(s_t_dictionary['Data'].keys())[:5]
             [('55115', ''),
              ('23490', 'BABWTHL'),
              ('38306', 'BACHE'),

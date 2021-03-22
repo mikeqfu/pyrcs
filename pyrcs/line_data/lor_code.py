@@ -29,11 +29,9 @@ class LOR:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data, 
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -79,20 +77,20 @@ class LOR:
         self.LUDKey = 'Last updated date'
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
-                                       confirmation_required=False)
+        self.Catalogue = get_catalogue(
+            url=self.SourceURL, update=update, confirmation_required=False)
 
         if data_dir:
             self.DataDir = validate_input_data_dir(data_dir)
         else:
-            self.DataDir = cd_dat("line-data", self.Key.lower())
+            self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
         self.CurrentDataDir = copy.copy(self.DataDir)
 
     def _cdd_lor(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\line-data\\lor-codes"``.
+        The directory for this module: ``"dat\\line-data\\lor-codes"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -115,12 +113,10 @@ class LOR:
 
         :param prefixes_only: whether to get only prefixes, defaults to ``True``
         :type prefixes_only: bool
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
         :return: keys to LOR code prefixes
         :rtype: list or dict
 
@@ -143,7 +139,11 @@ class LOR:
             >>> list(keys_to_pfx.keys())
             ['Key to prefixes', 'Last updated date']
 
-            >>> print(keys_to_pfx['Key to prefixes'].head())
+            >>> keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
+
+            >>> type(keys_to_pfx_codes)
+            pandas.core.frame.DataFrame
+            >>> keys_to_pfx_codes.head()
               Prefixes                                    Name
             0       CY                                   Wales
             1       EA         South Eastern: East Anglia area
@@ -160,18 +160,25 @@ class LOR:
 
         else:
             try:
-                lor_pref = pd.read_html(self.SourceURL)[0].loc[:, [0, 2]]
+                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+
+                soup = bs4.BeautifulSoup(source.text, 'lxml')
+                span_tags = soup.find_all('span', attrs={'class': 'tab2'})
+
+                dat = [(span_tag.text, span_tag.next_sibling.strip().replace('=  ', ''))
+                       for span_tag in span_tags]
+
+                lor_pref = pd.DataFrame(dat, columns=['Prefixes', 'Name'])
 
             except (urllib.error.URLError, socket.gaierror):
                 verbose_ = \
                     True if (update and verbose != 2) else (False if verbose == 2 else verbose)
                 print_conn_err(update=update, verbose=verbose_)
+
                 keys_to_prefixes = load_pickle(path_to_pickle)
 
             else:
                 try:
-                    lor_pref.columns = ['Prefixes', 'Name']
-
                     if prefixes_only:
                         keys_to_prefixes = lor_pref.Prefixes.tolist()
                     else:
@@ -192,12 +199,10 @@ class LOR:
         """
         Get URLs to PRIDE/LOR codes with different prefixes.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
         :return: a list of URLs of web pages hosting LOR codes for each prefix
         :rtype: list
 
@@ -207,10 +212,10 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> # lor_page_urls_ = lor.get_lor_page_urls(update=True, verbose=True)
-            >>> lor_page_urls_ = lor.get_lor_page_urls()
+            >>> # lor_urls = lor.get_lor_page_urls(update=True, verbose=True)
+            >>> lor_urls = lor.get_lor_page_urls()
 
-            >>> lor_page_urls_[:2]
+            >>> lor_urls[:2]
             ['http://www.railwaycodes.org.uk/pride/pridecy.shtm',
              'http://www.railwaycodes.org.uk/pride/prideea.shtm']
         """
@@ -224,9 +229,9 @@ class LOR:
             try:
                 source = requests.get(self.SourceURL, headers=fake_requests_headers())
             except requests.ConnectionError:
-                print_conn_err(update=update,
-                               verbose=True if (update and verbose != 2) else
-                               (False if verbose == 2 else verbose))
+                verbose_ = \
+                    True if (update and verbose != 2) else (False if verbose == 2 else verbose)
+                print_conn_err(update=update, verbose=verbose_)
                 lor_page_urls = load_pickle(path_to_pickle)
 
             else:
@@ -253,12 +258,10 @@ class LOR:
         """
         Update catalogue data including keys to prefixes and LOR page URLs.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
 
         **Examples**::
 
@@ -266,7 +269,10 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> lor._update_catalogue(verbose=True)
+            >>> lor._update_catalogue()
+            To update catalogue? [No]|Yes: >? yes
+            Updating "keys-to-prefixes.pickle" at "pyrcs\\dat\\line-data\\lor" ... Done.
+            Updating "prefix-page-urls.pickle" at "pyrcs\\dat\\line-data\\lor" ... Done.
 
         :meta private:
         """
@@ -283,12 +289,10 @@ class LOR:
 
         :param prefix: prefix of LOR codes
         :type prefix: str
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: LOR codes for the given ``prefix``
         :rtype: dict or None
 
@@ -304,20 +308,34 @@ class LOR:
             dict
             >>> list(lor_codes_cy.keys())
             ['CY', 'Notes', 'Last updated date']
-            >>> type(lor_codes_cy['CY'])
+
+            >>> cy_codes = lor_codes_cy['CY']
+
+            >>> type(cy_codes)
             pandas.core.frame.DataFrame
+            >>> cy_codes.head()
+                 Code  ... Line Name Note
+            0   CY240  ...           None
+            1  CY1540  ...           None
+            [2 rows x 5 columns]
 
             >>> lor_codes_nw = lor.collect_lor_codes_by_prefix(prefix='NW')
+
+            >>> type(lor_codes_nw)
+            dict
             >>> list(lor_codes_nw.keys())
             ['NW/NZ', 'Notes', 'Last updated date']
 
             >>> lor_codes_ea = lor.collect_lor_codes_by_prefix(prefix='EA')
-            >>> ea_dat = lor_codes_ea['EA']
-            >>> type(ea_dat)
+
+            >>> ea_codes = lor_codes_ea['EA']
+
+            >>> type(ea_codes)
             dict
-            >>> list(ea_dat.keys())
+            >>> list(ea_codes.keys())
             ['Current system', 'Original system']
-            >>> print(ea_dat['Current system']['EA'].head())
+
+            >>> ea_codes['Current system']['EA'].head()
                  Code  ... Line Name Note
             0  EA1000  ...           None
             1  EA1010  ...           None
@@ -422,17 +440,14 @@ class LOR:
         Fetch `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: LOR codes
         :rtype: dict
 
@@ -447,13 +462,20 @@ class LOR:
 
             >>> type(lor_codes_dat)
             dict
-            >>> type(lor_codes_dat['LOR'])
+
+            >>> l_codes = lor_codes_dat['LOR']
+
+            >>> type(l_codes)
             dict
-            >>> list(lor_codes_dat['LOR'].keys())
+            >>> list(l_codes.keys())
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW/NZ', 'SC', 'SO', 'SW', 'XR']
 
-            >>> type(lor_codes_dat['LOR']['CY'])
+            >>> cy_codes = l_codes['CY']
+
+            >>> type(cy_codes)
             dict
+            >>> list(cy_codes.keys())
+            ['CY', 'Notes', 'Last updated date']
         """
 
         prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
@@ -497,12 +519,10 @@ class LOR:
         Collect `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
         from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of ELR/LOR converter
         :rtype: dict or None
 
@@ -520,7 +540,11 @@ class LOR:
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
 
-            >>> print(elr_lor_conv['ELR/LOR converter'].head())
+            >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
+
+            >>> type(elr_loc_conv_data)
+            pandas.core.frame.DataFrame
+            >>> elr_loc_conv_data.head()
                 ELR  ...                                            LOR_URL
             0   AAV  ...  http://www.railwaycodes.org.uk/pride/pridesw.s...
             1   ABD  ...  http://www.railwaycodes.org.uk/pride/pridegw.s...
@@ -590,23 +614,19 @@ class LOR:
 
             return elr_lor_converter
 
-    def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None,
-                                verbose=False):
+    def fetch_elr_lor_converter(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
         from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: data of ELR/LOR converter
         :rtype: dict
 
@@ -624,7 +644,11 @@ class LOR:
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
 
-            >>> print(elr_lor_conv['ELR/LOR converter'].head())
+            >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
+
+            >>> type(elr_loc_conv_data)
+            pandas.core.frame.DataFrame
+            >>> elr_loc_conv_data.head()
                 ELR  ...                                            LOR_URL
             0   AAV  ...  http://www.railwaycodes.org.uk/pride/pridesw.s...
             1   ABD  ...  http://www.railwaycodes.org.uk/pride/pridegw.s...

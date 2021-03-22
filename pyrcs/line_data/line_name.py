@@ -23,11 +23,9 @@ class LineNames:
 
     :param data_dir: name of data directory, defaults to ``None``
     :type data_dir: str or None
-    :param update: whether to check on update and proceed to update the package data, 
-        defaults to ``False``
+    :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console as the function runs,
-        defaults to ``True``
+    :param verbose: whether to print relevant information in console, defaults to ``True``
     :type verbose: bool or int
 
     :ivar str Name: name of the data
@@ -69,7 +67,7 @@ class LineNames:
         self.LUDKey = 'Last updated date'
         self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(page_url=self.SourceURL, update=update,
+        self.Catalogue = get_catalogue(url=self.SourceURL, update=update,
                                        confirmation_required=False)
 
         if data_dir:
@@ -82,7 +80,7 @@ class LineNames:
         """
         Change directory to package data directory and sub-directories (and/or a file).
 
-        The directory for this module: ``"\\dat\\line-data\\line-names"``.
+        The directory for this module: ``"dat\\line-data\\line-names"``.
 
         :param sub_dir: sub-directory or sub-directories (and/or a file)
         :type sub_dir: str
@@ -103,12 +101,10 @@ class LineNames:
         """
         Collect data of railway line names from source web page.
 
-        :param confirmation_required: whether to require users to confirm and proceed, 
-            defaults to ``True``
+        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict or None
 
@@ -118,14 +114,22 @@ class LineNames:
 
             >>> ln = LineNames()
 
-            >>> line_names_dat = ln.collect_line_names(confirmation_required=False)
+            >>> line_names_dat = ln.collect_line_names()
+            To collect British railway line names? [No]|Yes: yes
 
             >>> type(line_names_dat)
             dict
             >>> list(line_names_dat.keys())
             ['Line names', 'Last updated date']
 
-            >>> print(line_names_dat['Line names'].head())
+            >>> print(ln.Key)
+            Line names
+
+            >>> line_names_codes = line_names_dat['Line names']
+
+            >>> type(line_names_codes)
+            pandas.core.frame.DataFrame
+            >>> line_names_codes.head()
                          Line name  ... Route_note
             0           Abbey Line  ...       None
             1        Airedale Line  ...       None
@@ -199,17 +203,14 @@ class LineNames:
         """
         Fetch data of railway line names from local backup.
 
-        :param update: whether to check on update and proceed to update the package data, 
-            defaults to ``False``
+        :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to replace the current package data with newly collected data,
-            defaults to ``False``
+        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
         :type pickle_it: bool
-        :param data_dir: name of package data folder, defaults to ``None``
+        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
         :type data_dir: str or None
-        :param verbose: whether to print relevant information in console as the function runs,
-            defaults to ``False``
-        :type verbose: bool
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
         :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict
 
@@ -227,7 +228,14 @@ class LineNames:
             >>> list(line_names_dat.keys())
             ['Line names', 'Last updated date']
 
-            >>> print(line_names_dat['Line names'].head())
+            >>> print(ln.Key)
+            Line names
+
+            >>> line_names_codes = line_names_dat['Line names']
+
+            >>> type(line_names_codes)
+            pandas.core.frame.DataFrame
+            >>> line_names_codes.head()
                          Line name  ... Route_note
             0           Abbey Line  ...       None
             1        Airedale Line  ...       None
