@@ -14,14 +14,15 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # A list of modules to be mocked up.
-autodoc_mock_imports = ['beautifulsoup4',
-                        'fuzzywuzzy',
-                        'measurement',
-                        'pandas',
-                        'more-itertools',
-                        'numpy',
-                        'requests',
-                        'pyhelpers']
+autodoc_mock_imports = [
+    'beautifulsoup4',
+    'fuzzywuzzy',
+    'measurement',
+    'pandas',
+    'more-itertools',
+    'numpy',
+    'requests',
+]
 
 # Project information ==================================================================
 import datetime
