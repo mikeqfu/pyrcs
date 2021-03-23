@@ -15,7 +15,8 @@
   - [LocationIdentifiers.collect_loc_codes_by_initial()](https://github.com/mikeqfu/pyrcs/commit/ca7bd7132bfc1c40327425335934a019fd69388e)
   - [Stations.collect_station_data_by_initial()](https://github.com/mikeqfu/pyrcs/commit/69df19d4e3692ca6f1642c7e029a61fd6ec72fa3)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/0.2.14/)
+
+**For more details, check out [PyRCS 0.2.14 documentation](https://pyrcs.readthedocs.io/en/0.2.14/).** 
 
 
 
@@ -37,7 +38,8 @@
   - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R426)
   - [parse_date()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R622)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/0.2.13/)
+
+**For more details, check out [PyRCS 0.2.13 documentation](https://pyrcs.readthedocs.io/en/0.2.13/).** 
 
 
 
@@ -69,7 +71,8 @@
   - [~~.collect_railway_viaducts_by_page()~~](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efL82) to [.collect_viaduct_codes_by_page()](https://github.com/mikeqfu/pyrcs/blob/bb66ee658a2b60e2ffe5e16381e8737b57c65b3d/pyrcs/other_assets/viaduct.py#L99)
   - [~~.fetch_railway_viaducts()~~](https://github.com/mikeqfu/pyrcs/commit/aa5325bc12b84b0f18ef39548efc1f7d268d5347#diff-f4e1105c5b49529eafc015218cb58dc9b9483837fb76542988186546b44745efL151) to [.fetch_viaduct_codes()](https://github.com/mikeqfu/pyrcs/blob/bb66ee658a2b60e2ffe5e16381e8737b57c65b3d/pyrcs/other_assets/viaduct.py#L177)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
+
+**For more details, check out [PyRCS 0.2.12 documentation](https://pyrcs.readthedocs.io/en/0.2.12/).** 
 
 
 
@@ -83,7 +86,8 @@
   - [~~.collect_railway_station_data_by_initial()~~](https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c#diff-86956d6a0963926f04ed9d7c6bf99fb9763a0c7cabb22c88c3fa8f68e5a31e19L127) to [.collect_station_data_by_initial()](https://github.com/mikeqfu/pyrcs/blob/81fe73e419597868e58731cb9417f4583b5a3611/pyrcs/other_assets/station.py#L127)
   - [~~.fetch_railway_station_data()~~](https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c#diff-86956d6a0963926f04ed9d7c6bf99fb9763a0c7cabb22c88c3fa8f68e5a31e19L246) to [.fetch_station_data()](https://github.com/mikeqfu/pyrcs/blob/81fe73e419597868e58731cb9417f4583b5a3611/pyrcs/other_assets/station.py#L245)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
+
+**For more details, check out [PyRCS 0.2.11 documentation](https://pyrcs.readthedocs.io/en/0.2.11/).** 
 
 
 
@@ -108,7 +112,8 @@
   - [~~stations~~](https://github.com/mikeqfu/pyrcs/commit/e0814219e719b82325dd5ff6c308f4a45cc43818) to [station](https://github.com/mikeqfu/pyrcs/blob/6a15470d22d8b2118ae59b688768cad92da92c34/pyrcs/other_assets/station.py)
   - [~~viaducts~~](https://github.com/mikeqfu/pyrcs/commit/b3d89ed5948319fc547737e752debb460b85991c) to [viaduct](https://github.com/mikeqfu/pyrcs/blob/6a15470d22d8b2118ae59b688768cad92da92c34/pyrcs/other_assets/viaduct.py)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) with substantial revisions
+
+**For more details, check out [PyRCS 0.2.10 documentation](https://pyrcs.readthedocs.io/en/0.2.10/).**
 
 
 
@@ -119,7 +124,8 @@
 ##### Main [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.8...0.2.9) since [v0.2.8](https://github.com/mikeqfu/pyrcs/tree/7d50599fcef5b038756ff39d30a531dd46d76c97):
 
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
+
+**For more details, check out [PyRCS 0.2.9 documentation](https://pyrcs.readthedocs.io/en/0.2.9/).** 
 
 
 
@@ -136,7 +142,8 @@
 - modified the class [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/7d50599fcef5b038756ff39d30a531dd46d76c97/pyrcs/line_data/elrs_mileages.py#L28) with [bug fixes](https://github.com/mikeqfu/pyrcs/commit/8849e0d33b70e68a1c80e9ec3d49edcc1fc8a21a)
 - modified [all sub-modules](https://github.com/mikeqfu/pyrcs/commit/983069544949bd3158c5821787aeaf455d2e8511) with [pyhelpers.validate_input_data_dir()](https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.validate_input_data_dir.html)
 - updated offline backup data
-- updated [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/)
+
+**For more details, check out [PyRCS 0.2.8 documentation](https://pyrcs.readthedocs.io/en/0.2.8/).** 
 
 
 
@@ -158,7 +165,7 @@
 - modified the module [utils](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/utils.py) with a new function [homepage_url()](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/utils.py#L21) and [bug fixes](https://github.com/mikeqfu/pyrcs/commit/be2cd82881420a97784f28f6d3d16d5a4264aa28)
 - removed the module [rc_psql](https://github.com/mikeqfu/pyrcs/commit/9ab958fa6ae7df12893509376d91535c52280e31) (Instead, [pyhelpers.sql](https://pyhelpers.readthedocs.io/en/latest/sql.html) is recommended)
 - updated offline backup data
-- created [PyRCS Documentation](https://pyrcs.readthedocs.io/en/latest/) being hosted at [Read the Docs](https://readthedocs.org/)
+- created [PyRCS documentation](https://readthedocs.org/projects/pyrcs/) hosted at [Read the Docs](https://readthedocs.org/)
 
 
 
