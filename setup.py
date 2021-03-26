@@ -54,15 +54,12 @@ setuptools.setup(
 
     install_requires=[
         'beautifulsoup4',
-        'fake_useragent',
-        'fuzzywuzzy',
         'html5lib',
         'lxml',
         'measurement',
-        'more-itertools',
         'numpy',
         'pandas',
-        'pyhelpers>=1.2.12',
+        'pyhelpers>=1.2.13',
         'requests',
     ],
 
