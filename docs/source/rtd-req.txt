@@ -1,10 +1,10 @@
 beautifulsoup4
-fuzzywuzzy
-measurement
 pandas
-more-itertools
-numpy
 requests
-pyhelpers>=1.2.12
+pyhelpers>=1.2.13
+measurement
+numpy
+lxml
+html5lib
 Sphinx~=3.5.3
 sphinx-rtd-theme~=0.5.1
