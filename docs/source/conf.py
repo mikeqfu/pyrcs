@@ -18,7 +18,7 @@ autodoc_mock_imports = [
     'beautifulsoup4',
     'pandas',
     'requests',
-    'pyhelpers>=1.2.13',
+    'pyhelpers>=1.2.14',
     'measurement',
     'numpy',
     'more-itertools',
