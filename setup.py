@@ -59,7 +59,7 @@ setuptools.setup(
         'measurement',
         'numpy',
         'pandas',
-        'pyhelpers>=1.2.13',
+        'pyhelpers>=1.2.14',
         'requests',
     ],
 
