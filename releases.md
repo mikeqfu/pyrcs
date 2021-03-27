@@ -2,6 +2,19 @@
 
 
 
+#### [0.2.15](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.15)
+
+*27 March 2021*
+
+##### Main [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.14...0.2.15) since [v0.2.14](https://github.com/mikeqfu/pyrcs/tree/fd7e40834af60dc80d334e541cd26fe9d88865bc):
+
+- installation of the package requires [pyhelpers](https://pypi.org/project/pyhelpers/)>=1.2.14, as the older versions might cause errors after updating or reinstalling the package
+- updated offline backup data
+
+**For more details, check out [PyRCS 0.2.15 documentation](https://pyrcs.readthedocs.io/en/0.2.15/).** 
+
+
+
 #### [0.2.14](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.14)
 
 *22 March 2021*
