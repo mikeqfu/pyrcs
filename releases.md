@@ -268,4 +268,6 @@
 
 **A brand-new release.**
 
-*Note that the initial release and later versions up to v0.1.28 have been deprecated and permanently removed.*
+
+
+The initial release and all the early versions up to v0.1.28 were deprecated and permanently removed.
