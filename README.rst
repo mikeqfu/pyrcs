@@ -17,7 +17,6 @@ PyRCS
     :alt: PyPI - Downloads
     :target: https://pypistats.org/packages/pyrcs
 .. |DOI| image:: https://zenodo.org/badge/92501006.svg
-    :alt: DOI
     :target: https://zenodo.org/badge/latestdoi/92501006
 
 | **Author**: Qian Fu
