@@ -22,8 +22,7 @@ PyRCS
 
 | **Author**: Qian Fu
 | **Email**: q.fu@bham.ac.uk
-
-
+|
 PyRCS is an open-source tool for collecting `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ used in different UK rail industry systems.
 
 Resources
