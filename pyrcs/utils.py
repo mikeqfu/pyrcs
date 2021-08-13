@@ -334,6 +334,46 @@ def shift_num_nr_mileage(nr_mileage, shift_yards):
     return shifted_num_mileage
 
 
+def mile_yard_to_mileage(mile, yard, as_float=True):
+    """
+    Convert mile and yard to Network Rail mileage.
+
+    :param mile: mile
+    :type mile: float or int
+    :param yard: yard
+    :type yard: float or int
+    :param as_float: whether to return a float-type value
+    :type as_float: bool
+    :return: Network Rail mileage
+    :rtype: str or float
+
+    **Examples**::
+
+        >>> from utils import mile_yard_to_mileage
+
+        >>> m, y = 10, 1500
+
+        >>> mileage = mile_yard_to_mileage(m, y)
+        >>> mileage
+        10.15
+
+        >>> mileage = mile_yard_to_mileage(m, y, as_float=False)
+        >>> mileage
+        '10.1500'
+    """
+
+    mile_, yard_ = map(str, (mile, yard))
+    if len(yard_) < 4:
+        yard_ = '0' * (4 - len(yard_)) + yard_
+
+    nr_mileage = mile_ + '.' + yard_
+
+    if as_float:
+        nr_mileage = nr_mileage_str_to_num(nr_mileage)
+
+    return nr_mileage
+
+
 def year_to_financial_year(date):
     """
     Convert calendar year of a given date to Network Rail financial year.
