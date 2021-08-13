@@ -249,14 +249,16 @@ def nr_mileage_to_yards(nr_mileage):
     return yards
 
 
-def yards_to_nr_mileage(yards):
+def yards_to_nr_mileage(yards, as_str=True):
     """
     Convert yards to Network Rail mileages.
 
     :param yards: yards
     :type yards: int or float or numpy.nan or None
-    :return: Network Rail mileage in the form '<miles>.<yards>'
-    :rtype: str
+    :param as_str: whether to return as a string value, defaults to ``True``
+    :type as_str: bool
+    :return: Network Rail mileage in the form '<miles>.<yards>' or <miles>.<yards>
+    :rtype: str or float
 
     **Examples**::
 
@@ -264,30 +266,35 @@ def yards_to_nr_mileage(yards):
 
         >>> mileage_dat = yards_to_nr_mileage(yards=396)
         >>> print(mileage_dat)
-        0.0396
-        >>> type(mileage_dat)
-        str
+        '0.0396'
 
-        >>> mileage_dat = yards_to_nr_mileage(yards=396.0)
-        >>> print(mileage_dat)
+        >>> mileage_dat = yards_to_nr_mileage(yards=396, as_str=False)
+        >>> mileage_dat
         0.0396
-        >>> type(mileage_dat)
-        str
 
         >>> mileage_dat = yards_to_nr_mileage(yards=None)
-        >>> print(mileage_dat)
+        >>> mileage_dat
+        ''
 
-        >>> type(mileage_dat)
-        str
+        >>> mileage_dat = yards_to_nr_mileage(yards=12320)
+        >>> mileage_dat
+        '7.0000'
     """
 
     if pd.notnull(yards) and yards != '':
         mileage_mi = np.floor(measurement.measures.Distance(yd=yards).mi)
         mileage_yd = yards - int(measurement.measures.Distance(mi=mileage_mi).yd)
-        # Example: "%.2f" % round(2606.89579999999, 2)
-        mileage = str('%.4f' % round((mileage_mi + mileage_yd / (10 ** 4)), 4))
+
+        if mileage_yd == 1760:
+            mileage_mi += 1
+            mileage_yd = 0
+
+        mileage = mileage_mi + round(mileage_yd / (10 ** 4), 4)
+        if as_str:
+            mileage = str('%.4f' % mileage)
+
     else:
-        mileage = ''
+        mileage = '' if as_str else np.nan
 
     return mileage
 
