@@ -4,22 +4,12 @@ Collect codes of British `railway overhead electrification installations
 """
 
 import copy
-import itertools
-import os
-import re
-import socket
 import urllib.error
 import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
 from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, parse_tr, \
-    print_conn_err, is_internet_connected, print_connection_error
+from ..utils import *
 
 
 class Electrification:
@@ -135,6 +125,7 @@ class Electrification:
 
         **Example**::
 
+            >>> # from pyrcs import Electrification
             >>> from pyrcs.line_data import Electrification
 
             >>> elec = Electrification()
@@ -147,24 +138,55 @@ class Electrification:
             >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
 
-            >>> print(elec.NationalNetworkKey)
-            National network
+            >>> elec.NationalNetworkKey
+            'National network'
 
             >>> national_network_codes = nn_dat[elec.NationalNetworkKey]
-
             >>> type(national_network_codes)
             dict
             >>> list(national_network_codes.keys())
-            ['Traditional numbering system distance and sequence',
-             'New numbering system km and decimal',
-             'Codes not certain confirmation is welcome',
+            ['Traditional numbering system [distance and sequence]',
+             'New numbering system [km and decimal]',
+             'Codes not certain [confirmation is welcome]',
              'Suspicious data',
              'An odd one to complete the record',
              'LBSC/Southern Railway overhead system',
              'Codes not known']
+
+            >>> national_network_codes['New numbering system [km and decimal]']['Codes']
+                Code  ...                                              Datum
+            0    BHL  ...                                         Paddington
+            1    BKE  ...                                         Paddington
+            2    BLL  ...                                         Paddington
+            3    BSW  ...                               Bristol Temple Meads
+            4    DCL  ...                                         Paddington
+            5    DEC  ...                                         Paddington
+            6    DWC  ...                                   Foxhall Junction
+            7    FEC  ...                                         Paddington
+            8   GSM1  ...                                         St Pancras
+            9    HEN  ...                                         Paddington
+            10   HNL  ...  Paddington\r [OLE distance counts back from ju...
+            11   LCN  ...                                Manchester Victoria
+            12   LTN  ...                                            Norwich
+            13   MLN  ...                                         Paddington
+            14   MLN  ...                                         Paddington
+            15  MLN1  ...                                         Paddington
+            16   PAC  ...                             Patchway Junction No 1
+            17   RFR  ...                                  junction with MLN
+            18   RTD  ...                                         Paddington
+            19   RWC  ...                              Reading West Junction
+            20  SPC1  ...                                         St Pancras
+            21  SPC2  ...                                         St Pancras
+            22   SWB  ...                                         Paddington
+            23   SWB  ...                                         Paddington
+            24   SWM  ...                                         Paddington
+            25   UGL  ...                                         Paddington
+            26   WYM  ...                                         St Pancras
+            27   YAT  ...  Paddington\r [OLE distance counts back from ju...
+            [28 rows x 3 columns]
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(
+        if confirmed("To collect section codes for OLE installations: {}\n?".format(
                 self.NationalNetworkKey.lower()),
                 confirmation_required=confirmation_required):
 
@@ -175,8 +197,9 @@ class Electrification:
                       end=" ... ")
 
             try:
-                source = requests.get(self.Catalogue[self.NationalNetworkKey],
-                                      headers=fake_requests_headers())
+                url = self.Catalogue[self.NationalNetworkKey]
+                requests_header = fake_requests_headers(randomized=True)
+                source = requests.get(url=url, headers=requests_header)
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -214,16 +237,23 @@ class Electrification:
                                            x.get_text(strip=True).replace('\xa0', ''))
                                           for x in soup.find('ol') if x != '\n')
                             if notes['Notes'] is None:
+                                # noinspection PyTypedDict
                                 notes['Notes'] = notes_
                             else:
                                 notes['Notes'] = [notes['Notes'], notes_]
 
                         # re.search(r'(\w ?)+(?=( \((\w ?)+\))?)', h3.text).group(0).strip()
-                        data_key = h3.text.strip()
+                        dk = []
+                        for x in h3.contents:
+                            if x.name == 'em':
+                                dk.append('[' + x.text + ']')
+                            else:
+                                dk.append(x.text)
+                        data_key = ''.join(dk)
 
                         national_network_ole_.update({data_key: {'Codes': table, **notes}})
 
-                        h3 = h3.find_next_sibling('h3')
+                        h3 = h3.find_next('h3')
 
                     source.close()
 
@@ -264,13 +294,13 @@ class Electrification:
 
         **Example**::
 
+            >>> # from pyrcs import Electrification
             >>> from pyrcs.line_data import Electrification
 
             >>> elec = Electrification()
 
-            >>> # nn_dat = elec.fetch_national_network_codes(update=True, verbose=True)
             >>> nn_dat = elec.fetch_national_network_codes()
-
+            >>> # nn_dat = elec.fetch_national_network_codes(update=True, verbose=True)
             >>> type(nn_dat)
             dict
             >>> list(nn_dat.keys())
@@ -280,13 +310,12 @@ class Electrification:
             National network
 
             >>> national_network_codes = nn_dat[elec.NationalNetworkKey]
-
             >>> type(national_network_codes)
             dict
             >>> list(national_network_codes.keys())
-            ['Traditional numbering system distance and sequence',
-             'New numbering system km and decimal',
-             'Codes not certain confirmation is welcome',
+            ['Traditional numbering system [distance and sequence]',
+             'New numbering system [km and decimal]',
+             'Codes not certain [confirmation is welcome]',
              'Suspicious data',
              'An odd one to complete the record',
              'LBSC/Southern Railway overhead system',
@@ -330,23 +359,41 @@ class Electrification:
 
         **Example**::
 
+            >>> # from pyrcs import Electrification
             >>> from pyrcs.line_data import Electrification
 
             >>> elec = Electrification()
 
             >>> l_names = elec.get_indep_line_names()
 
-            >>> l_names[:5]
+            >>> l_names
             ['Beamish Tramway',
              'Birkenhead Tramway',
              'Black Country Living Museum',
              'Blackpool Tramway',
-             'Brighton and Rottingdean Seashore Electric Railway']
+             'Brighton and Rottingdean Seashore Electric Railway',
+             'Channel Tunnel',
+             'Croydon Tramlink',
+             'East Anglia Transport Museum',
+             'Edinburgh Tramway',
+             'Heath Park Tramway',
+             'Heaton Park Tramway',
+             'Iarnród Éireann',
+             'Luas',
+             'Manchester Metrolink',
+             'Manx Electric Railway',
+             'Midland Metro',
+             'Nottingham Express Transit',
+             'Seaton Tramway',
+             'Sheffield Supertram',
+             'Snaefell Mountain Railway',
+             'Summerlee, Museum of Scottish Industrial Life Tramway',
+             'Tyne & Wear Metro']
         """
 
         try:
             url = self.Catalogue[self.IndependentLinesKey]
-            source = requests.get(url, headers=fake_requests_headers())
+            source = requests.get(url, headers=fake_requests_headers(randomized=True))
         except requests.exceptions.ConnectionError:
             print_conn_err(verbose=verbose)
 
@@ -373,6 +420,7 @@ class Electrification:
 
         **Example**::
 
+            >>> # from pyrcs import Electrification
             >>> from pyrcs.line_data import Electrification
 
             >>> elec = Electrification()
@@ -400,7 +448,7 @@ class Electrification:
              'Tyne & Wear Metro']
         """
 
-        if confirmed("To collect section codes for OLE installations: {}?".format(
+        if confirmed("To collect section codes for OLE installations: {}\n?".format(
                 self.IndependentLinesKey.lower()),
                 confirmation_required=confirmation_required):
 
@@ -412,7 +460,8 @@ class Electrification:
 
             try:
                 source = requests.get(
-                    self.Catalogue[self.IndependentLinesKey], headers=fake_requests_headers())
+                    url=self.Catalogue[self.IndependentLinesKey],
+                    headers=fake_requests_headers(randomized=True))
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -759,8 +808,9 @@ class Electrification:
             etz_ole = None
 
             try:
-                source = requests.get(self.Catalogue[self.TariffZonesKey],
-                                      headers=fake_requests_headers())
+                source = requests.get(
+                    url=self.Catalogue[self.TariffZonesKey],
+                    headers=fake_requests_headers(randomized=True))
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
