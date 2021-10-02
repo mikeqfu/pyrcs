@@ -24,7 +24,7 @@ from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 from pyhelpers.text import find_similar_str
 
 
-# -- Specification of resource homepage ----------------------------------------------------------
+# -- Specification of resource homepage ------------------------------------------------
 
 def homepage_url():
     """
@@ -32,14 +32,21 @@ def homepage_url():
 
     :return: URL of the data source homepage
     :rtype: str
+
+    **Example**::
+
+        >>> from pyrcs.utils import homepage_url
+
+        >>> homepage_url()
+        'http://www.railwaycodes.org.uk/'
     """
 
     return 'http://www.railwaycodes.org.uk/'
 
 
-# -- Specification of directory/file paths -------------------------------------------------------
+# -- Specification of directory/file paths ---------------------------------------------
 
-def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
+def _cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
     Change directory to ``dat_dir`` and sub-directories within a package.
 
@@ -57,15 +64,14 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
 
     **Example**::
 
+        >>> # noinspection PyProtectedMember
+        >>> from pyrcs.utils import _cd_dat
         >>> import os
-        >>> from pyrcs.utils import cd_dat
 
-        >>> path_to_dat_dir = cd_dat("line-data", dat_dir="dat", mkdir=False)
+        >>> path_to_dat_dir = _cd_dat("line-data", dat_dir="dat", mkdir=False)
 
         >>> print(os.path.relpath(path_to_dat_dir))
         pyrcs\\dat\\line-data
-
-    :meta private:
     """
 
     path = pkg_resources.resource_filename(__name__, dat_dir)
@@ -82,7 +88,7 @@ def cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     return path
 
 
-# -- Data converters -----------------------------------------------------------------------------
+# -- Data converters -------------------------------------------------------------------
 
 def mile_chain_to_nr_mileage(miles_chains):
     """
@@ -99,15 +105,13 @@ def mile_chain_to_nr_mileage(miles_chains):
 
         >>> # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
         >>> mileage_data = mile_chain_to_nr_mileage(miles_chains='0.18')
-
-        >>> print(mileage_data)
-        0.0396
+        >>> mileage_data
+        '0.0396'
 
         >>> # None, np.nan or ''
         >>> mileage_data = mile_chain_to_nr_mileage(miles_chains=None)
-
-        >>> print(mileage_data)
-
+        >>> mileage_data
+        ''
     """
 
     if pd.notna(miles_chains) and miles_chains != '':
@@ -134,15 +138,13 @@ def nr_mileage_to_mile_chain(str_mileage):
         >>> from pyrcs.utils import nr_mileage_to_mile_chain
 
         >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage='0.0396')
-
-        >>> print(miles_chains_dat)
-        0.18
+        >>> miles_chains_dat
+        '0.18'
 
         >>> # None, np.nan or ''
         >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage=None)
-
-        >>> print(miles_chains_dat)
-
+        >>> miles_chains_dat
+        ''
     """
 
     if pd.notna(str_mileage) and str_mileage != '':
@@ -169,11 +171,11 @@ def nr_mileage_str_to_num(str_mileage):
         >>> from pyrcs.utils import nr_mileage_str_to_num
 
         >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='0.0396')
-        >>> print(num_mileage_dat)
+        >>> num_mileage_dat
         0.0396
 
         >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='')
-        >>> print(num_mileage_dat)
+        >>> num_mileage_dat
         nan
     """
 
@@ -193,20 +195,16 @@ def nr_mileage_num_to_str(num_mileage):
 
     **Examples**::
 
-        >>> import numpy
         >>> from pyrcs.utils import nr_mileage_num_to_str
+        >>> import numpy
 
         >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=0.0396)
-        >>> print(str_mileage_dat)
-        0.0396
-        >>> type(str_mileage_dat)
-        str
+        >>> str_mileage_dat
+        '0.0396'
 
         >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=numpy.nan)
-        >>> print(str_mileage_dat)
-
-        >>> type(str_mileage_dat)
-        str
+        >>> str_mileage_dat
+        ''
     """
 
     if (num_mileage or num_mileage == 0) and pd.notna(num_mileage):
@@ -231,11 +229,11 @@ def nr_mileage_to_yards(nr_mileage):
         >>> from pyrcs.utils import nr_mileage_to_yards
 
         >>> yards_dat = nr_mileage_to_yards(nr_mileage='0.0396')
-        >>> print(yards_dat)
+        >>> yards_dat
         396
 
         >>> yards_dat = nr_mileage_to_yards(nr_mileage=0.0396)
-        >>> print(yards_dat)
+        >>> yards_dat
         396
     """
 
@@ -265,7 +263,7 @@ def yards_to_nr_mileage(yards, as_str=True):
         >>> from pyrcs.utils import yards_to_nr_mileage
 
         >>> mileage_dat = yards_to_nr_mileage(yards=396)
-        >>> print(mileage_dat)
+        >>> mileage_dat
         '0.0396'
 
         >>> mileage_dat = yards_to_nr_mileage(yards=396, as_str=False)
@@ -315,15 +313,15 @@ def shift_num_nr_mileage(nr_mileage, shift_yards):
         >>> from pyrcs.utils import shift_num_nr_mileage
 
         >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220)
-        >>> print(n_mileage)
+        >>> n_mileage
         0.0616
 
         >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220.99)
-        >>> print(n_mileage)
+        >>> n_mileage
         0.0617
 
         >>> n_mileage = shift_num_nr_mileage(nr_mileage=10, shift_yards=220)
-        >>> print(n_mileage)
+        >>> n_mileage
         10.022
     """
 
@@ -385,11 +383,11 @@ def year_to_financial_year(date):
 
     **Example**::
 
-        >>> import datetime
         >>> from pyrcs.utils import year_to_financial_year
+        >>> import datetime
 
         >>> financial_year = year_to_financial_year(date=datetime.datetime(2021, 3, 31))
-        >>> print(financial_year)
+        >>> financial_year
         2020
     """
 
@@ -398,7 +396,7 @@ def year_to_financial_year(date):
     return financial_date.year
 
 
-# -- Data parsers --------------------------------------------------------------------------------
+# -- Data parsers ----------------------------------------------------------------------
 
 def parse_tr(header, trs):
     """
@@ -417,9 +415,10 @@ def parse_tr(header, trs):
 
     **Example**::
 
+        >>> from pyrcs.utils import parse_tr
         >>> import bs4
         >>> import requests
-        >>> from pyrcs.utils import fake_requests_headers, parse_tr
+        >>> from pyhelpers.ops import fake_requests_headers
 
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
         >>> source = requests.get(example_url, headers=fake_requests_headers())
@@ -435,6 +434,8 @@ def parse_tr(header, trs):
 
         >>> type(tables_list)
         list
+        >>> len(tables_list) // 100
+        1
         >>> tables_list[-1]
         ['AYT', 'Aberystwyth Branch', '0.00 - 41.15', 'Pencader Junction', '']
     """
@@ -511,7 +512,8 @@ def parse_table(source, parser='lxml'):
 
     **Examples**::
 
-        >>> from pyrcs.utils import fake_requests_headers, parse_table
+        >>> from pyrcs.utils import parse_table
+        >>> from pyhelpers.ops import fake_requests_headers
 
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
         >>> source_dat = requests.get(example_url, headers=fake_requests_headers())
@@ -520,10 +522,14 @@ def parse_table(source, parser='lxml'):
 
         >>> type(parsed_contents)
         tuple
+        >>> len(parsed_contents)
+        2
         >>> type(parsed_contents[0])
         list
-        >>> type(parsed_contents[1])
-        list
+        >>> len(parsed_contents[0]) // 100
+        1
+        >>> parsed_contents[1]
+        ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
     """
 
     # Get plain text from the source URL
@@ -556,25 +562,25 @@ def parse_location_name(location_name):
         >>> from pyrcs.utils import parse_location_name
 
         >>> dat_and_note = parse_location_name('Abbey Wood')
-        >>> print(dat_and_note)
+        >>> dat_and_note
         ('Abbey Wood', '')
 
         >>> dat_and_note = parse_location_name(None)
-        >>> print(dat_and_note)
+        >>> dat_and_note
         ('', '')
 
         >>> dat_and_note = parse_location_name('Abercynon (formerly Abercynon South)')
-        >>> print(dat_and_note)
+        >>> dat_and_note
         ('Abercynon', 'formerly Abercynon South')
 
         >>> location_dat = 'Allerton (reopened as Liverpool South Parkway)'
         >>> dat_and_note = parse_location_name(location_dat)
-        >>> print(dat_and_note)
+        >>> dat_and_note
         ('Allerton', 'reopened as Liverpool South Parkway')
 
         >>> location_dat = 'Ashford International [domestic portion]'
         >>> dat_and_note = parse_location_name(location_dat)
-        >>> print(dat_and_note)
+        >>> dat_and_note
         ('Ashford International', 'domestic portion')
     """
 
@@ -656,12 +662,13 @@ def parse_date(str_date, as_date_type=False):
 
         >>> str_date_dat = '2020-01-01'
 
-        >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
+        >>> parsed_date_dat = parse_date(str_date_dat)
+        >>> parsed_date_dat
+        '2020-01-01'
 
-        >>> type(parsed_date_dat)
-        datetime.date
-        >>> print(parsed_date_dat)
-        2020-01-01
+        >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
+        >>> parsed_date_dat
+        datetime.date(2020, 1, 1)
     """
 
     try:
@@ -670,18 +677,20 @@ def parse_date(str_date, as_date_type=False):
     except (TypeError, calendar.IllegalMonthError):
         month_name = find_similar_str(str_date, calendar.month_name)
         err_month_ = find_similar_str(month_name, str_date.split(' '))
-        temp_date = dateutil.parser.parse(str_date.replace(err_month_, month_name), fuzzy=True)
+        temp_date = dateutil.parser.parse(
+            timestr=str_date.replace(err_month_, month_name), fuzzy=True)
 
     parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
 
     return parsed_date
 
 
-# -- Retrieval of useful information -------------------------------------------------------------
+# -- Retrieval of useful information ---------------------------------------------------
 
 def get_site_map(update=False, confirmation_required=True, verbose=False):
     """
-    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_ from the package data.
+    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
+    from the package data.
 
     :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
@@ -690,7 +699,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: dictionary of site map data
-    :rtype: dict or None
+    :rtype: collections.OrderedDict or None
 
     **Examples**::
 
@@ -710,14 +719,9 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
 
         >>> site_map_dat['Home']
         http://www.railwaycodes.org.uk/index.shtml
-
-        >>> # site_map_dat = get_site_map(update=True, verbose=2)
-        >>> # To collect the site map? [No]|Yes: yes
-        >>> # Updating the package data ... Done.
-        >>> # Updating "site-map.pickle" at "pyrcs\\dat" ... Done.
     """
 
-    path_to_pickle = cd_dat("site-map.pickle", mkdir=True)
+    path_to_pickle = _cd_dat("site-map.pickle", mkdir=True)
 
     if os.path.isfile(path_to_pickle) and not update:
         site_map = load_pickle(path_to_pickle)
@@ -725,7 +729,8 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     else:
         site_map = None
 
-        if confirmed("To collect the site map?", confirmation_required=confirmation_required):
+        if confirmed("To collect the site map?",
+                     confirmation_required=confirmation_required):
 
             if verbose == 2:
                 print("Updating the package data", end=" ... ")
@@ -755,7 +760,9 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                             if len(dat_temp) == 1:
                                 dat = urllib.parse.urljoin(homepage_url(), dat_temp[0])
                             else:
-                                dat = [urllib.parse.urljoin(homepage_url(), x) for x in dat_temp]
+                                dat = [
+                                    urllib.parse.urljoin(homepage_url(), x)
+                                    for x in dat_temp]
 
                             site_map.update({h3[i]: dat})
 
@@ -962,17 +969,19 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
 
         >>> from pyrcs.utils import get_catalogue
 
-        >>> cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
-        >>> type(cat)
+        >>> elr_cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
+        >>> type(elr_cat)
         dict
-        >>> list(cat.keys())[:5]
+        >>> list(elr_cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
+        >>> list(elr_cat.keys())[-5:]
+        ['Lines without codes',
+         'ELR/LOR converter',
+         'LUL system',
+         'DLR system',
+         'Canals']
 
-        >>> cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
-        >>> list(cat.keys())[:5]
-        ['Line data']
-
-        >>> line_data_cat = cat['Line data']
+        >>> line_data_cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
         >>> type(line_data_cat)
         dict
         >>> list(line_data_cat.keys())
@@ -986,7 +995,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
 
     cat_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
         '.shtm', '.json').split('/') if x)
-    path_to_cat_json = cd_dat("catalogue", cat_json, mkdir=True)
+    path_to_cat_json = _cd_dat("catalogue", cat_json, mkdir=True)
 
     if os.path.isfile(path_to_cat_json) and not update:
         catalogue = load_json(path_to_cat_json)
@@ -1006,7 +1015,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                     source_text = source.text
                     source.close()
 
-                    soup = bs4.BeautifulSoup(source_text, 'lxml')
+                    soup = bs4.BeautifulSoup(markup=source_text, features='lxml')
 
                     try:
                         try:
@@ -1017,13 +1026,15 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                             cold_soup = soup.find('div', attrs={'class': 'fixed'})
 
                         catalogue = {
-                            a.get_text(strip=True): urllib.parse.urljoin(url, a.get('href'))
+                            a.text.replace('\xa0', ' ').strip():
+                                urllib.parse.urljoin(url, a.get('href'))
                             for a in cold_soup.find_all('a')}
 
                     except AttributeError:
                         cold_soup = soup.find('h1').find_all_next('a')
                         catalogue = {
-                            a.get_text(strip=True): urllib.parse.urljoin(url, a.get('href'))
+                            a.text.replace('\xa0', ' ').strip():
+                                urllib.parse.urljoin(url, a.get('href'))
                             for a in cold_soup}
 
                     if json_it and catalogue is not None:
@@ -1069,7 +1080,7 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
 
     menu_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
         '.shtm', '.json').split('/') if x)
-    path_to_menu_json = cd_dat("catalogue", menu_json, mkdir=True)
+    path_to_menu_json = _cd_dat("catalogue", menu_json, mkdir=True)
 
     if os.path.isfile(path_to_menu_json) and not update:
         cls_menu = load_json(path_to_menu_json)
@@ -1081,7 +1092,7 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
                      confirmation_required=confirmation_required):
 
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(url=url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_connection_error(verbose=verbose)
 
@@ -1137,6 +1148,93 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     return cls_menu
 
 
+def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h3', verbose=False):
+    """
+    Get the catalogue of the main page of a code category.
+
+    :param url: URL of the main page of a code category
+    :type url: str
+    :param head_tag: tag name of the feature list at the top of the page, defaults to ``'nav'``
+    :type head_tag: str
+    :param head_txt: text that is contained in the ``head_tag``, defaults to ``'Jump to: '``
+    :type head_txt: str
+    :param feature_tag: tag name of the headings of each feature, defaults to ``'h3'``
+    :type feature_tag: str
+    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :type verbose: bool or int
+    :return: the catalogue of the main page of a code category
+    :rtype: pandas.DataFrame
+
+    **Example**::
+
+        >>> from pyrcs.utils import get_page_catalogue
+        >>> from pyhelpers.settings import pd_preferences
+
+        >>> pd_preferences(max_columns=1)
+
+        >>> elec_url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
+
+        >>> elec_catalogue = get_page_catalogue(elec_url)
+        >>> elec_catalogue
+                                                      Feature  ...
+        0                                     Beamish Tramway  ...
+        1                                  Birkenhead Tramway  ...
+        2                         Black Country Living Museum  ...
+        3                                   Blackpool Tramway  ...
+        4   Brighton and Rottingdean Seashore Electric Rai...  ...
+        ..                                                ...  ...
+        17                                     Seaton Tramway  ...
+        18                                Sheffield Supertram  ...
+        19                          Snaefell Mountain Railway  ...
+        20  Summerlee, Museum of Scottish Industrial Life ...  ...
+        21                                  Tyne & Wear Metro  ...
+
+        [22 rows x 3 columns]
+
+        >>> elec_catalogue.columns.to_list()
+        ['Feature', 'URL', 'Heading']
+    """
+
+    try:
+        source = requests.get(url=url, headers=fake_requests_headers(randomized=True))
+    except requests.exceptions.ConnectionError:
+        print_conn_err(verbose=verbose)
+
+    else:
+        soup = bs4.BeautifulSoup(markup=source.text, features='lxml')
+
+        page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
+
+        for nav in soup.find_all(head_tag):
+            nav_text = nav.text.replace('\r\n', '').strip()
+            if re.match(r'^({})'.format(head_txt), nav_text):
+                feature_names = nav_text.replace(head_txt, '').split('\xa0| ')
+                page_catalogue['Feature'] = feature_names
+
+                feature_urls = []
+                for item_name in feature_names:
+                    text_pat = re.compile(r'.*{}.*'.format(item_name), re.IGNORECASE)
+                    a = nav.find('a', text=text_pat)
+                    feature_urls.append(urllib.parse.urljoin(url, a.get('href')))
+
+                page_catalogue['URL'] = feature_urls
+
+        feature_headings = []
+        for h3 in soup.find_all(feature_tag):
+            h3_heading_x = []
+            for elem in h3.contents:
+                if elem.name == 'em':
+                    h3_heading_x.append('[' + elem.text + ']')
+                else:
+                    h3_heading_x.append(elem.text)
+            sub_heading = ''.join(h3_heading_x)
+            feature_headings.append(sub_heading)
+
+        page_catalogue['Heading'] = feature_headings
+
+        return page_catalogue
+
+
 # -- Rectification of location names ---------------------------------------------------
 
 def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
@@ -1183,7 +1281,7 @@ def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
     """
 
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
-    location_name_repl_dict = load_json(cd_dat(json_filename))
+    location_name_repl_dict = load_json(_cd_dat(json_filename))
 
     if regex:
         location_name_repl_dict = {
@@ -1215,7 +1313,7 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
     new_items_keys = list(new_items.keys())
 
     if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
-        path_to_json = cd_dat(json_filename)
+        path_to_json = _cd_dat(json_filename)
         location_name_repl_dict = load_json(path_to_json)
 
         if any(isinstance(k, re.Pattern) for k in new_items_keys):
@@ -1226,7 +1324,7 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-# -- Data fixers ---------------------------------------------------------------------------------
+# -- Data fixers -----------------------------------------------------------------------
 
 def fix_num_stanox(stanox_code):
     """
@@ -1242,14 +1340,10 @@ def fix_num_stanox(stanox_code):
         >>> from pyrcs.utils import fix_num_stanox
 
         >>> stanox = fix_num_stanox(stanox_code=65630)
-        >>> type(stanox)
-        str
         >>> stanox
         '65630'
 
         >>> stanox = fix_num_stanox(stanox_code=2071)
-        >>> type(stanox)
-        str
         >>> stanox
         '02071'
     """
@@ -1305,7 +1399,7 @@ def fix_nr_mileage_str(nr_mileage):
     return nr_mileage_
 
 
-# -- Miscellaneous helpers -----------------------------------------------------------------------
+# -- Miscellaneous helpers -------------------------------------------------------------
 
 def print_connection_error(verbose=False):
     """
@@ -1313,13 +1407,6 @@ def print_connection_error(verbose=False):
 
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
-
-    **Example**::
-
-        >>> from utils import print_connection_error
-
-        >>> print_connection_error()
-
     """
 
     if verbose:
@@ -1337,13 +1424,6 @@ def print_conn_err(update=False, verbose=False):
     :type update: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
-
-    **Example**::
-
-        >>> from utils import print_conn_err
-
-        >>> print_conn_err()
-
     """
 
     msg = "The Internet connection is not available."
