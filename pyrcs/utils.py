@@ -23,8 +23,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 from pyhelpers.text import find_similar_str
 
+""" == Specifications ============================================================== """
 
-# -- Specification of resource homepage ------------------------------------------------
 
 def homepage_url():
     """
@@ -43,8 +43,6 @@ def homepage_url():
 
     return 'http://www.railwaycodes.org.uk/'
 
-
-# -- Specification of directory/file paths ---------------------------------------------
 
 def _cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
@@ -88,7 +86,8 @@ def _cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     return path
 
 
-# -- Data converters -------------------------------------------------------------------
+""" Converters ===================================================================== """
+
 
 def mile_chain_to_nr_mileage(miles_chains):
     """
@@ -372,7 +371,7 @@ def mile_yard_to_mileage(mile, yard, as_float=True):
     return nr_mileage
 
 
-def year_to_financial_year(date):
+def get_financial_year(date):
     """
     Convert calendar year of a given date to Network Rail financial year.
 
@@ -383,10 +382,10 @@ def year_to_financial_year(date):
 
     **Example**::
 
-        >>> from pyrcs.utils import year_to_financial_year
+        >>> from pyrcs.utils import get_financial_year
         >>> import datetime
 
-        >>> financial_year = year_to_financial_year(date=datetime.datetime(2021, 3, 31))
+        >>> financial_year = get_financial_year(date=datetime.datetime(2021, 3, 31))
         >>> financial_year
         2020
     """
@@ -396,9 +395,83 @@ def year_to_financial_year(date):
     return financial_date.year
 
 
-# -- Data parsers ----------------------------------------------------------------------
+def fix_num_stanox(stanox_code):
+    """
+    Fix 'STANOX' if it is loaded as numbers.
 
-def parse_tr(header, trs):
+    :param stanox_code: STANOX code
+    :type stanox_code: str or int
+    :return: standard STANOX code
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import fix_num_stanox
+
+        >>> stanox = fix_num_stanox(stanox_code=65630)
+        >>> stanox
+        '65630'
+
+        >>> stanox = fix_num_stanox(stanox_code=2071)
+        >>> stanox
+        '02071'
+    """
+
+    if isinstance(stanox_code, (int or float)):
+        stanox_code = '' if pd.isna(stanox_code) else str(int(stanox_code))
+
+    if len(stanox_code) < 5 and stanox_code != '':
+        stanox_code = '0' * (5 - len(stanox_code)) + stanox_code
+
+    return stanox_code
+
+
+def fix_nr_mileage_str(nr_mileage):
+    """
+    Fix Network Rail mileage.
+
+    :param nr_mileage: NR mileage
+    :type nr_mileage: str or float
+    :return: conventional NR mileage code
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import fix_nr_mileage_str
+
+        >>> mileage = fix_nr_mileage_str(nr_mileage=29.011)
+        >>> mileage
+        '29.0110'
+
+        >>> mileage = fix_nr_mileage_str(nr_mileage='.1100')
+        >>> mileage
+        '0.1100'
+    """
+
+    if isinstance(nr_mileage, float):
+        nr_mileage_ = fix_nr_mileage_str(str(nr_mileage))
+
+    elif nr_mileage and nr_mileage != '0':
+        if '.' in nr_mileage:
+            miles, yards = nr_mileage.split('.')
+            if miles == '':
+                miles = '0'
+        else:
+            miles, yards = nr_mileage, '0'
+        if len(yards) < 4:
+            yards += '0' * (4 - len(yards))
+        nr_mileage_ = '.'.join([miles, yards])
+
+    else:
+        nr_mileage_ = nr_mileage
+
+    return nr_mileage_
+
+
+""" == Parsers ===================================================================== """
+
+
+def parse_tr(header, trs, as_dataframe=False):
     """
     Parse a list of parsed HTML <tr> elements.
 
@@ -408,10 +481,12 @@ def parse_tr(header, trs):
 
     :param header: list of column names of a requested table
     :type header: list
-    :param trs: contents under <tr> tags (bs4.Tag) of a web page
+    :param trs: contents under 'tr' tags of a web page
     :type trs: bs4.ResultSet
-    :return: list of lists with each comprising a row of the requested table
-    :rtype: list
+    :param as_dataframe: whether to return the parsed data in tabular form
+    :param as_dataframe: bool
+    :return: a list of lists that each comprises a row of the requested table
+    :rtype: list of lists or pandas.DataFrame
 
     **Example**::
 
@@ -440,7 +515,7 @@ def parse_tr(header, trs):
         ['AYT', 'Aberystwyth Branch', '0.00 - 41.15', 'Pencader Junction', '']
     """
 
-    tbl_lst = []
+    records = []
     for row in trs:
         data = []
         for dat in row.find_all('td'):
@@ -452,7 +527,7 @@ def parse_tr(header, trs):
                 data.append(txt)
             else:
                 data.append(txt)
-        tbl_lst.append(data)
+        records.append(data)
 
     row_spanned = []
     for no, tr in enumerate(trs):
@@ -470,9 +545,9 @@ def parse_tr(header, trs):
             i, to_repeat = x[0], x[1]
             for y in to_repeat:
                 for j in range(1, y[0]):
-                    if y[2] in tbl_lst[i] and y[2] != '\xa0':
-                        y[1] += np.abs(tbl_lst[i].index(y[2]) - y[1], dtype='int64')
-                    tbl_lst[i + j].insert(y[1], y[2])
+                    if y[2] in records[i] and y[2] != '\xa0':
+                        y[1] += np.abs(records[i].index(y[2]) - y[1], dtype='int64')
+                    records[i + j].insert(y[1], y[2])
 
     # if row_spanned:
     #     for x in row_spanned:
@@ -487,14 +562,17 @@ def parse_tr(header, trs):
     #             else:
     #                 tbl_lst[idx].insert(x[1] + 1, x[3])
 
-    for k in range(len(tbl_lst)):
-        n = len(header) - len(tbl_lst[k])
+    for k in range(len(records)):
+        n = len(header) - len(records[k])
         if n > 0:
-            tbl_lst[k].extend(['\xa0'] * n)
-        elif n < 0 and tbl_lst[k][2] == '\xa0':
-            del tbl_lst[k][2]
+            records[k].extend(['\xa0'] * n)
+        elif n < 0 and records[k][2] == '\xa0':
+            del records[k][2]
 
-    return tbl_lst
+    if as_dataframe:
+        records = pd.DataFrame(data=records, columns=header)
+
+    return records
 
 
 def parse_table(source, parser='lxml'):
@@ -685,7 +763,8 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-# -- Retrieval of useful information ---------------------------------------------------
+""" == Assistant scrapers ========================================================== """
+
 
 def get_site_map(update=False, confirmation_required=True, verbose=False):
     """
@@ -1148,6 +1227,46 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     return cls_menu
 
 
+def get_heading(heading_tag, elem_name='em'):
+    heading_x = []
+
+    for elem in heading_tag.contents:
+        if elem.name == elem_name:
+            heading_x.append('[' + elem.text + ']')
+        else:
+            heading_x.append(elem.text)
+    heading = ''.join(heading_x)
+
+    return heading
+
+
+def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
+    """
+    Get hypertext (i.e. text with a hyperlink).
+
+    :param hypertext_tag:
+    :param hyperlink_tag_name:
+    :param md_style:
+    :return:
+    """
+
+    hypertext_x = []
+    for x in hypertext_tag.contents:
+        if x.name == hyperlink_tag_name:
+            href = x.get('href')
+            if md_style:
+                x_text = '[' + x.text + ']' + f'({href})'
+            else:
+                x_text = x.text + f' ({href})'
+            hypertext_x.append(x_text)
+        else:
+            hypertext_x.append(x.text)
+
+    hypertext = ''.join(hypertext_x).replace('\xa0', '').replace('  ', ' ')
+
+    return hypertext
+
+
 def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h3', verbose=False):
     """
     Get the catalogue of the main page of a code category.
@@ -1221,13 +1340,7 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
 
         feature_headings = []
         for h3 in soup.find_all(feature_tag):
-            h3_heading_x = []
-            for elem in h3.contents:
-                if elem.name == 'em':
-                    h3_heading_x.append('[' + elem.text + ']')
-                else:
-                    h3_heading_x.append(elem.text)
-            sub_heading = ''.join(h3_heading_x)
+            sub_heading = get_heading(heading_tag=h3, elem_name='em')
             feature_headings.append(sub_heading)
 
         page_catalogue['Heading'] = feature_headings
@@ -1235,7 +1348,10 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
         return page_catalogue
 
 
-# -- Rectification of location names ---------------------------------------------------
+""" == Testers ===================================================================== """
+
+
+# -- Data rectification ----------------------------------------------------------------
 
 def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
     """
@@ -1324,115 +1440,6 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-# -- Data fixers -----------------------------------------------------------------------
-
-def fix_num_stanox(stanox_code):
-    """
-    Fix 'STANOX' if it is loaded as numbers.
-
-    :param stanox_code: STANOX code
-    :type stanox_code: str or int
-    :return: standard STANOX code
-    :rtype: str
-
-    **Examples**::
-
-        >>> from pyrcs.utils import fix_num_stanox
-
-        >>> stanox = fix_num_stanox(stanox_code=65630)
-        >>> stanox
-        '65630'
-
-        >>> stanox = fix_num_stanox(stanox_code=2071)
-        >>> stanox
-        '02071'
-    """
-
-    if isinstance(stanox_code, (int or float)):
-        stanox_code = '' if pd.isna(stanox_code) else str(int(stanox_code))
-
-    if len(stanox_code) < 5 and stanox_code != '':
-        stanox_code = '0' * (5 - len(stanox_code)) + stanox_code
-
-    return stanox_code
-
-
-def fix_nr_mileage_str(nr_mileage):
-    """
-    Fix Network Rail mileage.
-
-    :param nr_mileage: NR mileage
-    :type nr_mileage: str or float
-    :return: conventional NR mileage code
-    :rtype: str
-
-    **Examples**::
-
-        >>> from pyrcs.utils import fix_nr_mileage_str
-
-        >>> mileage = fix_nr_mileage_str(nr_mileage=29.011)
-        >>> mileage
-        '29.0110'
-
-        >>> mileage = fix_nr_mileage_str(nr_mileage='.1100')
-        >>> mileage
-        '0.1100'
-    """
-
-    if isinstance(nr_mileage, float):
-        nr_mileage_ = fix_nr_mileage_str(str(nr_mileage))
-
-    elif nr_mileage and nr_mileage != '0':
-        if '.' in nr_mileage:
-            miles, yards = nr_mileage.split('.')
-            if miles == '':
-                miles = '0'
-        else:
-            miles, yards = nr_mileage, '0'
-        if len(yards) < 4:
-            yards += '0' * (4 - len(yards))
-        nr_mileage_ = '.'.join([miles, yards])
-
-    else:
-        nr_mileage_ = nr_mileage
-
-    return nr_mileage_
-
-
-# -- Miscellaneous helpers -------------------------------------------------------------
-
-def print_connection_error(verbose=False):
-    """
-    Print a message about unsuccessful attempts to establish a connection to the Internet.
-
-    :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
-    """
-
-    if verbose:
-        print("Failed to establish an Internet connection. "
-              "The current instance relies on local backup.")
-
-
-def print_conn_err(update=False, verbose=False):
-    """
-    Print a message about unsuccessful attempts to establish a connection to the Internet
-    for an instance of a class.
-
-    :param update: defaults to ``False``
-        (mostly complies with ``update`` in a parent function that uses this function)
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
-    """
-
-    msg = "The Internet connection is not available."
-    if update and verbose:
-        print(msg + " Failed to update the data.")
-    elif verbose:
-        print(msg)
-
-
 def is_str_float(str_val):
     """
     Check if a string-type variable can express a float-type value.
@@ -1468,6 +1475,40 @@ def is_str_float(str_val):
     return test_res
 
 
+# -- Network connections ---------------------------------------------------------------
+
+def print_connection_error(verbose=False):
+    """
+    Print a message about unsuccessful attempts to establish a connection to the Internet.
+
+    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :type verbose: bool or int
+    """
+
+    if verbose:
+        print("Failed to establish an Internet connection. "
+              "The current instance relies on local backup.")
+
+
+def print_conn_err(update=False, verbose=False):
+    """
+    Print a message about unsuccessful attempts to establish a connection to the Internet
+    (for an instance of a class).
+
+    :param update: defaults to ``False``
+        (mostly complies with ``update`` in a parent function that uses this function)
+    :type update: bool
+    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :type verbose: bool or int
+    """
+
+    msg = "The Internet connection is not available."
+    if update and verbose:
+        print(msg + " Failed to update the data.")
+    elif verbose:
+        print(msg)
+
+
 def is_internet_connected():
     """
     Check the Internet connection.
@@ -1491,3 +1532,27 @@ def is_internet_connected():
         return True
     except (socket.gaierror, OSError):
         return False
+
+
+""" == Miscellaneous helpers ======================================================= """
+
+
+def print_collecting_data(data_name, verbose, confirmation_required, end=" ... "):
+    """
+    Print a message about the status of collecting data.
+
+    :param data_name: name of the data being collected
+    :type data_name: str
+    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :type verbose: bool or int
+    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+    :type confirmation_required: bool
+    :param end: string appended after the last value, defaults to ``" ... "``.
+    :type end: str
+    """
+
+    if verbose == 2:
+        if confirmation_required:
+            print(f"Collecting the data", end=end)
+        else:
+            print(f"Collecting {data_name}", end=end)
