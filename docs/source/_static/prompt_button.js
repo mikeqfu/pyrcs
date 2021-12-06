@@ -28,7 +28,7 @@ $(document).ready(function() {
     div.each(function() {
         let jthis = $(this);
         if (jthis.find('.gp').length > 0) {
-            let button = $('<span class="copybutton">&gt;&gt;&gt;</span>');
+            let button = $('<span class="prompt_button">&gt;&gt;&gt;</span>');
             button.css(button_styles)
             button.attr('title', hide_text);
             button.data('hidden', 'false');
@@ -42,7 +42,7 @@ $(document).ready(function() {
     });
 
     // define the behavior of the button when it's clicked
-    $('.copybutton').click(function(e){
+    $('.prompt_button').click(function(e){
         e.preventDefault();
         let button = $(this);
         if (button.data('hidden') === 'false') {
