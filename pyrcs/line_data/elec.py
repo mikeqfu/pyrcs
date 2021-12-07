@@ -3,11 +3,10 @@ Collect `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
-import copy
 import urllib.error
 import urllib.parse
 
-from pyhelpers.dir import cd, validate_dir
+from pyhelpers.dir import cd
 
 from pyrcs.utils import *
 from pyrcs.utils import _cd_dat
@@ -129,7 +128,7 @@ def _collect_codes_and_notes(h3):
     """
     elec = Electrification()
 
-    url = elec.Catalogue[elec.IndependentLinesKey]
+    url = elec.Catalogue[elec.INDEPENDENT_LINES_KEY]
     source = requests.get(url=url, headers=fake_requests_headers(randomized=True))
     soup = bs4.BeautifulSoup(markup=source.text, features='html.parser')
 
@@ -189,6 +188,26 @@ class Electrification:
     A class for collecting section codes for OLE installations.
     """
 
+    #: Name of the data
+    NAME = 'Section codes for overhead line electrification (OLE) installations'
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
+    KEY = 'Electrification'
+
+    #: Key of the dict-type data of the '*national network*'
+    KEY_TO_NATIONAL_NETWORK = 'National network'
+    #: Key of the dict-type data of the '*independent lines*'
+    KEY_TO_INDEPENDENT_LINES = 'Independent lines'
+    #: Key of the dict-type data of the '*overhead line electrification neutral sections (OHNS)*'
+    KEY_TO_OHNS = 'National network neutral sections'
+    #: Key of the dict-type data of the '*UK railway electrification tariff zones*'
+    KEY_TO_ENERGY_TARIFF_ZONES = 'National network energy tariff zones'
+
+    #: URL of the main web page of the data
+    URL = urllib.parse.urljoin(home_page_url(), '/electrification/mast_prefix0.shtm')
+
+    #: Key of the data of the last updated date
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
         :param data_dir: name of data directory, defaults to ``None``
@@ -198,20 +217,11 @@ class Electrification:
         :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
 
-        :ivar str Name: name of the data
-        :ivar str Key: key of the dict-type data
-        :ivar str HomeURL: URL of the main homepage
-        :ivar str SourceURL: URL of the data web page
-        :ivar str LUDKey: key of the last updated date
-        :ivar str LUD: last updated date
-        :ivar dict Catalogue: catalogue of the data
-        :ivar str DataDir: path to the data directory
-        :ivar str CurrentDataDir: path to the current data directory
-
-        :ivar str NationalNetworkKey: key of the dict-type data of national network
-        :ivar str IndependentLinesKey: key of the dict-type data of independent lines
-        :ivar str OhnsKey: key of the dict-type data of OHNS
-        :ivar str TariffZonesKey: key of the dict-type data of tariff zones
+        :ivar str url: URL of the data web page
+        :ivar str last_updated_date: last update date
+        :ivar dict catalogue: catalogue of the data
+        :ivar str data_dir: path to the data directory
+        :ivar str current_data_dir: path to the current data directory
 
         **Example**::
 
@@ -220,58 +230,25 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> print(elec.Name)
+            >>> print(elec.NAME)
             Electrification masts and related features
 
-            >>> print(elec.SourceURL)
+            >>> print(elec.URL)
             http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = 'Electrification masts and related features'  #: Name of data category
-        self.Key = 'Electrification'
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()  #: URL to the homepage
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/electrification/mast_prefix0.shtm')
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
-        self.LUDKey = 'Last updated date'  #: Key to last updated date
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.Catalogue = get_catalogue(
-            url=self.SourceURL, update=update, confirmation_required=False)
-
-        if data_dir:
-            self.DataDir = validate_dir(data_dir)
-        else:
-            self.DataDir = _cd_dat("line-data", self.Key.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
-
-        self.NationalNetworkKey = 'National network'
-        self.IndependentLinesKey = 'Independent lines'
-        self.OhnsKey = 'National network neutral sections'
-        self.TariffZonesKey = 'National network energy tariff zones'
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
     @staticmethod
     def _cfm_msg(code_key):
         cfm_msg = "To collect section codes for OLE installations: {}\n?".format(code_key.lower())
         return cfm_msg
-
-    @staticmethod
-    def _print_collect_msg(code_key, verbose=2):
-        if verbose == 2:
-            print("Collecting the codes for {}".format(code_key.lower()), end=" ... ")
-
-    @staticmethod
-    def _collect_verbose(data_dir, verbose):
-        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
-        return verbose_
-
-    @staticmethod
-    def _print_nothing_msg(code_key, verbose=True):
-        nothing_msg = "No data of {} has been freshly collected.".format(code_key.lower())
-        if verbose:
-            print(nothing_msg)
 
     @staticmethod
     def _collect_data(source):
@@ -305,25 +282,9 @@ class Electrification:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
-
-    def _make_pickle_pathname(self, code_key, data_dir=None):
-        pickle_filename = code_key.lower().replace(" ", "-") + ".pickle"
-
-        if data_dir is None:
-            path_to_pickle = self._cdd_elec(pickle_filename)
-        else:
-            self.CurrentDataDir = validate_dir(path_to_dir=data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
-
-        return path_to_pickle
-
-    def _pickle_it(self, codes, code_key, pickle_it, data_dir, verbose):
-        if pickle_it and data_dir:
-            path_to_pickle = self._make_pickle_pathname(code_key=code_key, data_dir=data_dir)
-            save_pickle(pickle_data=codes, path_to_pickle=path_to_pickle, verbose=verbose)
 
     def collect_national_network_codes(self, confirmation_required=True, verbose=False):
         """
@@ -354,10 +315,10 @@ class Electrification:
             >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
 
-            >>> elec.NationalNetworkKey
+            >>> elec.KEY_TO_NATIONAL_NETWORK
             'National network'
 
-            >>> nn_codes = nn_dat[elec.NationalNetworkKey]
+            >>> nn_codes = nn_dat[elec.KEY_TO_NATIONAL_NETWORK]
             >>> type(nn_codes)
             dict
             >>> list(nn_codes.keys())
@@ -386,12 +347,14 @@ class Electrification:
             [552 rows x 4 columns]
         """
 
-        cfm_msg = self._cfm_msg(self.NationalNetworkKey)
+        cfm_msg = self._cfm_msg(self.KEY_TO_NATIONAL_NETWORK)
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
-            self._print_collect_msg(code_key=self.NationalNetworkKey, verbose=verbose)
+            print_collect_msg(
+                data_name=self.KEY_TO_NATIONAL_NETWORK, verbose=verbose,
+                confirmation_required=confirmation_required)
 
-            url = self.Catalogue[self.NationalNetworkKey]
+            url = self.catalogue[self.KEY_TO_NATIONAL_NETWORK]
 
             national_network_ole = None
 
@@ -460,14 +423,14 @@ class Electrification:
                     last_updated_date = get_last_updated_date(url=url)
 
                     national_network_ole = {
-                        self.NationalNetworkKey: national_network_ole_,
-                        self.LUDKey: last_updated_date,
+                        self.KEY_TO_NATIONAL_NETWORK: national_network_ole_,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
                     if verbose == 2:
                         print("Done.")
 
-                    path_to_pickle = self._make_pickle_pathname(code_key=self.NationalNetworkKey)
+                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_NATIONAL_NETWORK)
                     save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -475,8 +438,7 @@ class Electrification:
 
             return national_network_ole
 
-    def fetch_national_network_codes(self, update=False, pickle_it=False, data_dir=None,
-                                     verbose=False):
+    def fetch_national_network_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch OLE section codes for `national network
         <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
@@ -506,10 +468,10 @@ class Electrification:
             >>> list(nn_dat.keys())
             ['National network', 'Last updated date']
 
-            >>> elec.NationalNetworkKey
+            >>> elec.KEY_TO_NATIONAL_NETWORK
             'National network'
 
-            >>> nn_codes = nn_dat[elec.NationalNetworkKey]
+            >>> nn_codes = nn_dat[elec.KEY_TO_NATIONAL_NETWORK]
             >>> type(nn_codes)
             dict
             >>> list(nn_codes.keys())
@@ -538,7 +500,7 @@ class Electrification:
             [552 rows x 4 columns]
         """
 
-        path_to_pickle = self._make_pickle_pathname(code_key=self.NationalNetworkKey)
+        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_NATIONAL_NETWORK)
 
         if os.path.isfile(path_to_pickle) and not update:
             national_network_ole = load_pickle(path_to_pickle)
@@ -546,15 +508,15 @@ class Electrification:
         else:
             national_network_ole = self.collect_national_network_codes(
                 confirmation_required=False,
-                verbose=self._collect_verbose(data_dir=data_dir, verbose=verbose))
+                verbose=collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose))
 
-            if national_network_ole is not None:  # codes_for_ole is not None
-                self._pickle_it(
-                    codes=national_network_ole, code_key=self.NationalNetworkKey,
+            if national_network_ole is not None:
+                data_to_pickle(
+                    self, data=national_network_ole, data_name=self.KEY_TO_NATIONAL_NETWORK,
                     pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
             else:
-                self._print_nothing_msg(code_key=self.NationalNetworkKey, verbose=verbose)
+                print_void_msg(data_name=self.KEY_TO_NATIONAL_NETWORK, verbose=verbose)
                 national_network_ole = load_pickle(path_to_pickle)
 
         return national_network_ole
@@ -605,7 +567,7 @@ class Electrification:
             indep_line_names = load_pickle(path_to_pickle)
 
         else:
-            url = self.Catalogue[self.IndependentLinesKey]
+            url = self.catalogue[self.KEY_TO_INDEPENDENT_LINES]
             indep_line_names = get_page_catalogue(
                 url=url, head_tag='nav', head_txt='Jump to: ', feature_tag='h3', verbose=verbose)
 
@@ -642,10 +604,10 @@ class Electrification:
             >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
 
-            >>> elec.IndependentLinesKey
+            >>> elec.KEY_TO_INDEPENDENT_LINES
             'Independent lines'
 
-            >>> il_ole_codes = il_ole_dat[elec.IndependentLinesKey]
+            >>> il_ole_codes = il_ole_dat[elec.KEY_TO_INDEPENDENT_LINES]
             >>> len(il_ole_codes)
             22
             >>> type(il_ole_codes)
@@ -678,14 +640,16 @@ class Electrification:
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
         """
 
-        cfm_msg = self._cfm_msg(code_key=self.IndependentLinesKey)
+        cfm_msg = self._cfm_msg(code_key=self.KEY_TO_INDEPENDENT_LINES)
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
-            self._print_collect_msg(code_key=self.IndependentLinesKey, verbose=verbose)
+            print_collect_msg(
+                data_name=self.KEY_TO_INDEPENDENT_LINES, verbose=verbose,
+                confirmation_required=confirmation_required)
 
             independent_lines_ole = None
 
-            url = self.Catalogue[self.IndependentLinesKey]
+            url = self.catalogue[self.KEY_TO_INDEPENDENT_LINES]
 
             try:
                 source = requests.get(url=url, headers=fake_requests_headers(randomized=True))
@@ -704,11 +668,11 @@ class Electrification:
                     print("Done.") if verbose == 2 else ""
 
                     independent_lines_ole = {
-                        self.IndependentLinesKey: independent_lines_ole_,
-                        self.LUDKey: last_updated_date,
+                        self.KEY_TO_INDEPENDENT_LINES: independent_lines_ole_,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = self._make_pickle_pathname(code_key=self.IndependentLinesKey)
+                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_INDEPENDENT_LINES)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -746,10 +710,10 @@ class Electrification:
             >>> list(il_ole_dat.keys())
             ['Independent lines', 'Last updated date']
 
-            >>> elec.IndependentLinesKey
+            >>> elec.KEY_TO_INDEPENDENT_LINES
             'Independent lines'
 
-            >>> il_ole_codes = il_ole_dat[elec.IndependentLinesKey]
+            >>> il_ole_codes = il_ole_dat[elec.KEY_TO_INDEPENDENT_LINES]
             >>> len(il_ole_codes)
             22
             >>> type(il_ole_codes)
@@ -782,7 +746,7 @@ class Electrification:
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
         """
 
-        path_to_pickle = self._make_pickle_pathname(code_key=self.IndependentLinesKey)
+        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_INDEPENDENT_LINES)
 
         if os.path.isfile(path_to_pickle) and not update:
             independent_lines_ole = load_pickle(path_to_pickle)
@@ -790,15 +754,15 @@ class Electrification:
         else:
             independent_lines_ole = self.collect_indep_lines_codes(
                 confirmation_required=False,
-                verbose=self._collect_verbose(data_dir=data_dir, verbose=verbose))
+                verbose=collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose))
 
             if independent_lines_ole is not None:
-                self._pickle_it(
-                    codes=independent_lines_ole, code_key=self.IndependentLinesKey,
+                data_to_pickle(
+                    self, data=independent_lines_ole, data_name=self.KEY_TO_INDEPENDENT_LINES,
                     pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
             else:
-                self._print_nothing_msg(code_key=self.IndependentLinesKey, verbose=verbose)
+                print_void_msg(data_name=self.KEY_TO_INDEPENDENT_LINES, verbose=verbose)
                 independent_lines_ole = load_pickle(path_to_pickle)
 
         return independent_lines_ole
@@ -832,10 +796,10 @@ class Electrification:
             >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
 
-            >>> elec.OhnsKey
+            >>> elec.KEY_TO_OHNS
             'National network neutral sections'
 
-            >>> ohns_data = ohns_dat[elec.OhnsKey]
+            >>> ohns_data = ohns_dat[elec.KEY_TO_OHNS]
             >>> type(ohns_data)
             dict
             >>> list(ohns_data.keys())
@@ -857,14 +821,16 @@ class Electrification:
             [493 rows x 5 columns]
         """
 
-        cfm_msg = self._cfm_msg(code_key=self.OhnsKey)
+        cfm_msg = self._cfm_msg(code_key=self.KEY_TO_OHNS)
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
-            self._print_collect_msg(code_key=self.OhnsKey, verbose=verbose)
+            print_collect_msg(
+                data_name=self.KEY_TO_OHNS, verbose=verbose,
+                confirmation_required=confirmation_required)
 
             ohns_codes = None
 
-            url = self.Catalogue[self.OhnsKey]
+            url = self.catalogue[self.KEY_TO_OHNS]
 
             try:
                 # header, neutral_sections_codes = pd.read_html(io=url)
@@ -911,11 +877,11 @@ class Electrification:
                     source.close()
 
                     ohns_codes = {
-                        self.OhnsKey: {'Codes': neutral_sections_codes, 'Notes': notes},
-                        self.LUDKey: last_updated_date,
+                        self.KEY_TO_OHNS: {'Codes': neutral_sections_codes, 'Notes': notes},
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = self._make_pickle_pathname(code_key=self.OhnsKey)
+                    path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OHNS)
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -954,10 +920,10 @@ class Electrification:
             >>> list(ohns_dat.keys())
             ['National network neutral sections', 'Last updated date']
 
-            >>> elec.OhnsKey
+            >>> elec.KEY_TO_OHNS
             'National network neutral sections'
 
-            >>> ohns_data = ohns_dat[elec.OhnsKey]
+            >>> ohns_data = ohns_dat[elec.KEY_TO_OHNS]
             >>> type(ohns_data)
             dict
             >>> list(ohns_data.keys())
@@ -979,7 +945,7 @@ class Electrification:
             [493 rows x 5 columns]
         """
 
-        path_to_pickle = self._make_pickle_pathname(code_key=self.OhnsKey)
+        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OHNS)
 
         if os.path.isfile(path_to_pickle) and not update:
             ohns_codes = load_pickle(path_to_pickle)
@@ -987,15 +953,15 @@ class Electrification:
         else:
             ohns_codes = self.collect_ohns_codes(
                 confirmation_required=False,
-                verbose=self._collect_verbose(data_dir=data_dir, verbose=verbose))
+                verbose=collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose))
 
             if ohns_codes is not None:
-                self._pickle_it(
-                    codes=ohns_codes, code_key=self.OhnsKey,
+                data_to_pickle(
+                    self, data=ohns_codes, data_name=self.KEY_TO_OHNS,
                     pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
             else:
-                self._print_nothing_msg(code_key=self.OhnsKey, verbose=verbose)
+                print_void_msg(data_name=self.KEY_TO_OHNS, verbose=verbose)
                 ohns_codes = load_pickle(path_to_pickle)
 
         return ohns_codes
@@ -1029,10 +995,10 @@ class Electrification:
             >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
 
-            >>> elec.TariffZonesKey
+            >>> elec.KEY_TO_ENERGY_TARIFF_ZONES
             'National network energy tariff zones'
 
-            >>> tariff_zone_codes = etz_ole_dat[elec.TariffZonesKey]
+            >>> tariff_zone_codes = etz_ole_dat[elec.KEY_TO_ENERGY_TARIFF_ZONES]
             >>> type(tariff_zone_codes)
             dict
             >>> list(tariff_zone_codes.keys())
@@ -1056,14 +1022,16 @@ class Electrification:
             13   WC                West Coast/North West
         """
 
-        cfm_msg = self._cfm_msg(code_key=self.TariffZonesKey)
+        cfm_msg = self._cfm_msg(code_key=self.KEY_TO_ENERGY_TARIFF_ZONES)
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
-            self._print_collect_msg(code_key=self.TariffZonesKey, verbose=verbose)
+            print_collect_msg(
+                data_name=self.KEY_TO_ENERGY_TARIFF_ZONES, verbose=verbose,
+                confirmation_required=confirmation_required)
 
             etz_ole = None
 
-            url = self.Catalogue[self.TariffZonesKey]
+            url = self.catalogue[self.KEY_TO_ENERGY_TARIFF_ZONES]
 
             try:
                 source = requests.get(url=url, headers=fake_requests_headers(randomized=True))
@@ -1074,49 +1042,20 @@ class Electrification:
             else:
                 try:
                     etz_ole_ = self._collect_data(source=source)
-
-                    # soup = bs4.BeautifulSoup(markup=source.text, features='html.parser')
-                    #
-                    # etz_ole_ = {}
-                    # h3 = soup.find('h3')
-                    # while h3:
-                    #     header_tag, table = h3.find_next('table'), None
-                    #     if header_tag:
-                    #         if header_tag.find_previous('h3') == h3:
-                    #             header = [x.text for x in header_tag.find_all('th')]
-                    #             temp = parse_tr(
-                    #                 header, header_tag.find_next('table').find_all('tr'))
-                    #             table = pd.DataFrame(temp, columns=header)
-                    #             table = table.applymap(
-                    #                 lambda x:
-                    #                 re.sub(
-                    #                     r'\']\)?', ']', re.sub(r'\(?\[\'', '[', x)).replace(
-                    #                     '\\xa0', '').strip())
-                    #
-                    #     notes, next_p = [], h3.find_next('p')
-                    #     previous_h3 = next_p.find_previous('h3')
-                    #     while previous_h3 == h3:
-                    #         notes.append(next_p.text.replace('\xa0', ''))
-                    #         next_p = next_p.find_next('p')
-                    #         try:
-                    #             previous_h3 = next_p.find_previous('h3')
-                    #         except AttributeError:
-                    #             break
-                    #     notes = ' '.join(notes).strip()
-                    #
-                    #     etz_ole_.update({h3.text: table, 'Notes': notes})
-                    #
-                    #     h3 = h3.find_next_sibling('h3')
-
                     source.close()
 
-                    last_updated_date = get_last_updated_date(self.Catalogue[self.TariffZonesKey])
+                    last_updated_date = get_last_updated_date(
+                        url=self.catalogue[self.KEY_TO_ENERGY_TARIFF_ZONES])
 
-                    print("Done.") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done.")
 
-                    etz_ole = {self.TariffZonesKey: etz_ole_, self.LUDKey: last_updated_date}
+                    etz_ole = {
+                        self.KEY_TO_ENERGY_TARIFF_ZONES: etz_ole_,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
+                    }
 
-                    path_to_pickle = self._make_pickle_pathname(code_key=self.TariffZonesKey)
+                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_ENERGY_TARIFF_ZONES)
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -1154,10 +1093,10 @@ class Electrification:
             >>> list(etz_ole_dat.keys())
             ['National network energy tariff zones', 'Last updated date']
 
-            >>> elec.TariffZonesKey
+            >>> elec.KEY_TO_ENERGY_TARIFF_ZONES
             'National network energy tariff zones'
 
-            >>> tariff_zone_codes = etz_ole_dat[elec.TariffZonesKey]
+            >>> tariff_zone_codes = etz_ole_dat[elec.KEY_TO_ENERGY_TARIFF_ZONES]
             >>> type(tariff_zone_codes)
             dict
             >>> list(tariff_zone_codes.keys())
@@ -1181,7 +1120,7 @@ class Electrification:
             13   WC                West Coast/North West
         """
 
-        path_to_pickle = self._make_pickle_pathname(code_key=self.TariffZonesKey)
+        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES)
 
         if os.path.isfile(path_to_pickle) and not update:
             etz_ole = load_pickle(path_to_pickle)
@@ -1189,23 +1128,22 @@ class Electrification:
         else:
             etz_ole = self.collect_etz_codes(
                 confirmation_required=False,
-                verbose=self._collect_verbose(data_dir=data_dir, verbose=verbose))
+                verbose=collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose))
 
             if etz_ole is not None:
-                self._pickle_it(
-                    codes=etz_ole, code_key=self.TariffZonesKey,
+                data_to_pickle(
+                    self, data=etz_ole, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES,
                     pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
             else:
-                self._print_nothing_msg(code_key=self.TariffZonesKey, verbose=verbose)
+                print_void_msg(data_name=self.KEY_TO_ENERGY_TARIFF_ZONES, verbose=verbose)
                 etz_ole = load_pickle(path_to_pickle)
 
         return etz_ole
 
     def fetch_elec_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
-        Fetch OLE section codes in `electrification
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_ catalogue.
+        Fetch OLE section codes in `electrification`_ catalogue.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -1217,6 +1155,8 @@ class Electrification:
         :type verbose: bool or int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
+
+        .. _`electrification`: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 
         **Example**::
 
@@ -1231,10 +1171,10 @@ class Electrification:
             >>> list(electrification_data.keys())
             ['Electrification', 'Last updated date']
 
-            >>> elec.Key
+            >>> elec.KEY
             'Electrification'
 
-            >>> electrification_codes = electrification_data[elec.Key]
+            >>> electrification_codes = electrification_data[elec.KEY]
             >>> type(electrification_codes)
             dict
             >>> list(electrification_codes.keys())
@@ -1244,10 +1184,7 @@ class Electrification:
              'National network neutral sections']
         """
 
-        if is_internet_connected():
-            verbose_ = self._collect_verbose(data_dir=data_dir, verbose=verbose)
-        else:
-            verbose_ = False
+        verbose_ = fetch_all_verbose(data_dir=data_dir, verbose=verbose)
 
         codes = []
         for func in dir(self):
@@ -1255,12 +1192,13 @@ class Electrification:
                 codes.append(getattr(self, func)(update=update, verbose=verbose_))
 
         ole_section_codes = {
-            self.Key: {next(iter(x)): next(iter(x.values())) for x in codes},
-            self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes),
+            self.KEY: {next(iter(x)): next(iter(x.values())) for x in codes},
+            self.KEY_TO_LAST_UPDATED_DATE: max(
+                next(itertools.islice(iter(x.values()), 1, 2)) for x in codes),
         }
 
-        self._pickle_it(
-            codes=ole_section_codes, code_key=self.Name,
+        data_to_pickle(
+            self, data=ole_section_codes, data_name=self.KEY,
             pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
         return ole_section_codes
