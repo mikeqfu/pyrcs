@@ -2,83 +2,70 @@
 Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 """
 
-import collections
-import copy
-import itertools
-import os
-import re
 import string
 import urllib.parse
 
-import bs4
-import numpy as np
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle, load_json
+from pyhelpers.dir import cd
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_location_name, parse_table, is_internet_connected, print_conn_err, print_connection_error
+from pyrcs.utils import *
+from pyrcs.utils import _cd_dat
 
 
 class Stations:
     """
     A class for collecting railway station data.
 
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
-
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str SourceURL: URL of the data web page
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    :ivar str StnKey: key of the dict-type data of railway station locations
-    :ivar str StnPickle: name of the pickle file of railway station locations
-    :ivar str BilingualKey: key of the dict-type data of bilingual names
-    :ivar str SpStnNameSignKey: key of the dict-type data of sponsored station name signs
-    :ivar str NSFOKey: key of the dict-type data of stations not served by SFO
-    :ivar str IntlKey: key of the dict-type data of UK international railway stations
-    :ivar str TriviaKey: key of the dict-type data of UK railway station trivia
-    :ivar str ARKey: key of the dict-type data of UK railway station access rights
-    :ivar str BarrierErrKey: key of the dict-type data of railway station barrier error codes
-
-    **Example**::
-
-        >>> from pyrcs.other_assets import Stations
-
-        >>> stn = Stations()
-
-        >>> print(stn.Name)
-        Railway station data
-
-        >>> print(stn.SourceURL)
-        http://www.railwaycodes.org.uk/stations/station0.shtm
     """
 
     def __init__(self, data_dir=None, verbose=True):
         """
-        Constructor method.
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
+
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str SourceURL: URL of the data web page
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        :ivar str StnKey: key of the dict-type data of railway station locations
+        :ivar str StnPickle: name of the pickle file of railway station locations
+        :ivar str BilingualKey: key of the dict-type data of bilingual names
+        :ivar str SpStnNameSignKey: key of the dict-type data of sponsored station name signs
+        :ivar str NSFOKey: key of the dict-type data of stations not served by SFO
+        :ivar str IntlKey: key of the dict-type data of UK international railway stations
+        :ivar str TriviaKey: key of the dict-type data of UK railway station trivia
+        :ivar str ARKey: key of the dict-type data of UK railway station access rights
+        :ivar str BarrierErrKey: key of the dict-type data of railway station barrier error codes
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import Stations
+
+            >>> stn = Stations()
+
+            >>> print(stn.NAME)
+            Railway station data
+
+            >>> print(stn.URL)
+            http://www.railwaycodes.org.uk/stations/station0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = 'Railway station data'
-        self.Key = 'Stations'
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/stations/station0.shtm')
+        self.NAME = 'Railway station data'
+        self.KEY = 'Stations'
+
+        self.URL = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
 
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
         self.StnKey = 'Mileages, operators and grid coordinates'
         self.StnPickle = self.StnKey.lower().replace(",", "").replace(" ", "-")
@@ -91,19 +78,15 @@ class Stations:
         self.ARKey = 'Access rights'
         self.BarrierErrKey = 'Barrier error codes'
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
     def _cdd_stn(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\other-assets\\stations"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Stations``
@@ -114,7 +97,7 @@ class Stations:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
@@ -152,9 +135,9 @@ class Stations:
              'London Underground']
         """
 
-        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
+        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.URL).path.replace(
             '.shtm', '.pickle').split('/') if x)
-        path_to_cat = cd_dat("catalogue", cat_json)
+        path_to_cat = _cd_dat("catalogue", cat_json)
 
         if os.path.isfile(path_to_cat) and not update:
             catalogue = load_pickle(path_to_cat)
@@ -164,7 +147,7 @@ class Stations:
                 print("Collecting a catalogue of {}".format(self.StnKey.lower()), end=" ... ")
 
             try:
-                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+                source = requests.get(self.URL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed.") if verbose == 2 else ""
                 print_conn_err(update=update, verbose=verbose)
@@ -176,7 +159,7 @@ class Stations:
 
                     cold_soup = soup.find_all('nav')[1]
 
-                    hot_soup = {a.text: urllib.parse.urljoin(self.SourceURL, a.get('href'))
+                    hot_soup = {a.text: urllib.parse.urljoin(self.URL, a.get('href'))
                                 for a in cold_soup.find_all('a')}
 
                     catalogue = collections.OrderedDict()
@@ -396,7 +379,7 @@ class Stations:
                         beginning_with))
 
             else:
-                url = self.SourceURL.replace('station0', 'station{}'.format(initial.lower()))
+                url = self.URL.replace('station0', 'station{}'.format(initial.lower()))
 
                 try:
                     source = requests.get(url, headers=fake_requests_headers())
@@ -567,8 +550,8 @@ class Stations:
         railway_station_data = {self.StnKey: stn_data, self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, self.StnPickle + ".pickle")
+            self.current_data_dir = validate_dir(data_dir)
+            path_to_pickle = os.path.join(self.current_data_dir, self.StnPickle + ".pickle")
             save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
 
         return railway_station_data

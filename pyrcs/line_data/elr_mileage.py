@@ -2,94 +2,76 @@
 Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
 """
 
-import copy
-import itertools
-import os
-import re
 import string
-import urllib.parse
 
-import bs4
 import measurement.measures
-import numpy as np
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.dir import cd
 from pyhelpers.text import remove_punctuation
 
-from pyrcs.utils import cd_dat, homepage_url, get_catalogue, get_last_updated_date, \
-    is_str_float, parse_table, mile_chain_to_nr_mileage, nr_mileage_to_mile_chain, \
-    yards_to_nr_mileage, print_conn_err, is_internet_connected, print_connection_error
+from pyrcs.utils import *
 
 
 class ELRMileages:
     """
     A class for collecting Engineer's Line References (ELRs) codes.
 
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param update: whether to do an update check (for the package data), defaults to ``False``
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
 
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str SourceURL: URL of the data web page
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    **Example**::
-
-        >>> from pyrcs.line_data import ELRMileages
-
-        >>> em = ELRMileages()
-
-        >>> print(em.Name)
-        ELRs and mileages
-
-        >>> print(em.SourceURL)
-        http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
+
+    NAME = "Engineer's Line References (ELRs)"
+    KEY = 'ELRs'  # key to ELRs and mileages
+
+    URL = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
+
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'  # key to last updated date
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        Constructor method.
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
+
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str SourceURL: URL of the data web page
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        **Example**::
+
+            >>> from pyrcs.line_data import ELRMileages
+
+            >>> em = ELRMileages()
+
+            >>> print(em.NAME)
+            ELRs and mileages
+
+            >>> print(em.URL)
+            http://www.railwaycodes.org.uk/elrs/elr0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = "ELRs and mileages"
-        self.Key = 'ELRs'  # key to ELRs and mileages
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/elrs/elr0.shtm')
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
-        self.LUDKey = 'Last updated date'  # key to last updated date
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.Catalogue = get_catalogue(
-            url=self.SourceURL, update=update, confirmation_required=False)
-
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("line-data", self.Name.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
     def _cdd_em(self, *sub_dir, mkdir=False, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\line-data\\elrs-and-mileages"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param mkdir: whether to create a directory, defaults to ``False``
         :type mkdir: bool
@@ -102,7 +84,7 @@ class ELRMileages:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=mkdir, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=mkdir, **kwargs)
 
         return path
 
@@ -445,13 +427,13 @@ class ELRMileages:
             elrs = load_pickle(path_to_pickle)
 
         else:
-            url = self.Catalogue[beginning_with]  # Specify the requested URL
+            url = self.catalogue[beginning_with]  # Specify the requested URL
 
-            elrs = {beginning_with: None, self.LUDKey: None}
+            elrs = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
             if verbose == 2:
                 print("Collecting data of {} beginning with \"{}\"".format(
-                    self.Key, beginning_with), end=" ... ")
+                    self.KEY, beginning_with), end=" ... ")
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
@@ -466,15 +448,17 @@ class ELRMileages:
                     dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
                     data = pd.DataFrame(dat, columns=header)
 
+                    last_updated_date = get_last_updated_date(url=url)
+
                     # Update the dict with both the DataFrame and its last updated date
-                    elrs.update({beginning_with: data, self.LUDKey: get_last_updated_date(url)})
+                    elrs.update({beginning_with: data, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
 
                     print("Done.") if verbose == 2 else ""
 
                     os.makedirs(os.path.dirname(path_to_pickle), exist_ok=True)
                     save_pickle(elrs, path_to_pickle, verbose=verbose)
 
-                except Exception as e:  # e.g the requested URL is not available:
+                except Exception as e:  # e.g. the requested URL is not available:
                     print("Failed. {}".format(e))
 
         return elrs
@@ -508,10 +492,10 @@ class ELRMileages:
             >>> list(elrs_dat.keys())
             ['ELRs', 'Last updated date']
 
-            >>> print(em.Key)
+            >>> print(em.KEY)
             ELRs
 
-            >>> em_codes = elrs_dat[em.Key]
+            >>> em_codes = elrs_dat[em.KEY]
 
             >>> type(em_codes)
             pandas.core.frame.DataFrame
@@ -529,31 +513,33 @@ class ELRMileages:
 
         data = [
             self.collect_elr_by_initial(
-                x, update, verbose=verbose_ if is_internet_connected() else False)
+                initial=x, update=update, verbose=verbose_ if is_internet_connected() else False)
             for x in string.ascii_lowercase]
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.Key))
-            data = [self.collect_elr_by_initial(x, update=False, verbose=verbose_)
-                    for x in string.ascii_lowercase]
+                print("No data of the {} has been freshly collected.".format(self.KEY))
+            data = [
+                self.collect_elr_by_initial(initial=x, update=False, verbose=verbose_)
+                for x in string.ascii_lowercase
+            ]
 
         # Select DataFrames only
         elrs_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
         elrs_data_table = pd.concat(elrs_data, axis=0, ignore_index=True, sort=False)
 
         # Get the latest updated date
-        last_updated_dates = (item[self.LUDKey]
-                              for item, _ in zip(data, string.ascii_uppercase))
+        last_updated_dates = (
+            item[self.KEY_TO_LAST_UPDATED_DATE] for item, _ in zip(data, string.ascii_uppercase))
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        elrs_data = {self.Key: elrs_data_table, self.LUDKey: latest_update_date}
+        elrs_data = {self.KEY: elrs_data_table, self.KEY_TO_LAST_UPDATED_DATE: latest_update_date}
 
         if pickle_it and data_dir:
-            pickle_filename = self.Name.lower().replace(" ", "-") + ".pickle"
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+            pickle_filename = self.NAME.lower().replace(" ", "-") + ".pickle"
+            self.current_data_dir = validate_dir(path_to_dir=data_dir)
+            path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
             save_pickle(elrs_data, path_to_pickle, verbose=verbose)
 
         return elrs_data
@@ -635,7 +621,7 @@ class ELRMileages:
                          confirmation_required=confirmation_required):
 
                 # The URL of the mileage file for the ELR
-                url = self.HomeURL + f'/elrs/_mileages/{elr[0].lower()}/{elr.lower()}.shtm'
+                url = home_page_url() + f'/elrs/_mileages/{elr[0].lower()}/{elr.lower()}.shtm'
 
                 if verbose == 2:
                     print("Collecting mileage file of \"{}\"".format(elr.upper()), end=" ... ")
@@ -771,7 +757,7 @@ class ELRMileages:
                         note_dat = {'Notes': notes}
 
                         # Identify if there are multiple measures in 'mileage_data'
-                        # e.g current and former measures
+                        # e.g. current and former measures
                         mileage_data = self._parse_multi_measures(mileage_data)
 
                         if parsed:
@@ -862,9 +848,9 @@ class ELRMileages:
 
             if mileage_file:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
                     save_pickle(mileage_file, path_to_pickle, verbose=verbose)
 
             else:
@@ -968,7 +954,7 @@ class ELRMileages:
 
         .. note::
 
-            This function may not be able find the connection for every pair of ELRs.
+            This function may not be able to find the connection for every pair of ELRs.
             See the :ref:`Example 2<get_conn_mileages-example-2>` below.
 
         :param start_elr: start ELR

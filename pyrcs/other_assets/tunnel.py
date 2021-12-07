@@ -2,100 +2,80 @@
 Collect codes of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
-import copy
-import itertools
 import operator
-import os
-import re
 import urllib.parse
 
-import bs4
 import measurement.measures
-import numpy as np
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
-from pyhelpers.text import find_similar_str
+from pyhelpers.dir import cd
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    parse_tr, print_conn_err, is_internet_connected, print_connection_error
+from pyrcs.utils import *
 
 
 class Tunnels:
     """
     A class for collecting railway tunnel lengths.
-
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param update: whether to do an update check (for the package data), defaults to ``False``
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
-
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str SourceURL: URL of the data web page
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    :ivar str P1Key: key of the dict-type data of Page 1
-    :ivar str P2Key: key of the dict-type data of Page 2
-    :ivar str P3Key: key of the dict-type data of Page 3
-    :ivar str P4Key: key of the dict-type data of Page 4
-
-    **Example**::
-
-        >>> from pyrcs.other_assets import Tunnels
-
-        >>> tunl = Tunnels()
-
-        >>> print(tunl.Name)
-        Railway tunnel lengths
-
-        >>> print(tunl.SourceURL)
-        http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        Constructor method.
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
+
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str SourceURL: URL of the data web page
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        :ivar str P1Key: key of the dict-type data of Page 1
+        :ivar str P2Key: key of the dict-type data of Page 2
+        :ivar str P3Key: key of the dict-type data of Page 3
+        :ivar str P4Key: key of the dict-type data of Page 4
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import Tunnels
+
+            >>> tunl = Tunnels()
+
+            >>> print(tunl.NAME)
+            Railway tunnel lengths
+
+            >>> print(tunl.URL)
+            http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = 'Railway tunnel lengths'
-        self.Key = 'Tunnels'
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/tunnels/tunnels0.shtm')
+        self.NAME = 'Railway tunnel lengths'
+        self.KEY = 'Tunnels'
+
+        self.URL = urllib.parse.urljoin(home_page_url(), '/tunnels/tunnels0.shtm')
 
         self.LUDKey = 'Last updated date'
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(
-            url=self.SourceURL, update=update, confirmation_required=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.Catalogue.keys())[1:]
+        self.P1Key, self.P2Key, self.P3Key, self.P4Key = list(self.catalogue.keys())[1:]
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("other-assets", self.Key.lower())
-        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
     def _cdd_tnl(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\other-assets\\tunnels"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Tunnels``
@@ -106,12 +86,13 @@ class Tunnels:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
     @staticmethod
     def parse_length(x):
+        # noinspection GrazieInspection
         """
         Parse data in ``'Length'`` column, i.e. convert miles/yards to metres.
 
@@ -218,7 +199,7 @@ class Tunnels:
         """
 
         assert page_no in range(1, 5)
-        page_name = find_similar_str(str(page_no), list(self.Catalogue.keys()))
+        page_name = find_similar_str(str(page_no), list(self.catalogue.keys()))
 
         pickle_filename_ = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower()
         path_to_pickle = self._cdd_tnl(pickle_filename_ + ".pickle")
@@ -227,12 +208,12 @@ class Tunnels:
             page_railway_tunnel_lengths = load_pickle(path_to_pickle)
 
         else:
-            url = self.Catalogue[page_name]
+            url = self.catalogue[page_name]
 
             page_railway_tunnel_lengths = None
 
             if verbose == 2:
-                print("Collecting data of {} on {}".format(self.Key.lower(), page_name),
+                print("Collecting data of {} on {}".format(self.KEY.lower(), page_name),
                       end=" ... ")
 
             try:
@@ -324,10 +305,10 @@ class Tunnels:
             >>> list(tunl_len_data.keys())
             ['Tunnels', 'Last updated date']
 
-            >>> print(tunl.Key)
+            >>> print(tunl.KEY)
             Tunnels
 
-            >>> tunl_len_dat = tunl_len_data[tunl.Key]
+            >>> tunl_len_dat = tunl_len_data[tunl.KEY]
 
             >>> type(tunl_len_dat)
             dict
@@ -358,18 +339,18 @@ class Tunnels:
         if all(x is None for x in page_data):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
+                print("No data of the {} has been freshly collected.".format(self.KEY.lower()))
             page_data = [self.collect_lengths_by_page(x, update=False, verbose=verbose_)
                          for x in range(1, 5)]
 
         railway_tunnel_lengths = {
-            self.Key: {next(iter(x)): next(iter(x.values())) for x in page_data},
+            self.KEY: {next(iter(x)): next(iter(x.values())) for x in page_data},
             self.LUDKey: max(next(itertools.islice(iter(x.values()), 1, 2)) for x in page_data)}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
+            self.current_data_dir = validate_dir(data_dir)
             path_to_pickle = os.path.join(
-                self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
+                self.current_data_dir, self.KEY.lower().replace(" ", "-") + ".pickle")
             save_pickle(railway_tunnel_lengths, path_to_pickle, verbose=verbose)
 
         return railway_tunnel_lengths

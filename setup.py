@@ -1,24 +1,37 @@
+import json
+
+import pkg_resources
 import setuptools
 
-import pyrcs
+meta_pathname = pkg_resources.resource_filename(__name__, "dat/metadata.json")
+
+with open(file=meta_pathname, mode='r') as metadata_file:
+    metadata = json.load(metadata_file)
+
+_author = metadata['Author']
+_author_email = metadata['Email']
+_description = metadata['Description']
+_license = metadata['License']
+_package = metadata['Package']
+_version = metadata['Version']
 
 with open("README.rst", 'r', encoding='utf-8') as readme:
     long_description = readme.read()
 
 setuptools.setup(
 
-    name=pyrcs.__package_name__,
+    name=_package,
 
-    version=pyrcs.__version__,
+    version=_version,
 
-    description=pyrcs.__description__,
+    description=_description,
     long_description=long_description,
     long_description_content_type="text/x-rst",
 
-    url='https://github.com/mikeqfu/pyrcs',
+    url=f'https://github.com/mikeqfu/{__package__}',
 
-    author=pyrcs.__author__,
-    author_email=pyrcs.__email__,
+    author=_author,
+    author_email=_author_email,
 
     license='GPLv3',
 
@@ -40,27 +53,25 @@ setuptools.setup(
         'Operating System :: POSIX :: Linux'
     ],
 
-    keywords=['Python', 'Railway Codes', 'Railway', 'CRS', 'NLC', 'TIPLOC', 'STANOX',
-              'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations', 'Signal boxes',
-              'Tunnels', 'Viaducts', 'Depots', 'Tracks'],
+    keywords=['Python', 'Railway Codes', 'Railway', 'Bridges', 'CRS', 'NLC', 'TIPLOC',
+              'STANOX', 'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations',
+              'Signal boxes', 'Tunnels', 'Viaducts', 'Depots', 'Tracks'],
 
     project_urls={
-        'Documentation': 'https://pyrcs.readthedocs.io/en/latest/',
-        'Source': 'https://github.com/mikeqfu/pyrcs',
-        'Tracker': 'https://github.com/mikeqfu/pyrcs/issues',
+        'Documentation': f'https://{_package}.readthedocs.io/en/{_version}/',
+        'Source': f'https://github.com/mikeqfu/{_package}',
+        'Tracker': f'https://github.com/mikeqfu/{_package}/issues',
     },
 
     packages=setuptools.find_packages(exclude=["*.tests", "tests.*", "tests"]),
 
     install_requires=[
         'beautifulsoup4',
-        'html5lib',
-        'lxml',
         'measurement',
         'numpy',
         'pandas',
-        'pyhelpers>=1.2.14',
         'requests',
+        'pyhelpers>=1.2.18',
     ],
 
     package_data={"": ["requirements.txt", "LICENSE"]},

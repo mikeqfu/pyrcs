@@ -6,19 +6,20 @@ PyRCS
 
     |PyPI| |Python| |License| |Downloads| |DOI|
 
-    .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs?color=important&label=PyPI
-        :alt: PyPI
+    .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs?color=yellow&label=PyPI
+        :alt: PyPI - Release
         :target: https://pypi.org/project/pyrcs/
-    .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs?color=informational&label=Python
+    .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs?label=Python
         :alt: PyPI - Python Version
         :target: https://www.python.org/downloads/
-    .. |License| image:: https://img.shields.io/pypi/l/pyrcs?color=green&label=License
+    .. |License| image:: https://img.shields.io/pypi/l/pyrcs?label=License
         :alt: PyPI - License
         :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
-    .. |Downloads| image:: https://img.shields.io/pypi/dm/pyrcs?color=yellow&label=Downloads
+    .. |Downloads| image:: https://img.shields.io/pypi/dm/pyrcs?label=Downloads
         :alt: PyPI - Downloads
         :target: https://pypistats.org/packages/pyrcs
     .. |DOI| image:: https://zenodo.org/badge/92501006.svg
+        :alt: Zenodo - DOI
         :target: https://zenodo.org/badge/latestdoi/92501006
 
 | **Author**: Qian Fu
@@ -30,27 +31,29 @@ PyRCS is an open-source tool for collecting |Railway Codes|_ used in different U
 
 .. |Railway Codes| replace:: *Railway Codes*
 
-######################
-Documentation contents
-######################
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :includehidden:
+    :caption: Documentation
 
     installation
-    quick-start
     sub-pkg-and-mod
     license
     use-of-data
     acknowledgement
 
-.. only:: html
+.. toctree::
+    :maxdepth: 1
+    :includehidden:
+    :caption: Quick start
 
-    ##################
-    Indices and tables
-    ##################
+    quick-start
 
-    * :ref:`genindex`
-    * :ref:`modindex`
-    * :ref:`search`
+
+Indices
+#######
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

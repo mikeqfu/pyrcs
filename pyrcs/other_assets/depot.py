@@ -2,93 +2,76 @@
 Collect `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
-import copy
-import os
-import re
-import socket
 import urllib.error
 import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.dir import cd
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    print_conn_err, is_internet_connected, print_connection_error
+from pyrcs.utils import *
 
 
 class Depots:
     """
     A class for collecting depot codes.
-
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param update: whether to do an update check (for the catagloue data), defaults to ``False``
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
-
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str SourceURL: URL of the data web page
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    :ivar str TCTKey: key of the dict-type data of two character TOPS codes
-    :ivar str TCTPickle: name of the pickle file of two character TOPS codes
-    :ivar str FDPTKey: key of the dict-type data of four digit pre-TOPS codes
-    :ivar str FDPTPickle: name of the pickle file of four digit pre-TOPS codes
-    :ivar str S1950Key: key of the dict-type data of 1950 system (pre-TOPS) codes
-    :ivar str S1950Pickle: name of the pickle file of 1950 system (pre-TOPS) codes
-    :ivar str GWRKey: key of the dict-type data of GWR codes
-    :ivar str GWRPickle: name of the pickle file of GWR codes
-
-    **Example**::
-
-        >>> from pyrcs.other_assets import Depots
-
-        >>> depots = Depots()
-
-        >>> print(depots.Name)
-        Depot codes
-
-        >>> print(depots.SourceURL)
-        http://www.railwaycodes.org.uk/depots/depots0.shtm
     """
+
+    NAME = 'Depot codes'
+    KEY = 'Depots'
+
+    URL = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
+
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'  # key to last updated date
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        Constructor method.
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param update: whether to do an update check (for the catagloue data), defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
+
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str SourceURL: URL of the data web page
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        :ivar str TCTKey: key of the dict-type data of two character TOPS codes
+        :ivar str TCTPickle: name of the pickle file of two character TOPS codes
+        :ivar str FDPTKey: key of the dict-type data of four digit pre-TOPS codes
+        :ivar str FDPTPickle: name of the pickle file of four digit pre-TOPS codes
+        :ivar str S1950Key: key of the dict-type data of 1950 system (pre-TOPS) codes
+        :ivar str S1950Pickle: name of the pickle file of 1950 system (pre-TOPS) codes
+        :ivar str GWRKey: key of the dict-type data of GWR codes
+        :ivar str GWRPickle: name of the pickle file of GWR codes
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import Depots
+
+            >>> depots = Depots()
+
+            >>> print(depots.NAME)
+            Depot codes
+
+            >>> print(depots.URL)
+            http://www.railwaycodes.org.uk/depots/depots0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = 'Depot codes'
-        self.Key = 'Depots'
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/depots/depots0.shtm')
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
-        self.LUDKey = 'Last updated date'  # key to last updated date
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.Catalogue = get_catalogue(
-            url=self.SourceURL, update=update, confirmation_required=False)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("other-assets", self.Key.lower())
-        self.CurrentDataDir = copy.copy(self.DataDir)
-
-        self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = list(self.Catalogue.keys())[1:]
+        self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = list(self.catalogue.keys())[1:]
         self.TCTPickle = self.TCTKey.replace(" ", "-").lower()
         self.FDPTPickle = re.sub(r'[ -]', '-', self.FDPTKey).lower()
         self.S1950Pickle = re.sub(r' \(|\) | ', '-', self.S1950Key).lower()
@@ -96,11 +79,11 @@ class Depots:
 
     def _cdd_depots(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
         
         The directory for this module: ``"dat\\other-assets\\depots"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Depots``
@@ -111,7 +94,7 @@ class Depots:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
@@ -161,7 +144,7 @@ class Depots:
         if confirmed("To collect data of {}?".format(self.TCTKey[:1].lower() + self.TCTKey[1:]),
                      confirmation_required=confirmation_required):
 
-            url = self.Catalogue[self.TCTKey]
+            url = self.catalogue[self.TCTKey]
 
             if verbose == 2:
                 print("Collecting data of {}".format(
@@ -186,7 +169,7 @@ class Depots:
                     print("Done.") if verbose == 2 else ""
 
                     two_char_tops_codes_data = {self.TCTKey: two_char_tops_codes,
-                                                self.LUDKey: last_updated_date}
+                                                self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
 
                     path_to_pickle = self._cdd_depots(self.TCTPickle + ".pickle")
                     save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
@@ -257,8 +240,8 @@ class Depots:
 
             if two_char_tops_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, self.TCTPickle + ".pickle")
+                    self.current_data_dir = validate_dir(data_dir)
+                    path_to_pickle = os.path.join(self.current_data_dir, self.TCTPickle + ".pickle")
                     save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
             else:
                 print("No data of {} has been freshly collected.".format(
@@ -314,7 +297,7 @@ class Depots:
 
             path_to_pickle = self._cdd_depots(self.FDPTPickle + ".pickle")
 
-            url = self.Catalogue[self.FDPTKey]
+            url = self.catalogue[self.FDPTKey]
 
             if verbose == 2:
                 print("Collecting data of {}".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]),
@@ -365,7 +348,7 @@ class Depots:
                     #     self.LUDKey: last_updated_date}
 
                     four_digit_pre_tops_codes_data = {self.FDPTKey: four_digit_pre_tops_codes,
-                                                      self.LUDKey: last_updated_date}
+                                                      self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
 
                     save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
 
@@ -434,9 +417,9 @@ class Depots:
 
             if four_digit_pre_tops_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
 
                     save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
 
@@ -448,6 +431,7 @@ class Depots:
         return four_digit_pre_tops_codes_data
 
     def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
+        # noinspection GrazieInspection
         """
         Collect `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from source web page.
@@ -493,7 +477,7 @@ class Depots:
         if confirmed("To collect data of {}?".format(self.S1950Key),
                      confirmation_required=confirmation_required):
 
-            url = self.Catalogue[self.S1950Key]
+            url = self.catalogue[self.S1950Key]
 
             if verbose == 2:
                 print("Collecting data of {}".format(self.S1950Key), end=" ... ")
@@ -515,7 +499,7 @@ class Depots:
                     print("Done.") if verbose == 2 else ""
 
                     system_1950_codes_data = {self.S1950Key: system_1950_codes,
-                                              self.LUDKey: last_updated_date}
+                                              self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
 
                     path_to_pickle = self._cdd_depots(self.S1950Pickle + ".pickle")
                     save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
@@ -526,6 +510,7 @@ class Depots:
             return system_1950_codes_data
 
     def fetch_1950_system_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        # noinspection GrazieInspection
         """
         Fetch `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from local backup.
@@ -580,9 +565,9 @@ class Depots:
 
             if system_1950_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
                     save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
 
             else:
@@ -641,7 +626,7 @@ class Depots:
         if confirmed("To collect data of {}?".format(self.GWRKey),
                      confirmation_required=confirmation_required):
 
-            url = self.Catalogue[self.GWRKey]
+            url = self.catalogue[self.GWRKey]
 
             if verbose == 2:
                 print("Collecting data of {}".format(self.GWRKey), end=" ... ")
@@ -685,7 +670,10 @@ class Depots:
 
                     print("Done.") if verbose == 2 else ""
 
-                    gwr_codes_data = {self.GWRKey: gwr_codes, self.LUDKey: last_updated_date}
+                    gwr_codes_data = {
+                        self.GWRKey: gwr_codes,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
+                    }
 
                     path_to_pickle = self._cdd_depots(self.GWRPickle + ".pickle")
                     save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
@@ -755,9 +743,9 @@ class Depots:
 
             if gwr_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
 
                     save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
 
@@ -797,12 +785,12 @@ class Depots:
             >>> list(depot_codes_dat.keys())
             ['Depots', 'Last updated date']
 
-            >>> print(depots.Key)
+            >>> print(depots.KEY)
             Depots
 
-            >>> type(depot_codes_dat[depots.Key])
+            >>> type(depot_codes_dat[depots.KEY])
             dict
-            >>> list(depot_codes_dat[depots.Key].keys())
+            >>> list(depot_codes_dat[depots.KEY].keys())
             ['1950 system (pre-TOPS) codes',
              'Four digit pre-TOPS codes',
              'GWR codes',
@@ -810,7 +798,7 @@ class Depots:
 
             >>> print(depots.FDPTKey)
 
-            >>> depot_codes_dat[depots.Key][depots.FDPTKey].head()
+            >>> depot_codes_dat[depots.KEY][depots.FDPTKey].head()
                Code             Depot name          Region
             0  2000             Accrington  London Midland
             1  2001   Derby Litchurch Lane      Main Works
@@ -828,12 +816,12 @@ class Depots:
                     update=update, verbose=verbose_ if is_internet_connected() else False))
 
         depot_codes_data = {
-            self.Key: {next(iter(x)): next(iter(x.values())) for x in depot_codes},
-            self.LUDKey: self.LUD}
+            self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_codes},
+            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
-            path_to_pickle = os.path.join(self.CurrentDataDir, self.Key.lower() + ".pickle")
+            self.current_data_dir = validate_dir(data_dir)
+            path_to_pickle = os.path.join(self.current_data_dir, self.KEY.lower() + ".pickle")
 
             save_pickle(depot_codes_data, path_to_pickle, verbose=verbose)
 

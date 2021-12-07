@@ -1,9 +1,11 @@
-# Created by .ignore support plugin (hsz.mobi)
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# PyCharm
+.idea
 
 # C extensions
 *.so
@@ -64,9 +66,6 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
-# Scrapy stuff:
-.scrapy
-
 # Sphinx documentation
 docs/_build/
 docs/build/
@@ -82,12 +81,6 @@ target/
 # pyenv
 .python-version
 
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
 # Environments
 .env
 .venv
@@ -97,25 +90,9 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Misc
-.idea/
-pyrcs/dat/
-tests/dat/
+# Other stuff
+pyrcs/dat
+tests/dat
 tests/cmd
 tests/quick_start.py
 tests/update_pkg_dat.py

@@ -2,88 +2,74 @@
 Collect `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
 """
 
-import copy
-import os
 import string
 import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.dir import cd
 
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    is_internet_connected, parse_table, parse_tr, print_conn_err, print_connection_error
+from pyrcs.utils import *
 
 
 class SignalBoxes:
     """
     A class for collecting signal box prefix codes.
 
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param update: whether to do an update check (for the package data), defaults to ``False``
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
 
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    :ivar str NonNationalRailKey: key of the dict-type data of non-national rail
-    :ivar str NonNationalRailPickle: name of the pickle file of non-national rail data
-    :ivar str IrelandKey: key of the dict-type data of Ireland
-    :ivar str IrelandPickle: name of the pickle file of Ireland data
-    :ivar str WRMASDKey: key of the dict-type data of WR MAS dates
-    :ivar str WRMASDPickle: name of the pickle file of WR MAS dates data
-    :ivar str MSBKey: key of the dict-type data of signal box bell codes
-    :ivar str MSBPickle: name of the pickle file of signal box bell codes
-
-    **Example**::
-
-        >>> from pyrcs.other_assets import SignalBoxes
-
-        >>> sb = SignalBoxes()
-
-        >>> print(sb.Name)
-        Signal box prefix codes
-
-        >>> print(sb.SourceURL)
-        http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        Constructor method.
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
+
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        :ivar str NonNationalRailKey: key of the dict-type data of non-national rail
+        :ivar str NonNationalRailPickle: name of the pickle file of non-national rail data
+        :ivar str IrelandKey: key of the dict-type data of Ireland
+        :ivar str IrelandPickle: name of the pickle file of Ireland data
+        :ivar str WRMASDKey: key of the dict-type data of WR MAS dates
+        :ivar str WRMASDPickle: name of the pickle file of WR MAS dates data
+        :ivar str MSBKey: key of the dict-type data of signal box bell codes
+        :ivar str MSBPickle: name of the pickle file of signal box bell codes
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import SignalBoxes
+
+            >>> sb = SignalBoxes()
+
+            >>> print(sb.NAME)
+            Signal box prefix codes
+
+            >>> print(sb.URL)
+            http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
         """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
 
-        self.Name = 'Signal box prefix codes'
-        self.Key = 'Signal boxes'
+        print_connection_error(verbose=verbose)
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/signal/signal_boxes0.shtm')
+        self.NAME = 'Signal box prefix codes'
+        self.KEY = 'Signal boxes'
+
+        self.URL = urllib.parse.urljoin(home_page_url(), '/signal/signal_boxes0.shtm')
 
         self.LUDKey = 'Last updated date'  # key to last updated date
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+        self.LUD = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
-        self.Catalogue = get_catalogue(
-            url=self.SourceURL, update=update, confirmation_required=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
         self.NonNationalRailKey = 'Non-National Rail'
         self.NonNationalRailPickle = self.NonNationalRailKey.lower().replace(" ", "-")
@@ -96,11 +82,11 @@ class SignalBoxes:
 
     def _cdd_sigbox(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\other-assets\\signal-boxes"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``SignalBoxes``
@@ -111,7 +97,7 @@ class SignalBoxes:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
@@ -167,17 +153,17 @@ class SignalBoxes:
         else:
             signal_box_prefix_codes = {beginning_with: None, self.LUDKey: None}
 
-            if beginning_with not in list(self.Catalogue.keys()):
+            if beginning_with not in list(self.catalogue.keys()):
                 if verbose:
                     print("No data is available for {} codes beginning with \"{}\".".format(
-                        self.Key.lower(), beginning_with))
+                        self.KEY.lower(), beginning_with))
 
             else:
-                url = self.SourceURL.replace('0', initial.lower())
+                url = self.URL.replace('0', initial.lower())
 
                 if verbose == 2:
                     print("Collecting data of {} beginning with \"{}\"".format(
-                        self.Key.lower(), beginning_with), end=" ... ")
+                        self.KEY.lower(), beginning_with), end=" ... ")
 
                 try:
                     source = requests.get(url, headers=fake_requests_headers())
@@ -237,10 +223,10 @@ class SignalBoxes:
             >>> list(sb_prefix_codes_dat.keys())
             ['Signal boxes', 'Last updated date']
 
-            >>> print(sb.Key)
+            >>> print(sb.KEY)
             Signal boxes
 
-            >>> sb_prefix_codes = sb_prefix_codes_dat[sb.Key]
+            >>> sb_prefix_codes = sb_prefix_codes_dat[sb.KEY]
 
             >>> type(sb_prefix_codes)
             pandas.core.frame.DataFrame
@@ -265,7 +251,7 @@ class SignalBoxes:
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.Key.lower()))
+                print("No data of the {} has been freshly collected.".format(self.KEY.lower()))
             data = [self.collect_prefix_codes(x, update=False, verbose=verbose_)
                     for x in string.ascii_lowercase]
 
@@ -279,13 +265,13 @@ class SignalBoxes:
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
         # Create a dict to include all information
-        signal_box_prefix_codes = {self.Key: signal_boxes_data_table,
+        signal_box_prefix_codes = {self.KEY: signal_boxes_data_table,
                                    self.LUDKey: latest_update_date}
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
+            self.current_data_dir = validate_dir(data_dir)
             path_to_pickle = os.path.join(
-                self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
+                self.current_data_dir, self.KEY.lower().replace(" ", "-") + ".pickle")
             save_pickle(signal_box_prefix_codes, path_to_pickle, verbose=verbose)
 
         return signal_box_prefix_codes
@@ -338,7 +324,7 @@ class SignalBoxes:
         if confirmed("To collect signal box data of {}?".format(self.NonNationalRailKey.lower()),
                      confirmation_required=confirmation_required):
 
-            url = self.Catalogue[self.NonNationalRailKey]
+            url = self.catalogue[self.NonNationalRailKey]
 
             if verbose == 2:
                 print("Collecting signal box data of {}".format(self.NonNationalRailKey.lower()),
@@ -485,8 +471,8 @@ class SignalBoxes:
 
             if non_national_rail_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    self.current_data_dir = validate_dir(data_dir)
+                    path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
                     save_pickle(non_national_rail_codes_data, path_to_pickle, verbose=verbose)
 
             else:

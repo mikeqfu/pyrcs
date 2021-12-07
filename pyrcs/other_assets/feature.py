@@ -10,88 +10,69 @@ This category includes:
     - `Driver/guard buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
 """
 
-import copy
-import itertools
-import os
-import re
-import socket
 import unicodedata
 import urllib.error
 import urllib.parse
 
-import bs4
-import numpy as np
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.dir import cd
 
 from pyrcs.line_data.elec import Electrification
-from pyrcs.utils import cd_dat, get_catalogue, get_last_updated_date, homepage_url, \
-    is_internet_connected, print_connection_error, print_conn_err
+from pyrcs.utils import *
 
 
 class Features:
     """
     A class for collecting codes of infrastructure features.
 
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param update: whether to do an update check (for the package data), defaults to ``False``
-    :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
-
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str LUDKey: key of the last updated date
-    :ivar dict Catalogue: catalogue of the data
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    :ivar str HabdWildKey: key of the dict-type data of HABD and WILD
-    :ivar str HabdWildPickle: name of the pickle file of HABD and WILD
-    :ivar str OLENeutralNetworkKey: key of the dict-type data of OLE neutral sections
-    :ivar str WaterTroughsKey: key of the dict-type data of water troughs
-    :ivar str WaterTroughsPickle: name of the pickle file of water troughs
-    :ivar str TelegraphKey: key of the dict-type data of telegraphic codes
-    :ivar str TelegraphPickle: name of the pickle file of telegraphic codes
-    :ivar str BuzzerKey: key of the dict-type data of buzzer codes
-    :ivar str BuzzerPickle: name of the pickle file of buzzer codes
-
-    **Example**::
-
-        >>> from pyrcs.other_assets import Features
-
-        >>> features = Features()
-
-        >>> print(features.Name)
-        Infrastructure features
     """
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        Constructor method.
-        """
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :type update: bool
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
 
-        self.Name = 'Infrastructure features'
-        self.Key = 'Features'
-        self.HomeURL = homepage_url()
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str LUDKey: key of the last updated date
+        :ivar dict Catalogue: catalogue of the data
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
+
+        :ivar str HabdWildKey: key of the dict-type data of HABD and WILD
+        :ivar str HabdWildPickle: name of the pickle file of HABD and WILD
+        :ivar str OLENeutralNetworkKey: key of the dict-type data of OLE neutral sections
+        :ivar str WaterTroughsKey: key of the dict-type data of water troughs
+        :ivar str WaterTroughsPickle: name of the pickle file of water troughs
+        :ivar str TelegraphKey: key of the dict-type data of telegraphic codes
+        :ivar str TelegraphPickle: name of the pickle file of telegraphic codes
+        :ivar str BuzzerKey: key of the dict-type data of buzzer codes
+        :ivar str BuzzerPickle: name of the pickle file of buzzer codes
+
+        **Example**::
+
+            >>> from pyrcs.other_assets import Features
+
+            >>> features = Features()
+
+            >>> print(features.NAME)
+            Infrastructure features
+        """
+
+        print_connection_error(verbose=verbose)
+
+        self.NAME = 'Infrastructure features'
+        self.KEY = 'Features'
+        self.URL = urllib.parse.urljoin(home_page_url(), '/features/habdwild.shtm')
         self.LUDKey = 'Last updated date'  # key to last updated date
 
-        self.Catalogue = get_catalogue(
-            url=urllib.parse.urljoin(self.HomeURL, '/features/habdwild.shtm'),
-            update=update, confirmation_required=False)
+        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("other-assets", self.Key.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
         self.HabdWildKey = 'HABD and WILD'
         self.HabdWildPickle = self.HabdWildKey.replace(" ", "-").lower()
@@ -105,11 +86,11 @@ class Features:
 
     def _cdd_feat(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\other-assets\\features"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``Features``
@@ -120,7 +101,7 @@ class Features:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
@@ -163,6 +144,7 @@ class Features:
         return yd
 
     def collect_habds_and_wilds(self, confirmation_required=True, verbose=False):
+        # noinspection GrazieInspection
         """
         Collect codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_ 
         from source web page.
@@ -225,7 +207,7 @@ class Features:
         if confirmed("To collect data of {}?".format(self.HabdWildKey),
                      confirmation_required=confirmation_required):
 
-            url = self.Catalogue[self.HabdWildKey]
+            url = self.catalogue[self.HabdWildKey]
 
             if verbose == 2:
                 print("Collecting data of {}".format(self.HabdWildKey), end=" ... ")
@@ -271,6 +253,7 @@ class Features:
             return habds_and_wilds_codes_data
 
     def fetch_habds_and_wilds(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        # noinspection GrazieInspection
         """
         Fetch codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
         from local backup.
@@ -346,8 +329,8 @@ class Features:
 
             if habds_and_wilds_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    self.current_data_dir = validate_dir(data_dir)
+                    path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
 
                     save_pickle(habds_and_wilds_codes_data, path_to_pickle, verbose=verbose)
 
@@ -401,7 +384,7 @@ class Features:
             [5 rows x 5 columns]
         """
 
-        url = self.Catalogue[self.WaterTroughsKey]
+        url = self.catalogue[self.WaterTroughsKey]
 
         if confirmed("To collect data of {}?".format(self.WaterTroughsKey.lower()),
                      confirmation_required=confirmation_required):
@@ -500,9 +483,9 @@ class Features:
 
             if water_troughs_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
 
                     save_pickle(water_troughs_data, path_to_pickle, verbose=verbose)
 
@@ -565,7 +548,7 @@ class Features:
             4  Q-TRAIN  Special run for the BTP travelling on local li...
         """
 
-        url = self.Catalogue[self.TelegraphKey]
+        url = self.catalogue[self.TelegraphKey]
 
         if confirmed("To collect data of {}?".format(self.TelegraphKey.lower()),
                      confirmation_required=confirmation_required):
@@ -681,9 +664,9 @@ class Features:
 
             if telegraph_code_words:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
                     save_pickle(telegraph_code_words, path_to_pickle, verbose=verbose)
 
             else:
@@ -734,7 +717,7 @@ class Features:
             4                                                  3            Set back
         """
 
-        url = self.Catalogue[self.BuzzerKey]
+        url = self.catalogue[self.BuzzerKey]
 
         if confirmed("To collect data of {}?".format(self.BuzzerKey.lower()),
                      confirmation_required=confirmation_required):
@@ -828,9 +811,9 @@ class Features:
 
             if buzzer_codes_data:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
+                    self.current_data_dir = validate_dir(data_dir)
                     path_to_pickle = os.path.join(
-                        self.CurrentDataDir, os.path.basename(path_to_pickle))
+                        self.current_data_dir, os.path.basename(path_to_pickle))
 
                     save_pickle(buzzer_codes_data, path_to_pickle, verbose=verbose)
 
@@ -841,6 +824,7 @@ class Features:
         return buzzer_codes_data
 
     def fetch_features_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+        # noinspection GrazieInspection
         """
         Fetch features codes from local backup.
 
@@ -869,10 +853,10 @@ class Features:
             >>> list(feat_dat.keys())
             ['Features', 'Last updated date']
 
-            >>> print(features.Key)
+            >>> print(features.KEY)
             Features
 
-            >>> feat_codes = feat_dat[features.Key]
+            >>> feat_codes = feat_dat[features.KEY]
 
             >>> type(feat_codes)
             dict
@@ -906,16 +890,16 @@ class Features:
                     update=update, verbose=verbose_ if is_internet_connected() else False))
 
         features_codes_data = {
-            self.Key:
+            self.KEY:
                 {next(iter(x)): next(iter(x.values())) for x in features_codes},
             self.LUDKey:
                 max(next(itertools.islice(iter(x.values()), 1, 2)) for x in features_codes)
         }
 
         if pickle_it and data_dir:
-            self.CurrentDataDir = validate_input_data_dir(data_dir)
+            self.current_data_dir = validate_dir(data_dir)
             path_to_pickle = os.path.join(
-                self.CurrentDataDir, self.Key.lower().replace(" ", "-") + ".pickle")
+                self.current_data_dir, self.KEY.lower().replace(" ", "-") + ".pickle")
             save_pickle(features_codes_data, path_to_pickle, verbose=verbose)
 
         return features_codes_data

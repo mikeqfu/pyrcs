@@ -4,6 +4,7 @@ Utilities - Helper functions.
 
 import calendar
 import collections
+import copy
 import datetime
 import itertools
 import os
@@ -19,6 +20,7 @@ import numpy as np
 import pandas as pd
 import pkg_resources
 import requests
+from pyhelpers.dir import validate_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
 from pyhelpers.text import find_similar_str
@@ -26,7 +28,7 @@ from pyhelpers.text import find_similar_str
 """ == Specifications ============================================================== """
 
 
-def homepage_url():
+def home_page_url():
     """
     Specify the homepage URL of the data source.
 
@@ -35,9 +37,9 @@ def homepage_url():
 
     **Example**::
 
-        >>> from pyrcs.utils import homepage_url
+        >>> from pyrcs.utils import home_page_url
 
-        >>> homepage_url()
+        >>> home_page_url()
         'http://www.railwaycodes.org.uk/'
     """
 
@@ -46,7 +48,7 @@ def homepage_url():
 
 def _cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
     """
-    Change directory to ``dat_dir`` and sub-directories within a package.
+    Change directory to ``dat_dir`` and subdirectories within a package.
 
     :param sub_dir: name of directory; names of directories (and/or a filename)
     :type sub_dir: str
@@ -84,6 +86,63 @@ def _cd_dat(*sub_dir, dat_dir="dat", mkdir=False, **kwargs):
             os.makedirs(os.path.dirname(path_to_file), exist_ok=True, **kwargs)
 
     return path
+
+
+def init_data_dir(cls, data_dir, category, cluster=None):
+    """
+    Set an initial data directory for (an instance of) a class for a data cluster.
+
+    :param cls: (an instance of) a class for a certain data cluster
+    :type cls: object
+    :param data_dir: name of a folder where the pickle file is to be saved
+    :type data_dir: str or None
+    :param category: name of a data category, e.g. ``"line-data"``
+    :type category: str
+    :param cluster: replacement for ``cls.KEY``
+    :type cluster: str or None
+    :return: pathnames of a default data directory and a current data directory
+    :rtype: typing.Tuple[str]
+
+    """
+
+    if data_dir:
+        cls.data_dir = validate_dir(data_dir)
+
+    else:
+        cluster_ = cls.__getattribute__('KEY') if cluster is None else copy.copy(cluster)
+        cls.data_dir = _cd_dat(category, cluster_.lower().replace(" ", "-"))
+
+    cls.current_data_dir = copy.copy(cls.data_dir)
+
+    return cls.data_dir, cls.current_data_dir
+
+
+def make_pickle_pathname(cls, data_name, data_dir=None):
+    """
+    Make a pathname for saving data as a pickle file.
+
+    :param cls: (an instance of) a class for a certain data cluster
+    :type cls: object
+    :param data_name: key to the dict-type data of a certain cluster
+    :type data_name: str
+    :param data_dir: name of a folder where the pickle file is to be saved
+    :type data_dir: str or None
+    :return: a pathname for saving data as a pickle file
+    :rtype: str
+
+    """
+
+    pickle_filename = data_name.lower().replace(" ", "-") + ".pickle"
+
+    if data_dir:
+        cls.current_data_dir = validate_dir(path_to_dir=data_dir)
+        path_to_pickle = os.path.join(cls.current_data_dir, pickle_filename)
+
+    else:  # data_dir is None or data_dir == ""
+        func = [x for x in dir(cls) if x.startswith('_cdd_')][0]
+        path_to_pickle = getattr(cls, func)(pickle_filename)
+
+    return path_to_pickle
 
 
 """ Converters ===================================================================== """
@@ -498,7 +557,7 @@ def parse_tr(header, trs, as_dataframe=False):
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
         >>> source = requests.get(example_url, headers=fake_requests_headers())
 
-        >>> parsed_text = bs4.BeautifulSoup(source.text, 'lxml')
+        >>> parsed_text = bs4.BeautifulSoup(source.text, 'html.parser')
 
         >>> # noinspection PyUnresolvedReferences
         >>> header_dat = [th.text for th in parsed_text.find_all('th')]
@@ -575,13 +634,13 @@ def parse_tr(header, trs, as_dataframe=False):
     return records
 
 
-def parse_table(source, parser='lxml'):
+def parse_table(source, parser='html.parser'):
     """
     Parse HTML <tr> elements for creating a data frame.
 
     :param source: response object to connecting a URL to request a table
     :type source: requests.Response
-    :param parser: ``'lxml'`` (default), ``'html5lib'`` or ``'html.parser'``
+    :param parser: ``'html.parser'`` (default), ``'html5lib'`` or ``'lxml'``
     :type parser: str
     :return: a list of lists each comprising a row of the requested table
         (see also :ref:`parse_tr() <parse-tr>`) and
@@ -596,7 +655,7 @@ def parse_table(source, parser='lxml'):
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
         >>> source_dat = requests.get(example_url, headers=fake_requests_headers())
 
-        >>> parsed_contents = parse_table(source_dat, parser='lxml')
+        >>> parsed_contents = parse_table(source_dat, parser='html.parser')
 
         >>> type(parsed_contents)
         tuple
@@ -622,7 +681,7 @@ def parse_table(source, parser='lxml'):
     # Get a list of lists, each of which corresponds to a piece of record
     trs = table_temp[1:]
 
-    # Return a list of parsed tr's, each of which corresponds to one df row
+    # Return a list of parsed <tr>'s, each of which corresponds to one df row
     return parse_tr(header, trs), header
 
 
@@ -750,11 +809,11 @@ def parse_date(str_date, as_date_type=False):
     """
 
     try:
-        temp_date = dateutil.parser.parse(str_date, fuzzy=True)
+        temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
         # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
     except (TypeError, calendar.IllegalMonthError):
-        month_name = find_similar_str(str_date, calendar.month_name)
-        err_month_ = find_similar_str(month_name, str_date.split(' '))
+        month_name = find_similar_str(x=str_date, lookup_list=calendar.month_name)
+        err_month_ = find_similar_str(x=month_name, lookup_list=str_date.split(' '))
         temp_date = dateutil.parser.parse(
             timestr=str_date.replace(err_month_, month_name), fuzzy=True)
 
@@ -814,7 +873,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
             if verbose == 2:
                 print("Updating the package data", end=" ... ")
 
-            url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
+            url = urllib.parse.urljoin(home_page_url(), '/misc/sitemap.shtm')
 
             try:
                 source = requests.get(url, headers=fake_requests_headers())
@@ -823,7 +882,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(source.text, 'html.parser')
                     h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
                     next_dl = soup.find('h3').find_next('dl')
 
@@ -837,10 +896,10 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                         if len(dts) == 1 and dts[0].text == '':
                             dat_temp = [x.find('a').get('href') for x in dds]
                             if len(dat_temp) == 1:
-                                dat = urllib.parse.urljoin(homepage_url(), dat_temp[0])
+                                dat = urllib.parse.urljoin(home_page_url(), dat_temp[0])
                             else:
                                 dat = [
-                                    urllib.parse.urljoin(homepage_url(), x)
+                                    urllib.parse.urljoin(home_page_url(), x)
                                     for x in dat_temp]
 
                             site_map.update({h3[i]: dat})
@@ -924,7 +983,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                                 else:
                                     sep_id.append(len(dds_) + 1)
 
-                                dat_ = [[urllib.parse.urljoin(homepage_url(), x.a.get('href'))
+                                dat_ = [[urllib.parse.urljoin(home_page_url(), x.a.get('href'))
                                          for x in dds_[j:k]]
                                         for j, k in _pair(sep_id) if j not in sub_sep_id]
                                 dtt_ = [x for x in dtt if x not in has_sub_dl]
@@ -1009,7 +1068,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
         web_page_text = source.text
 
         # Parse the text scraped from the requested web page
-        parsed_text = bs4.BeautifulSoup(web_page_text, 'lxml')
+        parsed_text = bs4.BeautifulSoup(markup=web_page_text, features='html.parser')
         # Find 'Last update date'
         update_tag = parsed_text.find('p', {'class': 'update'})
 
@@ -1031,7 +1090,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
     """
     Get the catalogue for a class.
 
-    :param url: URL of the main page of a code category
+    :param url: URL of the main page of a data cluster
     :type url: str
     :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
@@ -1094,7 +1153,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                     source_text = source.text
                     source.close()
 
-                    soup = bs4.BeautifulSoup(markup=source_text, features='lxml')
+                    soup = bs4.BeautifulSoup(markup=source_text, features='html.parser')
 
                     try:
                         try:
@@ -1120,7 +1179,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                         save_json(catalogue, path_to_cat_json, verbose=verbose)
 
                 except Exception as e:
-                    print("Failed to get the category menu. {}".format(e))
+                    print("Failed to get the catalogue. {}".format(e))
 
         else:
             print("The catalogue for the requested data has not been acquired.")
@@ -1177,7 +1236,7 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(source.text, 'html.parser')
                     h1, h2s = soup.find('h1'), soup.find_all('h2')
 
                     cls_name = h1.text.replace(' menu', '')
@@ -1269,9 +1328,9 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
 
 def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h3', verbose=False):
     """
-    Get the catalogue of the main page of a code category.
+    Get the catalogue of the main page of a data cluster.
 
-    :param url: URL of the main page of a code category
+    :param url: URL of the main page of a data cluster
     :type url: str
     :param head_tag: tag name of the feature list at the top of the page, defaults to ``'nav'``
     :type head_tag: str
@@ -1281,7 +1340,7 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
     :type feature_tag: str
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
-    :return: the catalogue of the main page of a code category
+    :return: catalogue of the main page of a data cluster
     :rtype: pandas.DataFrame
 
     **Example**::
@@ -1320,7 +1379,7 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
         print_conn_err(verbose=verbose)
 
     else:
-        soup = bs4.BeautifulSoup(markup=source.text, features='lxml')
+        soup = bs4.BeautifulSoup(markup=source.text, features='html.parser')
 
         page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
 
@@ -1485,9 +1544,10 @@ def print_connection_error(verbose=False):
     :type verbose: bool or int
     """
 
-    if verbose:
-        print("Failed to establish an Internet connection. "
-              "The current instance relies on local backup.")
+    if not is_internet_connected():
+        if verbose:
+            print("Failed to establish an Internet connection. "
+                  "The current instance relies on local backup.")
 
 
 def print_conn_err(update=False, verbose=False):
@@ -1525,7 +1585,7 @@ def is_internet_connected():
     """
 
     try:
-        netloc = urllib.parse.urlparse(homepage_url()).netloc
+        netloc = urllib.parse.urlparse(home_page_url()).netloc
         host = socket.gethostbyname(netloc)
         s = socket.create_connection((host, 80))
         s.close()
@@ -1537,15 +1597,21 @@ def is_internet_connected():
 """ == Miscellaneous helpers ======================================================= """
 
 
-def print_collecting_data(data_name, verbose, confirmation_required, end=" ... "):
+def confirm_msg(data_name):
+    cfm_msg = "To collect data of {}\n?".format(data_name.lower())
+
+    return cfm_msg
+
+
+def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
     """
     Print a message about the status of collecting data.
 
     :param data_name: name of the data being collected
     :type data_name: str
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: whether to print relevant information in console
     :type verbose: bool or int
-    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+    :param confirmation_required: whether to confirm before proceeding
     :type confirmation_required: bool
     :param end: string appended after the last value, defaults to ``" ... "``.
     :type end: str
@@ -1555,4 +1621,82 @@ def print_collecting_data(data_name, verbose, confirmation_required, end=" ... "
         if confirmation_required:
             print(f"Collecting the data", end=end)
         else:
-            print(f"Collecting {data_name}", end=end)
+            print(f"Collecting the data of {data_name.lower()}", end=end)
+
+
+def print_void_msg(data_name, verbose):
+    """
+    Print a message about the status of collecting data
+    (only when the data collection process fails).
+
+    :param data_name: name of the data being collected
+    :type data_name: str
+    :param verbose: whether to print relevant information in console
+    :type verbose: bool or int
+    """
+
+    if verbose:
+        print("No data of {} has been freshly collected.".format(data_name.lower()))
+
+
+def collect_in_fetch_verbose(data_dir, verbose):
+    """
+    Create a new parameter that indicates whether to print relevant information in console
+    (used only if it is necessary to re-collect data when trying to fetch the data).
+
+    :param data_dir: name of a folder where the pickle file is to be saved
+    :type data_dir: str or None
+    :param verbose: whether to print relevant information in console
+    :type verbose: bool or int
+    :return: whether to print relevant information in console when collecting data
+    :rtype: bool or int
+    """
+
+    verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+
+    return verbose_
+
+
+def fetch_all_verbose(data_dir, verbose):
+    """
+    Create a new parameter that indicates whether to print relevant information in console
+    (used only when trying to fetch all data of a cluster).
+
+    :param data_dir: name of a folder where the pickle file is to be saved
+    :type data_dir: str or None
+    :param verbose: whether to print relevant information in console
+    :type verbose: bool or int
+    :return: whether to print relevant information in console when collecting data
+    :rtype: bool or int
+    """
+
+    if is_internet_connected():
+        verbose_ = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
+    else:
+        verbose_ = False
+
+    return verbose_
+
+
+def data_to_pickle(cls, data, data_name, pickle_it, data_dir, verbose):
+    """
+    Save collected as a pickle file, depending on the given parameters.
+
+    :param cls: (an instance of) a class for a certain data cluster
+    :type cls: object
+    :param data: data of a certain cluster
+    :type data: pandas.DataFrame or list or dict
+    :param data_name: key to the dict-type data of a certain cluster
+    :type data_name: str
+    :param pickle_it: whether to save the data as a pickle file
+    :type pickle_it: bool
+    :param data_dir: name of a folder where the pickle file is to be saved
+    :type data_dir: str or None
+    :param verbose: whether to print relevant information in console
+    :type verbose: bool or int
+    """
+
+    if pickle_it and data_dir:
+        path_to_pickle = make_pickle_pathname(cls=cls, data_name=data_name, data_dir=data_dir)
+
+        save_pickle(pickle_data=data, path_to_pickle=path_to_pickle, verbose=verbose)

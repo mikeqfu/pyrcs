@@ -2,78 +2,70 @@
 Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
-import copy
-import os
 import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
-from pyhelpers.dir import cd, validate_input_data_dir
-from pyhelpers.ops import fake_requests_headers
-from pyhelpers.store import load_pickle, save_pickle
+from pyhelpers.dir import cd
 
-from pyrcs.utils import cd_dat, confirmed, get_last_updated_date, homepage_url, print_conn_err, \
-    is_internet_connected, print_connection_error
+from pyrcs.utils import *
+from pyrcs.utils import _cd_dat
 
 
 class TrackDiagrams:
     """
     A class for collecting British railway track diagrams.
 
-    :param data_dir: name of data directory, defaults to ``None``
-    :type data_dir: str or None
-    :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
-
-    :ivar str Name: name of the data
-    :ivar str Key: key of the dict-type data
-    :ivar str HomeURL: URL of the main homepage
-    :ivar str SourceURL: URL of the data web page
-    :ivar str LUDKey: key of the last updated date
-    :ivar str LUD: last updated date
-    :ivar str DataDir: path to the data directory
-    :ivar str CurrentDataDir: path to the current data directory
-
-    **Example**::
-
-        >>> from pyrcs.line_data import TrackDiagrams
-
-        >>> td = TrackDiagrams()
-
-        >>> print(td.Name)
-        Railway track diagrams (some samples)
-
-        >>> print(td.SourceURL)
-        http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """
 
+    NAME = 'Railway track diagrams (some samples)'
+    KEY = 'Track diagrams'
+
+    URL = urllib.parse.urljoin(home_page_url(), '/line/diagrams0.shtm')
+
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+
     def __init__(self, data_dir=None, verbose=True):
-        if not is_internet_connected():
-            print_connection_error(verbose=verbose)
+        """
+        :param data_dir: name of data directory, defaults to ``None``
+        :type data_dir: str or None
+        :param verbose: whether to print relevant information in console, defaults to ``True``
+        :type verbose: bool or int
 
-        self.Name = 'Railway track diagrams (some samples)'
-        self.Key = 'Track diagrams'
+        :ivar str Name: name of the data
+        :ivar str Key: key of the dict-type data
+        :ivar str HomeURL: URL of the main homepage
+        :ivar str SourceURL: URL of the data web page
+        :ivar str LUDKey: key of the last updated date
+        :ivar str LUD: last updated date
+        :ivar str DataDir: path to the data directory
+        :ivar str CurrentDataDir: path to the current data directory
 
-        self.HomeURL = homepage_url()
-        self.SourceURL = urllib.parse.urljoin(self.HomeURL, '/line/diagrams0.shtm')
+        **Example**::
 
-        self.LUDKey = 'Last updated date'
-        self.LUD = get_last_updated_date(url=self.SourceURL, parsed=True, as_date_type=False)
+            >>> from pyrcs.line_data import TrackDiagrams
 
-        if data_dir:
-            self.DataDir = validate_input_data_dir(data_dir)
-        else:
-            self.DataDir = cd_dat("line-data", self.Key.lower().replace(" ", "-"))
-        self.CurrentDataDir = copy.copy(self.DataDir)
+            >>> td = TrackDiagrams()
+
+            >>> print(td.NAME)
+            Railway track diagrams (some samples)
+
+            >>> print(td.URL)
+            http://www.railwaycodes.org.uk/track/diagrams0.shtm
+
+        """
+
+        print_connection_error(verbose=verbose)
+
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
     def _cdd_td(self, *sub_dir, **kwargs):
         """
-        Change directory to package data directory and sub-directories (and/or a file).
+        Change directory to package data directory and subdirectories (and/or a file).
 
         The directory for this module: ``"dat\\line-data\\track-diagrams"``.
 
-        :param sub_dir: sub-directory or sub-directories (and/or a file)
+        :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
         :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
         :return: path to the backup data directory for ``LOR``
@@ -84,7 +76,7 @@ class TrackDiagrams:
         :meta private:
         """
 
-        path = cd(self.DataDir, *sub_dir, mkdir=True, **kwargs)
+        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
@@ -114,19 +106,19 @@ class TrackDiagrams:
             ['Track diagrams']
         """
 
-        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.SourceURL).path.replace(
+        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.URL).path.replace(
             '.shtm', '.json').split('/') if x)
-        path_to_cat = cd_dat("catalogue", cat_json)
+        path_to_cat = _cd_dat("catalogue", cat_json)
 
         if os.path.isfile(path_to_cat) and not update:
             items = load_pickle(path_to_cat)
 
         else:
             if verbose == 2:
-                print("Collecting a list of {} items".format(self.Key.lower()), end=" ... ")
+                print("Collecting a list of {} items".format(self.KEY.lower()), end=" ... ")
 
             try:
-                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+                source = requests.get(self.URL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(update=update, verbose=verbose)
@@ -136,7 +128,7 @@ class TrackDiagrams:
                 try:
                     soup = bs4.BeautifulSoup(source.text, 'lxml')
                     h3 = {x.get_text(strip=True) for x in soup.find_all('h3', text=True)}
-                    items = {self.Key: h3}
+                    items = {self.KEY: h3}
 
                     print("Done. ") if verbose == 2 else ""
 
@@ -194,17 +186,16 @@ class TrackDiagrams:
             1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
         """
 
-        if confirmed("To collect the catalogue of sample {}?".format(self.Key.lower()),
+        if confirmed("To collect the catalogue of sample {}?".format(self.KEY.lower()),
                      confirmation_required=confirmation_required):
 
             if verbose == 2:
-                print("Collecting the catalogue of sample {}".format(self.Key.lower()),
-                      end=" ... ")
+                print("Collecting the catalogue of sample {}".format(self.KEY.lower()), end=" ... ")
 
             track_diagrams_catalogue = None
 
             try:
-                source = requests.get(self.SourceURL, headers=fake_requests_headers())
+                source = requests.get(url=self.URL, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -226,7 +217,7 @@ class TrackDiagrams:
                         cold_soup = h3.find_next('div', attrs={'class': 'columns'})
                         if cold_soup:
                             info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
-                            urls = [urllib.parse.urljoin(self.SourceURL, a.get('href'))
+                            urls = [urllib.parse.urljoin(self.URL, a.get('href'))
                                     for a in cold_soup.find_all('a')]
                         else:
                             cold_soup = h3.find_next('a', attrs={'target': '_blank'})
@@ -234,7 +225,7 @@ class TrackDiagrams:
 
                             while cold_soup:
                                 info.append(cold_soup.text)
-                                urls.append(urllib.parse.urljoin(self.SourceURL, cold_soup['href']))
+                                urls.append(urllib.parse.urljoin(self.URL, cold_soup['href']))
                                 cold_soup = cold_soup.find_next('a') \
                                     if h3.text == 'Miscellaneous' \
                                     else cold_soup.find_next_sibling('a')
@@ -245,12 +236,14 @@ class TrackDiagrams:
 
                         h3 = h3.find_next_sibling('h3')
 
-                    track_diagrams_catalogue = {self.Key: track_diagrams_catalogue_,
-                                                self.LUDKey: self.LUD}
+                    track_diagrams_catalogue = {
+                        self.KEY: track_diagrams_catalogue_,
+                        self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
+                    }
 
                     print("Done. ") if verbose == 2 else ""
 
-                    pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+                    pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
                     path_to_pickle = self._cdd_td(pickle_filename)
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
@@ -309,7 +302,7 @@ class TrackDiagrams:
             1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
         """
 
-        pickle_filename = self.Key.lower().replace(" ", "-") + ".pickle"
+        pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
         path_to_pickle = self._cdd_td(pickle_filename)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -323,13 +316,13 @@ class TrackDiagrams:
 
             if track_diagrams_catalogue:
                 if pickle_it and data_dir:
-                    self.CurrentDataDir = validate_input_data_dir(data_dir)
-                    path_to_pickle = os.path.join(self.CurrentDataDir, pickle_filename)
+                    self.current_data_dir = validate_dir(data_dir)
+                    path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
                     save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
 
             else:
                 print("No data of the sample {} catalogue has been freshly collected.".format(
-                    self.Key.lower()))
+                    self.KEY.lower()))
                 track_diagrams_catalogue = load_pickle(path_to_pickle)
 
         return track_diagrams_catalogue

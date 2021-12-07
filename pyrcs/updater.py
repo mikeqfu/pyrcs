@@ -5,10 +5,8 @@ Update package data.
 
 import time
 
-from pyhelpers.ops import confirmed
-
 from .collector import LineData, OtherAssets
-from .utils import get_site_map, is_internet_connected, print_connection_error
+from .utils import *
 
 
 def update_backup_data(verbose=False, time_gap=2):
