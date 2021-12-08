@@ -1,11 +1,8 @@
 import json
 
-import pkg_resources
 import setuptools
 
-meta_pathname = pkg_resources.resource_filename(__name__, "dat/metadata.json")
-
-with open(file=meta_pathname, mode='r') as metadata_file:
+with open(file="pyrcs/dat/metadata.json", mode='r') as metadata_file:
     metadata = json.load(metadata_file)
 
 _author = metadata['Author']
