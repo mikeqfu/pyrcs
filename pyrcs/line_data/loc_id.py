@@ -87,7 +87,7 @@ class LocationIdentifiers:
 
         self.data_dir, self.current_data_dir = init_data_dir(
             self, data_dir=data_dir, category="line-data",
-            key=re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-"))
+            cluster=re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-"))
 
     def _cdd_locid(self, *sub_dir, **kwargs):
         """
