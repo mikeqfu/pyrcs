@@ -10,9 +10,9 @@ The current release includes only:
 import time
 import urllib.parse
 
-from line_data import *
-from other_assets import *
-from utils import *
+from .line_data import *
+from .other_assets import *
+from .utils import *
 
 
 class LineData:

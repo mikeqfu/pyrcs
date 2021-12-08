@@ -1,6 +1,6 @@
 import json
 
-from collector import *
+from .collector import *
 
 with open(pkg_resources.resource_filename(__name__, "dat/metadata.json"), mode='r') as metadata_file:
     metadata = json.load(metadata_file)
@@ -20,6 +20,7 @@ __version__ = metadata['Version']
 __license__ = metadata['License']
 
 __all__ = [
+    'collector',
     'LineData',
     'OtherAssets',
     'Electrification',
