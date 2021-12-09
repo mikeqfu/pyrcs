@@ -574,18 +574,30 @@ def parse_tr(header, trs, as_dataframe=False):
         ['AYT', 'Aberystwyth Branch', '0.00 - 41.15', 'Pencader Junction', '']
     """
 
+    def _parse_other_tags_in_td_contents(td_content):
+        if not isinstance(td_content, str):
+            td_text = td_content.get_text()
+            if td_content.name == 'em':
+                td_text = f'[{td_text}]'
+            elif td_content.name == 'q':
+                td_text = f'"{td_text}"'
+        else:
+            td_text = td_content
+        return td_text
+
     records = []
     for row in trs:
         data = []
         for dat in row.find_all('td'):
-            txt = dat.get_text()
-            if '\n' in txt:
-                t = txt.split('\n')
-                txt = '%s (%s)' % (t[0], t[1:]) if '(' not in txt and ')' not in txt \
-                    else '%s %s' % (t[0], t[1:])
-                data.append(txt)
+            txt_lst = [_parse_other_tags_in_td_contents(content) for content in dat.contents]
+            text = ''.join(txt_lst)
+            if '\n' in text:
+                txt = text.split('\n')
+                text = '%s (%s)' % (txt[0], txt[1:]) if '(' not in text and ')' not in text \
+                    else '%s %s' % (txt[0], txt[1:])
+                data.append(text)
             else:
-                data.append(txt)
+                data.append(text)
         records.append(data)
 
     row_spanned = []
@@ -606,8 +618,10 @@ def parse_tr(header, trs, as_dataframe=False):
                 for j in range(1, y[0]):
                     if y[2] in records[i] and y[2] != '\xa0':
                         y[1] += np.abs(records[i].index(y[2]) - y[1], dtype='int64')
-                    records[i + j].insert(y[1], y[2])
-
+                    if len(records[i + j]) < len(records[i]):
+                        records[i + j].insert(y[1], y[2])
+                    elif records[i + j][y[1]] == '':
+                        records[i + j][y[1]] = y[2]
     # if row_spanned:
     #     for x in row_spanned:
     #         for j in range(1, x[2]):

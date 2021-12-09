@@ -1,6 +1,6 @@
 alabaster==0.7.12
 anyio==3.4.0
-argon2-cffi==21.1.0
+argon2-cffi==21.2.0
 attrs==21.2.0
 Babel==2.9.1
 backcall==0.2.0
@@ -31,7 +31,7 @@ jupyter==1.0.0
 jupyter-client==7.1.0
 jupyter-console==6.4.0
 jupyter-core==4.9.1
-jupyter-server==1.12.1
+jupyter-server==1.13.0
 jupyterlab==3.2.4
 jupyterlab-pygments==0.1.2
 jupyterlab-server==2.8.2
@@ -56,7 +56,7 @@ parso==0.8.3
 pickleshare==0.7.5
 pkginfo==1.8.2
 prometheus-client==0.12.0
-prompt-toolkit==3.0.23
+prompt-toolkit==3.0.24
 psycopg2==2.9.2
 pycparser==2.21
 Pygments==2.10.0
@@ -99,10 +99,10 @@ testpath==0.5.0
 tornado==6.1
 tqdm==4.62.3
 traitlets==5.1.1
-twine==3.7.0
+twine==3.7.1
 urllib3==1.26.7
 wcwidth==0.2.5
 webencodings==0.5.1
-websocket-client==1.2.1
+websocket-client==1.2.3
 widgetsnbextension==3.5.2
 zipp==3.6.0

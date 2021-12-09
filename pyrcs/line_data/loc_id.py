@@ -12,7 +12,7 @@ from pyhelpers.store import save
 from pyrcs.utils import *
 
 
-def _collect_list(h3, p, list_head_tag):
+def _collect_list(p, list_head_tag):
     notes = p.text.strip('thus:', '.')
 
     elements = [get_hypertext(x) for x in list_head_tag.findChildren('li')]
@@ -85,9 +85,11 @@ class LocationIdentifiers:
         mscen_url = urllib.parse.urljoin(home_page_url(), '/crs/crs2.shtm')
         self.catalogue.update({self.KEY_TO_MSCEN: mscen_url})
 
+        self.other_systems_catalogue = get_page_catalogue(url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS])
+
         self.data_dir, self.current_data_dir = init_data_dir(
-            self, data_dir=data_dir, category="line-data",
-            cluster=re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-"))
+            self, data_dir=data_dir, category="line-data", cluster="crs-nlc-tiploc-stanox")
+        # cluster = re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-")
 
     def _cdd_locid(self, *sub_dir, **kwargs):
         """
@@ -158,7 +160,7 @@ class LocationIdentifiers:
     #     return intro_texts
 
     @staticmethod
-    def amendment_to_loc_names():
+    def amendment_to_location_names():
         """
         Create a replacement dictionary for location name amendments.
 
@@ -171,7 +173,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> loc_name_amendment_dict = lid.amendment_to_loc_names()
+            >>> loc_name_amendment_dict = lid.amendment_to_location_names()
 
             >>> list(loc_name_amendment_dict.keys())
             ['Location']
@@ -191,6 +193,7 @@ class LocationIdentifiers:
                          re.compile(r'-Upon-'): '-upon-',
                          re.compile(r'-Under-'): '-under-',
                          re.compile(r'-Y-'): '-y-'}}
+
         return location_name_amendment_dict
 
     @staticmethod
@@ -483,19 +486,19 @@ class LocationIdentifiers:
 
             else:
                 try:
-                    web_page_text = bs4.BeautifulSoup(source.text, 'html.parser')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                     # Get system name
-                    system_names = [k.text for k in web_page_text.find_all('h3')]
+                    system_names = [k.text for k in soup.find_all('h3')]
 
                     # Parse table data for each system
-                    table_data = list(split_list_by_size(web_page_text.find_all('table'), sub_len=2))
+                    table_data = list(split_list_by_size(soup.find_all('table'), sub_len=2))
 
                     tables = []
                     for table in table_data:
-                        headers = [x.text for x in table[0].find_all('th')]
+                        column_names = [x.text for x in table[0].find_all('th')]
                         tbl_dat = table[1].find_all('tr')
-                        tbl_data = pd.DataFrame(parse_tr(headers, tbl_dat), columns=headers)
+                        tbl_data = parse_tr(header=column_names, trs=tbl_dat, as_dataframe=True)
                         tables.append(tbl_data)
 
                     # Make a dict
@@ -508,7 +511,7 @@ class LocationIdentifiers:
                         print("Done.")
 
                     path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OTHER_SYSTEMS)
-                    save_pickle(other_systems_codes, path_to_pickle, verbose=verbose)
+                    save_pickle(other_systems_codes, path_to_pickle=path_to_pickle, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}.".format(e))
@@ -584,7 +587,7 @@ class LocationIdentifiers:
 
         return other_systems_codes
 
-    def collect_loc_codes_by_initial(self, initial, update=False, verbose=False):
+    def collect_codes_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ for a given ``initial`` letter.
@@ -606,7 +609,7 @@ class LocationIdentifiers:
             >>> lid = LocationIdentifiers()
 
             >>> # loc_a = lid.collect_loc_codes_by_initial('a', update=True, verbose=True)
-            >>> loc_a = lid.collect_loc_codes_by_initial(initial='a')
+            >>> loc_a = lid.collect_codes_by_initial(initial='a')
 
             >>> type(loc_a)
             dict
@@ -649,89 +652,102 @@ class LocationIdentifiers:
             }
 
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(url=url, headers=fake_requests_headers())
             except requests.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    tbl_lst, header = parse_table(source=source, parser='html.parser')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+                    headers, codes = soup.find('thead'), soup.find('tbody')
+
+                    column_names = [th.text for th in headers.find_all('th')]
+                    len_of_cols = len(column_names)
+                    list_of_rows = [[td for td in tr.find_all('td')] for tr in codes.find_all('tr')]
+
+                    list_of_row_data = []
+                    for row in list_of_rows:
+                        dat = [x.text for x in row]
+                        list_of_row_data.append(dat[:len_of_cols] if len(row) > len_of_cols else dat)
 
                     # Get a raw DataFrame
-                    reps = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
-                    pattern = re.compile("|".join(reps.keys()))
-                    tbl_lst = [
-                        [pattern.sub(lambda x: reps[x.group(0)], item) for item in record]
-                        for record in tbl_lst
-                    ]
-                    loc_codes = pd.DataFrame(tbl_lst, columns=header)
-                    loc_codes.replace({'\xa0': ''}, regex=True, inplace=True)
+                    rep = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
+                    pat = re.compile("|".join(rep.keys()))
+                    tbl = [[pat.sub(lambda x: rep[x.group(0)], z) for z in y] for y in list_of_row_data]
+                    location_codes = pd.DataFrame(data=tbl, columns=column_names)
+                    location_codes.replace({'\xa0': ''}, regex=True, inplace=True)
 
                     # Collect additional information as note
-                    loc_codes[['Location', 'Location_Note']] = \
-                        loc_codes.Location.map(parse_location_name).apply(pd.Series)
+                    location_codes[['Location', 'Location_Note']] = \
+                        location_codes.Location.map(parse_location_name).apply(pd.Series)
 
                     # CRS, NLC, TIPLOC, STANME
                     drop_pattern = re.compile(r'[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
                     idx = [
-                        loc_codes[loc_codes.CRS == x].index[0] for x in loc_codes.CRS
+                        location_codes[location_codes.CRS == x].index[0] for x in location_codes.CRS
                         if re.match(drop_pattern, x)
                     ]
-                    loc_codes.drop(labels=idx, axis=0, inplace=True)
+                    location_codes.drop(labels=idx, axis=0, inplace=True)
 
-                    # Collect others note
+                    # Collect notes about the code columns
                     def collect_others_note(other_note_x):
-                        n = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', other_note_x)
-                        note = n.group() if n is not None else ''
+                        if other_note_x is not None:
+                            # Search for notes
+                            n1 = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', other_note_x)
+                            note = n1.group(0) if n1 is not None else ''
+
+                            # Strip redundant characters
+                            n2 = re.search(r'[\w ,]+(?= [\[(\'])', note)
+                            if n2 is not None:
+                                note = n2.group(0)
+
+                        else:
+                            note = ''
+
                         return note
 
-                    # Strip others note
-                    def strip_others_note(other_note_x):
-                        d = re.search(r'[\w ,]+(?= [\[(\'])', other_note_x)
-                        dat = d.group() if d is not None else other_note_x
-                        return dat
-
-                    other_codes_col = loc_codes.columns[1:-1]
-                    other_notes_col = [x + '_Note' for x in other_codes_col]
-                    loc_codes[other_notes_col] = loc_codes[other_codes_col].applymap(collect_others_note)
-                    loc_codes[other_codes_col] = loc_codes[other_codes_col].applymap(strip_others_note)
+                    codes_col_names = location_codes.columns[1:-1]
+                    location_codes[[x + '_Note' for x in codes_col_names]] = \
+                        location_codes[codes_col_names].applymap(collect_others_note)
 
                     # Parse STANOX note
                     def parse_stanox_note(x):
-                        if x in ('-', ''):
-                            dat, note = '', ''
+                        if x in ('-', '') or x is None:
+                            data, note = '', ''
                         else:
                             if re.match(r'\d{5}$', x):
-                                dat = x
+                                data = x
                                 note = ''
                             elif re.match(r'\d{5}\*$', x):
-                                dat = x.rstrip('*')
+                                data = x.rstrip('*')
                                 note = 'Pseudo STANOX'
                             elif re.match(r'\d{5} \w.*', x):
-                                dat = re.search(r'\d{5}', x).group()
+                                data = re.search(r'\d{5}', x).group()
                                 note = re.search(r'(?<= )\w.*', x).group()
                             else:
                                 d = re.search(r'[\w *,]+(?= [\[(\'])', x)
-                                dat = d.group() if d is not None else x
-                                note = 'Pseudo STANOX' if '*' in dat else ''
+                                data = d.group() if d is not None else x
+                                note = 'Pseudo STANOX' if '*' in data else ''
                                 n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
                                 if n is not None:
                                     note = '; '.join(x for x in [note, n.group()] if x != '')
                                 if '(' not in note and note.endswith(')'):
                                     note = note.rstrip(')')
-                        return dat, note
+                        return data, note
 
-                    if not loc_codes.empty:
-                        loc_codes[['STANOX', 'STANOX_Note']] = loc_codes.STANOX.map(
+                    if not location_codes.empty:
+                        location_codes[['STANOX', 'STANOX_Note']] = location_codes.STANOX.map(
                             parse_stanox_note).apply(pd.Series)
                     else:
                         # No data is available on the web page for the given 'key_word'
-                        loc_codes['STANOX_Note'] = loc_codes.STANOX
+                        location_codes['STANOX_Note'] = location_codes.STANOX
 
-                    if any('see note' in crs_note for crs_note in loc_codes.CRS_Note):
+                    if any('see note' in crs_note for crs_note in location_codes.CRS_Note):
                         loc_idx = [
-                            i for i, crs_note in enumerate(loc_codes.CRS_Note) if 'see note' in crs_note
+                            i for i, crs_note in enumerate(location_codes.CRS_Note)
+                            if 'see note' in crs_note
                         ]
 
                         web_page_text = bs4.BeautifulSoup(source.text, 'html.parser')
@@ -742,37 +758,38 @@ class LocationIdentifiers:
                         ]
                         add_notes = [self.parse_note_page(note_url) for note_url in note_urls]
 
-                        additional_notes = dict(zip(loc_codes.CRS.iloc[loc_idx], add_notes))
+                        additional_notes = dict(zip(location_codes.CRS.iloc[loc_idx], add_notes))
 
                     else:
                         additional_notes = None
 
-                    loc_codes = loc_codes.replace(self.amendment_to_loc_names(), regex=True)
+                    location_codes = location_codes.replace(
+                        self.amendment_to_location_names(), regex=True)
 
-                    loc_codes.STANOX = loc_codes.STANOX.replace({'-': ''})
+                    location_codes.STANOX = location_codes.STANOX.replace({'-': ''})
 
-                    loc_codes.index = range(len(loc_codes))  # Rearrange index
+                    location_codes.index = range(len(location_codes))  # Rearrange index
 
                     last_updated_date = get_last_updated_date(url=url)
 
                     if verbose == 2:
                         print("Done.")
 
-                    data = {
-                        beginning_with: loc_codes,
+                    parsed_data = {
+                        beginning_with: location_codes,
                         self.KEY_TO_ADDITIONAL_NOTES: additional_notes,
                         self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
-                    location_codes_initial.update(data)
+                    location_codes_initial.update(parsed_data)
 
-                    save_pickle(location_codes_initial, path_to_pickle, verbose=verbose)
+                    save_pickle(location_codes_initial, path_to_pickle=path_to_pickle, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}.".format(e))
 
         return location_codes_initial
 
-    def fetch_location_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
         """
         Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ from local backup.
@@ -794,18 +811,18 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> # loc_dat = lid.fetch_location_codes(update=True, verbose=True)
-            >>> loc_dat = lid.fetch_location_codes()
+            >>> # loc_dat = lid.fetch_codes(update=True, verbose=True)
+            >>> loc_dat = lid.fetch_codes()
 
             >>> type(loc_dat)
             dict
             >>> list(loc_dat.keys())
-            ['Location codes', 'Other systems', 'Additional notes', 'Last updated date']
+            ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
 
-            >>> print(lid.KEY)
-            Location codes
+            >>> lid.KEY
+            'LocationID'
 
-            >>> loc_codes = loc_dat['Location codes']
+            >>> loc_codes = loc_dat['LocationID']
 
             >>> type(loc_codes)
             pandas.core.frame.DataFrame
@@ -816,6 +833,7 @@ class LocationIdentifiers:
             2                 Abbeyhill Signal E811      ...
             3            Abbeyhill Turnback Sidings      ...
             4  Abbey Level Crossing (Staffordshire)      ...
+
             [5 rows x 12 columns]
         """
 
@@ -824,7 +842,7 @@ class LocationIdentifiers:
         # Get every data table
         verbose_2 = verbose_1 if is_internet_connected() else False
         data = [
-            self.collect_loc_codes_by_initial(initial=x, update=update, verbose=verbose_2)
+            self.collect_codes_by_initial(initial=x, update=update, verbose=verbose_2)
             for x in string.ascii_lowercase
         ]
 
@@ -834,7 +852,7 @@ class LocationIdentifiers:
                 print_void_msg(data_name=self.KEY, verbose=verbose)
 
             data = [
-                self.collect_loc_codes_by_initial(initial=x, update=False, verbose=verbose_1)
+                self.collect_codes_by_initial(initial=x, update=False, verbose=verbose_1)
                 for x in string.ascii_lowercase
             ]
 
@@ -877,8 +895,8 @@ class LocationIdentifiers:
 
         return location_codes
 
-    def make_loc_id_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False, main_key=None,
-                         save_it=False, data_dir=None, update=False, verbose=False):
+    def make_xref_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False, main_key=None,
+                       save_it=False, data_dir=None, update=False, verbose=False):
         """
         Make a dict/dataframe for location code data for the given ``keys``.
 
@@ -911,7 +929,7 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> stanox_dictionary = lid.make_loc_id_dict(keys='STANOX')
+            >>> stanox_dictionary = lid.make_xref_dict(keys='STANOX')
 
             >>> type(stanox_dictionary)
             pandas.core.frame.DataFrame
@@ -924,7 +942,7 @@ class LocationIdentifiers:
             04308   Abbeyhill Turnback Sidings
             88601                   Abbey Wood
 
-            >>> s_t_dictionary = lid.make_loc_id_dict(['STANOX', 'TIPLOC'], initials='a')
+            >>> s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
 
             >>> type(s_t_dictionary)
             pandas.core.frame.DataFrame
@@ -940,8 +958,8 @@ class LocationIdentifiers:
             >>> ks = ['STANOX', 'TIPLOC']
             >>> ini = 'b'
 
-            >>> s_t_dictionary = lid.make_loc_id_dict(['STANOX', 'TIPLOC'], initials='b',
-            ...                                       as_dict=True, main_key='Data')
+            >>> s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='b',
+            ...                                            as_dict=True, main_key='Data')
 
             >>> type(s_t_dictionary)
             dict
@@ -987,10 +1005,10 @@ class LocationIdentifiers:
 
         else:
             if initials is None:
-                location_codes = self.fetch_location_codes(verbose=verbose)[self.KEY]
+                location_codes = self.fetch_codes(verbose=verbose)[self.KEY]
             else:
                 temp = [
-                    self.collect_loc_codes_by_initial(initial, verbose=verbose)[initial.upper()]
+                    self.collect_codes_by_initial(initial, verbose=verbose)[initial.upper()]
                     for initial in initials]
                 location_codes = pd.concat(temp, axis=0, ignore_index=True, sort=False)
 

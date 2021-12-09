@@ -32,7 +32,7 @@ class LineData:
         >>> ld = LineData()
 
         >>> # To get data of location codes
-        >>> location_codes_data = ld.LocationIdentifiers.fetch_location_codes()
+        >>> location_codes_data = ld.LocationIdentifiers.fetch_codes()
 
         >>> type(location_codes_data)
         dict
@@ -145,7 +145,7 @@ class LineData:
 
                 # Location
                 print(f"\n{self.LocationIdentifiers.NAME}:")
-                _ = self.LocationIdentifiers.fetch_location_codes(update=True, verbose=verbose)
+                _ = self.LocationIdentifiers.fetch_codes(update=True, verbose=verbose)
 
                 time.sleep(time_gap)
 

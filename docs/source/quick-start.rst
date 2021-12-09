@@ -45,12 +45,12 @@ Now we can create an instance for getting the location codes:
 Get location codes for a given initial letter
 ---------------------------------------------
 
-By using the method :py:meth:`LocationIdentifiers.collect_loc_codes_by_initial()<loc_id.LocationIdentifiers.collect_loc_codes_by_initial>`, we can get the location codes that start with a specific letter, say ``'A'`` or ``'a'``:
+By using the method :py:meth:`LocationIdentifiers.collect_codes_by_initial()<loc_id.LocationIdentifiers.collect_codes_by_initial>`, we can get the location codes that start with a specific letter, say ``'A'`` or ``'a'``:
 
 .. code-block:: python
 
     >>> # The input is case-insensitive
-    >>> loc_codes_a = lid.collect_loc_codes_by_initial('A')
+    >>> loc_codes_a = lid.collect_codes_by_initial('A')
 
     >>> type(loc_codes_a)
     dict
@@ -90,11 +90,11 @@ Below is a snapshot of the codes of the location names beginning with 'A':
 Get all available location codes
 --------------------------------
 
-To get all available location codes in this category, use the method :py:class:`LocationIdentifiers.fetch_location_codes()<loc_id.LocationIdentifiers.fetch_location_codes>`:
+To get all available location codes in this category, use the method :py:class:`LocationIdentifiers.fetch_codes()<loc_id.LocationIdentifiers.fetch_codes>`:
 
 .. code-block:: python
 
-    >>> loc_codes = lid.fetch_location_codes()
+    >>> loc_codes = lid.fetch_codes()
 
     >>> type(loc_codes)
     dict

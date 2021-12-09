@@ -427,31 +427,33 @@ class ELRMileages:
             elrs = load_pickle(path_to_pickle)
 
         else:
-            url = self.catalogue[beginning_with]  # Specify the requested URL
+            if verbose == 2:
+                print(f"Collecting data of {self.KEY} beginning with \"{beginning_with}\"", end=" ... ")
 
             elrs = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
-            if verbose == 2:
-                print("Collecting data of {} beginning with \"{}\"".format(
-                    self.KEY, beginning_with), end=" ... ")
+            url = self.catalogue[beginning_with]  # Specify the requested URL
 
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(url=url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print("Failed.") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    records, header = parse_table(source, parser='lxml')
+                    records, header = parse_table(source=source, parser='html.parser')
                     # Create a DataFrame of the requested table
                     dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
-                    data = pd.DataFrame(dat, columns=header)
+                    data = pd.DataFrame(data=dat, columns=header)
 
-                    last_updated_date = get_last_updated_date(url=url)
+                    last_updated_date = get_last_updated_date(url=url, parsed=True)
 
                     # Update the dict with both the DataFrame and its last updated date
-                    elrs.update({beginning_with: data, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
+                    elrs = {
+                        beginning_with: data,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
+                    }
 
                     print("Done.") if verbose == 2 else ""
 
@@ -506,6 +508,7 @@ class ELRMileages:
             2  AAV  ...
             3  ABB  ...       Now AHB
             4  ABB  ...
+
             [5 rows x 5 columns]
         """
 
@@ -544,8 +547,8 @@ class ELRMileages:
 
         return elrs_data
 
-    def collect_mileage_file(self, elr, parsed=True, confirmation_required=True,
-                             pickle_it=False, verbose=False):
+    def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, pickle_it=False,
+                             verbose=False):
         """
         Collect mileage file for the given ELR from source web page.
 
@@ -634,7 +637,7 @@ class ELRMileages:
 
                 else:
                     try:
-                        source_text = bs4.BeautifulSoup(source.text, 'lxml')
+                        source_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                         line_name = source_text.find('h3').text
                         sub_line_name_ = source_text.find('h4')
