@@ -31,7 +31,7 @@ jupyter==1.0.0
 jupyter-client==7.1.0
 jupyter-console==6.4.0
 jupyter-core==4.9.1
-jupyter-server==1.13.0
+jupyter-server==1.13.1
 jupyterlab==3.2.4
 jupyterlab-pygments==0.1.2
 jupyterlab-server==2.8.2
@@ -72,7 +72,7 @@ pywinpty==1.1.6
 pyzmq==22.3.0
 qtconsole==5.2.1
 QtPy==1.11.3
-readme-renderer==30.0
+readme-renderer==31.0
 requests==2.26.0
 requests-toolbelt==0.9.1
 rfc3986==1.5.0
@@ -92,7 +92,7 @@ sphinxcontrib-htmlhelp==2.0.0
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
-SQLAlchemy==1.4.27
+SQLAlchemy==1.4.28
 sympy==1.9
 terminado==0.12.1
 testpath==0.5.0

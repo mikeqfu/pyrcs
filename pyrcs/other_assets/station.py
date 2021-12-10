@@ -14,8 +14,18 @@ from pyrcs.utils import _cd_dat
 class Stations:
     """
     A class for collecting railway station data.
-
     """
+
+    #: Name of the data
+    NAME = 'Railway station data'
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
+    KEY = 'Stations'
+
+    #: URL of the main web page of the data
+    URL = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
+
+    #: Key of the data of the last updated date
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, verbose=True):
         """
@@ -59,16 +69,9 @@ class Stations:
 
         print_connection_error(verbose=verbose)
 
-        self.NAME = 'Railway station data'
-        self.KEY = 'Stations'
-
-        self.URL = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
-
-        self.LUDKey = 'Last updated date'  # key to last updated date
-        self.LUD = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
         self.StnKey = 'Mileages, operators and grid coordinates'
-        self.StnPickle = self.StnKey.lower().replace(",", "").replace(" ", "-")
 
         self.BilingualKey = 'Bilingual names'
         self.SpStnNameSignKey = 'Sponsored signs'
@@ -155,7 +158,7 @@ class Stations:
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(source.text, 'html.parser')
 
                     cold_soup = soup.find_all('nav')[1]
 
@@ -191,10 +194,10 @@ class Stations:
     @staticmethod
     def _parse_degrees(x):
         if x == '':
-            z = np.nan
+            y = np.nan
         else:
-            z = float(x.replace('c.', '') if x.startswith('c.') else x)
-        return z
+            y = float(re.sub(r'(c\.)|≈', '', x))
+        return y
 
     @staticmethod
     def _parse_owner_and_operator(x):
@@ -363,33 +366,32 @@ class Stations:
             railway_station_data = load_pickle(path_to_pickle)
 
         else:
-            railway_station_data = {beginning_with: None, self.LUDKey: None}
+            railway_station_data = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
             if verbose == 2:
-                print("Collecting {} of locations beginning with \"{}\"".format(
+                print("Collecting {} of stations (beginning with \"{}\")".format(
                     self.StnKey.lower(), beginning_with), end=" ... ")
 
             stn_data_catalogue = self.get_station_data_catalogue()
-            stn_data_initials = list(
-                stn_data_catalogue['Mileages, operators and grid coordinates'].keys())
+            stn_data_initials = list(stn_data_catalogue[self.StnKey].keys())
 
             if beginning_with not in stn_data_initials:
                 if verbose:
-                    print("No data is available for the locations beginning with \"{}\".".format(
-                        beginning_with))
+                    print(f"No data is available for the stations beginning with \"{beginning_with}\".")
 
             else:
                 url = self.URL.replace('station0', 'station{}'.format(initial.lower()))
 
                 try:
-                    source = requests.get(url, headers=fake_requests_headers())
+                    source = requests.get(url=url, headers=fake_requests_headers())
                 except requests.exceptions.ConnectionError:
                     print("Failed.") if verbose == 2 else ""
                     print_conn_err(verbose=verbose)
 
                 else:
                     try:
-                        records, header = parse_table(source, parser='lxml')
+                        records, header = parse_table(source=source, parser='html.parser')
+
                         # Create a DataFrame of the requested table
                         dat = [[x.replace('=', 'See').strip('\xa0') for x in i] for i in records]
                         col = [re.sub(r'\n?\r+\n?', ' ', h) for h in header]
@@ -401,10 +403,17 @@ class Stations:
                             lambda x: x.split(' ') if not re.match('^[Ss]ee ', x) else [x])
                         temp_elr_len = temp_elr.map(len).sum()
                         if max(temp_degree_len, temp_elr_len) > len(stn_dat):
-                            temp_col = ['ELR', 'Status',
-                                        'Degrees Longitude', 'Degrees Latitude', 'Grid Reference']
-                            idx = [j for j in stn_dat.index
-                                   if max(len(temp_degree[j]), len(temp_elr[j])) > 1]
+                            temp_col = [
+                                'ELR',
+                                'Degrees Longitude',
+                                'Degrees Latitude',
+                                'Grid Reference',
+                            ]
+
+                            idx = [
+                                j for j in stn_dat.index
+                                if max(len(temp_degree[j]), len(temp_elr[j])) > 1
+                            ]
 
                             temp_vals = []
 
@@ -413,23 +422,29 @@ class Stations:
                                 temp_val = []
                                 for c in col:
                                     x_ = stn_dat.loc[i, c]
-                                    if c in temp_col:
+                                    if c == 'Status':
+                                        if 'Operator confusion\r' in x_:
+                                            y_ = re.search(r'\[(.*?)]', x_).group(1)
+                                            y_ = ['Operator confusion: ' + re.sub(' +', ' ', y_)]
+                                        else:
+                                            y_ = [x_]
+                                        y_ *= t
+                                    elif c == 'Mileage':
+                                        y_ = re.findall(r'\d+m \d+ch|\d+\.\d+km|\w+', x_)
+                                        if len(y_) > t:
+                                            y_ = re.findall(r'\d+m \d+ch|unknown', x_)
+                                    elif c in temp_col:
                                         x_ = re.sub(r' \(\[\'|\', \'|\']\)', ' ', x_)
                                         if '\r' in x_ or '\\r' in x_:
                                             x_ = re.sub(r'\r|\\r', ',', x_).strip().split(',')
-                                            y = [z.strip() for z in x_]
+                                            y_ = [z.strip() for z in x_]
                                         else:
-                                            y = x_.strip().split(' ')
-                                        if len(y) == 1:
-                                            y = y * t
-                                        temp_val.append(y)
-                                    elif c == 'Mileage':
-                                        y = re.findall(r'\d+m \d+ch|\d+\.\d+km|\w+', x_)
-                                        if len(y) > t:
-                                            y = re.findall(r'\d+m \d+ch|unknown', x_)
-                                        temp_val.append(y)
+                                            y_ = x_.strip().split(' ')
+                                        if len(y_) == 1:
+                                            y_ *= t
                                     else:
-                                        temp_val.append([x_] * t)
+                                        y_ = [x_] * t
+                                    temp_val.append(y_)
 
                                 temp_vals.append(
                                     pd.DataFrame(np.array(temp_val, dtype=object).T, columns=col))
@@ -461,14 +476,19 @@ class Stations:
                         stn_dat.drop('Operator', axis=1, inplace=True)
                         stn_dat = stn_dat.join(operators)
 
-                        last_updated_date = get_last_updated_date(url)
+                        last_updated_date = get_last_updated_date(url=url, parsed=True)
 
-                        railway_station_data.update({beginning_with: stn_dat,
-                                                     self.LUDKey: last_updated_date})
+                        railway_stn_dat = {
+                            beginning_with: stn_dat,
+                            self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
+                        }
 
-                        print("Done.") if verbose == 2 else ""
+                        railway_station_data.update(railway_stn_dat)
 
-                        save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
+                        if verbose == 2:
+                            print("Done.")
+
+                        save_pickle(railway_station_data, path_to_pickle=path_to_pickle, verbose=verbose)
 
                     except Exception as e:
                         print("Failed. {}".format(e))
@@ -520,23 +540,27 @@ class Stations:
             [5 rows x 30 columns]
         """
 
-        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+        verbose_1 = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
+        verbose_2 = verbose_1 if is_internet_connected() else False
 
         data_sets = [
             self.collect_station_data_by_initial(
-                x, update=update, verbose=verbose_ if is_internet_connected() else False)
+                initial=x, update=update, verbose=verbose_2)
             for x in string.ascii_lowercase]
 
         if all(d[x] is None for d, x in zip(data_sets, string.ascii_uppercase)):
             if update:
                 print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.StnKey.lower()))
-            data_sets = [self.collect_station_data_by_initial(x, update=False, verbose=verbose_)
-                         for x in string.ascii_lowercase]
+                print_void_msg(data_name=self.StnKey, verbose=verbose)
+
+            data_sets = [
+                self.collect_station_data_by_initial(x, update=False, verbose=verbose_1)
+                for x in string.ascii_lowercase
+            ]
 
         stn_dat_tbl_ = (item[x] for item, x in zip(data_sets, string.ascii_uppercase))
-        stn_dat_tbl = sorted([x for x in stn_dat_tbl_ if x is not None], key=lambda x: x.shape[1],
-                             reverse=True)
+        stn_dat_tbl = sorted(
+            [x for x in stn_dat_tbl_ if x is not None], key=lambda x: x.shape[1], reverse=True)
         stn_data = pd.concat(stn_dat_tbl, axis=0, ignore_index=True, sort=False)
 
         stn_data = stn_data.where(pd.notna(stn_data), None)
@@ -544,14 +568,16 @@ class Stations:
 
         stn_data.index = range(len(stn_data))
 
-        last_updated_dates = (d[self.LUDKey] for d in data_sets)
+        last_updated_dates = (d[self.KEY_TO_LAST_UPDATED_DATE] for d in data_sets)
         latest_update_date = max(d for d in last_updated_dates if d is not None)
 
-        railway_station_data = {self.StnKey: stn_data, self.LUDKey: latest_update_date}
+        railway_station_data = {
+            self.StnKey: stn_data,
+            self.KEY_TO_LAST_UPDATED_DATE: latest_update_date,
+        }
 
-        if pickle_it and data_dir:
-            self.current_data_dir = validate_dir(data_dir)
-            path_to_pickle = os.path.join(self.current_data_dir, self.StnPickle + ".pickle")
-            save_pickle(railway_station_data, path_to_pickle, verbose=verbose)
+        data_to_pickle(
+            self, data=railway_station_data, data_name=self.StnKey,
+            pickle_it=pickle_it, data_dir=data_dir, verbose=verbose)
 
         return railway_station_data
