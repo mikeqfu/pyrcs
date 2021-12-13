@@ -93,7 +93,6 @@ venv.bak/
 # Other stuff
 pyrcs/dat/*/*
 pyrcs/dat/*.pickle
-pyrcs/dat/location-names-*.json
 tests/dat
 tests/cmd
 tests/quick_start.py
