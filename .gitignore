@@ -92,7 +92,7 @@ venv.bak/
 
 # Other stuff
 pyrcs/dat/*/*
-pyrcs/dat/*.pickle
+pyrcs/dat/site-map.json
 tests/dat
 tests/cmd
 tests/quick_start.py
