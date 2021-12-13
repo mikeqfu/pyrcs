@@ -1,8 +1,7 @@
 beautifulsoup4
 pandas
 requests
-pyhelpers @ git+https://github.com/mikeqfu/pyhelpers.git@600e36a36181c39aeb5360dab9325599fffdff81
-measurement
+pyhelpers @ git+https://github.com/mikeqfu/pyhelpers.git@c9cd989ac14819090abef06925155f37513dbe60
 numpy
 Sphinx~=4.3.0
 sphinx-copybutton

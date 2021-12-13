@@ -1,6 +1,7 @@
 alabaster==0.7.12
 anyio==3.4.0
-argon2-cffi==21.2.0
+argon2-cffi==21.3.0
+argon2-cffi-bindings==21.2.0
 attrs==21.2.0
 Babel==2.9.1
 backcall==0.2.0
@@ -32,16 +33,14 @@ jupyter-client==7.1.0
 jupyter-console==6.4.0
 jupyter-core==4.9.1
 jupyter-server==1.13.1
-jupyterlab==3.2.4
+jupyterlab==3.2.5
 jupyterlab-pygments==0.1.2
-jupyterlab-server==2.8.2
+jupyterlab-server==2.9.0
 jupyterlab-widgets==1.0.2
 keyring==23.4.0
 MarkupSafe==2.0.1
 matplotlib-inline==0.1.3
-measurement==3.2.0
 mistune==0.8.4
-mpmath==1.2.1
 nbclassic==0.3.4
 nbclient==0.5.9
 nbconvert==6.3.0
@@ -50,7 +49,7 @@ nest-asyncio==1.5.4
 notebook==6.4.6
 numpy==1.21.4
 packaging==21.3
-pandas==1.3.4
+pandas==1.3.5
 pandocfilters==1.5.0
 parso==0.8.3
 pickleshare==0.7.5
@@ -60,7 +59,7 @@ prompt-toolkit==3.0.24
 psycopg2==2.9.2
 pycparser==2.21
 Pygments==2.10.0
-pyhelpers @ git+https://github.com/mikeqfu/pyhelpers.git@3b61b8abe8a1682a372d90ae9f6a292b8d3366b6
+pyhelpers @ git+https://github.com/mikeqfu/pyhelpers.git@c9cd989ac14819090abef06925155f37513dbe60
 pyparsing==3.0.6
 pyproj==3.3.0
 pyrsistent==0.18.0
@@ -70,9 +69,9 @@ pywin32==302
 pywin32-ctypes==0.2.0
 pywinpty==1.1.6
 pyzmq==22.3.0
-qtconsole==5.2.1
+qtconsole==5.2.2
 QtPy==1.11.3
-readme-renderer==31.0
+readme-renderer==32.0
 requests==2.26.0
 requests-toolbelt==0.9.1
 rfc3986==1.5.0
@@ -93,7 +92,6 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 SQLAlchemy==1.4.28
-sympy==1.9
 terminado==0.12.1
 testpath==0.5.0
 tornado==6.1
