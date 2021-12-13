@@ -6,7 +6,6 @@ import calendar
 import collections
 import copy
 import datetime
-import itertools
 import os
 import re
 import socket
@@ -15,14 +14,13 @@ import urllib.parse
 
 import bs4
 import dateutil.parser
-import measurement.measures
 import numpy as np
 import pandas as pd
 import pkg_resources
 import requests
 from pyhelpers.dir import validate_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_json, load_pickle, save_json, save_pickle
+from pyhelpers.store import load_json, save_json, save_pickle
 from pyhelpers.text import find_similar_str
 
 """ == Specifications ============================================================== """
@@ -148,6 +146,11 @@ def make_pickle_pathname(cls, data_name, data_dir=None):
 """ Converters ===================================================================== """
 
 
+def kilometer_to_yards(km):
+    yards = float(km) * 1093.6132983377079
+    return yards
+
+
 def mile_chain_to_nr_mileage(miles_chains):
     """
     Convert mileage data in the form '<miles>.<chains>' to Network Rail mileage.
@@ -174,7 +177,7 @@ def mile_chain_to_nr_mileage(miles_chains):
 
     if pd.notna(miles_chains) and miles_chains != '':
         miles, chains = str(miles_chains).split('.')
-        yards = measurement.measures.Distance(chain=chains).yd
+        yards = chains * 22.0  # measurement.measures.Distance(chain=chains).yd
         network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
     else:
         network_rail_mileage = ''
@@ -207,7 +210,7 @@ def nr_mileage_to_mile_chain(str_mileage):
 
     if pd.notna(str_mileage) and str_mileage != '':
         miles, yards = str(str_mileage).split('.')
-        chains = measurement.measures.Distance(yard=yards).chain
+        chains = yards / 22.0  # measurement.measures.Distance(yard=yards).chain
         miles_chains = '%.2f' % (int(miles) + round(chains / (10 ** 2), 2))
     else:
         miles_chains = ''
@@ -300,7 +303,7 @@ def nr_mileage_to_yards(nr_mileage):
 
     miles = int(nr_mileage.split('.')[0])
     yards = int(nr_mileage.split('.')[1])
-    yards += int(measurement.measures.Distance(mi=miles).yd)
+    yards += int(miles * 1760)  # int(measurement.measures.Distance(mi=miles).yd)
 
     return yards
 
@@ -338,8 +341,8 @@ def yards_to_nr_mileage(yards, as_str=True):
     """
 
     if pd.notnull(yards) and yards != '':
-        mileage_mi = np.floor(measurement.measures.Distance(yd=yards).mi)
-        mileage_yd = yards - int(measurement.measures.Distance(mi=mileage_mi).yd)
+        mileage_mi = np.floor(yards / 1760)  # measurement.measures.Distance(yd=yards).mi
+        mileage_yd = yards - int(mileage_mi * 1760)  # measurement.measures.Distance(mi=mileage_mi).yd
 
         if mileage_yd == 1760:
             mileage_mi += 1
@@ -839,6 +842,130 @@ def parse_date(str_date, as_date_type=False):
 """ == Assistant scrapers ========================================================== """
 
 
+def _parse_dd_or_dt_contents(dd_or_dt_contents):
+    if len(dd_or_dt_contents) == 1:
+        content = dd_or_dt_contents[0]
+        if isinstance(content, str):
+            text = content
+            href = None
+        else:
+            text = content.get_text(strip=True)
+            href = content.get(key='href') if content.name == 'a' else ''
+
+    else:  # len(dd_or_dt_contents) == 2:
+        a_href, text = dd_or_dt_contents
+        if not isinstance(text, str):
+            text, a_href = dd_or_dt_contents
+
+        text = re.search(r'\((.*?)\)', text).group(1)
+        text = text[0].capitalize() + text[1:]
+        href = a_href.find(name='a').get(key='href')
+
+    return text, href
+
+
+def _get_site_map_sub_dl(h3_dl_dts):
+    h3_dl_dt_dd_dict = {}
+
+    for h3_dl_dt in h3_dl_dts:
+
+        dt_text, dt_href = _parse_dd_or_dt_contents(h3_dl_dt.contents)
+
+        if dt_href is not None:
+            dt_link = urllib.parse.urljoin(home_page_url(), dt_href)
+            h3_dl_dt_dd_dict.update({dt_text: dt_link})
+
+        else:
+            next_dd = h3_dl_dt.find_next('dd')
+            prev_dt = next_dd.find_previous(name='dt')
+            next_dd_sub_dl = next_dd.findChild(name='dl')
+
+            if next_dd_sub_dl is not None:
+                next_dd_sub_dl_dts = next_dd_sub_dl.find_all(name='dt')
+                h3_dl_dt_dd_dict = _get_site_map_sub_dl(next_dd_sub_dl_dts)
+
+            else:
+                h3_dl_dt_dds = {}
+                while prev_dt == h3_dl_dt:
+                    next_dd_sub_dl_ = next_dd.findChild('dl')
+
+                    if next_dd_sub_dl_ is None:
+                        next_dd_contents = [x for x in next_dd.contents if x != '\n']
+
+                        if len(next_dd_contents) == 1:
+                            next_dd_content = next_dd_contents[0]
+                            text = next_dd_content.get_text(strip=True)
+                            href = next_dd_content.get(key='href')
+
+                        else:  # len(next_dd_contents) == 2:
+                            a_href, text = next_dd_contents
+                            if not isinstance(text, str):
+                                text, a_href = next_dd_contents
+
+                            text = re.search(r'\((.*?)\)', text).group(1)
+                            text = text[0].capitalize() + text[1:]
+                            href = a_href.find(name='a').get(key='href')
+
+                        link = urllib.parse.urljoin(home_page_url(), href)
+                        h3_dl_dt_dds.update({text: link})
+
+                    else:
+                        sub_dts = next_dd_sub_dl_.find_all(name='dt')
+
+                        for sub_dt in sub_dts:
+                            sub_dt_text, _ = _parse_dd_or_dt_contents(sub_dt.contents)
+                            sub_dt_dds = sub_dt.find_next_siblings(name='dd')
+                            sub_dt_dds_dict = _get_site_map_sub_dl(sub_dt_dds)
+
+                            h3_dl_dt_dds.update({sub_dt_text: sub_dt_dds_dict})
+
+                    try:
+                        next_dd = next_dd.find_next_sibling(name='dd')
+                        prev_dt = next_dd.find_previous_sibling(name='dt')
+                    except AttributeError:
+                        break
+
+                h3_dl_dt_dd_dict.update({dt_text: h3_dl_dt_dds})
+
+    return h3_dl_dt_dd_dict
+
+
+def _get_site_map(source):
+    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+    h3s = soup.find_all(name='h3', attrs={"class": "site"})
+
+    site_map = collections.OrderedDict()
+
+    for h3 in h3s:
+        h3_title = h3.get_text(strip=True)
+
+        h3_dl = h3.find_next_sibling(name='dl')
+
+        h3_dl_dts = h3_dl.find_all(name='dt')
+
+        if len(h3_dl_dts) == 1:
+            h3_dl_dt_dd_dict = {}
+
+            h3_dl_dt = h3_dl_dts[0]
+            h3_dl_dt_text = h3_dl_dt.get_text(strip=True)
+
+            if h3_dl_dt_text == '':
+                h3_dl_dt_dds = h3_dl_dt.find_next_siblings('dd')
+
+                for h3_dl_dt_dd in h3_dl_dt_dds:
+                    text, href = _parse_dd_or_dt_contents(h3_dl_dt_dd.contents)
+                    link = urllib.parse.urljoin(home_page_url(), href)
+                    h3_dl_dt_dd_dict.update({text: link})
+
+        else:
+            h3_dl_dt_dd_dict = _get_site_map_sub_dl(h3_dl_dts)
+
+        site_map.update({h3_title: h3_dl_dt_dd_dict})
+
+    return site_map
+
+
 def get_site_map(update=False, confirmation_required=True, verbose=False):
     """
     Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
@@ -873,16 +1000,15 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
         http://www.railwaycodes.org.uk/index.shtml
     """
 
-    path_to_pickle = _cd_dat("site-map.pickle", mkdir=True)
+    path_to_json = _cd_dat("site-map.json", mkdir=True)
 
-    if os.path.isfile(path_to_pickle) and not update:
-        site_map = load_pickle(path_to_pickle)
+    if os.path.isfile(path_to_json) and not update:
+        site_map = load_json(path_to_json)
 
     else:
         site_map = None
 
-        if confirmed("To collect the site map?",
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect the site map?", confirmation_required=confirmation_required):
 
             if verbose == 2:
                 print("Updating the package data", end=" ... ")
@@ -890,146 +1016,26 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
             url = urllib.parse.urljoin(home_page_url(), '/misc/sitemap.shtm')
 
             try:
-                source = requests.get(url, headers=fake_requests_headers())
+                source = requests.get(url=url, headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_conn_err(update=update, verbose=True if update else verbose)
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.text, 'html.parser')
-                    h3 = [x.get_text(strip=True) for x in soup.find_all('h3')]
-                    next_dl = soup.find('h3').find_next('dl')
+                    site_map = _get_site_map(source=source)
 
-                    site_map = collections.OrderedDict()
-                    i = 0
-                    while i < len(h3):
-                        # text, data
-                        dts = next_dl.findChildren('dt')
-                        dds = next_dl.findChildren('dd')
-
-                        if len(dts) == 1 and dts[0].text == '':
-                            dat_temp = [x.find('a').get('href') for x in dds]
-                            if len(dat_temp) == 1:
-                                dat = urllib.parse.urljoin(home_page_url(), dat_temp[0])
-                            else:
-                                dat = [
-                                    urllib.parse.urljoin(home_page_url(), x)
-                                    for x in dat_temp]
-
-                            site_map.update({h3[i]: dat})
-
-                        else:
-
-                            def _pair(iterable):
-                                a, b = itertools.tee(iterable)
-                                next(b, None)
-                                return zip(a, b)
-
-                            def _get_sub_site_maps(dts_, dds_):
-                                # dts_, dds_ = dts, dds
-                                site_map_ = {}
-                                dtt = []
-                                sep_id = [0]
-                                counter = 0
-                                has_sub_dl = []
-                                under_sub_dl = []
-                                sub_sep_id = []
-
-                                for dt in dts_:
-                                    if dt.text not in under_sub_dl:
-                                        dtt_temp = dt.get_text(strip=True)
-                                        temp = re.search(r'.*(?= \()', dtt_temp)
-
-                                        dtt.append(temp.group() if temp else dtt_temp)
-
-                                        sib_dd = dt
-                                        while True:
-                                            try:
-                                                sib_dd = sib_dd.find_next_sibling()
-                                            except AttributeError:
-                                                break
-                                            try:
-                                                dd_name = sib_dd.name
-                                            except AttributeError:
-                                                dd_name = ''
-                                            if dd_name == 'dd':
-                                                sub_dl = sib_dd.findChild('dl')
-
-                                                if sub_dl is not None:  # sub_dl.name == 'dl':
-                                                    sub_dt = sub_dl.findChildren('dt')
-                                                    sub_dd = sub_dl.findChildren('dd')
-                                                    sub_dl_cat = _get_sub_site_maps(sub_dt, sub_dd)
-
-                                                    if sib_dd.next_element.name == 'a':
-                                                        site_map_.update(sub_dl_cat)
-                                                        temp_dd = soup.new_tag("dd")
-                                                        temp_dd.append(
-                                                            sib_dd.next_element.__copy__())
-                                                        dds_[counter] = temp_dd
-                                                        counter += 1
-                                                        sep_id.append(counter)
-                                                        sub_sep_id.append(counter)
-                                                        counter += len(sub_dd)
-                                                        sep_id.append(counter)
-                                                        sub_key = list(sub_dl_cat.keys())[0]
-                                                        dtt.append(sub_key)
-                                                        has_sub_dl.append(sub_key)
-                                                    else:
-                                                        site_map_.update({dt.text: sub_dl_cat})
-                                                        sub_sep_id.append(counter)
-                                                        has_sub_dl.append(dt.text)
-                                                        counter += len(sub_dd) + 1
-                                                        sep_id.append(counter)
-
-                                                    under_sub_dl += [x.text for x in sub_dt]
-
-                                                else:
-                                                    counter += 1
-
-                                            elif dd_name == 'dt':
-                                                sib_dd_ = sib_dd.find_previous_sibling('dd')
-                                                if not sib_dd_.findChild('dl'):
-                                                    sep_id.append(counter)
-                                                break
-
-                                if counter == len(dds_):
-                                    sep_id.append(counter)
-                                else:
-                                    sep_id.append(len(dds_) + 1)
-
-                                dat_ = [[urllib.parse.urljoin(home_page_url(), x.a.get('href'))
-                                         for x in dds_[j:k]]
-                                        for j, k in _pair(sep_id) if j not in sub_sep_id]
-                                dtt_ = [x for x in dtt if x not in has_sub_dl]
-
-                                site_map_.update(dict(zip(dtt_, dat_)))
-
-                                site_map_ = collections.OrderedDict((k, site_map_[k]) for k in dtt)
-
-                                return site_map_
-
-                            sub_site_map = _get_sub_site_maps(dts, dds)
-
-                            site_map.update({h3[i]: sub_site_map})
-
-                        try:
-                            next_dl = next_dl.find_next('h3').find_next('dl')
-                        except AttributeError:
-                            break
-
-                        i += 1
-
-                    print("Done. ") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done. ")
 
                     if site_map is not None:
-                        save_pickle(site_map, path_to_pickle, verbose=verbose)
+                        save_json(site_map, path_to_json=path_to_json, indent=4, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
         else:
             print("Cancelled. ") if verbose == 2 else ""
-            site_map = load_pickle(path_to_pickle)
+            site_map = load_json(path_to_json)
 
     return site_map
 
