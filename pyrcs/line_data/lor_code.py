@@ -6,6 +6,7 @@ import urllib.error
 import urllib.parse
 
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 

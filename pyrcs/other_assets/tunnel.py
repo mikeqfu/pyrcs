@@ -2,11 +2,12 @@
 Collect codes of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
+import itertools
 import operator
 import urllib.parse
 
-import measurement.measures
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 
@@ -131,19 +132,17 @@ class Tunnels:
             add_info = 'Unavailable'
         elif re.match(r'\d+m \d+yd-.*\d+m \d+yd.*', x):
             miles_a, yards_a, miles_b, yards_b = re.findall(r'\d+', x)
-            length_a = \
-                measurement.measures.Distance(mi=miles_a).m + \
-                measurement.measures.Distance(yd=yards_a).m
-            length_b = \
-                measurement.measures.Distance(mi=miles_b).m + \
-                measurement.measures.Distance(yd=yards_b).m
+            length_a = miles_a * 1609.344 + yards_a * 0.9144
+            # measurement.measures.Distance(mi=miles_a).m + measurement.measures.Distance(yd=yards_a).m
+            length_b = miles_b * 1609.344 + yards_b * 0.9144
+            # measurement.measures.Distance(mi=miles_b).m + measurement.measures.Distance(yd=yards_b).m
             length = (length_a + length_b) / 2
             add_info = '-'.join([str(round(length_a, 2)), str(round(length_b, 2))]) + ' metres'
         else:
             if re.match(r'(formerly )?c?≈?\d+m ?\d+y?(ch)?.*', x):
                 miles, yards = re.findall(r'\d+', x)
-                if re.match(r'.*\d+ch$', x):
-                    yards = measurement.measures.Distance(chain=yards).yd
+                if re.match(r'.*\d+ch$', x):  # "yards" is "chains"
+                    yards = yards * 22  # measurement.measures.Distance(chain=yards).yd
                 if re.match(r'^c.*|^≈', x):
                     add_info = 'Approximate'
                 elif re.match(r'\d+y$', x):
@@ -158,9 +157,8 @@ class Tunnels:
             else:
                 miles, yards = 0, 0
                 add_info = ''
-            length = \
-                measurement.measures.Distance(mi=miles).m + \
-                measurement.measures.Distance(yd=yards).m
+            length = miles * 1609.344 + yards * 0.9144
+            # measurement.measures.Distance(mi=miles).m + measurement.measures.Distance(yd=yards).m
         return length, add_info
 
     def collect_lengths_by_page(self, page_no, update=False, verbose=False):

@@ -3,10 +3,12 @@ Collect `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
+import itertools
 import urllib.error
 import urllib.parse
 
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 from pyrcs.utils import _cd_dat

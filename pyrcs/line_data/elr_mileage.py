@@ -2,10 +2,11 @@
 Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
 """
 
+import itertools
 import string
 
-import measurement.measures
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 from pyhelpers.text import remove_punctuation
 
 from pyrcs.utils import *
@@ -111,8 +112,7 @@ class ELRMileages:
             if 'Distances in km' in test_temp_node:
                 temp_mileage_data = mileage_data[~mileage_data.Node.str.contains('Distances in km')]
                 temp_mileages = temp_mileage_data.Mileage.map(
-                    lambda x: nr_mileage_to_mile_chain(
-                        yards_to_nr_mileage(measurement.measures.Distance(km=x).yd)))
+                    lambda x: nr_mileage_to_mile_chain(yards_to_nr_mileage(kilometer_to_yards(km=x))))
                 temp_mileage_data.Mileage = temp_mileages.tolist()
                 checked_mileage_data = temp_mileage_data
 
@@ -198,8 +198,7 @@ class ELRMileages:
         if any(mileage.str.match('.*km')):
             if all(mileage.str.match('.*km')):
                 temp_mileage = mileage.str.replace('km', '').map(
-                    lambda x: yards_to_nr_mileage(
-                        measurement.measures.Distance(km=x.replace('≈', '')).british_yd))
+                    lambda x: yards_to_nr_mileage(kilometer_to_yards(km=x.replace('≈', ''))))
 
                 # Might be wrong!
                 miles_chains = temp_mileage.map(lambda x: nr_mileage_to_mile_chain(x))
@@ -339,8 +338,7 @@ class ELRMileages:
                 elif re.match(pat4, node_x):
                     y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
                          nr_mileage_to_mile_chain(yards_to_nr_mileage(
-                             measurement.measures.Distance(
-                                 km=re.search(r'\d+\.\d+', node_x).group(0)).yd))]
+                             kilometer_to_yards(km=re.search(r'\d+\.\d+', node_x).group(0))))]
                 else:
                     y = [node_x, ''] if len(node_x) <= 4 else ['', '']
                 y[0] = y[0] if len(y[0]) <= 4 else ''

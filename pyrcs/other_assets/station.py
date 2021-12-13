@@ -2,10 +2,12 @@
 Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 """
 
+import itertools
 import string
 import urllib.parse
 
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 from pyrcs.utils import _cd_dat

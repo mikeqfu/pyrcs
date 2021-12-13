@@ -10,11 +10,13 @@ This category includes:
     - `Driver/guard buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
 """
 
+import itertools
 import unicodedata
 import urllib.error
 import urllib.parse
 
 from pyhelpers.dir import cd
+from pyhelpers.store import load_pickle
 
 from pyrcs.line_data.elec import Electrification
 from pyrcs.utils import *

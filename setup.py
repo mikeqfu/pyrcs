@@ -64,7 +64,6 @@ setuptools.setup(
 
     install_requires=[
         'beautifulsoup4',
-        'measurement',
         'numpy',
         'pandas',
         'requests',
