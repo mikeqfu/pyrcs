@@ -1,6 +1,7 @@
 """
 Collect data of `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
 """
+import urllib.parse
 
 from pyhelpers.dir import cd
 
@@ -13,11 +14,15 @@ class Bridges:
 
     """
 
+    #: Name of the data
     NAME = 'Railway bridges'
+    #: Key to the data
     KEY = 'Bridges'
 
+    #: URL of the main web page of the data
     URL = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
 
+    #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, verbose=True):
@@ -55,6 +60,10 @@ class Bridges:
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
+        self.introduction = get_introduction(url=self.URL, verbose=verbose)
+
+        self.url_ = os.path.dirname(self.URL) + '/'
+
     def _cdd_bdg(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and subdirectories (and/or a file).
@@ -75,6 +84,32 @@ class Bridges:
 
         return path
 
+    def _parse_h4_ul_li(self, h4_ul_li):
+        h4_ul_li_contents = h4_ul_li.contents
+
+        h4_ul_li_dict = {}
+        if len(h4_ul_li_contents) == 1:
+            h4_ul_li_content = h4_ul_li_contents[0]
+
+            text = h4_ul_li_content.get_text(strip=True)
+            href = h4_ul_li_content.get('href')
+
+        else:  # len(h4_ul_li_contents) == 2:
+            span_a_href, suppl_text = h4_ul_li_contents
+            if not isinstance(suppl_text, str):
+                suppl_text, span_a_href = h4_ul_li_contents
+
+            text = span_a_href.get_text(strip=True)
+            if suppl_text:
+                text += ' ' + suppl_text
+
+            href = span_a_href.find('a').get('href')
+
+        link = urllib.parse.urljoin(self.url_, href)
+        h4_ul_li_dict.update({text: link})
+
+        return h4_ul_li_dict
+
     def collect_bridges(self, confirmation_required=True, verbose=False):
         """
         Collect data of railway bridges from source web page.
@@ -88,11 +123,25 @@ class Bridges:
 
         **Example**::
 
+            >>> from pyrcs.line_data import Bridges
+
+            >>> bridges = Bridges()
+
+            >>> bdg_dat = bridges.collect_bridges()
+            >>> list(bdg_dat.keys())
+            ['East Coast Main Line',
+             'West Coast Main Line',
+             'Scotland',
+             'Elizabeth Line',
+             'London Overground',
+             'Anglia',
+             'London Underground',
+             'Key to text presentation conventions']
         """
 
-        data_name = "data of {}" + self.NAME.lower()
+        data_name = f"data of {self.NAME.lower()}"
 
-        if confirmed(f"To collect {data_name}?", confirmation_required=confirmation_required):
+        if confirmed(f"To collect {data_name}\n?", confirmation_required=confirmation_required):
 
             print_collect_msg(
                 data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
@@ -104,17 +153,52 @@ class Bridges:
                 url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
                 source = requests.get(url, headers=fake_requests_headers(randomized=True))
                 """
-                source = requests.get(self.URL, headers=fake_requests_headers(randomized=True))
+                source = requests.get(url=self.URL, headers=fake_requests_headers())
             except requests.ConnectionError:
                 print("Failed. ") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    row_lst, header = parse_table(source, parser='lxml')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
+                    h4s = soup.find_all(name='h4')
 
+                    bridges_data = {}
+                    for h4 in h4s:
+                        h4_text = h4.get_text(strip=True)
 
+                        h4_ul = h4.find_next(name='ul')
+
+                        h4_ul_lis = h4_ul.find_all(name='li')
+                        h4_ul_lis_dict = {}
+                        for h4_ul_li in h4_ul_lis:
+                            h4_ul_lis_dict.update(self._parse_h4_ul_li(h4_ul_li))
+
+                        bridges_data.update({h4_text: h4_ul_lis_dict})
+
+                    # Key to text presentation conventions
+                    keys_h3 = h4s[-1].find_next(name='h3')
+                    keys_p_contents = keys_h3.find_next('p').contents
+
+                    keys_p_contents_ = []
+                    for x in keys_p_contents:
+                        if isinstance(x, str):
+                            y = re.sub(r'( = +)|\n', '', x).capitalize()
+                        else:
+                            y = x.get_text(strip=True)
+                        keys_p_contents_.append(y)
+
+                    from pyhelpers.ops import split_list_by_size
+
+                    sub_dict = split_list_by_size(keys_p_contents_, sub_len=2)
+                    keys_dict = {keys_h3.text: {k: v for k, v in sub_dict}}
+
+                    bridges_data.update(keys_dict)
+
+                    if bool(bridges_data):
+                        path_to_json = make_file_pathname(self, data_name=self.KEY, ext=".json")
+                        save_json(bridges_data, path_to_json, indent=4, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
