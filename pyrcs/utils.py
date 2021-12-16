@@ -6,9 +6,9 @@ import calendar
 import collections
 import copy
 import datetime
+import numbers
 import os
 import re
-import socket
 import typing
 import urllib.parse
 
@@ -19,11 +19,11 @@ import pandas as pd
 import pkg_resources
 import requests
 from pyhelpers.dir import validate_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.ops import confirmed, fake_requests_headers, is_url_connectable
 from pyhelpers.store import load_json, save_json, save_pickle
 from pyhelpers.text import find_similar_str
 
-""" == Specifications ============================================================== """
+""" == Specifications ======================================================================== """
 
 
 def home_page_url():
@@ -115,7 +115,7 @@ def init_data_dir(cls, data_dir, category, cluster=None):
     return cls.data_dir, cls.current_data_dir
 
 
-def make_pickle_pathname(cls, data_name, data_dir=None):
+def make_file_pathname(cls, data_name, ext=".pickle", data_dir=None):
     """
     Make a pathname for saving data as a pickle file.
 
@@ -123,6 +123,8 @@ def make_pickle_pathname(cls, data_name, data_dir=None):
     :type cls: object
     :param data_name: key to the dict-type data of a certain cluster
     :type data_name: str
+    :param ext: file extension, defaults to ``".pickle"``
+    :type ext: str
     :param data_dir: name of a folder where the pickle file is to be saved
     :type data_dir: str or None
     :return: a pathname for saving data as a pickle file
@@ -130,7 +132,7 @@ def make_pickle_pathname(cls, data_name, data_dir=None):
 
     """
 
-    pickle_filename = data_name.lower().replace(" ", "-") + ".pickle"
+    pickle_filename = data_name.lower().replace(" ", "-") + ext
 
     if data_dir:
         cls.current_data_dir = validate_dir(path_to_dir=data_dir)
@@ -143,177 +145,114 @@ def make_pickle_pathname(cls, data_name, data_dir=None):
     return path_to_pickle
 
 
-""" Converters ===================================================================== """
+""" Converters =============================================================================== """
 
 
-def kilometer_to_yards(km):
-    yards = float(km) * 1093.6132983377079
+def kilometer_to_yard(km):
+    yards = km * 1093.6132983377079
     return yards
 
 
-def mile_chain_to_nr_mileage(miles_chains):
-    """
-    Convert mileage data in the form '<miles>.<chains>' to Network Rail mileage.
-
-    :param miles_chains: mileage data presented in the form '<miles>.<chains>'
-    :type miles_chains: str or numpy.nan or None
-    :return: Network Rail mileage in the form '<miles>.<yards>'
-    :rtype: str
-
-    **Examples**::
-
-        >>> from pyrcs.utils import mile_chain_to_nr_mileage
-
-        >>> # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
-        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains='0.18')
-        >>> mileage_data
-        '0.0396'
-
-        >>> # None, np.nan or ''
-        >>> mileage_data = mile_chain_to_nr_mileage(miles_chains=None)
-        >>> mileage_data
-        ''
-    """
-
-    if pd.notna(miles_chains) and miles_chains != '':
-        miles, chains = str(miles_chains).split('.')
-        yards = chains * 22.0  # measurement.measures.Distance(chain=chains).yd
-        network_rail_mileage = '%.4f' % (int(miles) + round(yards / (10 ** 4), 4))
-    else:
-        network_rail_mileage = ''
-
-    return network_rail_mileage
-
-
-def nr_mileage_to_mile_chain(str_mileage):
-    """
-    Convert Network Rail mileage to the form '<miles>.<chains>'.
-
-    :param str_mileage: Network Rail mileage data presented in the form '<miles>.<yards>'
-    :type str_mileage: str or numpy.nan or None
-    :return: '<miles>.<chains>'
-    :rtype: str
-
-    **Examples**::
-
-        >>> from pyrcs.utils import nr_mileage_to_mile_chain
-
-        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage='0.0396')
-        >>> miles_chains_dat
-        '0.18'
-
-        >>> # None, np.nan or ''
-        >>> miles_chains_dat = nr_mileage_to_mile_chain(str_mileage=None)
-        >>> miles_chains_dat
-        ''
-    """
-
-    if pd.notna(str_mileage) and str_mileage != '':
-        miles, yards = str(str_mileage).split('.')
-        chains = yards / 22.0  # measurement.measures.Distance(yard=yards).chain
-        miles_chains = '%.2f' % (int(miles) + round(chains / (10 ** 2), 2))
-    else:
-        miles_chains = ''
-
-    return miles_chains
-
-
-def nr_mileage_str_to_num(str_mileage):
+def mileage_str_to_num(mileage):
     """
     Convert string-type Network Rail mileage to numerical-type one.
 
-    :param str_mileage: string-type Network Rail mileage in the form '<miles>.<yards>'
-    :type str_mileage: str
+    :param mileage: string-type Network Rail mileage in the form '<miles>.<yards>'
+    :type mileage: str
     :return: numerical-type Network Rail mileage
     :rtype: float
 
     **Examples**::
 
-        >>> from pyrcs.utils import nr_mileage_str_to_num
+        >>> from pyrcs.utils import mileage_str_to_num
 
-        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='0.0396')
-        >>> num_mileage_dat
+        >>> mileage_num = mileage_str_to_num(mileage='0.0396')
+        >>> mileage_num
         0.0396
 
-        >>> num_mileage_dat = nr_mileage_str_to_num(str_mileage='')
-        >>> num_mileage_dat
+        >>> mileage_num = mileage_str_to_num(mileage='')
+        >>> mileage_num
         nan
     """
 
-    num_mileage = np.nan if str_mileage == '' else round(float(str_mileage), 4)
+    mileage_ = np.nan if mileage == '' else round(float(mileage), 4)
 
-    return num_mileage
+    return mileage_
 
 
-def nr_mileage_num_to_str(num_mileage):
+def mileage_num_to_str(mileage):
     """
     Convert numerical-type Network Rail mileage to string-type one.
 
-    :param num_mileage: numerical-type Network Rail mileage
-    :type num_mileage: float
+    :param mileage: numerical-type Network Rail mileage
+    :type mileage: float
     :return: string-type Network Rail mileage in the form '<miles>.<yards>'
     :rtype: str
 
     **Examples**::
 
-        >>> from pyrcs.utils import nr_mileage_num_to_str
+        >>> from pyrcs.utils import mileage_num_to_str
         >>> import numpy
 
-        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=0.0396)
-        >>> str_mileage_dat
+        >>> mileage_str = mileage_num_to_str(mileage=0.0396)
+        >>> mileage_str
         '0.0396'
 
-        >>> str_mileage_dat = nr_mileage_num_to_str(num_mileage=numpy.nan)
-        >>> str_mileage_dat
+        >>> mileage_str = mileage_num_to_str(mileage=numpy.nan)
+        >>> mileage_str
         ''
     """
 
-    if (num_mileage or num_mileage == 0) and pd.notna(num_mileage):
-        nr_mileage = '%.4f' % round(float(num_mileage), 4)
+    if (mileage or mileage == 0) and not np.isnan(mileage):
+        mileage_ = '%.4f' % round(float(mileage), 4)
     else:
-        nr_mileage = ''
+        mileage_ = ''
 
-    return nr_mileage
+    return mileage_
 
 
-def nr_mileage_to_yards(nr_mileage):
+def mileage_to_yard(mileage):
     """
     Convert Network Rail mileages to yards.
 
-    :param nr_mileage: Network Rail mileage
-    :type nr_mileage: float or str
+    :param mileage: Network Rail mileage
+    :type mileage: float or str
     :return: yards
     :rtype: int
 
     **Examples**::
 
-        >>> from pyrcs.utils import nr_mileage_to_yards
+        >>> from pyrcs.utils import mileage_to_yard
 
-        >>> yards_dat = nr_mileage_to_yards(nr_mileage='0.0396')
+        >>> yards_dat = mileage_to_yard(mileage='0.0396')
         >>> yards_dat
         396
 
-        >>> yards_dat = nr_mileage_to_yards(nr_mileage=0.0396)
+        >>> yards_dat = mileage_to_yard(mileage=0.0396)
         >>> yards_dat
         396
+
+        >>> yards_dat = mileage_to_yard(mileage=1.0396)
+        >>> yards_dat
+        2156
     """
 
-    if isinstance(nr_mileage, (float, typing.SupportsFloat, np.float64, int, np.integer)):
-        nr_mileage = nr_mileage_num_to_str(nr_mileage)
+    if isinstance(mileage, (int, float, numbers.Integral, numbers.Rational)):
+        mileage = mileage_num_to_str(mileage)
 
-    miles = int(nr_mileage.split('.')[0])
-    yards = int(nr_mileage.split('.')[1])
+    miles, yards = map(float, mileage.split('.'))
+
     yards += int(miles * 1760)  # int(measurement.measures.Distance(mi=miles).yd)
 
-    return yards
+    return int(yards)
 
 
-def yards_to_nr_mileage(yards, as_str=True):
+def yard_to_mileage(yard, as_str=True):
     """
     Convert yards to Network Rail mileages.
 
-    :param yards: yards
-    :type yards: int or float or numpy.nan or None
+    :param yard: yard data
+    :type yard: int or float or numpy.nan or None
     :param as_str: whether to return as a string value, defaults to ``True``
     :type as_str: bool
     :return: Network Rail mileage in the form '<miles>.<yards>' or <miles>.<yards>
@@ -321,28 +260,31 @@ def yards_to_nr_mileage(yards, as_str=True):
 
     **Examples**::
 
-        >>> from pyrcs.utils import yards_to_nr_mileage
+        >>> from pyrcs.utils import yard_to_mileage
 
-        >>> mileage_dat = yards_to_nr_mileage(yards=396)
+        >>> mileage_dat = yard_to_mileage(yard=396)
         >>> mileage_dat
         '0.0396'
 
-        >>> mileage_dat = yards_to_nr_mileage(yards=396, as_str=False)
+        >>> mileage_dat = yard_to_mileage(yard=396, as_str=False)
         >>> mileage_dat
         0.0396
 
-        >>> mileage_dat = yards_to_nr_mileage(yards=None)
+        >>> mileage_dat = yard_to_mileage(yard=None)
         >>> mileage_dat
         ''
 
-        >>> mileage_dat = yards_to_nr_mileage(yards=12320)
+        >>> mileage_dat = yard_to_mileage(yard=12320)
         >>> mileage_dat
         '7.0000'
     """
 
-    if pd.notnull(yards) and yards != '':
-        mileage_mi = np.floor(yards / 1760)  # measurement.measures.Distance(yd=yards).mi
-        mileage_yd = yards - int(mileage_mi * 1760)  # measurement.measures.Distance(mi=mileage_mi).yd
+    if pd.notnull(yard) and yard != '':
+        yd = int(yard)
+        # mileage_mi = measurement.measures.Distance(yd=yards).mi
+        mileage_mi = np.floor(yd / 1760)
+        # mileage_yd = measurement.measures.Distance(mi=mileage_mi).yd
+        mileage_yd = yd - int(mileage_mi * 1760)
 
         if mileage_yd == 1760:
             mileage_mi += 1
@@ -358,42 +300,7 @@ def yards_to_nr_mileage(yards, as_str=True):
     return mileage
 
 
-def shift_num_nr_mileage(nr_mileage, shift_yards):
-    """
-    Shift Network Rail mileage by given yards.
-
-    :param nr_mileage: Network Rail mileage
-    :type nr_mileage: float or int or str
-    :param shift_yards: yards by which the given ``nr_mileage`` is shifted
-    :type shift_yards: int or float
-    :return: shifted numerical Network Rail mileage
-    :rtype: float
-
-    **Examples**::
-
-        >>> from pyrcs.utils import shift_num_nr_mileage
-
-        >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220)
-        >>> n_mileage
-        0.0616
-
-        >>> n_mileage = shift_num_nr_mileage(nr_mileage='0.0396', shift_yards=220.99)
-        >>> n_mileage
-        0.0617
-
-        >>> n_mileage = shift_num_nr_mileage(nr_mileage=10, shift_yards=220)
-        >>> n_mileage
-        10.022
-    """
-
-    yards = nr_mileage_to_yards(nr_mileage) + shift_yards
-    shifted_nr_mileage = yards_to_nr_mileage(yards)
-    shifted_num_mileage = nr_mileage_str_to_num(shifted_nr_mileage)
-
-    return shifted_num_mileage
-
-
-def mile_yard_to_mileage(mile, yard, as_float=True):
+def mile_yard_to_mileage(mile, yard, as_numeric=True):
     """
     Convert mile and yard to Network Rail mileage.
 
@@ -401,8 +308,8 @@ def mile_yard_to_mileage(mile, yard, as_float=True):
     :type mile: float or int
     :param yard: yard
     :type yard: float or int
-    :param as_float: whether to return a float-type value
-    :type as_float: bool
+    :param as_numeric: whether to return a numeric value, defaults to ``True``
+    :type as_numeric: bool
     :return: Network Rail mileage
     :rtype: str or float
 
@@ -412,12 +319,12 @@ def mile_yard_to_mileage(mile, yard, as_float=True):
 
         >>> m, y = 10, 1500
 
-        >>> mileage = mile_yard_to_mileage(m, y)
-        >>> mileage
+        >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y)
+        >>> mileage_data
         10.15
 
-        >>> mileage = mile_yard_to_mileage(m, y, as_float=False)
-        >>> mileage
+        >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
+        >>> mileage_data
         '10.1500'
     """
 
@@ -425,12 +332,122 @@ def mile_yard_to_mileage(mile, yard, as_float=True):
     if len(yard_) < 4:
         yard_ = '0' * (4 - len(yard_)) + yard_
 
-    nr_mileage = mile_ + '.' + yard_
+    mileage = mile_ + '.' + yard_
 
-    if as_float:
-        nr_mileage = nr_mileage_str_to_num(nr_mileage)
+    if as_numeric:
+        mileage = mileage_str_to_num(mileage)
 
-    return nr_mileage
+    return mileage
+
+
+def shift_mileage_by_yard(mileage, shift_yards, as_numeric=True):
+    """
+    Shift Network Rail mileage by given yards.
+
+    :param mileage: mileage (associated with an ELR) used by Network Rail
+    :type mileage: float or int or str
+    :param shift_yards: yards by which the given ``mileage`` is shifted
+    :type shift_yards: int or float
+    :param as_numeric: whether to return a numeric type result, defaults to ``True``
+    :type as_numeric: bool
+    :return: shifted Network Rail mileage
+    :rtype: float or str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import shift_mileage_by_yard
+
+        >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220)
+        >>> n_mileage
+        0.0616
+
+        >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220.99)
+        >>> n_mileage
+        0.0617
+
+        >>> n_mileage = shift_mileage_by_yard(mileage=10, shift_yards=220)
+        >>> n_mileage
+        10.022
+    """
+
+    yards = mileage_to_yard(mileage=mileage) + shift_yards
+    shifted_mileage = yard_to_mileage(yard=yards)
+
+    if as_numeric:
+        shifted_mileage = mileage_str_to_num(mileage=shifted_mileage)
+
+    return shifted_mileage
+
+
+def mile_chain_to_mileage(mile_chain):
+    """
+    Convert mileage data in the form '<miles>.<chains>' to Network Rail mileage.
+
+    :param mile_chain: mileage data presented in the form '<miles>.<chains>'
+    :type mile_chain: str or numpy.nan or None
+    :return: Network Rail mileage in the form '<miles>.<yards>'
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import mile_chain_to_mileage
+
+        >>> # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
+        >>> mileage_data = mile_chain_to_mileage(mile_chain='0.18')
+        >>> mileage_data
+        '0.0396'
+
+        >>> # None, np.nan or ''
+        >>> mileage_data = mile_chain_to_mileage(mile_chain=None)
+        >>> mileage_data
+        ''
+    """
+
+    if pd.notna(mile_chain) and mile_chain != '':
+        miles, chains = map(float, str(mile_chain).split('.'))
+        yards = chains * 22.0  # measurement.measures.Distance(chain=chains).yd
+        network_rail_mileage = '%.4f' % (miles + round(yards / (10 ** 4), 4))
+    else:
+        network_rail_mileage = ''
+
+    return network_rail_mileage
+
+
+def mileage_to_mile_chain(mileage):
+    """
+    Convert Network Rail mileage to the form '<miles>.<chains>'.
+
+    :param mileage: Network Rail mileage data presented in the form '<miles>.<yards>'
+    :type mileage: str or numpy.nan or None
+    :return: '<miles>.<chains>'
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import mileage_to_mile_chain
+
+        >>> mile_chain_data = mileage_to_mile_chain(mileage='0.0396')
+        >>> mile_chain_data
+        '0.18'
+
+        >>> mile_chain_data = mileage_to_mile_chain(mileage=1.0396)
+        >>> mile_chain_data
+        '1.18'
+
+        >>> # None, np.nan or ''
+        >>> miles_chains_dat = mileage_to_mile_chain(mileage=None)
+        >>> miles_chains_dat
+        ''
+    """
+
+    if pd.notna(mileage) and mileage != '':
+        miles, yards = map(float, str(mileage).split('.'))
+        chains = yards / 22.0  # measurement.measures.Distance(yard=yards).chain
+        miles_chains = '%.2f' % (miles + round(chains / (10 ** 2), 2))
+    else:
+        miles_chains = ''
+
+    return miles_chains
 
 
 def get_financial_year(date):
@@ -457,80 +474,88 @@ def get_financial_year(date):
     return financial_date.year
 
 
-def fix_num_stanox(stanox_code):
+def fix_stanox(stanox):
     """
-    Fix 'STANOX' if it is loaded as numbers.
+    Fix the format of a given `STANOX (station number)`_ code.
 
-    :param stanox_code: STANOX code
-    :type stanox_code: str or int
+    :param stanox: STANOX code
+    :type stanox: str or int
     :return: standard STANOX code
     :rtype: str
 
+    .. _`STANOX (station number)`: https://wiki.openraildata.com/index.php?title=STANOX_Areas
+
     **Examples**::
 
-        >>> from pyrcs.utils import fix_num_stanox
+        >>> from pyrcs.utils import fix_stanox
 
-        >>> stanox = fix_num_stanox(stanox_code=65630)
-        >>> stanox
+        >>> fixed_stanox = fix_stanox(stanox=65630)
+        >>> fixed_stanox
         '65630'
 
-        >>> stanox = fix_num_stanox(stanox_code=2071)
-        >>> stanox
+        >>> fixed_stanox = fix_stanox(stanox='2071')
+        >>> fixed_stanox
+        '02071'
+
+        >>> fixed_stanox = fix_stanox(stanox=2071)
+        >>> fixed_stanox
         '02071'
     """
 
-    if isinstance(stanox_code, (int or float)):
-        stanox_code = '' if pd.isna(stanox_code) else str(int(stanox_code))
+    if isinstance(stanox, str):
+        stanox_ = copy.copy(stanox)
+    else:  # isinstance(stanox, (int, float)) or stanox is None
+        stanox_ = '' if pd.isna(stanox) else str(int(stanox))
 
-    if len(stanox_code) < 5 and stanox_code != '':
-        stanox_code = '0' * (5 - len(stanox_code)) + stanox_code
+    if len(stanox_) < 5 and stanox_ != '':
+        stanox_ = '0' * (5 - len(stanox_)) + stanox_
 
-    return stanox_code
+    return stanox_
 
 
-def fix_nr_mileage_str(nr_mileage):
+def fix_mileage(mileage):
     """
-    Fix Network Rail mileage.
+    Fix mileage data (associated with an ELR).
 
-    :param nr_mileage: NR mileage
-    :type nr_mileage: str or float
-    :return: conventional NR mileage code
+    :param mileage: Network Rail mileage
+    :type mileage: str or float
+    :return: fixed mileage data in the conventional format used by Network Rail
     :rtype: str
 
     **Examples**::
 
-        >>> from pyrcs.utils import fix_nr_mileage_str
+        >>> from pyrcs.utils import fix_mileage
 
-        >>> mileage = fix_nr_mileage_str(nr_mileage=29.011)
-        >>> mileage
+        >>> fixed_mileage = fix_mileage(mileage=29.011)
+        >>> fixed_mileage
         '29.0110'
 
-        >>> mileage = fix_nr_mileage_str(nr_mileage='.1100')
-        >>> mileage
+        >>> fixed_mileage = fix_mileage(mileage='.1100')
+        >>> fixed_mileage
         '0.1100'
     """
 
-    if isinstance(nr_mileage, float):
-        nr_mileage_ = fix_nr_mileage_str(str(nr_mileage))
+    if isinstance(mileage, float):
+        mileage_ = fix_mileage(str(mileage))
 
-    elif nr_mileage and nr_mileage != '0':
-        if '.' in nr_mileage:
-            miles, yards = nr_mileage.split('.')
+    elif mileage and mileage != '0':
+        if '.' in mileage:
+            miles, yards = mileage.split('.')
             if miles == '':
                 miles = '0'
         else:
-            miles, yards = nr_mileage, '0'
+            miles, yards = mileage, '0'
         if len(yards) < 4:
             yards += '0' * (4 - len(yards))
-        nr_mileage_ = '.'.join([miles, yards])
+        mileage_ = '.'.join([miles, yards])
 
     else:
-        nr_mileage_ = nr_mileage
+        mileage_ = copy.copy(mileage)
 
-    return nr_mileage_
+    return mileage_
 
 
-""" == Parsers ===================================================================== """
+""" == Parsers =============================================================================== """
 
 
 def parse_tr(header, trs, as_dataframe=False):
@@ -839,7 +864,7 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date
 
 
-""" == Assistant scrapers ========================================================== """
+""" == Assistant scrapers ==================================================================== """
 
 
 def _parse_dd_or_dt_contents(dd_or_dt_contents):
@@ -1427,10 +1452,68 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
         return page_catalogue
 
 
-""" == Testers ===================================================================== """
+def _parse_h3_paras(h3):
+    p = h3.find_next(name='p')
+    prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
+
+    paras = []
+    while prev_h3 == h3 and prev_h4 is None:
+        para_text = p.text.replace('  ', ' ')
+        paras.append(para_text)
+
+        p = p.find_next(name='p')
+        prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
+
+    return paras
 
 
-# -- Data rectification ----------------------------------------------------------------
+def get_introduction(url, delimiter='\n', verbose=True):
+    """
+    Get contents of the Introduction page.
+
+    :param url: URL of a web page (usually the main page of a data cluster)
+    :type url: str
+    :param delimiter: delimiter used for separating paragraphs, defaults to ``'\n'``
+    :type delimiter: str
+    :param verbose: whether to print relevant information in console, defaults to ``True``
+    :type verbose: bool or int
+    :return: introductory texts on the given web page
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import get_introduction
+
+        >>> bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
+
+        >>> intro_text = get_introduction(url=bridges_url)
+        >>> intro_text
+        "There are thousands of bridges over and under the railway system. These pages attempt ..."
+    """
+
+    introduction = None
+
+    try:
+        source = requests.get(url=url, headers=fake_requests_headers())
+    except requests.exceptions.ConnectionError:
+        print_conn_err(verbose=verbose)
+
+    else:
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        intro_h3 = [h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
+
+        intro_paras = _parse_h3_paras(intro_h3)
+
+        introduction = delimiter.join(intro_paras)
+
+    return introduction
+
+
+""" == Testers =============================================================================== """
+
+
+# -- Data rectification ----------------------------------------------------------------------
 
 def fetch_loc_names_repl_dict(k=None, regex=False, as_dataframe=False):
     """
@@ -1519,12 +1602,12 @@ def update_loc_names_repl_dict(new_items, regex, verbose=False):
         save_json(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-def is_str_float(str_val):
+def is_str_float(x):
     """
     Check if a string-type variable can express a float-type value.
 
-    :param str_val: a string-type variable
-    :type str_val: str
+    :param x: a string-type variable
+    :type x: str
     :return: whether ``str_val`` can express a float value
     :rtype: bool
 
@@ -1546,7 +1629,7 @@ def is_str_float(str_val):
     """
 
     try:
-        float(str_val)  # float(re.sub('[()~]', '', text))
+        float(x)  # float(re.sub('[()~]', '', text))
         test_res = True
     except ValueError:
         test_res = False
@@ -1554,7 +1637,30 @@ def is_str_float(str_val):
     return test_res
 
 
-# -- Network connections ---------------------------------------------------------------
+# -- Network connections ---------------------------------------------------------------------
+
+
+def is_home_connectable():
+    """
+    Check whether the Railway Codes website is connectable.
+
+    :return: whether the Railway Codes website is connectable
+    :rtype: bool
+
+    **Examples**::
+
+        >>> from pyrcs.utils import is_home_connectable
+
+        >>> is_home_connectable()
+        True
+    """
+
+    url = home_page_url()
+
+    rslt = is_url_connectable(url=url)
+
+    return rslt
+
 
 def print_connection_error(verbose=False):
     """
@@ -1564,7 +1670,7 @@ def print_connection_error(verbose=False):
     :type verbose: bool or int
     """
 
-    if not is_internet_connected():
+    if not is_home_connectable():
         if verbose:
             print("Failed to establish an Internet connection. "
                   "The current instance relies on local backup.")
@@ -1589,32 +1695,7 @@ def print_conn_err(update=False, verbose=False):
         print(msg)
 
 
-def is_internet_connected():
-    """
-    Check the Internet connection.
-
-    :return: whether the machine is currently connected to the Internet
-    :rtype: bool
-
-    **Examples**::
-
-        >>> from pyrcs.utils import is_internet_connected
-
-        >>> is_internet_connected()
-        True
-    """
-
-    try:
-        netloc = urllib.parse.urlparse(home_page_url()).netloc
-        host = socket.gethostbyname(netloc)
-        s = socket.create_connection((host, 80))
-        s.close()
-        return True
-    except (socket.gaierror, OSError):
-        return False
-
-
-""" == Miscellaneous helpers ======================================================= """
+""" == Miscellaneous helpers ================================================================= """
 
 
 def confirm_msg(data_name):
@@ -1690,7 +1771,7 @@ def fetch_all_verbose(data_dir, verbose):
     :rtype: bool or int
     """
 
-    if is_internet_connected():
+    if is_home_connectable():
         verbose_ = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
     else:
         verbose_ = False
@@ -1717,6 +1798,6 @@ def data_to_pickle(cls, data, data_name, pickle_it, data_dir, verbose):
     """
 
     if pickle_it and data_dir:
-        path_to_pickle = make_pickle_pathname(cls=cls, data_name=data_name, data_dir=data_dir)
+        path_to_pickle = make_file_pathname(cls=cls, data_name=data_name, data_dir=data_dir)
 
         save_pickle(pickle_data=data, path_to_pickle=path_to_pickle, verbose=verbose)
