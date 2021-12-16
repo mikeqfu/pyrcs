@@ -476,14 +476,13 @@ def get_financial_year(date):
 
 def fix_stanox(stanox):
     """
-    Fix the format of a given `STANOX (station number)`_ code.
+    Fix the format of a given
+    `STANOX (station number) <https://wiki.openraildata.com/index.php?title=STANOX_Areas>`_ code.
 
     :param stanox: STANOX code
     :type stanox: str or int
     :return: standard STANOX code
     :rtype: str
-
-    .. _`STANOX (station number)`: https://wiki.openraildata.com/index.php?title=STANOX_Areas
 
     **Examples**::
 

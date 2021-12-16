@@ -18,7 +18,7 @@ Specifications
 
     home_page_url
     init_data_dir
-    make_pickle_pathname
+    make_file_pathname
 
 Converters
 ~~~~~~~~~~
