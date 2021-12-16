@@ -331,7 +331,7 @@ class Tunnels:
 
         page_data = [
             self.collect_lengths_by_page(
-                x, update=update, verbose=verbose_ if is_internet_connected() else False)
+                x, update=update, verbose=verbose_ if is_home_connectable() else False)
             for x in range(1, 5)]
 
         if all(x is None for x in page_data):

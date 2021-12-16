@@ -112,7 +112,7 @@ class ELRMileages:
             if 'Distances in km' in test_temp_node:
                 temp_mileage_data = mileage_data[~mileage_data.Node.str.contains('Distances in km')]
                 temp_mileages = temp_mileage_data.Mileage.map(
-                    lambda x: nr_mileage_to_mile_chain(yards_to_nr_mileage(kilometer_to_yards(km=x))))
+                    lambda x: mileage_to_mile_chain(yard_to_mileage(kilometer_to_yard(km=x))))
                 temp_mileage_data.Mileage = temp_mileages.tolist()
                 checked_mileage_data = temp_mileage_data
 
@@ -198,14 +198,14 @@ class ELRMileages:
         if any(mileage.str.match('.*km')):
             if all(mileage.str.match('.*km')):
                 temp_mileage = mileage.str.replace('km', '').map(
-                    lambda x: yards_to_nr_mileage(kilometer_to_yards(km=x.replace('≈', ''))))
+                    lambda x: yard_to_mileage(kilometer_to_yard(km=x.replace('≈', ''))))
 
                 # Might be wrong!
-                miles_chains = temp_mileage.map(lambda x: nr_mileage_to_mile_chain(x))
+                miles_chains = temp_mileage.map(lambda x: mileage_to_mile_chain(x))
 
             else:
                 miles_chains = mileage.map(lambda x: re.sub(r'/?\d+\.\d+km/?', '', x))
-                temp_mileage = miles_chains.map(lambda x: mile_chain_to_nr_mileage(x))
+                temp_mileage = miles_chains.map(lambda x: mile_chain_to_mileage(x))
             mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
 
         else:
@@ -233,7 +233,7 @@ class ELRMileages:
                         temp_mileage.append(m.strip(' ').replace(' ', '.'))
                         mileage_note.append('')
             miles_chains = temp_mileage.copy()
-            temp_mileage = [mile_chain_to_nr_mileage(m) for m in temp_mileage]
+            temp_mileage = [mile_chain_to_mileage(m) for m in temp_mileage]
 
         parsed_mileage = pd.DataFrame({'Mileage': temp_mileage,
                                        'Mileage_Note': mileage_note,
@@ -337,8 +337,8 @@ class ELRMileages:
                         y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
                 elif re.match(pat4, node_x):
                     y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
-                         nr_mileage_to_mile_chain(yards_to_nr_mileage(
-                             kilometer_to_yards(km=re.search(r'\d+\.\d+', node_x).group(0))))]
+                         mileage_to_mile_chain(yard_to_mileage(
+                             kilometer_to_yard(km=re.search(r'\d+\.\d+', node_x).group(0))))]
                 else:
                     y = [node_x, ''] if len(node_x) <= 4 else ['', '']
                 y[0] = y[0] if len(y[0]) <= 4 else ''
@@ -510,11 +510,11 @@ class ELRMileages:
             [5 rows x 5 columns]
         """
 
-        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+        verbose_1 = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+        verbose_2 = verbose_1 if is_home_connectable() else False
 
         data = [
-            self.collect_elr_by_initial(
-                initial=x, update=update, verbose=verbose_ if is_internet_connected() else False)
+            self.collect_elr_by_initial(initial=x, update=update, verbose=verbose_2)
             for x in string.ascii_lowercase]
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
@@ -522,7 +522,7 @@ class ELRMileages:
                 print_conn_err(verbose=verbose)
                 print("No data of the {} has been freshly collected.".format(self.KEY))
             data = [
-                self.collect_elr_by_initial(initial=x, update=False, verbose=verbose_)
+                self.collect_elr_by_initial(initial=x, update=False, verbose=verbose_1)
                 for x in string.ascii_lowercase
             ]
 
@@ -929,7 +929,7 @@ class ELRMileages:
             end_orig_mile_chain = start_temp.loc[key_idx, mile_chain_col]
 
             if end_orig_mile_chain and end_orig_mile_chain != 'Unknown':
-                end_orig_mileage = mile_chain_to_nr_mileage(end_orig_mile_chain)
+                end_orig_mileage = mile_chain_to_mileage(end_orig_mile_chain)
             else:  # end_conn_mile_chain == '':
                 # noinspection PyTypeChecker
                 end_mask = end_em.apply(

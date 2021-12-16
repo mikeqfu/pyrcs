@@ -3,6 +3,7 @@ Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunne
 """
 
 import itertools
+import socket
 import urllib.error
 import urllib.parse
 
@@ -243,7 +244,7 @@ class Viaducts:
 
         page_data = [
             self.collect_viaduct_codes_by_page(
-                page_no, update, verbose=verbose_ if is_internet_connected() else False)
+                page_no, update, verbose=verbose_ if is_home_connectable() else False)
             for page_no in range(1, 7)]
 
         if all(x is None for x in page_data):

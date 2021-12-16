@@ -4,6 +4,7 @@ Collect `section codes for overhead line electrification (OLE) installations
 """
 
 import itertools
+import socket
 import urllib.error
 import urllib.parse
 
@@ -432,8 +433,9 @@ class Electrification:
                     if verbose == 2:
                         print("Done.")
 
-                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_NATIONAL_NETWORK)
-                    save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
+                    if bool(national_network_ole):
+                        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_NATIONAL_NETWORK)
+                        save_pickle(national_network_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
@@ -502,7 +504,7 @@ class Electrification:
             [552 rows x 4 columns]
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_NATIONAL_NETWORK)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_NATIONAL_NETWORK)
 
         if os.path.isfile(path_to_pickle) and not update:
             national_network_ole = load_pickle(path_to_pickle)
@@ -674,7 +676,7 @@ class Electrification:
                         self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_INDEPENDENT_LINES)
+                    path_to_pickle = make_file_pathname(self, self.KEY_TO_INDEPENDENT_LINES)
                     save_pickle(independent_lines_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -748,7 +750,7 @@ class Electrification:
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_INDEPENDENT_LINES)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_INDEPENDENT_LINES)
 
         if os.path.isfile(path_to_pickle) and not update:
             independent_lines_ole = load_pickle(path_to_pickle)
@@ -883,7 +885,7 @@ class Electrification:
                         self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OHNS)
+                    path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_OHNS)
                     save_pickle(ohns_codes, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -947,7 +949,7 @@ class Electrification:
             [493 rows x 5 columns]
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OHNS)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_OHNS)
 
         if os.path.isfile(path_to_pickle) and not update:
             ohns_codes = load_pickle(path_to_pickle)
@@ -1057,7 +1059,7 @@ class Electrification:
                         self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = make_pickle_pathname(self, self.KEY_TO_ENERGY_TARIFF_ZONES)
+                    path_to_pickle = make_file_pathname(self, self.KEY_TO_ENERGY_TARIFF_ZONES)
                     save_pickle(etz_ole, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -1122,7 +1124,7 @@ class Electrification:
             13   WC                West Coast/North West
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES)
 
         if os.path.isfile(path_to_pickle) and not update:
             etz_ole = load_pickle(path_to_pickle)

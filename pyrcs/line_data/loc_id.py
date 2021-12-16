@@ -111,32 +111,33 @@ class LocationIdentifiers:
 
         return path
 
-    def _get_introduction(self, subtitle_tag='h3', verbose=False):
+    def _get_introduction(self, verbose=False):
+        introduction = None
+
         try:
-            source = requests.get(url=self.URL, headers=fake_requests_headers(randomized=True))
-        except requests.ConnectionError:
-            print("Failed. ") if verbose == 2 else ""
+            source = requests.get(url=self.URL, headers=fake_requests_headers())
+        except requests.exceptions.ConnectionError:
             print_conn_err(verbose=verbose)
 
         else:
-            web_page_text = bs4.BeautifulSoup(markup=source.text, features='html.parser')
+            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-            div = web_page_text.find(name='div', attrs={'class': 'background'})
+            h3s = soup.find_all('h3')
 
-            intro_texts = {}
+            h3 = h3s[0]
 
-            h3 = div.find_next(name=subtitle_tag)
+            p = h3.find_next(name='p')
+            prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
-            p = h3.find_next('p')
-            while h3:
-                sub_heading = get_heading(heading_tag=h3, elem_name='em')
+            intro_paras = []
+            while prev_h3 == h3 and prev_h4 is None:
+                para_text = p.text.replace('  ', ' ')
+                intro_paras.append(para_text)
 
-                if p.find_previous(name='h3') == h3:
-                    txt = p.text.replace(' thus:', '.')
+                p = p.find_next(name='p')
+                prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
-                    p = h3.find_next('p')
-
-                ol = h3.find_next('ol')
+            introduction = '\n'.join(intro_paras)
 
     # def get_introduction(self, subtitle_tag='h3', update=False, verbose=False):
     #     path_to_pickle = self._cdd_locid("intro.pickle")
@@ -320,7 +321,7 @@ class LocationIdentifiers:
                 if verbose == 2:
                     print("Failed. ")
 
-                if not is_internet_connected():
+                if not is_home_connectable():
                     print_conn_err(verbose=verbose)
 
                 explanatory_note = None
@@ -350,7 +351,7 @@ class LocationIdentifiers:
                     if verbose == 2:
                         print("Done.")
 
-                    path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_MSCEN)
+                    path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_MSCEN)
                     save_pickle(explanatory_note, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -404,7 +405,7 @@ class LocationIdentifiers:
             4  Lichfield Trent Valley  LTV      LIF
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_MSCEN)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_MSCEN)
 
         if os.path.isfile(path_to_pickle) and not update:
             explanatory_note = load_pickle(path_to_pickle)
@@ -510,7 +511,7 @@ class LocationIdentifiers:
                     if verbose == 2:
                         print("Done.")
 
-                    path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OTHER_SYSTEMS)
+                    path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_OTHER_SYSTEMS)
                     save_pickle(other_systems_codes, path_to_pickle=path_to_pickle, verbose=verbose)
 
                 except Exception as e:
@@ -565,7 +566,7 @@ class LocationIdentifiers:
              'Tyne & Wear Metro']
         """
 
-        path_to_pickle = make_pickle_pathname(self, data_name=self.KEY_TO_OTHER_SYSTEMS)
+        path_to_pickle = make_file_pathname(self, data_name=self.KEY_TO_OTHER_SYSTEMS)
 
         if os.path.isfile(path_to_pickle) and not update:
             other_systems_codes = load_pickle(path_to_pickle)
@@ -840,7 +841,7 @@ class LocationIdentifiers:
         verbose_1 = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
 
         # Get every data table
-        verbose_2 = verbose_1 if is_internet_connected() else False
+        verbose_2 = verbose_1 if is_home_connectable() else False
         data = [
             self.collect_codes_by_initial(initial=x, update=update, verbose=verbose_2)
             for x in string.ascii_lowercase

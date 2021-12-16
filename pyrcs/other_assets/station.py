@@ -543,7 +543,7 @@ class Stations:
         """
 
         verbose_1 = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
-        verbose_2 = verbose_1 if is_internet_connected() else False
+        verbose_2 = verbose_1 if is_home_connectable() else False
 
         data_sets = [
             self.collect_station_data_by_initial(

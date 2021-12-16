@@ -2,6 +2,7 @@
 Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
 """
 
+import socket
 import urllib.error
 import urllib.parse
 
@@ -151,14 +152,15 @@ class LOR:
                 soup = bs4.BeautifulSoup(source.text, 'lxml')
                 span_tags = soup.find_all('span', attrs={'class': 'tab2'})
 
-                dat = [(span_tag.text, span_tag.next_sibling.strip().replace('=  ', ''))
-                       for span_tag in span_tags]
+                dat = [
+                    (span_tag.text, span_tag.next_sibling.strip().replace('=  ', ''))
+                    for span_tag in span_tags
+                ]
 
                 lor_pref = pd.DataFrame(dat, columns=['Prefixes', 'Name'])
 
             except (urllib.error.URLError, socket.gaierror):
-                verbose_ = \
-                    True if (update and verbose != 2) else (False if verbose == 2 else verbose)
+                verbose_ = True if (update and verbose != 2) else (False if verbose == 2 else verbose)
                 print_conn_err(update=update, verbose=verbose_)
 
                 keys_to_prefixes = load_pickle(path_to_pickle)
@@ -473,7 +475,7 @@ class LOR:
 
         lor_codes = [
             self.collect_lor_codes_by_prefix(
-                prefix=p, update=update, verbose=verbose_ if is_internet_connected() else False)
+                prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False)
             for p in prefixes if p != 'NZ']
 
         if all(x is None for x in lor_codes):

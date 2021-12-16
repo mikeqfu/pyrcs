@@ -246,7 +246,7 @@ class SignalBoxes:
         # Get every data table
         data = [
             self.collect_prefix_codes(
-                x, update=update, verbose=verbose_ if is_internet_connected() else False)
+                x, update=update, verbose=verbose_ if is_home_connectable() else False)
             for x in string.ascii_lowercase]
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):

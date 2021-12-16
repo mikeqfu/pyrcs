@@ -11,6 +11,7 @@ This category includes:
 """
 
 import itertools
+import socket
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -889,7 +890,7 @@ class Features:
         for func in dir(self):
             if func.startswith('fetch_') and func != 'fetch_features_codes':
                 features_codes.append(getattr(self, func)(
-                    update=update, verbose=verbose_ if is_internet_connected() else False))
+                    update=update, verbose=verbose_ if is_home_connectable() else False))
 
         features_codes_data = {
             self.KEY:

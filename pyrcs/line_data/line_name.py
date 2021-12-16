@@ -47,7 +47,7 @@ class LineNames:
             >>> print(ln.URL)
             http://www.railwaycodes.org.uk/misc/line_names.shtm
         """
-        if not is_internet_connected():
+        if not is_home_connectable():
             print_connection_error(verbose=verbose)
 
         self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)

@@ -78,7 +78,7 @@ class LineData:
         """
         Constructor method.
         """
-        if not is_internet_connected():
+        if not is_home_connectable():
             self.Connected = False
             print_connection_error(verbose=verbose)
         else:
@@ -233,7 +233,7 @@ class OtherAssets:
         """
         Constructor method.
         """
-        if not is_internet_connected():
+        if not is_home_connectable():
             self.Connected = False
             print_connection_error(verbose=verbose)
         else:

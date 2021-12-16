@@ -27,17 +27,17 @@ Converters
     :toctree: _generated/
     :template: function.rst
 
-    mile_chain_to_nr_mileage
-    nr_mileage_to_mile_chain
-    nr_mileage_str_to_num
-    nr_mileage_num_to_str
-    nr_mileage_to_yards
-    yards_to_nr_mileage
-    shift_num_nr_mileage
+    mileage_str_to_num
+    mileage_num_to_str
+    mileage_to_yard
+    yard_to_mileage
     mile_yard_to_mileage
+    shift_mileage_by_yard
+    mile_chain_to_mileage
+    mileage_to_mile_chain
     get_financial_year
-    fix_num_stanox
-    fix_nr_mileage_str
+    fix_stanox
+    fix_mileage
 
 Parsers
 ~~~~~~~
@@ -76,16 +76,15 @@ Data checkers and rectification
 
     fetch_loc_names_repl_dict
     update_loc_names_repl_dict
-    is_str_float
 
 .. rubric:: Network connections
 .. autosummary::
     :toctree: _generated/
     :template: function.rst
 
+    is_home_connectable
     print_connection_error
     print_conn_err
-    is_internet_connected
 
 Miscellaneous helpers
 ~~~~~~~~~~~~~~~~~~~~~

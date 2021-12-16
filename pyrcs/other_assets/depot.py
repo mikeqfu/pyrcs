@@ -2,6 +2,7 @@
 Collect `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
+import socket
 import urllib.error
 import urllib.parse
 
@@ -154,8 +155,7 @@ class Depots:
             two_char_tops_codes_data = None
 
             try:
-                header, two_char_tops_codes = \
-                    pd.read_html(url, na_values=[''], keep_default_na=False)
+                header, two_char_tops_codes = pd.read_html(url, na_values=[''], keep_default_na=False)
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed.") if verbose == 2 else ""
                 print_conn_err(verbose=verbose)
@@ -655,8 +655,7 @@ class Depots:
                 numerical_codes_2.drop(2, axis=1, inplace=True)
                 numerical_codes_2.columns = headers
 
-                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2],
-                                            ignore_index=True)
+                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2], ignore_index=True)
 
             except (urllib.error.URLError, socket.gaierror):
                 print("Failed.") if verbose == 2 else ""
@@ -814,7 +813,7 @@ class Depots:
         for func in dir(self):
             if func.startswith('fetch_') and func != 'fetch_depot_codes':
                 depot_codes.append(getattr(self, func)(
-                    update=update, verbose=verbose_ if is_internet_connected() else False))
+                    update=update, verbose=verbose_ if is_home_connectable() else False))
 
         depot_codes_data = {
             self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_codes},

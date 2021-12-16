@@ -25,7 +25,7 @@ def update_backup_data(verbose=False, time_gap=2):
         >>> update_backup_data(verbose=True)
     """
 
-    if not is_internet_connected():
+    if not is_home_connectable():
         print_connection_error(verbose=verbose)
         print("Unable to update the data.")
 
