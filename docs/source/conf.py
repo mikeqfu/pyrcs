@@ -2,11 +2,11 @@
 Configuration file for the Sphinx documentation builder.
 """
 
-# == Path setup ==========================================================================
+# == Path setup ====================================================================================
 import os
 import sys
 
-# If the directory is relative to the documentation root, use os.path.abspath to make it absolute.
+# If the directory is relative to the documentation root, use os.path.abspath to make it absolute:
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../pyrcs'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
@@ -15,17 +15,17 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 # A list of modules to be mocked up:
 autodoc_mock_imports = [
     'beautifulsoup4',
-    'measurement',
     'numpy',
     'pandas',
     'requests',
     'pyhelpers',
 ]
 
-# == Project information =================================================================
-from pyrcs import __author__, __copyright__, __description__, __package__, __project__, __version__
+# == Project information ===========================================================================
+from pyrcs import __affiliation__, __author__, __copyright__, __description__, __package__, \
+    __project__, __version__
 
-# General information about the project.
+# General information about the project:
 project = __project__
 copyright = __copyright__
 
@@ -33,7 +33,7 @@ copyright = __copyright__
 version = __version__  # The short X.Y version
 release = version  # The full version, including alpha/beta/rc tags
 
-# == General configuration ===============================================================
+# == General configuration =========================================================================
 import sphinx_rtd_theme
 
 _ = sphinx_rtd_theme.get_html_theme_path()
@@ -82,7 +82,7 @@ autoclass_content = 'both'  # ['class', 'init']
 # Automatically documented members are sorted by source order ('bysource'):
 autodoc_member_order = 'bysource'
 
-# == Options for HTML and HTMLHelp output ================================================
+# == Options for HTML and HTMLHelp output ==========================================================
 html_theme = 'sphinx_rtd_theme'  # The theme to use for HTML & HTML Help pages
 
 html_theme_options = {
@@ -109,7 +109,7 @@ html_js_files = ['prompt_button.js']
 # Output file base name for HTML help builder:
 htmlhelp_basename = project + 'doc'  # Default is 'pydoc'.
 
-# == Options for LaTeX output ============================================================
+# == Options for LaTeX output ======================================================================
 from pygments.formatters.latex import LatexFormatter
 from sphinx.highlighting import PygmentsBridge
 
@@ -139,36 +139,42 @@ latex_documents = [
      ),
 ]
 
+first_release_date = 'August 2019'
+affiliation_school, affiliation_univ = __affiliation__.split(', ')
+
 # Customized title page
 latex_maketitle = r'''
+    \newgeometry{top=1.1in,bottom=1.1in,right=1.2in,left=1.2in}
     \pagenumbering{roman}
-
     \makeatletter
     \hypertarget{titlepage}{}
     \begin{titlepage}
-        \flushleft
+        \flushright
 
-        \vspace*{30mm}
-        \textbf{\Huge {{PyRCS Documentation}}}
+        \vspace*{22mm}
+        \textbf{\Huge {{%s Documentation}}}
+        
+        \vspace{5mm}
+        \textit{\Large {{%s}}} \par
+        \vspace{5mm}
+        \textbf{\textit{\LARGE {{Release %s}}}} \par
+
+        \vspace{45mm}
+        \LARGE \textbf{{%s}} \par
 
         \vspace{5mm}
-        \LARGE A web scraping tool for the railway codes used in the UK \par
-        \textit{\Large {{(Extracting data from the website: www.railwaycodes.org.uk)}}} \par
-        \vspace{5mm}
-        \textit{\Large {{Release %s}}}
+        \textit{\Large {{%s}}} \par
+        \textit{\Large {{%s}}} \par
 
-        \vspace{55mm}
-        \Large \textbf{{%s}}
-
-        \vspace{10mm}
-        \large School of Engineering \par
-        \large University of Birmingham \par
-
-        \vspace{50mm}
-        \small First release: August 2019 \par
-        \small Last updated: \MonthYearFormat\today
+        \vspace{35mm}
+        \textbf{\Large {{First release:}}} \Large %s \par
+        \textbf{\Large {{Last updated:}}} \Large \MonthYearFormat\today \par
+    
+        \vspace{30mm}
+        \Large \textcopyright \space Copyright %s \par
 
     \end{titlepage}
+    \restoregeometry
     \bookmark[dest=titlepage]{Title}
     \makeatother
 
@@ -191,7 +197,14 @@ latex_maketitle = r'''
 
     \clearpage
     \pagenumbering{arabic}
-    ''' % (release, __author__)
+    ''' % (__project__,
+           __description__.rstrip('.'),
+           release,
+           __author__,
+           affiliation_school,
+           affiliation_univ,
+           first_release_date,
+           __copyright__)
 
 latex_preamble = r'''
     \setlength{\headheight}{14pt}
@@ -270,7 +283,7 @@ latex_elements = {
     'passoptionstopackages': r'\PassOptionsToPackage{svgnames}{xcolor}',
 }
 
-# == Options for manual page output ======================================================
+# == Options for manual page output ================================================================
 
 man_pages = [  # How to group the document tree into manual pages
     ('index',  # startdocname
@@ -281,7 +294,7 @@ man_pages = [  # How to group the document tree into manual pages
      )
 ]
 
-# == Options for Texinfo output ==========================================================
+# == Options for Texinfo output ====================================================================
 
 texinfo_documents = [  # Grouping the document tree into Texinfo files
     (master_doc,  # source start file
