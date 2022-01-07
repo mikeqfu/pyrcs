@@ -33,6 +33,7 @@ setuptools.setup(
     license='GPLv3',
 
     classifiers=[
+        'Intended Audience :: Developers',
         'Intended Audience :: Education',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Information Technology',
@@ -67,10 +68,10 @@ setuptools.setup(
         'numpy',
         'pandas',
         'requests',
-        'pyhelpers>=1.2.18',
+        'pyhelpers>=1.3.0',
     ],
 
-    package_data={"": ["requirements.txt", "LICENSE"]},
+    package_data={"": ["dat/*", "requirements.txt", "LICENSE"]},
     include_package_data=True,
 
 )
