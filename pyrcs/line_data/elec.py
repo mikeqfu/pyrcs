@@ -220,9 +220,8 @@ class Electrification:
         :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
 
-        :ivar str url: URL of the data web page
-        :ivar str last_updated_date: last update date
         :ivar dict catalogue: catalogue of the data
+        :ivar str last_updated_date: last update date
         :ivar str data_dir: path to the data directory
         :ivar str current_data_dir: path to the current data directory
 
@@ -242,9 +241,9 @@ class Electrification:
 
         print_connection_error(verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL)
-
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
+
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
@@ -1164,8 +1163,7 @@ class Electrification:
 
         **Example**::
 
-            >>> from pyrcs.line_data import Electrification
-            >>> # from pyrcs import Electrification
+            >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
 
             >>> elec = Electrification()
 
