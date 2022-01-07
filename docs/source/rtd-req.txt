@@ -1,8 +1,8 @@
 beautifulsoup4
+numpy
 pandas
 requests
-pyhelpers @ git+https://github.com/mikeqfu/pyhelpers.git@c9cd989ac14819090abef06925155f37513dbe60
-numpy
-Sphinx~=4.3.0
-sphinx-copybutton
-sphinx-rtd-theme~=1.0.0
+pyhelpers>=1.3.0
+Sphinx>=4.3.2
+sphinx-copybutton>=0.4.0
+sphinx-rtd-theme>=1.0.0
