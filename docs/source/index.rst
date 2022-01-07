@@ -10,10 +10,10 @@ PyRCS
         :alt: PyPI - Release
         :target: https://pypi.org/project/pyrcs/
     .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs?label=Python
-        :alt: PyPI - Python Version
+        :alt: Python version
         :target: https://www.python.org/downloads/
     .. |License| image:: https://img.shields.io/pypi/l/pyrcs?label=License
-        :alt: PyPI - License
+        :alt: License for PyRCS
         :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
     .. |Downloads| image:: https://img.shields.io/pypi/dm/pyrcs?label=Downloads
         :alt: PyPI - Downloads
