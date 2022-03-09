@@ -1,7 +1,7 @@
 """
-A collection of modules for collecting
+A sub-package of modules for collecting
 `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
-See also :py:class:`pyrcs.collector.OtherAssets`.
+See also :py:class:`~pyrcs.collector.OtherAssets`.
 """
 
 from .depot import Depots
@@ -11,9 +11,11 @@ from .station import Stations
 from .tunnel import Tunnels
 from .viaduct import Viaducts
 
-__all__ = ['depot', 'Depots',
-           'feature', 'Features',
-           'sig_box', 'SignalBoxes',
-           'station', 'Stations',
-           'tunnel', 'Tunnels',
-           'viaduct', 'Viaducts']
+__all__ = [
+    'sig_box', 'SignalBoxes',
+    'tunnel', 'Tunnels',
+    'viaduct', 'Viaducts',
+    'station', 'Stations',
+    'depot', 'Depots',
+    'feature', 'Features',
+]
