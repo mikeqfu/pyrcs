@@ -115,6 +115,17 @@ def _parse_vulgar_fraction_in_length(x):
     return yd
 
 
+def _parse_telegraph_in_use_term(x):
+    if x == '♠':
+        y = 'cross industry term used in 1939'
+    elif x == '†':
+        y = 'cross industry term used in 1939 and still used by BR in the 1980s'
+    else:
+        y = x
+
+    return y
+
+
 class Features:
     """
     A class for collecting codes of several infrastructure features.
@@ -561,7 +572,7 @@ class Features:
             pandas.core.frame.DataFrame
             >>> tel_official_codes.head()
                   Code  ...                               In use
-            0    ABACK  ...                                    ♠
+            0    ABACK  ...     cross industry term used in 1939
             1    ABASE  ...                            GWR, 1939
             2  ABREAST  ...  GWR, 1939 / Railway Executive, 1950
             3  ABREAST  ...   British Transport Commission, 1958
@@ -612,6 +623,9 @@ class Features:
                         trs = h3.find_next('tbody').find_all('tr')
 
                         dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+                        if 'In use' in dat.columns:
+                            dat['In use'] = dat['In use'].map(_parse_telegraph_in_use_term)
 
                         codes_list.append(dat)
 
@@ -676,7 +690,7 @@ class Features:
             pandas.core.frame.DataFrame
             >>> tel_official_codes.head()
                   Code  ...                               In use
-            0    ABACK  ...                                    ♠
+            0    ABACK  ...     cross industry term used in 1939
             1    ABASE  ...                            GWR, 1939
             2  ABREAST  ...  GWR, 1939 / Railway Executive, 1950
             3  ABREAST  ...   British Transport Commission, 1958
