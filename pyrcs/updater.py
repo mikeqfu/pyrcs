@@ -9,13 +9,13 @@ from .collector import LineData, OtherAssets
 from .utils import *
 
 
-def update_backup_data(verbose=False, time_gap=2):
+def update_backup_data(verbose=False, time_gap=5):
     """
     Update data of the package's local backup.
 
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool
-    :param time_gap: time gap (in seconds) between updating different classes, defaults to ``2``
+    :param time_gap: time gap (in seconds) between updating different classes, defaults to ``5``
     :type time_gap: int
 
     **Example**::
@@ -30,13 +30,13 @@ def update_backup_data(verbose=False, time_gap=2):
         print("Unable to update the data.")
 
     else:
-        if confirmed("To update the backup resources?"):
+        if confirmed("To update the backup resources\n?"):
 
             # Site map
             print("\nSite map:")
             _ = get_site_map(update=True, confirmation_required=False, verbose=verbose)
 
-            print("")
+            time.sleep(time_gap)
 
             # Line data
             ld = LineData(update=True)
