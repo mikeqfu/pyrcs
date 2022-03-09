@@ -1,25 +1,25 @@
 """
-Collect British `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
 """
 
 from pyhelpers.dir import cd
-from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 
 
 class LineNames:
     """
-    A class for collecting data of British railway line names.
-
-
+    A class for collecting data of
+    `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
     """
 
+    #: Name of the data
     NAME = 'Railway line names'
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
     KEY = 'Line names'
-
+    #: URL of the main web page of the data
     URL = urllib.parse.urljoin(home_page_url(), '/line/line_names.shtm')
-
+    #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
@@ -32,12 +32,13 @@ class LineNames:
         :type verbose: bool or int
 
         :ivar dict catalogue: catalogue of the data
+        :ivar str last_updated_date: last update date
         :ivar str data_dir: path to the data directory
         :ivar str current_data_dir: path to the current data directory
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import LineNames
+            >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
 
             >>> ln = LineNames()
 
@@ -47,25 +48,26 @@ class LineNames:
             >>> print(ln.URL)
             http://www.railwaycodes.org.uk/misc/line_names.shtm
         """
-        if not is_home_connectable():
-            print_connection_error(verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        print_connection_error(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-    def _cdd_ln(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and subdirectories (and/or a file).
 
-        The directory for this module: ``"dat\\line-data\\line-names"``.
+        The directory for this module: ``"data\\line-data\\line-names"``.
 
         :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for ``LineNames``
+        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
+        :return: path to the backup data directory for the class
+            :py:class:`~pyrcs.line_data.line_name.LineNames`
         :rtype: str
 
         .. _pyhelpers.dir.cd:
@@ -77,29 +79,35 @@ class LineNames:
         return path
 
     @staticmethod
-    def _parse_route_column(x):
+    def _parse_route(x):
         """
         Parse route column.
         """
+        
         if 'Watford - Euston suburban route' in x:
             route, route_note = 'Watford - Euston suburban route', x
+        
         elif ', including Moorgate - Farringdon' in x:
             route_note = 'including Moorgate - Farringdon'
             route = x.replace(', including Moorgate - Farringdon', '')
+        
         elif re.match(r'.+(?= \[\')', x):
             route, route_note = re.split(r' \[\'\(?', x)
             route_note = route_note.strip(")']")
+        
         elif re.match(r'.+\)$', x):
             if re.match(r'.+(?= - \()', x):
                 route, route_note = x, None
             else:
                 route, route_note = re.split(r' \(\[?\'?', x)
                 route_note = route_note.rstrip('\'])')
+        
         else:
             route, route_note = x, None
+        
         return route, route_note
 
-    def collect_line_names(self, confirmation_required=True, verbose=False):
+    def collect_codes(self, confirmation_required=True, verbose=False):
         """
         Collect data of railway line names from source web page.
 
@@ -110,40 +118,40 @@ class LineNames:
         :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import LineNames
+            >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
 
             >>> ln = LineNames()
 
-            >>> line_names_dat = ln.collect_line_names()
-            To collect British railway line names? [No]|Yes: yes
-
-            >>> type(line_names_dat)
+            >>> line_names_codes = ln.collect_codes()
+            To collect British railway line names
+            ? [No]|Yes: yes
+            >>> type(line_names_codes)
             dict
-            >>> list(line_names_dat.keys())
+            >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
 
-            >>> print(ln.KEY)
-            Line names
+            >>> ln.KEY
+            'Line names'
 
-            >>> line_names_codes = line_names_dat['Line names']
-
-            >>> type(line_names_codes)
+            >>> line_names_codes_dat = line_names_codes[ln.KEY]
+            >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
-            >>> line_names_codes.head()
+            >>> line_names_codes_dat.head()
                          Line name  ... Route_note
             0           Abbey Line  ...       None
             1        Airedale Line  ...       None
             2          Argyle Line  ...       None
             3     Arun Valley Line  ...       None
             4  Atlantic Coast Line  ...       None
+
             [5 rows x 3 columns]
         """
 
-        data_name = "British" + self.NAME.lower()
+        data_name = self.NAME.lower()
 
-        if confirmed(f"To collect {data_name}?", confirmation_required=confirmation_required):
+        if confirmed(f"To collect British {data_name}\n?", confirmation_required=confirmation_required):
 
             print_collect_msg(
                 data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
@@ -151,103 +159,86 @@ class LineNames:
             line_names_data = None
 
             try:
-                source = requests.get(self.URL, headers=fake_requests_headers())
-            except requests.ConnectionError:
-                print("Failed. ") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+                source = requests.get(url=self.URL, headers=fake_requests_headers())
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
-                    row_lst, header = parse_table(source, parser='lxml')
+                    columns, records = parse_table(source=source, parser='html.parser')
                     line_names = pd.DataFrame(
-                        [[r.replace('\xa0', '').strip() for r in row] for row in row_lst],
-                        columns=header)
+                        [[rec.replace('\xa0', '').strip() for rec in record] for record in records],
+                        columns=columns)
 
-                    line_names[['Route', 'Route_note']] = \
-                        line_names.Route.map(self._parse_route_column).apply(pd.Series)
+                    rte_col = ['Route', 'Route_note']
+                    line_names[rte_col] = line_names.Route.map(self._parse_route).apply(pd.Series)
 
                     last_updated_date = get_last_updated_date(self.URL)
 
-                    line_names_data = {self.KEY: line_names,
-                                       self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+                    line_names_data = {
+                        self.KEY: line_names,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
+                    }
 
-                    print("Done. ") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done.")
 
-                    pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
-                    path_to_pickle = self._cdd_ln(pickle_filename)
-                    save_pickle(line_names_data, path_to_pickle, verbose=verbose)
+                    save_data_to_file(
+                        self, data=line_names_data, data_name=self.KEY, ext=".pickle", verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
             return line_names_data
 
-    def fetch_line_names(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch data of railway line names from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: railway line names and routes data and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import LineNames
+            >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
 
             >>> ln = LineNames()
 
-            >>> # line_names_dat = ln.fetch_line_names(update=True, verbose=True)
-            >>> line_names_dat = ln.fetch_line_names()
-
-            >>> type(line_names_dat)
+            >>> line_names_codes = ln.fetch_codes()
+            >>> type(line_names_codes)
             dict
-            >>> list(line_names_dat.keys())
+            >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
 
-            >>> print(ln.KEY)
-            Line names
+            >>> ln.KEY
+            'Line names'
 
-            >>> line_names_codes = line_names_dat['Line names']
+            >>> line_names_codes_dat = line_names_codes[ln.KEY]
 
-            >>> type(line_names_codes)
+            >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
-            >>> line_names_codes.head()
+            >>> line_names_codes_dat.head()
                          Line name  ... Route_note
             0           Abbey Line  ...       None
             1        Airedale Line  ...       None
             2          Argyle Line  ...       None
             3     Arun Valley Line  ...       None
             4  Atlantic Coast Line  ...       None
+
             [5 rows x 3 columns]
         """
 
-        pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
-        path_to_pickle = self._cdd_ln(pickle_filename)
-
-        if os.path.isfile(path_to_pickle) and not update:
-            line_names_data = load_pickle(path_to_pickle)
-
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            line_names_data = self.collect_line_names(confirmation_required=False,
-                                                      verbose=verbose_)
-
-            if line_names_data:  # line-names is not None
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
-                    save_pickle(line_names_data, path_to_pickle, verbose=verbose)
-            else:
-                print("No data of the railway {} has been freshly collected.".format(
-                    self.KEY.lower()))
-                line_names_data = load_pickle(path_to_pickle)
+        line_names_data = fetch_data_from_file(
+            cls=self, method='collect_codes', data_name=self.KEY, ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose)
 
         return line_names_data
