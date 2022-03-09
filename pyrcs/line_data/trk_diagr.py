@@ -2,56 +2,51 @@
 Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
-import urllib.parse
-
 from pyhelpers.dir import cd
-from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
-from pyrcs.utils import _cd_dat
 
 
 class TrackDiagrams:
     """
-    A class for collecting British railway track diagrams.
-
+    A class for collecting data of British
+    `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
     """
 
-    NAME = 'Railway track diagrams (some samples)'
+    #: Name of the data
+    NAME = 'Railway track diagrams'
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
     KEY = 'Track diagrams'
-
+    #: URL of the main web page of the data
     URL = urllib.parse.urljoin(home_page_url(), '/line/diagrams0.shtm')
-
+    #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
-    def __init__(self, data_dir=None, verbose=True):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         :param data_dir: name of data directory, defaults to ``None``
         :type data_dir: str or None
+        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :type update: bool
         :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
 
-        :ivar str Name: name of the data
-        :ivar str Key: key of the dict-type data
-        :ivar str HomeURL: URL of the main homepage
-        :ivar str SourceURL: URL of the data web page
-        :ivar str LUDKey: key of the last updated date
-        :ivar str LUD: last updated date
-        :ivar str DataDir: path to the data directory
-        :ivar str CurrentDataDir: path to the current data directory
+        :ivar dict catalogue: catalogue of the data
+        :ivar str last_updated_date: last updated date
+        :ivar str data_dir: path to the data directory
+        :ivar str current_data_dir: path to the current data directory
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import TrackDiagrams
+            >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
 
             >>> td = TrackDiagrams()
 
             >>> print(td.NAME)
-            Railway track diagrams (some samples)
+            Railway track diagrams
 
             >>> print(td.URL)
-            http://www.railwaycodes.org.uk/track/diagrams0.shtm
-
+            http://www.railwaycodes.org.uk/line/diagrams0.shtm
         """
 
         print_connection_error(verbose=verbose)
@@ -60,28 +55,30 @@ class TrackDiagrams:
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-    def _cdd_td(self, *sub_dir, **kwargs):
+        self.catalogue = self._fetch_catalogue(update=update, verbose=True if verbose == 2 else False)
+
+    def _cdd(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and subdirectories (and/or a file).
 
-        The directory for this module: ``"dat\\line-data\\track-diagrams"``.
+        The directory for this module: ``"data\\line-data\\track-diagrams"``.
 
         :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
-        :return: path to the backup data directory for ``LOR``
+        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
+        :return: path to the backup data directory for the class
+            :py:class:`~pyrcs.line_data.trk_diagr.TrackDiagrams`
         :rtype: str
 
-        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
-
-        :meta private:
+        .. _pyhelpers.dir.cd:
+            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
         path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
 
         return path
 
-    def get_track_diagrams_items(self, update=False, verbose=False):
+    def _get_items(self, update=False, verbose=False):
         """
         Get catalogue of track diagrams.
 
@@ -92,56 +89,61 @@ class TrackDiagrams:
         :return: catalogue of railway station data
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import TrackDiagrams
+            >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
 
             >>> td = TrackDiagrams()
 
-            >>> # trk_diagr_items = td.get_track_diagrams_items(update=True, verbose=True)
-            >>> trk_diagr_items = td.get_track_diagrams_items()
+            >>> trk_diagr_items = td._get_items()
 
-            >>> type(trk_diagr_items)
-            dict
-            >>> list(trk_diagr_items.keys())
-            ['Track diagrams']
+            >>> trk_diagr_items
+            {'Track diagrams': {'London Underground',
+              'Main line diagrams',
+              'Miscellaneous',
+              'Tram systems'}}
         """
 
-        cat_json = '-'.join(x for x in urllib.parse.urlparse(self.URL).path.replace(
-            '.shtm', '.json').split('/') if x)
-        path_to_cat = _cd_dat("catalogue", cat_json)
+        dat_name = self.KEY.lower()
+        ext = ".pickle"
+        path_to_cat = cd_data("catalogue", dat_name.replace(" ", "-") + ext)
 
         if os.path.isfile(path_to_cat) and not update:
-            items = load_pickle(path_to_cat)
+            items = load_data(path_to_cat)
 
         else:
             if verbose == 2:
-                print("Collecting a list of {} items".format(self.KEY.lower()), end=" ... ")
+                print("Collecting a list of {} items".format(dat_name), end=" ... ")
+
+            items = None
 
             try:
-                source = requests.get(self.URL, headers=fake_requests_headers())
-            except requests.exceptions.ConnectionError:
-                print("Failed. ") if verbose == 2 else ""
-                print_conn_err(update=update, verbose=verbose)
-                items = load_pickle(path_to_cat)
+                source = requests.get(url=self.URL, headers=fake_requests_headers())
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(update=update, verbose=verbose, e=e)
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
                     h3 = {x.get_text(strip=True) for x in soup.find_all('h3', text=True)}
                     items = {self.KEY: h3}
 
-                    print("Done. ") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done.")
 
-                    save_pickle(items, path_to_cat, verbose=verbose)
+                    save_data_to_file(
+                        self, data=items, data_name=dat_name, ext=ext, dump_dir=cd_data("catalogue"),
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
-                    items = None
 
         return items
 
-    def collect_sample_catalogue(self, confirmation_required=True, verbose=False):
+    def _collect_catalogue(self, confirmation_required=True, verbose=False):
         """
         Collect catalogue of sample railway track diagrams from source web page.
 
@@ -149,63 +151,61 @@ class TrackDiagrams:
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: catalogue of sample railway track diagrams and
-            date of when the catalogue was last updated
+        :return: catalogue of railway track diagrams and date of when the catalogue was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import TrackDiagrams
+            >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
 
             >>> td = TrackDiagrams()
 
-            >>> track_diagrams_catalog = td.collect_sample_catalogue()
-            To collect the catalogue of sample track diagrams? [No]|Yes: yes
-
+            >>> track_diagrams_catalog = td._collect_catalogue()
+            To collect the catalogue of track diagrams
+            ? [No]|Yes: yes
             >>> type(track_diagrams_catalog)
             dict
             >>> list(track_diagrams_catalog.keys())
             ['Track diagrams', 'Last updated date']
 
             >>> td_dat = track_diagrams_catalog['Track diagrams']
-
             >>> type(td_dat)
             dict
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
 
             >>> main_line_diagrams = td_dat['Main line diagrams']
-
             >>> type(main_line_diagrams)
             tuple
-
             >>> type(main_line_diagrams[1])
             pandas.core.frame.DataFrame
             >>> main_line_diagrams[1].head()
-                                         Description                               FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/li...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
+                                         Description                                         FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
         """
 
-        if confirmed("To collect the catalogue of sample {}?".format(self.KEY.lower()),
-                     confirmation_required=confirmation_required):
+        data_name = self.KEY.lower()
 
-            if verbose == 2:
-                print("Collecting the catalogue of sample {}".format(self.KEY.lower()), end=" ... ")
+        if confirmed("To collect the catalogue of {}\n?".format(data_name), confirmation_required):
+
+            print_collect_msg(data_name, verbose=verbose, confirmation_required=confirmation_required)
 
             track_diagrams_catalogue = None
 
             try:
                 source = requests.get(url=self.URL, headers=fake_requests_headers())
-            except requests.exceptions.ConnectionError:
-                print("Failed. ") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
                     track_diagrams_catalogue_ = {}
 
-                    soup = bs4.BeautifulSoup(source.text, 'lxml')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                     h3 = soup.find('h3', text=True, attrs={'class': None})
                     while h3:
@@ -214,12 +214,15 @@ class TrackDiagrams:
                             desc = [x.text for x in h3.find_next_siblings('p')]
                         else:
                             desc = h3.find_next_sibling('p').text.replace('\xa0', '')
+
                         # Extract details
                         cold_soup = h3.find_next('div', attrs={'class': 'columns'})
                         if cold_soup:
                             info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
-                            urls = [urllib.parse.urljoin(self.URL, a.get('href'))
-                                    for a in cold_soup.find_all('a')]
+                            urls = [
+                                urllib.parse.urljoin(self.URL, a.get('href'))
+                                for a in cold_soup.find_all('a')
+                            ]
                         else:
                             cold_soup = h3.find_next('a', attrs={'target': '_blank'})
                             info, urls = [], []
@@ -227,11 +230,12 @@ class TrackDiagrams:
                             while cold_soup:
                                 info.append(cold_soup.text)
                                 urls.append(urllib.parse.urljoin(self.URL, cold_soup['href']))
-                                cold_soup = cold_soup.find_next('a') \
-                                    if h3.text == 'Miscellaneous' \
-                                    else cold_soup.find_next_sibling('a')
+                                if h3.text == 'Miscellaneous':
+                                    cold_soup = cold_soup.find_next('a')
+                                else:
+                                    cold_soup = cold_soup.find_next_sibling('a')
 
-                        meta = pd.DataFrame(zip(info, urls), columns=['Description', 'FileURL'])
+                        meta = pd.DataFrame(data=zip(info, urls), columns=['Description', 'FileURL'])
 
                         track_diagrams_catalogue_.update({h3.text: (desc, meta)})
 
@@ -242,88 +246,63 @@ class TrackDiagrams:
                         self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
                     }
 
-                    print("Done. ") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done.")
 
-                    pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
-                    path_to_pickle = self._cdd_td(pickle_filename)
-                    save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
+                    save_data_to_file(
+                        self, data=track_diagrams_catalogue, data_name=data_name, ext=".pickle",
+                        dump_dir=cd_data("catalogue"), verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
             return track_diagrams_catalogue
 
-    def fetch_sample_catalogue(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def _fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch catalogue of sample railway track diagrams from local backup.
+        Fetch catalogue of railway track diagrams from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: catalogue of sample railway track diagrams and
             date of when the catalogue was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.line_data import TrackDiagrams
+            >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
 
             >>> td = TrackDiagrams()
 
-            >>> # trk_diagr_cat = td.fetch_sample_catalogue(update=True, verbose=True)
-            >>> trk_diagr_cat = td.fetch_sample_catalogue()
-
+            >>> trk_diagr_cat = td._fetch_catalogue()
             >>> type(trk_diagr_cat)
             dict
             >>> list(trk_diagr_cat.keys())
             ['Track diagrams', 'Last updated date']
 
             >>> td_dat = trk_diagr_cat['Track diagrams']
-
             >>> type(td_dat)
             dict
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
 
             >>> main_line_diagrams = td_dat['Main line diagrams']
-
             >>> type(main_line_diagrams)
             tuple
-
             >>> type(main_line_diagrams[1])
             pandas.core.frame.DataFrame
             >>> main_line_diagrams[1].head()
-                                         Description                               FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/li...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/li...
+                                         Description                                         FileURL
+            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
+            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
         """
 
-        pickle_filename = self.KEY.lower().replace(" ", "-") + ".pickle"
-        path_to_pickle = self._cdd_td(pickle_filename)
-
-        if os.path.isfile(path_to_pickle) and not update:
-            track_diagrams_catalogue = load_pickle(path_to_pickle)
-
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            track_diagrams_catalogue = self.collect_sample_catalogue(
-                confirmation_required=False, verbose=verbose_)
-
-            if track_diagrams_catalogue:
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(self.current_data_dir, pickle_filename)
-                    save_pickle(track_diagrams_catalogue, path_to_pickle, verbose=verbose)
-
-            else:
-                print("No data of the sample {} catalogue has been freshly collected.".format(
-                    self.KEY.lower()))
-                track_diagrams_catalogue = load_pickle(path_to_pickle)
+        track_diagrams_catalogue = fetch_data_from_file(
+            cls=self, method='_collect_catalogue', data_name=self.KEY, ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
 
         return track_diagrams_catalogue
