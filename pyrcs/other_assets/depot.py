@@ -1,28 +1,36 @@
 """
-Collect `depots codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
-import socket
-import urllib.error
-import urllib.parse
-
 from pyhelpers.dir import cd
-from pyhelpers.store import load_pickle
 
 from pyrcs.utils import *
 
 
 class Depots:
     """
-    A class for collecting depot codes.
+    A class for collecting `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
     """
 
+    #: Name of the data
     NAME = 'Depot codes'
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
     KEY = 'Depots'
 
+    #: Key of the dict-type data of two character TOPS codes
+    KEY_TO_TOPS = 'Two character TOPS codes'
+    #: Key of the dict-type data of four digit pre-TOPS codes
+    KEY_TO_PRE_TOPS = 'Four digit pre-TOPS codes'
+    #: Key of the dict-type data of 1950 system (pre-TOPS) codes
+    KEY_TO_1950_SYSTEM = '1950 system (pre-TOPS) codes'
+    #: Key of the dict-type data of GWR codes
+    KEY_TO_GWR = 'GWR codes'
+
+    #: URL of the main web page of the data
     URL = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
 
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'  # key to last updated date
+    #: Key of the data of the last updated date
+    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
@@ -33,28 +41,14 @@ class Depots:
         :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
 
-        :ivar str Name: name of the data
-        :ivar str Key: key of the dict-type data
-        :ivar str HomeURL: URL of the main homepage
-        :ivar str SourceURL: URL of the data web page
-        :ivar str LUDKey: key of the last updated date
-        :ivar str LUD: last updated date
-        :ivar dict Catalogue: catalogue of the data
-        :ivar str DataDir: path to the data directory
-        :ivar str CurrentDataDir: path to the current data directory
+        :ivar dict catalogue: catalogue of the data
+        :ivar str last_updated_date: last updated date
+        :ivar str data_dir: path to the data directory
+        :ivar str current_data_dir: path to the current data directory
 
-        :ivar str TCTKey: key of the dict-type data of two character TOPS codes
-        :ivar str TCTPickle: name of the pickle file of two character TOPS codes
-        :ivar str FDPTKey: key of the dict-type data of four digit pre-TOPS codes
-        :ivar str FDPTPickle: name of the pickle file of four digit pre-TOPS codes
-        :ivar str S1950Key: key of the dict-type data of 1950 system (pre-TOPS) codes
-        :ivar str S1950Pickle: name of the pickle file of 1950 system (pre-TOPS) codes
-        :ivar str GWRKey: key of the dict-type data of GWR codes
-        :ivar str GWRPickle: name of the pickle file of GWR codes
+        **Examples**::
 
-        **Example**::
-
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
@@ -67,33 +61,27 @@ class Depots:
 
         print_connection_error(verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
-
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
+
+        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
-        self.TCTKey, self.FDPTKey, self.S1950Key, self.GWRKey = list(self.catalogue.keys())[1:]
-        self.TCTPickle = self.TCTKey.replace(" ", "-").lower()
-        self.FDPTPickle = re.sub(r'[ -]', '-', self.FDPTKey).lower()
-        self.S1950Pickle = re.sub(r' \(|\) | ', '-', self.S1950Key).lower()
-        self.GWRPickle = self.GWRKey.replace(" ", "-").lower()
-
-    def _cdd_depots(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and subdirectories (and/or a file).
         
-        The directory for this module: ``"dat\\other-assets\\depots"``.
+        The directory for this module: ``"data\\other-assets\\depots"``.
 
         :param sub_dir: subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
-        :param kwargs: optional parameters of `os.makedirs`_, e.g. ``mode=0o777``
-        :return: path to the backup data directory for ``Depots``
+        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
+        :return: path to the backup data directory for the class
+            :py:class:`~pyrcs.other_assets.depot.Depots`
         :rtype: str
 
-        .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
-
-        :meta private:
+        .. _`pyhelpers.dir.cd`:
+            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
         path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
@@ -112,142 +100,127 @@ class Depots:
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> tct_dat = depots.collect_two_char_tops_codes()
-            To collect data of two character TOPS codes? [No]|Yes: yes
-
-            >>> type(tct_dat)
+            >>> tct_codes = depots.collect_two_char_tops_codes()
+            To collect data of two character TOPS codes
+            ? [No]|Yes: yes
+            >>> type(tct_codes)
             dict
-            >>> list(tct_dat.keys())
+            >>> list(tct_codes.keys())
             ['Two character TOPS codes', 'Last updated date']
 
-            >>> print(depots.TCTKey)
-            Two character TOPS codes
+            >>> depots.KEY_TO_TOPS
+            'Two character TOPS codes'
 
-            >>> tct_codes = tct_dat[depots.TCTKey]
-
-            >>> type(tct_codes)
+            >>> tct_codes_dat = tct_codes[depots.KEY_TO_TOPS]
+            >>> type(tct_codes_dat)
             pandas.core.frame.DataFrame
-            >>> tct_codes.head()
-              Code click to sort  ...                Notes
-            0                 AB  ...          Closed 1987
-            1                 AB  ...
-            2                 AC  ...  Became WH from 1994
-            3                 AC  ...
-            4                 AD  ...
+            >>> tct_codes_dat.head()
+              Code  ...                Notes
+            0   AB  ...          Closed 1987
+            1   AB  ...
+            2   AC  ...  Became WH from 1994
+            3   AC  ...
+            4   AD  ...
+
             [5 rows x 5 columns]
         """
 
-        if confirmed("To collect data of {}?".format(self.TCTKey[:1].lower() + self.TCTKey[1:]),
-                     confirmation_required=confirmation_required):
+        cfm_msg = confirm_msg(self.KEY_TO_TOPS)
 
-            url = self.catalogue[self.TCTKey]
+        if confirmed(cfm_msg, confirmation_required=confirmation_required):
 
-            if verbose == 2:
-                print("Collecting data of {}".format(
-                    self.TCTKey[:1].lower() + self.TCTKey[1:]), end=" ... ")
+            print_collect_msg(
+                self.KEY_TO_TOPS, verbose=verbose, confirmation_required=confirmation_required)
 
             two_char_tops_codes_data = None
 
             try:
-                header, two_char_tops_codes = pd.read_html(url, na_values=[''], keep_default_na=False)
-            except (urllib.error.URLError, socket.gaierror):
-                print("Failed.") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+                url = self.catalogue[self.KEY_TO_TOPS]
+                source = requests.get(url=url, headers=fake_requests_headers())
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
-                    two_char_tops_codes.columns = header.columns.to_list()
-                    two_char_tops_codes.fillna('', inplace=True)
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    last_updated_date = get_last_updated_date(url)
+                    thead, tbody = soup.find('thead'), soup.find('tbody')
+                    ths = [th.text for th in thead.find_all(name='th')]
+                    trs = tbody.find_all(name='tr')
+                    two_char_tops_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-                    print("Done.") if verbose == 2 else ""
+                    if verbose == 2:
+                        print("Done.")
 
-                    two_char_tops_codes_data = {self.TCTKey: two_char_tops_codes,
-                                                self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+                    two_char_tops_codes_data = {
+                        self.KEY_TO_TOPS: two_char_tops_codes,
+                        self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url)
+                    }
 
-                    path_to_pickle = self._cdd_depots(self.TCTPickle + ".pickle")
-                    save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
+                    save_data_to_file(
+                        self, data=two_char_tops_codes_data, data_name=self.KEY_TO_TOPS, ext=".pickle",
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
             return two_char_tops_codes_data
 
-    def fetch_two_char_tops_codes(self, update=False, pickle_it=False, data_dir=None,
-                                  verbose=False):
+    def fetch_two_char_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of two-character TOPS codes and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> # tct_dat = depots.fetch_two_char_tops_codes(update=True, verbose=True)
-            >>> tct_dat = depots.fetch_two_char_tops_codes()
-
-            >>> type(tct_dat)
+            >>> tct_codes = depots.fetch_two_char_tops_codes()
+            >>> type(tct_codes)
             dict
-            >>> list(tct_dat.keys())
+            >>> list(tct_codes.keys())
             ['Two character TOPS codes', 'Last updated date']
 
-            >>> print(depots.TCTKey)
-            Two character TOPS codes
+            >>> depots.KEY_TO_TOPS
+            'Two character TOPS codes'
 
-            >>> tct_codes = tct_dat[depots.TCTKey]
-
-            >>> type(tct_codes)
+            >>> tct_codes_dat = tct_codes[depots.KEY_TO_TOPS]
+            >>> type(tct_codes_dat)
             pandas.core.frame.DataFrame
-            >>> tct_codes.head()
-              Code click to sort  ...                Notes
-            0                 AB  ...          Closed 1987
-            1                 AB  ...
-            2                 AC  ...  Became WH from 1994
-            3                 AC  ...
-            4                 AD  ...
+            >>> tct_codes_dat.head()
+              Code  ...                Notes
+            0   AB  ...          Closed 1987
+            1   AB  ...
+            2   AC  ...  Became WH from 1994
+            3   AC  ...
+            4   AD  ...
+
             [5 rows x 5 columns]
         """
 
-        path_to_pickle = self._cdd_depots(self.TCTPickle + ".pickle")
-
-        if os.path.isfile(path_to_pickle) and not update:
-            two_char_tops_codes_data = load_pickle(path_to_pickle)
-
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            two_char_tops_codes_data = self.collect_two_char_tops_codes(
-                confirmation_required=False, verbose=verbose_)
-
-            if two_char_tops_codes_data:
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(self.current_data_dir, self.TCTPickle + ".pickle")
-                    save_pickle(two_char_tops_codes_data, path_to_pickle, verbose=verbose)
-            else:
-                print("No data of {} has been freshly collected.".format(
-                    self.TCTKey[:1].lower() + self.TCTKey[1:]))
-                two_char_tops_codes_data = load_pickle(path_to_pickle)
+        two_char_tops_codes_data = fetch_data_from_file(
+            cls=self, method='collect_two_char_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose)
 
         return two_char_tops_codes_data
 
@@ -260,179 +233,161 @@ class Depots:
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of two-character TOPS codes and date of when the data was last updated
+        :return: data of four-digit pre-TOPS codes and date of when the data was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> fdpt = depots.collect_four_digit_pre_tops_codes()
-            To collect data of four digit pre-TOPS codes? [No]|Yes: yes
-
-            >>> type(fdpt)
+            >>> fdpt_codes = depots.collect_four_digit_pre_tops_codes()
+            To collect data of four digit pre-TOPS codes
+            ? [No]|Yes: yes
+            >>> type(fdpt_codes)
             dict
-            >>> list(fdpt.keys())
+            >>> list(fdpt_codes.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
 
-            >>> print(depots.FDPTKey)
-            Four digit pre-TOPS codes
+            >>> depots.KEY_TO_PRE_TOPS
+            'Four digit pre-TOPS codes'
 
-            >>> fdpt_codes = fdpt[depots.FDPTKey]
-
-            >>> type(fdpt_codes)
+            >>> fdpt_codes_dat = fdpt_codes[depots.KEY_TO_PRE_TOPS]
+            >>> type(fdpt_codes_dat)
             pandas.core.frame.DataFrame
-            >>> fdpt_codes.head()
-               Code             Depot name          Region
-            0  2000             Accrington  London Midland
-            1  2001   Derby Litchurch Lane      Main Works
-            2  2003              Blackburn  London Midland
-            3  2004  Bolton Trinity Street  London Midland
-            4  2006                Burnley  London Midland
+            >>> fdpt_codes_dat.head()
+               Code             Depot name          Region  Main Works site
+            0  2000             Accrington  London Midland            False
+            1  2001   Derby Litchurch Lane  London Midland             True
+            2  2003              Blackburn  London Midland            False
+            3  2004  Bolton Trinity Street  London Midland            False
+            4  2006                Burnley  London Midland            False
         """
 
-        if confirmed("To collect data of {}?".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]),
-                     confirmation_required=confirmation_required):
+        data_name = self.KEY_TO_PRE_TOPS[:1].lower() + self.KEY_TO_PRE_TOPS[1:]
+        cfm_msg = confirm_msg(data_name)
+        if confirmed(cfm_msg, confirmation_required=confirmation_required):
 
-            path_to_pickle = self._cdd_depots(self.FDPTPickle + ".pickle")
-
-            url = self.catalogue[self.FDPTKey]
-
-            if verbose == 2:
-                print("Collecting data of {}".format(self.FDPTKey[:1].lower() + self.FDPTKey[1:]),
-                      end=" ... ")
+            print_collect_msg(data_name, verbose=verbose, confirmation_required=confirmation_required)
 
             four_digit_pre_tops_codes_data = None
 
             try:
-                headers_, four_digit_pre_tops_codes = pd.read_html(url)
-            except requests.ConnectionError:
-                print("Failed.") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+                url = self.catalogue[self.KEY_TO_PRE_TOPS]
+                # headers_, four_digit_pre_tops_codes = pd.read_html(url)
+                source = requests.get(url=url, headers=fake_requests_headers())
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
-                    four_digit_pre_tops_codes.columns = [
-                        x.replace(' click to sort', '') for x in list(headers_)]
+                    # four_digit_pre_tops_codes.columns = [
+                    #     x.replace(' click to sort', '') for x in list(headers_)]
 
-                    col_region = 'Region'
-                    four_digit_pre_tops_codes[col_region] = ''
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    dagger, col_depot = ' †', 'Depot name'
-                    for i in four_digit_pre_tops_codes.index:
-                        v = four_digit_pre_tops_codes.loc[i, col_depot]
-                        c = four_digit_pre_tops_codes.loc[i, 'Code']
-                        if v.endswith(dagger):
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'Main Works'
-                        elif 2000 <= c < 3000:
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'London Midland'
-                        elif 3000 <= c < 4000:
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'Western'
-                        elif 4000 <= c < 5000:
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'Southern'
-                        elif 5000 <= c < 7000:
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'Eastern'
-                        elif c >= 7000:
-                            four_digit_pre_tops_codes.loc[i, col_region] = 'Scottish'
+                    thead, tbody = soup.find('thead'), soup.find('tbody')
 
-                    four_digit_pre_tops_codes[col_depot] = \
-                        four_digit_pre_tops_codes[col_depot].str.rstrip(dagger)
+                    ths = [th.text for th in thead.find_all(name='th')]
+                    trs = tbody.find_all(name='tr')
+                    codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+                    codes.Code = codes['Code'].map(int)
+
+                    dagger_mark, depot_name_column, region_column = ' †', 'Depot name', 'Region'
+
+                    def _identify_region(x):
+                        if 2000 <= x < 3000:
+                            _region_name = 'London Midland'
+                        elif 3000 <= x < 4000:
+                            _region_name = 'Western'
+                        elif 4000 <= x < 5000:
+                            _region_name = 'Southern'
+                        elif 5000 <= x < 7000:
+                            _region_name = 'Eastern'
+                        else:  # x >= 7000:
+                            _region_name = 'Scottish'
+                        return _region_name
+
+                    codes[region_column] = codes.Code.map(_identify_region)
+
+                    codes['Main Works site'] = codes[depot_name_column].map(
+                        lambda x: True if x.endswith(dagger_mark) else False)
+
+                    codes[depot_name_column] = codes[depot_name_column].str.rstrip(dagger_mark)
 
                     last_updated_date = get_last_updated_date(url)
 
-                    print("Done.") if verbose == 2 else ""
+                    four_digit_pre_tops_codes_data = {
+                        self.KEY_TO_PRE_TOPS: codes,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
+                    }
 
-                    # four_digit_pre_tops_codes_data = {
-                    #     self.FDPTKey: dict(zip(region_names, four_digit_pre_tops_codes_list)),
-                    #     self.LUDKey: last_updated_date}
+                    if verbose == 2:
+                        print("Done.")
 
-                    four_digit_pre_tops_codes_data = {self.FDPTKey: four_digit_pre_tops_codes,
-                                                      self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
-
-                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
+                    save_data_to_file(
+                        self, data=four_digit_pre_tops_codes_data, data_name=data_name, ext=".pickle",
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
             return four_digit_pre_tops_codes_data
 
-    def fetch_four_digit_pre_tops_codes(self, update=False, pickle_it=False, data_dir=None,
-                                        verbose=False):
+    def fetch_four_digit_pre_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
         from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of two-character TOPS codes and date of when the data was last updated
+        :return: data of four-digit pre-TOPS codes and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> # fdpt = depots.fetch_four_digit_pre_tops_codes(update=True, verbose=True)
-            >>> fdpt = depots.fetch_four_digit_pre_tops_codes()
-
-            >>> type(fdpt)
+            >>> fdpt_codes = depots.fetch_four_digit_pre_tops_codes()
+            >>> type(fdpt_codes)
             dict
-            >>> list(fdpt.keys())
+            >>> list(fdpt_codes.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
 
-            >>> print(depots.FDPTKey)
-            Four digit pre-TOPS codes
+            >>> depots.KEY_TO_PRE_TOPS
+            'Four digit pre-TOPS codes'
 
-            >>> fdpt_codes = fdpt[depots.FDPTKey]
-
-            >>> type(fdpt_codes)
+            >>> fdpt_codes_dat = fdpt_codes[depots.KEY_TO_PRE_TOPS]
+            >>> type(fdpt_codes_dat)
             pandas.core.frame.DataFrame
-            >>> fdpt_codes.head()
-               Code             Depot name          Region
-            0  2000             Accrington  London Midland
-            1  2001   Derby Litchurch Lane      Main Works
-            2  2003              Blackburn  London Midland
-            3  2004  Bolton Trinity Street  London Midland
-            4  2006                Burnley  London Midland
+            >>> fdpt_codes_dat.head()
+               Code             Depot name          Region  Main Works site
+            0  2000             Accrington  London Midland            False
+            1  2001   Derby Litchurch Lane  London Midland             True
+            2  2003              Blackburn  London Midland            False
+            3  2004  Bolton Trinity Street  London Midland            False
+            4  2006                Burnley  London Midland            False
         """
 
-        path_to_pickle = self._cdd_depots(self.FDPTPickle + ".pickle")
+        data_name = re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
-
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            four_digit_pre_tops_codes_data = self.collect_four_digit_pre_tops_codes(
-                confirmation_required=False, verbose=verbose_)
-
-            if four_digit_pre_tops_codes_data:
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(
-                        self.current_data_dir, os.path.basename(path_to_pickle))
-
-                    save_pickle(four_digit_pre_tops_codes_data, path_to_pickle, verbose=verbose)
-
-            else:
-                print("No data of {} has been freshly collected.".format(
-                    self.FDPTKey[:1].lower() + self.FDPTKey[1:]))
-                four_digit_pre_tops_codes_data = load_pickle(path_to_pickle)
+        four_digit_pre_tops_codes_data = fetch_data_from_file(
+            cls=self, method='collect_four_digit_pre_tops_codes', data_name=data_name, ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose)
 
         return four_digit_pre_tops_codes_data
 
     def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
-        # noinspection GrazieInspection
         """
         Collect `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from source web page.
@@ -444,138 +399,130 @@ class Depots:
         :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> s1950_dat = depots.collect_1950_system_codes()
-            To collect data of 1950 system (pre-TOPS) codes? [No]|Yes: yes
-
-            >>> type(s1950_dat)
+            >>> s1950_codes = depots.collect_1950_system_codes()
+            To collect data of 1950 system (pre-TOPS) codes
+            ? [No]|Yes: yes
+            >>> type(s1950_codes)
             dict
-            >>> list(s1950_dat.keys())
+            >>> list(s1950_codes.keys())
             ['1950 system (pre-TOPS) codes', 'Last updated date']
 
-            >>> print(depots.S1950Key)
-            1950 system (pre-TOPS) codes
+            >>> depots.KEY_TO_1950_SYSTEM
+            '1950 system (pre-TOPS) codes'
 
-            >>> s1950_codes = s1950_dat[depots.S1950Key]
+            >>> s1950_codes_dat = s1950_codes[depots.KEY_TO_1950_SYSTEM]
 
-            >>> type(s1950_codes)
+            >>> type(s1950_codes_dat)
             pandas.core.frame.DataFrame
-            >>> s1950_codes.head()
-              Code click to sort  ...                                              Notes
-            0                 1A  ...               From 1950. Became WN from 6 May 1973
-            1                 1B  ...                       From 1950. To 3 January 1966
-            2                 1C  ...               From 1950. Became WJ from 6 May 1973
-            3                 1D  ...  Previously 13B to 9 June 1950. Became 1J from ...
-            4                 1D  ...  Previously 14F to 31 August 1963. Became ME fr...
-            [5 rows x 3 columns]
+            >>> s1950_codes_dat.head()
+              Code        Depot name                                              Notes
+            0   1A         Willesden              From 1950.  Became WN from 6 May 1973
+            1   1B            Camden                      From 1950.  To 3 January 1966
+            2   1C           Watford              From 1950.  Became WJ from 6 May 1973
+            3   1D  Devons Road, Bow  Previously 13B to 9 June 1950.  Became 1J from...
+            4   1D        Marylebone  Previously 14F to 31 August 1963.  Became ME f...
         """
 
-        if confirmed("To collect data of {}?".format(self.S1950Key),
-                     confirmation_required=confirmation_required):
+        if confirmed(confirm_msg(self.KEY_TO_1950_SYSTEM), confirmation_required=confirmation_required):
 
-            url = self.catalogue[self.S1950Key]
-
-            if verbose == 2:
-                print("Collecting data of {}".format(self.S1950Key), end=" ... ")
+            print_collect_msg(
+                data_name=self.KEY_TO_1950_SYSTEM, verbose=verbose, confirmation_required=confirmation_required)
 
             system_1950_codes_data = None
 
             try:
-                header, system_1950_codes = pd.read_html(url, na_values=[''], keep_default_na=False)
-            except (urllib.error.URLError, socket.gaierror):
-                print("Failed.") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+                url = self.catalogue[self.KEY_TO_1950_SYSTEM]
+                source = requests.get(url=url, headers=fake_requests_headers())
+
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
-                    system_1950_codes.columns = header.columns.to_list()
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+                    source.close()
+
+                    thead, tbody = soup.find('thead'), soup.find('tbody')
+
+                    ths = [th.text for th in thead.find_all(name='th')]
+                    trs = tbody.find_all(name='tr')
+                    system_1950_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
                     last_updated_date = get_last_updated_date(url)
 
-                    print("Done.") if verbose == 2 else ""
+                    system_1950_codes_data = {
+                        self.KEY_TO_1950_SYSTEM: system_1950_codes,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
+                    }
 
-                    system_1950_codes_data = {self.S1950Key: system_1950_codes,
-                                              self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+                    if verbose == 2:
+                        print("Done.")
 
-                    path_to_pickle = self._cdd_depots(self.S1950Pickle + ".pickle")
-                    save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
+                    save_data_to_file(
+                        self, data=system_1950_codes_data,
+                        data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM), ext=".pickle",
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
             return system_1950_codes_data
 
-    def fetch_1950_system_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
-        # noinspection GrazieInspection
+    def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> # s1950_dat = depots.fetch_1950_system_codes(update=True, verbose=True)
-            >>> s1950_dat = depots.fetch_1950_system_codes()
-
-            >>> print(depots.S1950Key)
-            1950 system (pre-TOPS) codes
-
-            >>> s1950_codes = s1950_dat[depots.S1950Key]
-
+            >>> s1950_codes = depots.fetch_1950_system_codes()
             >>> type(s1950_codes)
+            dict
+            >>> list(s1950_codes.keys())
+            ['1950 system (pre-TOPS) codes', 'Last updated date']
+
+            >>> depots.KEY_TO_1950_SYSTEM
+            '1950 system (pre-TOPS) codes'
+
+            >>> s1950_codes_dat = s1950_codes[depots.KEY_TO_1950_SYSTEM]
+            >>> type(s1950_codes_dat)
             pandas.core.frame.DataFrame
-            >>> s1950_codes.head()
-              Code click to sort  ...                                              Notes
-            0                 1A  ...               From 1950. Became WN from 6 May 1973
-            1                 1B  ...                       From 1950. To 3 January 1966
-            2                 1C  ...               From 1950. Became WJ from 6 May 1973
-            3                 1D  ...  Previously 13B to 9 June 1950. Became 1J from ...
-            4                 1D  ...  Previously 14F to 31 August 1963. Became ME fr...
-            [5 rows x 3 columns]
+            >>> s1950_codes_dat.head()
+              Code        Depot name                                              Notes
+            0   1A         Willesden              From 1950.  Became WN from 6 May 1973
+            1   1B            Camden                      From 1950.  To 3 January 1966
+            2   1C           Watford              From 1950.  Became WJ from 6 May 1973
+            3   1D  Devons Road, Bow  Previously 13B to 9 June 1950.  Became 1J from...
+            4   1D        Marylebone  Previously 14F to 31 August 1963.  Became ME f...
         """
 
-        path_to_pickle = self._cdd_depots(self.S1950Pickle + ".pickle")
+        system_1950_data = fetch_data_from_file(
+            cls=self, method='collect_1950_system_codes',
+            data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(), ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            system_1950_codes_data = load_pickle(path_to_pickle)
-
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            system_1950_codes_data = self.collect_1950_system_codes(
-                confirmation_required=False, verbose=verbose_)
-
-            if system_1950_codes_data:
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(
-                        self.current_data_dir, os.path.basename(path_to_pickle))
-                    save_pickle(system_1950_codes_data, path_to_pickle, verbose=verbose)
-
-            else:
-                print("No data of {} has been freshly collected.".format(self.S1950Key))
-                system_1950_codes_data = load_pickle(path_to_pickle)
-
-        return system_1950_codes_data
+        return system_1950_data
 
     def collect_gwr_codes(self, confirmation_required=True, verbose=False):
         """
@@ -589,33 +536,33 @@ class Depots:
         :return: data of GWR depot codes and date of when the data was last updated
         :rtype: dict or None
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> gwr_codes_dat = depots.collect_gwr_codes()
-            To collect data of GWR codes? [No]|Yes: yes
+            >>> gwr_codes = depots.collect_gwr_codes()
+            To collect data of GWR codes
+            ? [No]|Yes: yes
+            >>> type(gwr_codes)
+            dict
+            >>> list(gwr_codes.keys())
+            ['GWR codes', 'Last updated date']
 
+            >>> depots.KEY_TO_GWR
+            'GWR codes'
+
+            >>> gwr_codes_dat = gwr_codes[depots.KEY_TO_GWR]
             >>> type(gwr_codes_dat)
             dict
             >>> list(gwr_codes_dat.keys())
-            ['GWR codes', 'Last updated date']
-
-            >>> print(depots.GWRKey)
-            GWR codes
-
-            >>> type(gwr_codes_dat[depots.GWRKey])
-            dict
-            >>> list(gwr_codes_dat[depots.GWRKey].keys())
             ['Alphabetical codes', 'Numerical codes']
 
-            >>> alpha_codes = gwr_codes_dat[depots.GWRKey]['Alphabetical codes']
-
-            >>> type(alpha_codes)
+            >>> gwr_alpha_codes = gwr_codes_dat['Alphabetical codes']
+            >>> type(gwr_alpha_codes)
             pandas.core.frame.DataFrame
-            >>> alpha_codes.head()
+            >>> gwr_alpha_codes.head()
                 Code   Depot name
             0  ABEEG     Aberbeeg
             1    ABG     Aberbeeg
@@ -624,105 +571,113 @@ class Depots:
             4    ABH  Aberystwyth
         """
 
-        if confirmed("To collect data of {}?".format(self.GWRKey),
-                     confirmation_required=confirmation_required):
+        if confirmed(confirm_msg(self.KEY_TO_GWR), confirmation_required=confirmation_required):
 
-            url = self.catalogue[self.GWRKey]
+            print_collect_msg(
+                data_name=self.KEY_TO_GWR, verbose=verbose, confirmation_required=confirmation_required)
 
-            if verbose == 2:
-                print("Collecting data of {}".format(self.GWRKey), end=" ... ")
-
-            gwr_codes_data = None
+            gwr_depot_codes = None
 
             try:
-                header_, alphabetical_codes, _, numerical_codes_2 = pd.read_html(url)
-                headers = [x.replace(' click to sort', '') for x in header_.columns]
+                url = self.catalogue[self.KEY_TO_GWR]
+                source = requests.get(url=url, headers=fake_requests_headers())
 
-                # Alphabetical codes
-                alphabetical_codes.columns = headers
-
-                # Numerical codes
-                source = requests.get(url, headers=fake_requests_headers())
-                soup = bs4.BeautifulSoup(source.text, 'lxml')
-
-                span_tags = soup.find_all('span', {'class': 'tab2'})
-                num_codes_1 = [
-                    (span_tag.text, span_tag.next_sibling.replace(' = ', '').strip())
-                    for span_tag in span_tags]
-
-                numerical_codes_1 = pd.DataFrame(num_codes_1, columns=headers)
-
-                numerical_codes_2.drop(2, axis=1, inplace=True)
-                numerical_codes_2.columns = headers
-
-                numerical_codes = pd.concat([numerical_codes_1, numerical_codes_2], ignore_index=True)
-
-            except (urllib.error.URLError, socket.gaierror):
-                print("Failed.") if verbose == 2 else ""
-                print_conn_err(verbose=verbose)
+            except Exception as e:
+                if verbose == 2:
+                    print("Failed. ", end="")
+                print_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
-                    gwr_codes = dict(zip([x.text for x in soup.find_all('h3')],
-                                         [alphabetical_codes, numerical_codes]))
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+                    theads, tbodies = soup.find_all(name='thead'), soup.find_all(name='tbody')
+
+                    tables = []
+                    for thead, tbody in zip(theads, tbodies):
+                        ths = [th.text for th in thead.find_all(name='th')]
+                        trs = tbody.find_all(name='tr')
+
+                        if len(ths) == 2:
+                            table = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+                        else:
+                            list_dat = [[td.text for td in tr.find_all('td')] for tr in trs]
+                            table = pd.DataFrame(data=list_dat, columns=ths)
+
+                        tables.append(table)
+
+                    alphabetical_codes, numerical_codes = tables
+
+                    span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
+                    num_codes_dict = dict([
+                        (int(span_tag.text), span_tag.next_sibling.replace(' = ', '').strip())
+                        for span_tag in span_tags])
+
+                    numerical_codes.rename(columns={'sort by division': 'Division'}, inplace=True)
+                    numerical_codes.Division = numerical_codes.Code.map(
+                        lambda x: num_codes_dict[int(str(x)[-1])])
+
+                    h3_titles = [h3.text for h3 in soup.find_all('h3')]
+                    gwr_depot_codes_data = dict(zip(h3_titles, [alphabetical_codes, numerical_codes]))
 
                     last_updated_date = get_last_updated_date(url)
 
-                    print("Done.") if verbose == 2 else ""
-
-                    gwr_codes_data = {
-                        self.GWRKey: gwr_codes,
+                    gwr_depot_codes = {
+                        self.KEY_TO_GWR: gwr_depot_codes_data,
                         self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
                     }
 
-                    path_to_pickle = self._cdd_depots(self.GWRPickle + ".pickle")
-                    save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
+                    if verbose == 2:
+                        print("Done.")
+
+                    save_data_to_file(
+                        self, data=gwr_depot_codes, data_name=self.KEY_TO_GWR, ext=".pickle",
+                        verbose=verbose)
 
                 except Exception as e:
                     print("Failed. {}".format(e))
 
-            return gwr_codes_data
+            return gwr_depot_codes
 
-    def fetch_gwr_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of GWR depot codes and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> # gwr_codes_dat = depots.fetch_gwr_codes(update=True, verbose=True)
-            >>> gwr_codes_dat = depots.fetch_gwr_codes()
-
-            >>> print(depots.GWRKey)
-            GWR codes
-
-            >>> gwr_codes = gwr_codes_dat[depots.GWRKey]
-
+            >>> gwr_codes = depots.fetch_gwr_codes()
             >>> type(gwr_codes)
             dict
             >>> list(gwr_codes.keys())
+            ['GWR codes', 'Last updated date']
+
+            >>> depots.KEY_TO_GWR
+            'GWR codes'
+
+            >>> gwr_codes_dat = gwr_codes[depots.KEY_TO_GWR]
+            >>> type(gwr_codes_dat)
+            dict
+            >>> list(gwr_codes_dat.keys())
             ['Alphabetical codes', 'Numerical codes']
 
-            >>> gwr_codes_alpha = gwr_codes['Alphabetical codes']
-
-            >>> type(gwr_codes_alpha)
+            >>> gwr_alpha_codes = gwr_codes_dat['Alphabetical codes']
+            >>> type(gwr_alpha_codes)
             pandas.core.frame.DataFrame
-            >>> gwr_codes_alpha.head()
+            >>> gwr_alpha_codes.head()
                 Code   Depot name
             0  ABEEG     Aberbeeg
             1    ABG     Aberbeeg
@@ -731,98 +686,78 @@ class Depots:
             4    ABH  Aberystwyth
         """
 
-        path_to_pickle = self._cdd_depots(self.GWRPickle + ".pickle")
+        gwr_depot_codes = fetch_data_from_file(
+            cls=self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pickle",
+            update=update, dump_dir=dump_dir, verbose=verbose)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            gwr_codes_data = load_pickle(path_to_pickle)
+        return gwr_depot_codes
 
-        else:
-            verbose_ = False if data_dir or not verbose else (2 if verbose == 2 else True)
-
-            gwr_codes_data = self.collect_gwr_codes(confirmation_required=False, verbose=verbose_)
-
-            if gwr_codes_data:
-                if pickle_it and data_dir:
-                    self.current_data_dir = validate_dir(data_dir)
-                    path_to_pickle = os.path.join(
-                        self.current_data_dir, os.path.basename(path_to_pickle))
-
-                    save_pickle(gwr_codes_data, path_to_pickle, verbose=verbose)
-
-            else:
-                print("No data of \"{}\" has been freshly collected.".format(self.GWRKey))
-                gwr_codes_data = load_pickle(path_to_pickle)
-
-        return gwr_codes_data
-
-    def fetch_depot_codes(self, update=False, pickle_it=False, data_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch `depots codes
         <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_ from local backup.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
-        :param pickle_it: whether to save the data as a pickle file, defaults to ``False``
-        :type pickle_it: bool
-        :param data_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type data_dir: str or None
+        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
+        :type dump_dir: str or None
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
         :return: data of depot codes and date of when the data was last updated
         :rtype: dict
 
-        **Example**::
+        **Examples**::
 
-            >>> from pyrcs.other_assets import Depots
+            >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
 
             >>> depots = Depots()
 
-            >>> # depot_codes_dat = depots.fetch_depot_codes(update=True, verbose=True)
-            >>> depot_codes_dat = depots.fetch_depot_codes()
+            >>> depots_codes = depots.fetch_codes()
 
-            >>> type(depot_codes_dat)
+            >>> type(depots_codes)
             dict
-            >>> list(depot_codes_dat.keys())
+            >>> list(depots_codes.keys())
             ['Depots', 'Last updated date']
 
-            >>> print(depots.KEY)
-            Depots
+            >>> depots.KEY
+            'Depots'
 
-            >>> type(depot_codes_dat[depots.KEY])
+            >>> depots_codes_dat = depots_codes[depots.KEY]
+            >>> type(depots_codes_dat)
             dict
-            >>> list(depot_codes_dat[depots.KEY].keys())
+            >>> list(depots_codes_dat.keys())
             ['1950 system (pre-TOPS) codes',
              'Four digit pre-TOPS codes',
              'GWR codes',
              'Two character TOPS codes']
 
-            >>> print(depots.FDPTKey)
-
-            >>> depot_codes_dat[depots.KEY][depots.FDPTKey].head()
-               Code             Depot name          Region
-            0  2000             Accrington  London Midland
-            1  2001   Derby Litchurch Lane      Main Works
-            2  2003              Blackburn  London Midland
-            3  2004  Bolton Trinity Street  London Midland
-            4  2006                Burnley  London Midland
+            >>> depots.KEY_TO_PRE_TOPS
+            'Four digit pre-TOPS codes'
+            >>> depots_codes_dat[depots.KEY_TO_PRE_TOPS].head()
+               Code             Depot name          Region  Main Works site
+            0  2000             Accrington  London Midland            False
+            1  2001   Derby Litchurch Lane  London Midland             True
+            2  2003              Blackburn  London Midland            False
+            3  2004  Bolton Trinity Street  London Midland            False
+            4  2006                Burnley  London Midland            False
         """
 
-        verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+        verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
 
-        depot_codes = []
+        depot_data = []
         for func in dir(self):
-            if func.startswith('fetch_') and func != 'fetch_depot_codes':
-                depot_codes.append(getattr(self, func)(
+            if func.startswith('fetch_') and func != 'fetch_codes':
+                depot_data.append(getattr(self, func)(
                     update=update, verbose=verbose_ if is_home_connectable() else False))
 
-        depot_codes_data = {
-            self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_codes},
-            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
+        depot_codes = {
+            self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_data},
+            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date
+        }
 
-        if pickle_it and data_dir:
-            self.current_data_dir = validate_dir(data_dir)
-            path_to_pickle = os.path.join(self.current_data_dir, self.KEY.lower() + ".pickle")
+        if dump_dir is not None:
+            save_data_to_file(
+                self, data=depot_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                verbose=verbose)
 
-            save_pickle(depot_codes_data, path_to_pickle, verbose=verbose)
-
-        return depot_codes_data
+        return depot_codes
