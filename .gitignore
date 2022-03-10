@@ -1,99 +1,23 @@
-### Python template
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# PyCharm
-.idea
-
-# C extensions
-*.so
-
 # Distribution / packaging
-.Python
-build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
 *.egg-info/
 
-lib64/
-parts/
-sdist/
-var/
-wheels/
-
-.installed.cfg
-
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
 # Sphinx documentation
-docs/_build/
 docs/build/
 docs/source/_generated
 
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
 # Environments
-.env
-.venv
-env/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Other stuff
-pyrcs/dat/*/*
-pyrcs/dat/site-map.json
-tests/dat
-tests/cmd
-tests/quick_start.py
-tests/update_pkg_dat.py
+# Jupyter Notebooks
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Customised
+.idea/
+pyrcs/data/*
+!pyrcs/data/location-names-repl.json
+!pyrcs/data/location-names-repl-regex.json
+!pyrcs/data/metadata.json
+tests/*
+!tests/data/
