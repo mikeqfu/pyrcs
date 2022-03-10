@@ -1,8 +1,2 @@
-# Include the license file
-include LICENSE
-
-# Include requirements
-include requirements.txt
-
 # Include package data
-recursive-include pyrcs/dat *
+recursive-include pyrcs/data *
