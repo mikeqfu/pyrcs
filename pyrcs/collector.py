@@ -189,8 +189,8 @@ class LineData:
 
 class OtherAssets:
     """
-    A class representation of all modules of the subpackage
-    :ref:`pyrcs.other_assets<other_assets>` for collecting other assets.
+    A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
+    for collecting other assets.
     """
 
     #: Name of data
