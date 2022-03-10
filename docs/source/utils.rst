@@ -17,7 +17,6 @@ Specifications
     :template: function.rst
 
     home_page_url
-    init_data_dir
     make_file_pathname
 
 Converters
@@ -27,17 +26,18 @@ Converters
     :toctree: _generated/
     :template: function.rst
 
-    mileage_str_to_num
-    mileage_num_to_str
-    mileage_to_yard
-    yard_to_mileage
-    mile_yard_to_mileage
-    shift_mileage_by_yard
-    mile_chain_to_mileage
-    mileage_to_mile_chain
-    get_financial_year
     fix_stanox
     fix_mileage
+    kilometer_to_yard
+    yard_to_mileage
+    mileage_to_yard
+    mile_chain_to_mileage
+    mileage_to_mile_chain
+    mile_yard_to_mileage
+    mileage_str_to_num
+    mileage_num_to_str
+    shift_mileage_by_yard
+    get_financial_year
 
 Parsers
 ~~~~~~~
@@ -64,7 +64,9 @@ Assistant scrapers
     get_category_menu
     get_page_catalogue
     get_heading
+    get_page_catalogue
     get_hypertext
+    get_introduction
 
 Data checkers and rectification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,7 +77,8 @@ Data checkers and rectification
     :template: function.rst
 
     fetch_loc_names_repl_dict
-    update_loc_names_repl_dict
+    is_str_float
+    validate_initial
 
 .. rubric:: Network connections
 .. autosummary::
@@ -98,4 +101,3 @@ Miscellaneous helpers
     print_void_msg
     collect_in_fetch_verbose
     fetch_all_verbose
-    data_to_pickle
