@@ -207,7 +207,7 @@ ELRs and mileages
 Engineer's Line References (ELRs)
 ---------------------------------
 
-Similar to the location identifiers, the codes of ELRs on the `Railway codes`_ website are also alphabetically arranged given their initial letters. We can use the method :py:meth:`ELRMileages.collect_elr_by_initial()<elr_mileage.ELRMileages.collect_elr_by_initial>` to get the data of ELRs which begin with a specific initial letter. Let's take ``'A'`` as an example:
+Similar to the location identifiers, the codes of ELRs on the `Railway Codes`_ website are also alphabetically arranged given their initial letters. We can use the method :py:meth:`ELRMileages.collect_elr_by_initial()<elr_mileage.ELRMileages.collect_elr_by_initial>` to get the data of ELRs which begin with a specific initial letter. Let's take ``'A'`` as an example:
 
 .. code-block:: python
 
@@ -263,7 +263,7 @@ In like manner, ``elrs_data`` is also a `dictionary`_, of which the *keys* are:
 -  ``'ELRs and mileages'``
 -  ``'Latest update date'``
 
-The corresponding *values* are
+The corresponding *values* are:
 
 -  ``elrs_dat['ELRs and mileages']`` - Codes of all available ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``);
 -  ``elrs_dat['Latest update date']`` - The latest ``'Last updated date'`` among all the initial-specific codes.
@@ -350,7 +350,7 @@ A snapshot of the data contained in ``em_amm`` is demonstrated below:
 Railway station data
 ====================
 
-The `railway station data`_ (incl. the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised as one of the `other assets`_ on the `Railway Codes`_ website. To deal with data in this category, PyRCS offers a sub-package :py:mod:`~pyrcs.other_assets`, from which we can use the contained class :py:class:`~station.Stations` to get the `railway station data`_:
+The `railway station data`_ (including the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised as one of the `other assets`_ on the `Railway Codes`_ website. To deal with data in this category, PyRCS offers a sub-package :py:mod:`~pyrcs.other_assets`, from which we can use the contained class :py:class:`~station.Stations` to get the `railway station data`_:
 
 .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 
@@ -367,7 +367,7 @@ Now let's import the class and create an instance of it:
 
 .. note::
 
-    Alternatively, the instance ``stn`` can also be defined through the class :py:class:`~pyrcs.collector.OtherAssets`, which contains all classes under the category of `other assets`_ (see below).
+    - Alternatively, the instance ``stn`` can also be defined through the class :py:class:`~pyrcs.collector.OtherAssets`, which contains all classes under the category of `other assets`_ (see below).
 
 .. code-block:: python
 
