@@ -20,6 +20,13 @@ __version__ = metadata['Version']
 __license__ = metadata['License']
 
 __all__ = [
+    __affiliation__,
+    __author__,
+    __copyright__,
+    __description__,
+    __package__,
+    __project__,
+    __version__,
     'LineData',
     'OtherAssets',
     'Electrification',
