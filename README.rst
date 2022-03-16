@@ -20,29 +20,27 @@ PyRCS
     :alt: Zenodo - DOI
     :target: https://zenodo.org/badge/latestdoi/92501006
 
-PyRCS is an open-source tool for collecting |Railway Codes|_ used in different UK rail industry systems.
+PyRCS is an open-source Python package for collecting and handling various codes (used in different UK rail industry systems), which are made available from `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website. This tool is intended for those, such as researchers and practitioners, who are the website users or work with the UK's railway codes by using Python programming language. It can facilitate access to, and manipulation of, the relevant data.
 
-.. _Railway Codes: http://www.railwaycodes.org.uk/index.shtml
-
-.. |Railway Codes| replace:: *Railway Codes*
+The installation of PyRCS includes a set of pre-packed data. When users request data of a category that is specified on the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website, the pre-packed data of the category is loaded by default. Beyond that, it also offers capabilities to directly access the most up-to-date data on the data source website, and update the relevant pre-packed data as well.
 
 Resources
 #########
 
 - `Documentation <https://pyrcs.readthedocs.io/en/latest/>`_
-- `Issue Tracker <https://github.com/mikeqfu/pyrcs/issues>`_
+- `Bug Tracker <https://github.com/mikeqfu/pyrcs/issues>`_
 
 License
 #######
 
-PyRCS is licensed under `GNU General Public License v3 (GPLv3) <https://github.com/mikeqfu/pyrcs/blob/master/LICENSE>`_.
-
-Acknowledgement
-###############
-
-The development of PyRCS is built on data from the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website. The author of PyRCS would like to thank the website editor and `all contributors <http://www.railwaycodes.org.uk/misc/acknowledgements.shtm>`_ to the data resources.
+PyRCS (pyrcs) is licensed under `GNU General Public License v3 <https://github.com/mikeqfu/pyrcs/blob/master/LICENSE>`_ or later (GPLv3+).
 
 Cite as
 #######
 
 Qian Fu, 2020. PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. `doi:10.5281/zenodo.4026744 <https://doi.org/10.5281/zenodo.4026744>`_
+
+Acknowledgement
+###############
+
+PyRCS uses data available from the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website. The time and effort that the website's editor and `all contributors <http://www.railwaycodes.org.uk/misc/acknowledgements.shtm>`_ put in making the site and data available are fully credited.
