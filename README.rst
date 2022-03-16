@@ -33,7 +33,7 @@ Resources
 License
 #######
 
-PyRCS (pyrcs) is licensed under `GNU General Public License v3 <https://github.com/mikeqfu/pyrcs/blob/master/LICENSE>`_ or later (GPLv3+).
+PyRCS is licensed under `GNU General Public License v3 <https://github.com/mikeqfu/pyrcs/blob/master/LICENSE>`_ or later (GPLv3+).
 
 Cite as
 #######
