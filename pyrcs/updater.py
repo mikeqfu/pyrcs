@@ -2,27 +2,26 @@
 Update package data.
 """
 
-
 import time
 
 from .collector import LineData, OtherAssets
 from .utils import *
 
 
-def update_backup_data(verbose=False, time_gap=5):
+def update_prepacked_data(verbose=False, interval=5):
     """
-    Update data of the package's local backup.
+    Update pre-packed data.
 
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool
-    :param time_gap: time gap (in seconds) between updating different classes, defaults to ``5``
-    :type time_gap: int
+    :param interval: time gap (in seconds) between updating different classes, defaults to ``5``
+    :type interval: int
 
     **Example**::
 
-        >>> from pyrcs.updater import update_backup_data
+        >>> from pyrcs.updater import update_prepacked_data
 
-        >>> update_backup_data(verbose=True)
+        >>> update_prepacked_data(verbose=True)
     """
 
     if not is_home_connectable():
@@ -36,17 +35,17 @@ def update_backup_data(verbose=False, time_gap=5):
             print("\nSite map:")
             _ = get_site_map(update=True, confirmation_required=False, verbose=verbose)
 
-            time.sleep(time_gap)
+            time.sleep(interval)
 
             # Line data
             ld = LineData(update=True)
-            ld.update(confirmation_required=False, verbose=verbose, time_gap=time_gap)
+            ld.update(confirmation_required=False, verbose=verbose, interval=interval)
 
-            time.sleep(time_gap)
+            time.sleep(interval)
 
             # Other assets
             oa = OtherAssets(update=True)
-            oa.update(confirmation_required=False, verbose=verbose, time_gap=time_gap)
+            oa.update(confirmation_required=False, verbose=verbose, interval=interval)
 
             if verbose:
                 print("\nUpdate finished.")
