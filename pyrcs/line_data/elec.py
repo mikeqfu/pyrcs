@@ -17,7 +17,7 @@ def _collect_notes(h3):
     if next_p is not None:
         h3_ = next_p.find_previous('h3')
         while h3_ == h3:
-            notes_2 = get_hypertext(hypertext=next_p, hyperlink_tag='a')
+            notes_2 = get_hypertext(hypertext_tag=next_p, hyperlink_tag_name='a')
             if notes_2:
                 notes_2 = notes_2. \
                     replace(' Section codes known at present are:', ''). \
@@ -55,7 +55,7 @@ def _collect_codes_without_list(h3):
     h3 = h3.find_next('h3')
     """
 
-    sub_heading = get_heading(heading=h3, elem_tag='em')
+    sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
     notes = _collect_notes(h3=h3)
 
@@ -65,7 +65,7 @@ def _collect_codes_without_list(h3):
 
 
 def _collect_list_only(h3, ul):
-    sub_heading = get_heading(heading=h3, elem_tag='em')
+    sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
     list_data = [get_hypertext(x) for x in ul.findChildren('li')]
     notes = _collect_notes(h3).strip().replace(' were:', '.')
@@ -80,7 +80,7 @@ def _collect_codes_with_list(h3, ul):
     'Blackpool Tramway',
     """
 
-    sub_heading = get_heading(heading=h3, elem_tag='em')
+    sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
     data_1_key, data_2_key = 'Section codes', 'Known prefixes'
     table_1, table_2 = {data_1_key: None}, {data_2_key: None}
@@ -109,7 +109,7 @@ def _collect_codes_and_notes(h3):
     """
     elec = Electrification()
 
-    url = elec.Catalogue[elec.INDEPENDENT_LINES_KEY]
+    url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
     source = requests.get(url=url, headers=fake_requests_headers())
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
@@ -155,7 +155,7 @@ def _collect_codes_and_notes(h3):
 
             notes = _collect_notes(h3=h3)
 
-            sub_heading = get_heading(heading=h3, elem_tag='em')
+            sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
             codes_and_notes = {sub_heading: {'Codes': codes, 'Notes': notes}}
 
     if codes_and_notes is None:
@@ -166,8 +166,10 @@ def _collect_codes_and_notes(h3):
 
 class Electrification:
     """
-    A class for collecting `section codes for overhead line electrification (OLE) installations
-    <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
+    A class for collecting `section codes for overhead line electrification (OLE) installations`_.
+
+    .. _`section codes for overhead line electrification (OLE) installations`:
+        http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
     """
 
     #: Name of the data
@@ -272,8 +274,8 @@ class Electrification:
 
     def collect_national_network_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect OLE section codes for `national network
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
+        Collect OLE section codes for
+        `national network <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
         from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
@@ -374,9 +376,9 @@ class Electrification:
 
     def fetch_national_network_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `national network
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
-        from local backup.
+        Fetch OLE section codes for `national network`_.
+
+        .. _`national network`: http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -439,8 +441,8 @@ class Electrification:
 
     def get_indep_line_catalogue(self, update=False, verbose=False):
         """
-        Get names of `independent lines
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
+        Get a catalogue for
+        `independent lines <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -480,7 +482,7 @@ class Electrification:
         else:
             indep_line_names = get_page_catalogue(
                 url=self.catalogue[self.KEY_TO_INDEPENDENT_LINES],
-                head_tag='nav', head_txt='Jump to: ', feature_tag='h3',
+                head_tag_name='nav', head_tag_txt='Jump to: ', feature_tag_name='h3',
                 verbose=verbose)
 
             # if bool(indep_line_names):
@@ -493,9 +495,9 @@ class Electrification:
 
     def collect_indep_lines_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect OLE section codes for `independent lines
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
-        from source web page.
+        Collect OLE section codes for `independent lines`_ from source web page.
+
+        .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -597,9 +599,9 @@ class Electrification:
 
     def fetch_indep_lines_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `independent lines
-        <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_
-        from local backup.
+        Fetch OLE section codes for `independent lines`_.
+
+        .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -666,7 +668,8 @@ class Electrification:
 
     def collect_ohns_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect codes for `overhead line electrification neutral sections
+        Collect codes for
+        `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from source web page.
 
@@ -790,9 +793,10 @@ class Electrification:
 
     def fetch_ohns_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes for `overhead line electrification neutral sections
-        <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
-        from local backup.
+        Fetch codes for `overhead line electrification neutral sections`_ (OHNS).
+
+        .. _`overhead line electrification neutral sections`:
+            http://www.railwaycodes.org.uk/electrification/neutral.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -946,9 +950,10 @@ class Electrification:
 
     def fetch_etz_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `national network energy tariff zones
-        <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
-        from source web page.
+        Fetch OLE section codes for `national network energy tariff zones`_.
+
+        .. _`national network energy tariff zones`:
+            http://www.railwaycodes.org.uk/electrification/tariff.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -1006,7 +1011,9 @@ class Electrification:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes in `electrification`_ catalogue.
+        Fetch OLE section codes listed in the `Electrification`_ catalogue.
+
+        .. _`Electrification`: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -1016,8 +1023,6 @@ class Electrification:
         :type verbose: bool or int
         :return: section codes for overhead line electrification (OLE) installations
         :rtype: dict
-
-        .. _`electrification`: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 
         **Examples**::
 

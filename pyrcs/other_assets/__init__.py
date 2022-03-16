@@ -1,6 +1,7 @@
 """
-A sub-package of modules for collecting
+A sub-package of modules for collecting codes of
 `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+
 See also :py:class:`~pyrcs.collector.OtherAssets`.
 """
 

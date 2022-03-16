@@ -10,8 +10,9 @@ from pyrcs.utils import *
 
 class Bridges:
     """
-    A class for collecting data of
-    `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
+    A class for collecting data of `railway bridges`_.
+
+    .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
     """
 
     #: Name of the data
@@ -105,7 +106,9 @@ class Bridges:
 
     def collect_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of railway bridges from source web page.
+        Collect codes of `railway bridges`_ from source web page.
+
+        .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -219,8 +222,9 @@ class Bridges:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_
-        (from local backup).
+        Fetch codes of `railway bridges`_.
+
+        .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

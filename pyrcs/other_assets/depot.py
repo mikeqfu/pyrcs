@@ -9,7 +9,9 @@ from pyrcs.utils import *
 
 class Depots:
     """
-    A class for collecting `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+    A class for collecting data of `depot codes`_.
+
+    .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
     """
 
     #: Name of the data
@@ -88,7 +90,7 @@ class Depots:
 
         return path
 
-    def collect_two_char_tops_codes(self, confirmation_required=True, verbose=False):
+    def collect_tops_codes(self, confirmation_required=True, verbose=False):
         """
         Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_ 
         from source web page.
@@ -106,7 +108,7 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> tct_codes = depots.collect_two_char_tops_codes()
+            >>> tct_codes = depots.collect_tops_codes()
             To collect data of two character TOPS codes
             ? [No]|Yes: yes
             >>> type(tct_codes)
@@ -175,10 +177,11 @@ class Depots:
 
             return two_char_tops_codes_data
 
-    def fetch_two_char_tops_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
-        from local backup.
+        Fetch data of `two-character TOPS codes`_.
+
+        .. _`two-character TOPS codes`: http://www.railwaycodes.org.uk/depots/depots1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -195,7 +198,7 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> tct_codes = depots.fetch_two_char_tops_codes()
+            >>> tct_codes = depots.fetch_tops_codes()
             >>> type(tct_codes)
             dict
             >>> list(tct_codes.keys())
@@ -224,7 +227,7 @@ class Depots:
 
         return two_char_tops_codes_data
 
-    def collect_four_digit_pre_tops_codes(self, confirmation_required=True, verbose=False):
+    def collect_pre_tops_codes(self, confirmation_required=True, verbose=False):
         """
         Collect `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
         from source web page.
@@ -242,7 +245,7 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> fdpt_codes = depots.collect_four_digit_pre_tops_codes()
+            >>> fdpt_codes = depots.collect_pre_tops_codes()
             To collect data of four digit pre-TOPS codes
             ? [No]|Yes: yes
             >>> type(fdpt_codes)
@@ -338,10 +341,11 @@ class Depots:
 
             return four_digit_pre_tops_codes_data
 
-    def fetch_four_digit_pre_tops_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_pre_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
-        from local backup.
+        Fetch data of `four-digit pre-TOPS codes`_.
+
+        .. _`four-digit pre-TOPS codes`: http://www.railwaycodes.org.uk/depots/depots2.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -358,7 +362,7 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> fdpt_codes = depots.fetch_four_digit_pre_tops_codes()
+            >>> fdpt_codes = depots.fetch_pre_tops_codes()
             >>> type(fdpt_codes)
             dict
             >>> list(fdpt_codes.keys())
@@ -432,7 +436,7 @@ class Depots:
         if confirmed(confirm_msg(self.KEY_TO_1950_SYSTEM), confirmation_required=confirmation_required):
 
             print_collect_msg(
-                data_name=self.KEY_TO_1950_SYSTEM, verbose=verbose, confirmation_required=confirmation_required)
+                self.KEY_TO_1950_SYSTEM, verbose=verbose, confirmation_required=confirmation_required)
 
             system_1950_codes_data = None
 
@@ -478,8 +482,9 @@ class Depots:
 
     def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
-        from local backup.
+        Fetch data of `1950 system (pre-TOPS) codes`_.
+
+        .. _`1950 system (pre-TOPS) codes`: http://www.railwaycodes.org.uk/depots/depots3.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -641,8 +646,10 @@ class Depots:
 
     def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `Great Western Railway (GWR) depot codes
-        <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from local backup.
+        Fetch data of `Great Western Railway (GWR) depot codes`_.
+
+        .. _`Great Western Railway (GWR) depot codes`:
+            http://www.railwaycodes.org.uk/depots/depots4.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -694,8 +701,9 @@ class Depots:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `depots codes
-        <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_ from local backup.
+        Fetch data of `depot codes`_.
+
+        .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

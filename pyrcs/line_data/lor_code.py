@@ -9,11 +9,12 @@ from pyrcs.utils import *
 
 class LOR:
     """
-    A class for collecting data of
-    `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_.
+    A class for collecting data of `Line of Route (LOR/PRIDE)`_.
 
-    - PRIDE: Possession Resource Information Database
-    - LOR: Line Of Route
+    'LOR' and 'PRIDE' stands for 'Line Of Route' and 'Possession Resource Information Database',
+    respectively.
+
+    .. _`Line of Route (LOR/PRIDE)`: http://www.railwaycodes.org.uk/pride/pride0.shtm
     """
 
     #: Name of the data
@@ -22,7 +23,7 @@ class LOR:
     SHORT_NAME = 'Line of Route (LOR/PRIDE) codes'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
     KEY = 'LOR'
-    # #: Key of the dict-type data of prefixes
+    #: Key of the dict-type data of prefixes
     KEY_P = 'Key to prefixes'
     #: Key of the dict-type data of *ELR/LOR converter*
     KEY_ELC = 'ELR/LOR converter'
@@ -435,7 +436,9 @@ class LOR:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ from local backup.
+        Fetch data of `PRIDE/LOR codes`_.
+
+        .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -619,8 +622,9 @@ class LOR:
 
     def fetch_elr_lor_converter(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
-        from local backup.
+        Fetch data of `ELR/LOR converter`_.
+
+        .. _`ELR/LOR converter`: http://www.railwaycodes.org.uk/pride/elrmapping.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

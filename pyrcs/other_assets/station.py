@@ -63,8 +63,9 @@ def _parse_owner_and_operator(x):
 
 class Stations:
     """
-    A class for collecting
-    `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+    A class for collecting `railway station data`_.
+
+    .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
     """
 
     #: Name of the data
@@ -235,7 +236,8 @@ class Stations:
     def collect_locations_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `data of railway station locations
-        <http://www.railwaycodes.org.uk/stations/station0.shtm>`_ for the given ``initial`` letter.
+        <http://www.railwaycodes.org.uk/stations/station0.shtm>`_
+        (mileages, operators and grid coordinates) for a given ``initial`` letter.
 
         :param initial: initial letter of locations of the railway station data
         :type initial: str
@@ -379,9 +381,9 @@ class Stations:
 
     def fetch_locations(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `data of railway station locations
-        <http://www.railwaycodes.org.uk/stations/station0.shtm>`_
-        (incl. mileages, operators and grid coordinates) from local backup.
+        Fetch `data of railway station locations`_ (mileages, operators and grid coordinates).
+
+        .. _`data of railway station locations`: http://www.railwaycodes.org.uk/stations/station0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

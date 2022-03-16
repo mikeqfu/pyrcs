@@ -9,8 +9,9 @@ from pyrcs.utils import *
 
 class LineNames:
     """
-    A class for collecting data of
-    `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+    A class for collecting data of `railway line names`_.
+
+    .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
     """
 
     #: Name of the data
@@ -109,7 +110,9 @@ class LineNames:
 
     def collect_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of railway line names from source web page.
+        Collect data of `railway line names`_ from source web page.
+
+        .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -196,7 +199,9 @@ class LineNames:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of railway line names from local backup.
+        Fetch data of `railway line names`_.
+
+        .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

@@ -11,8 +11,9 @@ from pyrcs.utils import *
 
 class Tunnels:
     """
-    A class for collecting data of
-    `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+    A class for collecting data of `railway tunnel lengths`_.
+
+    .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """
 
     #: Name of the data
@@ -168,8 +169,9 @@ class Tunnels:
 
     def collect_codes_by_page(self, page_no, update=False, verbose=False):
         """
-        Collect data of railway `tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_
-        for a page number from source web page.
+        Collect data of `railway tunnel lengths`_ for a page number from source web page.
+
+        .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
         :param page_no: page number; valid values include ``1``, ``2``, ``3`` and ``4``
         :type page_no: int or str
@@ -306,8 +308,9 @@ class Tunnels:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of railway `tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_
-        from local backup.
+        Fetch data of `railway tunnel lengths`_.
+
+        .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

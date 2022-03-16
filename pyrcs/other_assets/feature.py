@@ -136,13 +136,13 @@ class Features:
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
     KEY = 'Features'
 
-    #: Key of the dict-type data of HABD and WILD
+    #: Key of the dict-type data of '*HABD*' and '*WILD*'
     KEY_TO_HABD_WILD = _HABDWILD.KEY
-    #: Key of the dict-type data of water troughs
+    #: Key of the dict-type data of '*water troughs*'
     KEY_TO_TROUGH = _WaterTroughs.KEY
-    #: Key of the dict-type data of telegraph codes
+    #: Key of the dict-type data of '*telegraph codes*'
     KEY_TO_TELEGRAPH = _Telegraph.KEY
-    #: Key of the dict-type data of buzzer codes
+    #: Key of the dict-type data of '*buzzer codes*'
     KEY_TO_BUZZER = _Buzzer.KEY
 
     #: Key of the data of the last updated date
@@ -322,8 +322,9 @@ class Features:
 
     def fetch_habds_and_wilds(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
-        from local backup.
+        Fetch codes of `HABDs and WILDs`_.
+
+        .. _`HABDs and WILDs`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -483,8 +484,9 @@ class Features:
 
     def fetch_water_troughs(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes of `water troughs locations <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_
-        from local backup.
+        Fetch codes of `water troughs locations`_.
+
+        .. _`water troughs locations`: http://www.railwaycodes.org.uk/misc/troughs.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -652,8 +654,9 @@ class Features:
 
     def fetch_telegraph_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `telegraph code words <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
-        from local backup.
+        Fetch data of `telegraph code words`_.
+
+        .. _`telegraph code words`: http://www.railwaycodes.org.uk/misc/telegraph.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -809,8 +812,9 @@ class Features:
 
     def fetch_buzzer_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
-        from local backup.
+        Fetch data of `buzzer codes`_.
+
+        .. _`buzzer codes`: http://www.railwaycodes.org.uk/misc/buzzer.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -856,9 +860,9 @@ class Features:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes of a few infrastructure features from local backup.
+        Fetch codes of infrastructure features.
 
-        The codes include:
+        Including:
 
             - `HABD and WILD <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
             - `Water troughs <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_

@@ -362,7 +362,7 @@ class LocationIdentifiers:
 
     def fetch_explanatory_note(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch multiple station codes explanatory note from local backup.
+        Fetch multiple station codes explanatory note.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -745,8 +745,9 @@ class LocationIdentifiers:
 
     def fetch_other_systems_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `other systems' codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_
-        from local backup.
+        Fetch data of `other systems' codes`_.
+
+        .. _`other systems' codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -795,8 +796,10 @@ class LocationIdentifiers:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes
-        <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ from local backup.
+        Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes`_ and `other systems' codes`_.
+
+        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+        .. _`other systems' codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

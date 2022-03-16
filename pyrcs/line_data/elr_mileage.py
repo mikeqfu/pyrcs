@@ -13,8 +13,9 @@ from pyrcs.utils import *
 
 class ELRMileages:
     """
-    A class for collecting data of
-    `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
+    A class for collecting data of `Engineer's Line References (ELRs)`_.
+
+    .. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
 
     #: Name of the data
@@ -467,7 +468,7 @@ class ELRMileages:
 
     def fetch_elr(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch ELRs and mileages from local backup.
+        Fetch data of ELRs and their associated mileages.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -849,7 +850,7 @@ class ELRMileages:
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False):
         """
-        Fetch mileage file for the given ELR from local backup.
+        Fetch the mileage file for a given ELR.
 
         :param elr: elr: ELR, e.g. ``'CJD'``, ``'MLA'``, ``'FED'``
         :type elr: str

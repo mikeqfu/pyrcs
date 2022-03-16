@@ -1,5 +1,5 @@
 """
-Collect data of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
 """
 
 import itertools
@@ -11,8 +11,9 @@ from pyrcs.utils import *
 
 class Viaducts:
     """
-    A class for collecting data of
-    `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+    A class for collecting codes of `railway viaducts`_.
+
+    .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """
 
     #: Name of the data
@@ -82,7 +83,9 @@ class Viaducts:
 
     def collect_codes_by_page(self, page_no, update=False, verbose=False):
         """
-        Collect data of railway viaducts for a given page number from source web page.
+        Collect data of `railway viaducts`_ for a given page number from source web page.
+
+        .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
         :param page_no: page number;
             valid values include ``1``, ``2``, ``3``, ``4``, ``5``, and ``6``
@@ -171,7 +174,9 @@ class Viaducts:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of railway viaducts from local backup.
+        Fetch data of `railway viaducts`_.
+
+        .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

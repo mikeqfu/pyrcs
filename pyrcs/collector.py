@@ -1,10 +1,8 @@
 """
 Collect data of railway codes.
 
-The current release includes only:
-
-    - `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_
-    - `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_
+The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_
+and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 """
 
 import time
@@ -17,7 +15,9 @@ from .utils import *
 class LineData:
     """
     A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
-    for collecting line data.
+    for collecting `line data`_.
+
+    .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
     """
 
     #: Name of data
@@ -106,17 +106,19 @@ class LineData:
         self.TrackDiagrams = trk_diagr.TrackDiagrams(update=update, verbose=False)
         self.Bridges = bridge.Bridges(verbose=False)
 
-    def update(self, confirmation_required=True, verbose=False, time_gap=5, init_update=False):
+    def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
         """
-        Update local backup of the `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+        Update pre-packed of the `line data`_.
+
+        .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :param time_gap: time gap (in seconds) between the updating of different classes,
+        :param interval: time gap (in seconds) between the updating of different classes,
             defaults to ``5``
-        :type time_gap: int
+        :type interval: int
         :param init_update: whether to update the data for instantiation of each subclass,
             defaults to ``False``
         :type init_update: bool
@@ -143,19 +145,19 @@ class LineData:
                 print(f"\n{self.ELRMileages.NAME}:")
                 _ = self.ELRMileages.fetch_elr(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Electrification
                 print(f"\n{self.Electrification.NAME}:")
                 _ = self.Electrification.fetch_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Location
                 print(f"\n{self.LocationIdentifiers.NAME}:")
                 _ = self.LocationIdentifiers.fetch_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Line of routes
                 print(f"\n{self.LOR.NAME}:")
@@ -165,7 +167,7 @@ class LineData:
                 _ = self.LOR.fetch_codes(update=True, verbose=verbose)
                 _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Line names
                 print(f"\n{self.LineNames.NAME}:")
@@ -180,7 +182,7 @@ class LineData:
                 # # noinspection PyProtectedMember
                 # _ = self.TrackDiagrams._fetch_catalogue(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Bridges
                 print(f"\n{self.Bridges.NAME}:")
@@ -190,7 +192,9 @@ class LineData:
 class OtherAssets:
     """
     A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
-    for collecting other assets.
+    for collecting `other assets`_.
+
+    .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
     """
 
     #: Name of data
@@ -279,18 +283,19 @@ class OtherAssets:
         self.Depots = depot.Depots(update=update, verbose=False)
         self.Features = feature.Features(update=update, verbose=False)
 
-    def update(self, confirmation_required=True, verbose=False, time_gap=5, init_update=False):
+    def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
         """
-        Update local backup data of the
-        `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+        Update pre-packed data of the `other assets`_.
+
+        .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :param time_gap: time gap (in seconds) between the updating of different classes,
+        :param interval: time gap (in seconds) between the updating of different classes,
             defaults to ``5``
-        :type time_gap: int
+        :type interval: int
         :param init_update: whether to update the data for instantiation of each subclass,
             defaults to ``False``
         :type init_update: bool
@@ -321,31 +326,31 @@ class OtherAssets:
                 _ = self.SignalBoxes.fetch_wr_mas_dates(update=True, verbose=verbose)
                 _ = self.SignalBoxes.fetch_bell_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Tunnels
                 print(f"\n{self.Tunnels.NAME}:")
                 _ = self.Tunnels.fetch_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Viaducts
                 print(f"\n{self.Viaducts.NAME}:")
                 _ = self.Viaducts.fetch_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Stations
                 print(f"\n{self.Stations.NAME}:")
                 _ = self.Stations.fetch_locations(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Depots
                 print(f"\n{self.Depots.NAME}:")
                 _ = self.Depots.fetch_codes(update=True, verbose=verbose)
 
-                time.sleep(time_gap)
+                time.sleep(interval)
 
                 # Features
                 print(f"\n{self.Features.NAME}:")

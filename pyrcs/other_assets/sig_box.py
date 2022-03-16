@@ -9,8 +9,9 @@ from pyrcs.utils import *
 
 class SignalBoxes:
     """
-    A class for collecting
-    `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
+    A class for collecting data of `signal box prefix codes`_.
+
+    .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """
 
     #: Name of the data
@@ -191,7 +192,7 @@ class SignalBoxes:
 
     def fetch_prefix_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch signal box prefix codes from local backup.
+        Fetch data of signal box prefix codes.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -409,9 +410,9 @@ class SignalBoxes:
 
     def fetch_non_national_rail_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch signal box prefix codes of
-        `non-national rail <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_
-        from local backup.
+        Fetch signal box prefix codes of `non-national rail`_.
+
+        .. _`non-national rail`: http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -481,8 +482,9 @@ class SignalBoxes:
 
     def collect_ireland_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect signal box prefix codes of
-        `Ireland <http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm>`_ from source web page.
+        Collect data of
+        `Irish signal cabin prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -573,9 +575,9 @@ class SignalBoxes:
 
     def fetch_ireland_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch signal box prefix codes of
-        `Ireland <http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm>`_
-        from local backup.
+        Fetch data of `Irish signal cabin prefix codes`_.
+
+        .. _`Irish signal cabin prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -621,11 +623,9 @@ class SignalBoxes:
 
     def collect_wr_mas_dates(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `WR MAS dates <http://www.railwaycodes.org.uk/signal/dates.shtm>`_
+        Collect data of `WR (western region) MAS (multiple aspect signalling) dates
+        <http://www.railwaycodes.org.uk/signal/dates.shtm>`_
         from source web page.
-
-        - WR: western region
-        - MAS: multiple aspect signalling
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -773,8 +773,10 @@ class SignalBoxes:
 
     def fetch_wr_mas_dates(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `WR MAS dates <http://www.railwaycodes.org.uk/signal/dates.shtm>`_
-        from local backup.
+        Fetch data of `WR (western region) MAS (multiple aspect signalling) dates`_.
+
+        .. _`WR (western region) MAS (multiple aspect signalling) dates`:
+            http://www.railwaycodes.org.uk/signal/dates.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -959,8 +961,9 @@ class SignalBoxes:
 
     def fetch_bell_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `bell codes <http://www.railwaycodes.org.uk/signal/bellcodes.shtm>`_
-        from local backup.
+        Fetch data of `bell codes`_.
+
+        .. _`bell codes`: http://www.railwaycodes.org.uk/signal/bellcodes.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool

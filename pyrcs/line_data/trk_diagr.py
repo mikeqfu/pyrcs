@@ -9,8 +9,9 @@ from pyrcs.utils import *
 
 class TrackDiagrams:
     """
-    A class for collecting data of British
-    `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+    A class for collecting data of British `railway track diagrams`_.
+
+    .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """
 
     #: Name of the data
@@ -260,7 +261,7 @@ class TrackDiagrams:
 
     def _fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch catalogue of railway track diagrams from local backup.
+        Fetch the catalogue of railway track diagrams.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
