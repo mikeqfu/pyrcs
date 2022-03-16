@@ -20,7 +20,6 @@ __version__ = metadata['Version']
 __license__ = metadata['License']
 
 __all__ = [
-    'collector',
     'LineData',
     'OtherAssets',
     'Electrification',
