@@ -13,8 +13,15 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # == Project information ===========================================================================
-from pyrcs import __affiliation__, __author__, __copyright__, __description__, __package__, \
-    __project__, __version__
+import datetime
+import json
+
+with open(file="data/metadata.json", mode='r') as metadata_file:
+    metadata = json.load(metadata_file)
+    __author__, __affiliation__ = metadata['Author'], metadata['Affiliation']
+    __package__, __project__, __version__ = metadata['Package'], metadata['Project'], metadata['Version']
+    __description__ = metadata['Description']
+    __copyright__ = f'2019-{datetime.datetime.now().year}, {__author__}'
 
 # General information about the project:
 project = __project__
