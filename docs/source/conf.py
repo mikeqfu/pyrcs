@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 import datetime
 import json
 
-with open(file="data/metadata.json", mode='r') as metadata_file:
+with open(file="../../pyrcs/data/metadata.json", mode='r') as metadata_file:
     metadata = json.load(metadata_file)
     __author__, __affiliation__ = metadata['Author'], metadata['Affiliation']
     __package__, __project__, __version__ = metadata['Package'], metadata['Project'], metadata['Version']
