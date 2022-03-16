@@ -2,4 +2,7 @@
 Acknowledgement
 ===============
 
-The development of PyRCS is built on data from the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website. The author of PyRCS would like to thank the website editor and `all contributors <http://www.railwaycodes.org.uk/misc/acknowledgements.shtm>`_ to the data resources.
+PyRCS uses data available from the `Railway Codes`_ website. The time and effort that the website's editor and `all contributors`_ put in making the site and data available are fully credited.
+
+.. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
+.. _`all contributors`: http://www.railwaycodes.org.uk/misc/acknowledgements.shtm

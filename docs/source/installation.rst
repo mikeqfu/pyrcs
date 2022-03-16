@@ -1,36 +1,46 @@
+.. _pyrcs-installation:
+
 ============
 Installation
 ============
 
-To install the latest release of PyRCS from `PyPI <https://pypi.org/project/pyrcs/>`_ by using `pip <https://packaging.python.org/key_projects/#pip>`_:
+To install the latest release of pyrcs from `PyPI`_ via `pip`_:
 
-.. code-block:: bash
+.. _`PyPI`: https://pypi.org/project/pyrcs/
+.. _`pip`: https://pip.pypa.io/en/stable/cli/pip/
+
+.. code-block:: console
 
    pip install --upgrade pyrcs
 
-To install a more recent version of PyRCS hosted on `GitHub repository <https://github.com/mikeqfu/pyrcs>`_:
+To install the most recent version of pyrcs hosted on `GitHub`_:
 
-.. code-block:: bash
+.. _`GitHub`: https://github.com/mikeqfu/pyrcs
+
+.. code-block:: console
 
    pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
 
-To test if PyRCS is correctly installed, try to import the package via an interpreter shell:
-
-.. code-block:: python
-
-    >>> import pyrcs
-
-    >>> pyrcs.__version__  # Check the current release
-
-.. parsed-literal::
-    The current release version is: |version|
 
 .. note::
 
-    - If you are using a `virtual environment <https://packaging.python.org/glossary/#term-Virtual-Environment>`_, ensure that it is activated.
+    - If using a `virtual environment`_, make sure it is activated.
+    - It is recommended to add `pip install`_ the option ``--upgrade`` (or ``-U``) to ensure that you are getting the latest stable release of the package.
+    - For more general instructions on the installation of Python packages, please refer to the official guide of `Installing Packages`_.
 
-    - It is recommended to add ``--upgrade`` (or ``-U``) when you use ``pip install`` (see the instruction above) so as to get the latest stable release of the package.
+    .. _`virtual environment`: https://packaging.python.org/glossary/#term-Virtual-Environment
+    .. _`pip install`: https://pip.pypa.io/en/stable/cli/pip_install/
+    .. _`Installing Packages`: https://packaging.python.org/tutorials/installing-packages/
 
-    - For more general instructions, check the "`Installing Packages <https://packaging.python.org/tutorials/installing-packages>`_".
 
-    - PyRCS has not yet been tested with `Python 2 <https://docs.python.org/2/>`_. For users who have installed both `Python 2 <https://docs.python.org/2/>`_ and `Python 3 <https://docs.python.org/3/>`_, it would be recommended to replace ``pip`` with ``pip3``. But you are more than welcome to volunteer testing the package with `Python 2 <https://docs.python.org/2/>`_ and any issues should be logged/reported onto the `Issues <https://github.com/mikeqfu/pyrcs/issues>`_ page.
+To check whether pyrcs has been correctly installed, try to import the package via an interpreter shell:
+
+.. code-block:: python
+    :name: cmd current version
+
+    >>> import pyrcs
+
+    >>> pyrcs.__version__  # Check the latest version
+
+.. parsed-literal::
+    The latest version is: |version|

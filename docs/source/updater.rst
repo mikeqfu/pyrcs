@@ -16,4 +16,4 @@ Local backup
     :toctree: _generated/
     :template: function.rst
 
-    update_backup_data
+    update_prepacked_data

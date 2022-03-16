@@ -18,6 +18,7 @@ line_data
     lor_code
     line_name
     trk_diagr
+    bridge
 
 .. toctree::
     :hidden:
@@ -28,3 +29,4 @@ line_data
     lor-code
     line-name
     trk-diagr
+    bridge

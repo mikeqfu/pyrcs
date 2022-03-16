@@ -63,7 +63,7 @@ Assistant scrapers
     get_catalogue
     get_category_menu
     get_page_catalogue
-    get_heading
+    get_heading_text
     get_page_catalogue
     get_hypertext
     get_introduction

@@ -12,15 +12,6 @@ sys.path.insert(0, os.path.abspath('../../pyrcs'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
-# A list of modules to be mocked up:
-autodoc_mock_imports = [
-    'beautifulsoup4',
-    'numpy',
-    'pandas',
-    'requests',
-    'pyhelpers',
-]
-
 # == Project information ===========================================================================
 from pyrcs import __affiliation__, __author__, __copyright__, __description__, __package__, \
     __project__, __version__
@@ -117,7 +108,7 @@ from sphinx.highlighting import PygmentsBridge
 class CustomLatexFormatter(LatexFormatter):
     def __init__(self, **options):
         super(CustomLatexFormatter, self).__init__(**options)
-        self.verboptions = r"formatcom=\small"
+        self.verboptions = r"formatcom=\footnotesize"
 
 
 PygmentsBridge.latex_formatter = CustomLatexFormatter
@@ -144,7 +135,7 @@ affiliation_school, affiliation_univ = __affiliation__.split(', ')
 
 # Customized title page
 latex_maketitle = r'''
-    \newgeometry{top=1.1in,bottom=1.1in,right=1.2in,left=1.2in}
+    \newgeometry{top=1.1in,bottom=1.1in,right=1.0in,left=1.0in}
     \pagenumbering{roman}
     \makeatletter
     \hypertarget{titlepage}{}
@@ -152,10 +143,10 @@ latex_maketitle = r'''
         \flushright
 
         \vspace*{22mm}
-        \textbf{\Huge {{%s Documentation}}}
+        \textbf{\Huge {{%s}}}
         
         \vspace{5mm}
-        \textit{\Large {{%s}}} \par
+        \textit{\large {{%s}}} \par
         \vspace{5mm}
         \textbf{\textit{\LARGE {{Release %s}}}} \par
 
@@ -186,13 +177,6 @@ latex_maketitle = r'''
     \hypertarget{tocpage}{}
     \tableofcontents
     \bookmark[dest=tocpage]{Table of Contents}
-    \makeatother
-
-    \cleardoublepage
-    \makeatletter
-    \hypertarget{lofpage}{}
-    \listoffigures
-    \bookmark[dest=lofpage]{List of Figures}
     \makeatother
 
     \clearpage

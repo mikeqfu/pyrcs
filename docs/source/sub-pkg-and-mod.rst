@@ -1,4 +1,4 @@
-.. _sub-pkg-and-mod:
+.. _pyrcs-sub-pkg-and-mod:
 
 ========================
 Sub-packages and modules
