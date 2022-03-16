@@ -129,7 +129,7 @@ def init_data_dir(cls, data_dir, category, cluster=None, **kwargs):
 
 def make_file_pathname(cls, data_name, ext=".pickle", data_dir=None):
     """
-    Make a pathname for saving data as a file of a certain format (e.g. ".pickle").
+    Make a pathname for saving data as a file of a certain format.
 
     :param cls: (an instance of) a class for a certain data cluster
     :type cls: object
@@ -1407,38 +1407,61 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     return cls_menu
 
 
-def get_heading(heading, elem_tag='em'):
+def get_heading_text(heading_tag, elem_tag_name='em'):
     """
+    Get the text of a given heading tag.
 
-    :param heading:
-    :param elem_tag:
-    :return:
+    :param heading_tag: tag of a heading
+    :type heading_tag: bs4.element.Tag
+    :param elem_tag_name: tag name of an element in the ``heading_tag``, defaults to ``'em'``
+    :type elem_tag_name: str
+    :return: cleansed text of the given ``heading_tag``
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.utils import get_heading_text
+        >>> from pyrcs.line_data import Electrification
+
+        >>> elec = Electrification()
+
+        >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
+        >>> source = requests.get(url=url, headers=fake_requests_headers())
+        >>> soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        >>> h3 = soup.find('h3')
+
+        >>> h3_text = get_heading_text(heading_tag=h3, elem_tag_name='em')
+        >>> h3_text
+        'Beamish Tramway'
     """
 
     heading_x = []
 
-    for elem in heading.contents:
-        if elem.name == elem_tag:
+    for elem in heading_tag.contents:
+        if elem.name == elem_tag_name:
             heading_x.append('[' + elem.text + ']')
         else:
             heading_x.append(elem.text)
-    heading = ''.join(heading_x)
 
-    return heading
+    heading_text = ''.join(heading_x)
+
+    return heading_text
 
 
-def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h3', verbose=False):
+def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', feature_tag_name='h3',
+                       verbose=False):
     """
     Get the catalogue of the main page of a data cluster.
 
     :param url: URL of the main page of a data cluster
     :type url: str
-    :param head_tag: tag name of the feature list at the top of the page, defaults to ``'nav'``
-    :type head_tag: str
-    :param head_txt: text that is contained in the ``head_tag``, defaults to ``'Jump to: '``
-    :type head_txt: str
-    :param feature_tag: tag name of the headings of each feature, defaults to ``'h3'``
-    :type feature_tag: str
+    :param head_tag_name: tag name of the feature list at the top of the page, defaults to ``'nav'``
+    :type head_tag_name: str
+    :param head_tag_txt: text that is contained in the head_tag, defaults to ``'Jump to: '``
+    :type head_tag_txt: str
+    :param feature_tag_name: tag name of the headings of each feature, defaults to ``'h3'``
+    :type feature_tag_name: str
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :return: catalogue of the main page of a data cluster
@@ -1485,10 +1508,11 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
 
         page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
 
-        for nav in soup.find_all(head_tag):
+        for nav in soup.find_all(head_tag_name):
             nav_text = nav.text.replace('\r\n', '').strip()
-            if re.match(r'^({})'.format(head_txt), nav_text):
-                feature_names = nav_text.replace(head_txt, '').split('\xa0| ')
+
+            if re.match(r'^({})'.format(head_tag_txt), nav_text):
+                feature_names = nav_text.replace(head_tag_txt, '').split('\xa0| ')
                 page_catalogue['Feature'] = feature_names
 
                 feature_urls = []
@@ -1500,8 +1524,8 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
                 page_catalogue['URL'] = feature_urls
 
         feature_headings = []
-        for h3 in soup.find_all(feature_tag):
-            sub_heading = get_heading(heading=h3, elem_tag='em')
+        for h3 in soup.find_all(feature_tag_name):
+            sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
             feature_headings.append(sub_heading)
 
         page_catalogue['Heading'] = feature_headings
@@ -1509,33 +1533,62 @@ def get_page_catalogue(url, head_tag='nav', head_txt='Jump to: ', feature_tag='h
         return page_catalogue
 
 
-def get_hypertext(hypertext, hyperlink_tag='a', md_style=True):
+def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
     """
-    Get hypertext (i.e. text with a hyperlink).
+    Get text that is with a hyperlink.
 
-    :param hypertext:
-    :param hyperlink_tag:
-    :param md_style:
-    :return:
+    :param hypertext_tag: tag of hypertext (i.e. text that is with a hyperlink)
+    :type hypertext_tag: bs4.element.Tag or bs4.element.PageElement
+    :param hyperlink_tag_name:
+    :type hyperlink_tag_name: str
+    :param md_style: whether to return the obtained hypertext in markdown style, defaults to ``True``
+    :type md_style: bool
+    :return: hypertext
+    :rtype: str
 
+    **Examples**::
 
+        >>> from pyrcs.utils import get_hypertext
+        >>> from pyrcs.line_data import Electrification
+        >>> import bs4
+        >>> import requests
+
+        >>> elec = Electrification()
+
+        >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
+        >>> source = requests.get(url)
+        >>> soup = bs4.BeautifulSoup(source.content, 'html.parser')
+
+        >>> h3 = soup.find('h3')
+
+        >>> p = h3.find_all_next('p')[8]
+        >>> p
+        <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-traml...
+
+        >>> hyper_txt = get_hypertext(hypertext_tag=p, md_style=True)
+        >>> hyper_txt
+        'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site](...
     """
 
     hypertext_x = []
-    for x in hypertext.contents:
-        if x.name == hyperlink_tag:
+
+    for x in hypertext_tag.contents:
+        if x.name == hyperlink_tag_name:
+            # noinspection PyUnresolvedReferences
             href = x.get('href')
+
             if md_style:
                 x_text = '[' + x.text + ']' + f'({href})'
             else:
                 x_text = x.text + f' ({href})'
             hypertext_x.append(x_text)
+
         else:
             hypertext_x.append(x.text)
 
-    hypertext = ''.join(hypertext_x).replace('\xa0', '').replace('  ', ' ')
+    hypertext_tag = ''.join(hypertext_x).replace('\xa0', '').replace('  ', ' ')
 
-    return hypertext
+    return hypertext_tag
 
 
 def _parse_h3_paras(h3):
