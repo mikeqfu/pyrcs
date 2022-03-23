@@ -127,7 +127,7 @@ class Tunnels:
             length = np.nan
             note = 'Unavailable'
 
-        elif re.match(r'\d+m \d+yd-.*\d+m \d+yd.*', x):
+        elif re.match(r'\d+m \d+yd?(- | to )?.*\d+m \d+yd?.*', x):
             miles_a, yards_a, miles_b, yards_b = re.findall(r'\d+', x)
             length_a = float(miles_a) * 1609.344 + float(yards_a) * 0.9144
             # measurement.measures.Distance(mi=miles_a).m + measurement.measures.Distance(yd=yards_a).m
@@ -137,7 +137,7 @@ class Tunnels:
             note = '-'.join([str(round(length_a, 2)), str(round(length_b, 2))]) + ' metres'
 
         else:
-            if re.match(r'(formerly )?c?≈?\d+m ?\d+y?(ch)?.*', x):
+            if re.match(r'(formerly )?c?≈?\d+m ?\d+yd?|ch', x):
                 miles, yards = re.findall(r'\d+', x)
                 if re.match(r'.*\d+ch$', x):  # "yards" is "chains"
                     yards = yards * 22  # measurement.measures.Distance(chain=yards).yd
@@ -151,7 +151,7 @@ class Tunnels:
                 else:
                     note = ''
 
-            elif re.match(r'\d+\.\d+km(\r)? .*(\[\')?\(\d+m \d+y\).*', x):
+            elif re.match(r'\d+\.\d+km(\r)? .*(\[\')?\(\d+m \d+yd?\).*', x):
                 miles, yards = re.findall(r'\d+', re.search(r'(?<=\()\d+.*(?=\))', x).group(0))
                 note = re.search(r'.+(?= (\[\')?\()', x.replace('\r', '')).group(0)
 
