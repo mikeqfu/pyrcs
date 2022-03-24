@@ -20,7 +20,7 @@ To demonstrate how PyRCS works, this brief tutorial provides a quick guide with 
 Location identifiers
 ====================
 
-The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can  the class :py:class:`~loc_id.LocationIdentifiers`, which is contained in the sub-package :py:mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
+The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can use the class :py:class:`~loc_id.LocationIdentifiers`, which is contained in the sub-package :py:mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
 
 .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 .. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
