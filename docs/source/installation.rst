@@ -26,7 +26,7 @@ To install the most recent version of pyrcs hosted on `GitHub`_:
 
     - If using a `virtual environment`_, make sure it is activated.
     - It is recommended to add `pip install`_ the option ``--upgrade`` (or ``-U``) to ensure that you are getting the latest stable release of the package.
-    - For more general instructions on the installation of Python packages, please refer to the official guide of `Installing Packages`_.
+    - For more general instructions on the installation of Python packages, please refer to the official guide on `Installing Packages`_.
 
     .. _`virtual environment`: https://packaging.python.org/glossary/#term-Virtual-Environment
     .. _`pip install`: https://pip.pypa.io/en/stable/cli/pip_install/
