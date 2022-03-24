@@ -1022,7 +1022,7 @@ class ELRMileages:
         .. note::
 
             This function may not be able to find the connection for every pair of ELRs.
-            See the :ref:`Example 2<get_conn_mileages-example-2>` below.
+            See :ref:`Example 2<get_conn_mileages-example-2>` below.
 
         :param start_elr: start ELR
         :type start_elr: str
