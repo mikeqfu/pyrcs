@@ -20,7 +20,7 @@ To demonstrate how PyRCS works, this brief tutorial provides a quick guide with 
 Location identifiers
 ====================
 
-The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can the class :py:class:`~loc_id.LocationIdentifiers`, which is contained in the sub-package :py:mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
+The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can  the class :py:class:`~loc_id.LocationIdentifiers`, which is contained in the sub-package :py:mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
 
 .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 .. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
@@ -58,7 +58,7 @@ The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categ
 Location identifiers given a specific initial letter
 ----------------------------------------------------
 
-Now we can get the codes (in `pandas.DataFrame`_ type) for all locations beginning with a given letter, by using the method :py:meth:`LocationIdentifiers.collect_codes_by_initial()<loc_id.LocationIdentifiers.collect_codes_by_initial>`. For example, to get the codes for locations whose names begin with ``'A'`` (or ``'a'``):
+Now we can get the codes (in a `pandas.DataFrame`_ type) for all locations beginning with a given letter, by using the method :py:meth:`LocationIdentifiers.collect_codes_by_initial()<loc_id.LocationIdentifiers.collect_codes_by_initial>`. For example, to get the codes for locations whose names begin with ``'A'`` (or ``'a'``):
 
 .. _`pandas.DataFrame`: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html
 
@@ -191,7 +191,7 @@ A snapshot of the data contained in ``loc_codes`` is demonstrated below:
 ELRs and mileages
 =================
 
-`Engineer's Line References (ELRs)`_ is also frequently seen among various data in Britain's railway system. To get the codes of ELRs (and their associated mileage files), we can use the class :py:class:`~elr_mileage.ELRMileages`:
+`Engineer's Line References (ELRs)`_ are also frequently seen among various data in Britain's railway system. To get the codes of ELRs (and their associated mileage files), we can use the class :py:class:`~elr_mileage.ELRMileages`:
 
 .. code-block:: python
 
@@ -292,7 +292,7 @@ A snapshot of the data contained in ``elrs_data`` is demonstrated below:
 Mileage file of a given ELR
 ---------------------------
 
-Further to the codes of ELRs, each ELR is in association with a mileage file, which specifies the major mileages for the ELR. To get the mileage data, we can use the method :py:meth:`ELRMileages.fetch_mileage_file()<elr_mileage.ELRMileages.fetch_mileage_file>`.
+Further to the codes of ELRs, each ELR is associated with a mileage file, which specifies the major mileages for the ELR. To get the mileage data, we can use the method :py:meth:`ELRMileages.fetch_mileage_file()<elr_mileage.ELRMileages.fetch_mileage_file>`.
 
 For example, let's try to get the `mileage file for 'AAM'`_:
 
