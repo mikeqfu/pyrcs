@@ -329,7 +329,6 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> # tunl_len_codes = tunl.fetch_codes(update=True, verbose=True)
             >>> tunl_len_codes = tunl.fetch_codes()
 
             >>> type(tunl_len_codes)
