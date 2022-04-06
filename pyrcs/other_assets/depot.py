@@ -222,7 +222,7 @@ class Depots:
         """
 
         two_char_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_two_char_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pickle",
+            cls=self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pickle",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return two_char_tops_codes_data
@@ -386,7 +386,7 @@ class Depots:
         data_name = re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS)
 
         four_digit_pre_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_four_digit_pre_tops_codes', data_name=data_name, ext=".pickle",
+            cls=self, method='collect_pre_tops_codes', data_name=data_name, ext=".pickle",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return four_digit_pre_tops_codes_data
