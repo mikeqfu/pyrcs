@@ -4,11 +4,14 @@ Update package data.
 
 import time
 
+from pyhelpers.ops import confirmed
+
 from .collector import LineData, OtherAssets
-from .utils import *
+from .parser import get_site_map
+from .utils import is_home_connectable, print_conn_err
 
 
-def update_prepacked_data(verbose=False, interval=5):
+def _update_prepacked_data(verbose=False, interval=5):
     """
     Update pre-packed data.
 
@@ -19,13 +22,13 @@ def update_prepacked_data(verbose=False, interval=5):
 
     **Example**::
 
-        >>> from pyrcs.updater import update_prepacked_data
+        >>> from pyrcs._updater import _update_prepacked_data
 
-        >>> update_prepacked_data(verbose=True)
+        >>> _update_prepacked_data(verbose=True)
     """
 
     if not is_home_connectable():
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
         print("Unable to update the data.")
 
     else:
