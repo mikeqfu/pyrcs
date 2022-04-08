@@ -4,7 +4,8 @@ Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/C
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 def _collect_list(p, list_head_tag):
@@ -102,7 +103,7 @@ def _parse_note_page(note_url, parser='html.parser', verbose=False):
         source = requests.get(note_url, headers=fake_requests_headers())
 
     except Exception as e:
-        print_conn_err(verbose=verbose, e=e)
+        print_inst_conn_err(verbose=verbose, e=e)
         return None
 
     web_page_text = bs4.BeautifulSoup(markup=source.text, features=parser).find_all(['p', 'pre'])
@@ -180,7 +181,7 @@ class LocationIdentifiers:
             http://www.railwaycodes.org.uk/crs/crs0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.introduction = self._get_introduction(verbose=False)
 
@@ -235,7 +236,7 @@ class LocationIdentifiers:
             source = requests.get(url=self.URL, headers=fake_requests_headers())
 
         except requests.exceptions.ConnectionError:
-            print_conn_err(verbose=verbose)
+            print_inst_conn_err(verbose=verbose)
 
         else:
             soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
@@ -321,7 +322,7 @@ class LocationIdentifiers:
                 if verbose == 2:
                     print("Failed. ", end="")
 
-                print_conn_err(verbose=verbose)
+                print_inst_conn_err(verbose=verbose)
 
                 explanatory_note = None
 
@@ -481,7 +482,7 @@ class LocationIdentifiers:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -673,7 +674,7 @@ class LocationIdentifiers:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -852,7 +853,7 @@ class LocationIdentifiers:
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
-                print_conn_err(verbose=verbose)
+                print_inst_conn_err(verbose=verbose)
                 print_void_msg(data_name=self.KEY, verbose=verbose)
 
             data = [

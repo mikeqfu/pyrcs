@@ -5,7 +5,8 @@ Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges
 from pyhelpers.dir import cd
 from pyhelpers.ops import split_list_by_size
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class Bridges:
@@ -49,7 +50,7 @@ class Bridges:
             http://www.railwaycodes.org.uk/bridges/bridges0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.introduction = get_introduction(url=self.URL, verbose=verbose)
 
@@ -170,7 +171,7 @@ class Bridges:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

@@ -7,7 +7,8 @@ import itertools
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 def _collect_notes(h3):
@@ -219,7 +220,7 @@ class Electrification:
             http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -347,7 +348,7 @@ class Electrification:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -572,7 +573,7 @@ class Electrification:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -724,7 +725,8 @@ class Electrification:
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
             print_collect_msg(
-                data_name=self.KEY_TO_OHNS, verbose=verbose, confirmation_required=confirmation_required)
+                data_name=self.KEY_TO_OHNS, verbose=verbose,
+                confirmation_required=confirmation_required)
 
             ohns_codes = None
 
@@ -738,7 +740,7 @@ class Electrification:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -923,7 +925,7 @@ class Electrification:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

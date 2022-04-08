@@ -4,7 +4,8 @@ Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class LineNames:
@@ -50,7 +51,7 @@ class LineNames:
             http://www.railwaycodes.org.uk/misc/line_names.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -167,7 +168,7 @@ class LineNames:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

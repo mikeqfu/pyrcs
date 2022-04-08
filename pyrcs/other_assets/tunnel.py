@@ -4,9 +4,11 @@ Collect data of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/
 
 import itertools
 
+import numpy as np
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class Tunnels:
@@ -52,7 +54,7 @@ class Tunnels:
             http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -235,7 +237,7 @@ class Tunnels:
             [5 rows x 6 columns]
         """
 
-        page_name = get_page_name(self, page_no, valid_page_no=set(range(1, 5)))
+        page_name = validate_page_name(self, page_no, valid_page_no=set(range(1, 5)))
 
         data_name = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower()
         ext = ".pickle"
@@ -258,7 +260,7 @@ class Tunnels:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -367,7 +369,7 @@ class Tunnels:
 
         if all(x is None for x in codes_on_pages):
             if update:
-                print_conn_err(verbose=verbose)
+                print_inst_conn_err(verbose=verbose)
                 print_void_msg(data_name=self.KEY, verbose=verbose)
 
             codes_on_pages = [

@@ -2,9 +2,11 @@
 Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 """
 
+import numpy as np
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 def _parse_degrees(x):
@@ -109,7 +111,7 @@ class Stations:
             http://www.railwaycodes.org.uk/stations/station0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = self._get_station_data_catalogue(update=update, verbose=False)
 
@@ -169,7 +171,7 @@ class Stations:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(update=update, verbose=verbose, e=e)
+                print_inst_conn_err(update=update, verbose=verbose, e=e)
 
             else:
                 try:
@@ -299,7 +301,7 @@ class Stations:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -432,7 +434,7 @@ class Stations:
 
         if all(d[x] is None for d, x in zip(data_sets, string.ascii_uppercase)):
             if update:
-                print_conn_err(verbose=verbose)
+                print_inst_conn_err(verbose=verbose)
                 print_void_msg(data_name=self.KEY_TO_STN, verbose=verbose)
 
             data_sets = [

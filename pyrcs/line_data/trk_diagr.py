@@ -4,7 +4,8 @@ Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/di
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class TrackDiagrams:
@@ -50,7 +51,7 @@ class TrackDiagrams:
             http://www.railwaycodes.org.uk/line/diagrams0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
@@ -124,7 +125,7 @@ class TrackDiagrams:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(update=update, verbose=verbose, e=e)
+                print_inst_conn_err(update=update, verbose=verbose, e=e)
 
             else:
                 try:
@@ -200,7 +201,7 @@ class TrackDiagrams:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

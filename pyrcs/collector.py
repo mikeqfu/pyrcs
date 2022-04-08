@@ -6,10 +6,14 @@ and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 """
 
 import time
+import urllib.parse
+
+from pyhelpers.ops import confirmed
 
 from .line_data import *
 from .other_assets import *
-from .utils import *
+from .parser import get_category_menu
+from .utils import home_page_url, is_home_connectable, print_conn_err, print_inst_conn_err
 
 
 class LineData:
@@ -91,7 +95,7 @@ class LineData:
 
         if not is_home_connectable():
             self.connected = False
-            print_connection_error(verbose=verbose)
+            print_conn_err(verbose=verbose)
         else:
             self.connected = True
 
@@ -133,7 +137,7 @@ class LineData:
         """
 
         if not self.connected:
-            print_conn_err(verbose=verbose)
+            print_inst_conn_err(verbose=verbose)
 
         else:
             if confirmed("To update line data\n?", confirmation_required=confirmation_required):
@@ -269,7 +273,7 @@ class OtherAssets:
 
         if not is_home_connectable():
             self.connected = False
-            print_connection_error(verbose=verbose)
+            print_conn_err(verbose=verbose)
         else:
             self.connected = True
 
@@ -310,7 +314,7 @@ class OtherAssets:
         """
 
         if not self.connected:
-            print_conn_err(verbose=verbose)
+            print_inst_conn_err(verbose=verbose)
 
         else:
             if confirmed("To update data of other assets\n?", confirmation_required):

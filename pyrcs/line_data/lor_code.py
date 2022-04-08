@@ -4,7 +4,8 @@ Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class LOR:
@@ -61,7 +62,7 @@ class LOR:
             http://www.railwaycodes.org.uk/pride/pride0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -156,7 +157,7 @@ class LOR:
                 verbose_ = True if (update and verbose != 2) else (False if verbose == 2 else verbose)
                 if verbose_:
                     print("Failed. ", end="")
-                print_conn_err(update=update, verbose=verbose_, e=e)
+                print_inst_conn_err(update=update, verbose=verbose_, e=e)
 
             else:
                 try:
@@ -221,7 +222,7 @@ class LOR:
                 verbose_ = True if (update and verbose != 2) else (False if verbose == 2 else verbose)
                 if verbose_:
                     print("Failed. ", end="")
-                print_conn_err(update=update, verbose=verbose_, e=e)
+                print_inst_conn_err(update=update, verbose=verbose_, e=e)
 
                 lor_page_urls = load_data(path_to_pickle)
 
@@ -368,7 +369,7 @@ class LOR:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -488,8 +489,8 @@ class LOR:
 
         if all(x is None for x in lor_codes):
             if update:
-                print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.KEY.lower()))
+                print_inst_conn_err(verbose=verbose)
+                print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
             lor_codes = [
                 self.collect_codes_by_prefix(prefix=p, update=False, verbose=verbose_)
                 for p in prefixes if p != 'NZ']
@@ -569,7 +570,7 @@ class LOR:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

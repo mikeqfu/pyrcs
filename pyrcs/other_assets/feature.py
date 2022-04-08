@@ -12,9 +12,11 @@ This category includes:
 import itertools
 import unicodedata
 
+import numpy as np
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class _HABDWILD:
@@ -32,7 +34,6 @@ class _HABDWILD:
     URL = urllib.parse.urljoin(home_page_url(), '/features/habdwild.shtm')
     #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
-    pass
 
 
 class _WaterTroughs:
@@ -47,7 +48,6 @@ class _WaterTroughs:
     URL = urllib.parse.urljoin(home_page_url(), '/features/troughs.shtm')
     #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
-    pass
 
 
 class _Telegraph:
@@ -62,7 +62,6 @@ class _Telegraph:
     URL = urllib.parse.urljoin(home_page_url(), '/features/telegraph.shtm')
     #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
-    pass
 
 
 class _Buzzer:
@@ -77,7 +76,6 @@ class _Buzzer:
     URL = urllib.parse.urljoin(home_page_url(), '/features/buzzer.shtm')
     #: Key of the data of the last updated date
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
-    pass
 
 
 def _decode_vulgar_fraction(x):
@@ -172,7 +170,7 @@ class Features:
             Infrastructure features
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=_HABDWILD.URL, update=update, confirmation_required=False)
 
@@ -279,7 +277,7 @@ class Features:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -449,7 +447,7 @@ class Features:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -609,7 +607,7 @@ class Features:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -775,7 +773,7 @@ class Features:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:

@@ -4,7 +4,8 @@ Collect data of `signal box prefix codes <http://www.railwaycodes.org.uk/signal/
 
 from pyhelpers.dir import cd
 
-from pyrcs.utils import *
+from ..parser import *
+from ..utils import *
 
 
 class SignalBoxes:
@@ -61,7 +62,7 @@ class SignalBoxes:
             http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -154,7 +155,7 @@ class SignalBoxes:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -243,8 +244,8 @@ class SignalBoxes:
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
-                print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.KEY.lower()))
+                print_inst_conn_err(verbose=verbose)
+                print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
             data = [
                 self.collect_prefix_codes(initial=x, update=False, verbose=verbose_1)
                 for x in string.ascii_lowercase]
@@ -351,7 +352,7 @@ class SignalBoxes:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -538,7 +539,7 @@ class SignalBoxes:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -710,7 +711,7 @@ class SignalBoxes:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -921,7 +922,7 @@ class SignalBoxes:
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
