@@ -26,14 +26,16 @@ Modules
 
 .. autosummary::
 
+    parser
+    converter
     collector
-    updater
     utils
 
 .. toctree::
     :maxdepth: 2
     :hidden:
 
+    parser
+    converter
     collector
-    updater
     utils

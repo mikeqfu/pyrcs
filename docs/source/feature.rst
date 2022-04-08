@@ -3,7 +3,7 @@ feature
 
 .. py:module:: pyrcs.other_assets.feature
 
-.. automodule:: feature
+.. automodule:: pyrcs.other_assets.feature
     :noindex:
     :no-members:
     :no-undoc-members:

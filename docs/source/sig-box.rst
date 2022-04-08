@@ -3,7 +3,7 @@ sig_box
 
 .. py:module:: pyrcs.other_assets.sig_box
 
-.. automodule:: sig_box
+.. automodule:: pyrcs.other_assets.sig_box
     :noindex:
     :no-members:
     :no-undoc-members:

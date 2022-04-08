@@ -3,7 +3,7 @@ trk_diagr
 
 .. py:module:: pyrcs.line_data.trk_diagr
 
-.. automodule:: trk_diagr
+.. automodule:: pyrcs.line_data.trk_diagr
     :noindex:
     :no-members:
     :no-undoc-members:

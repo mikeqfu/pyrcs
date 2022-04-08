@@ -3,7 +3,7 @@ depot
 
 .. py:module:: pyrcs.other_assets.depot
 
-.. automodule:: depot
+.. automodule:: pyrcs.other_assets.depot
     :noindex:
     :no-members:
     :no-undoc-members:

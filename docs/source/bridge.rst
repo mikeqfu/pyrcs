@@ -3,7 +3,7 @@ bridge
 
 .. py:module:: pyrcs.line_data.bridge
 
-.. automodule:: bridge
+.. automodule:: pyrcs.line_data.bridge
     :noindex:
     :no-members:
     :no-undoc-members:

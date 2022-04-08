@@ -3,7 +3,7 @@ line_name
 
 .. py:module:: pyrcs.line_data.line_name
 
-.. automodule:: line_name
+.. automodule:: pyrcs.line_data.line_name
     :noindex:
     :no-members:
     :no-undoc-members:

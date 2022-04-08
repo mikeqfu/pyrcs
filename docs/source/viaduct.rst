@@ -3,7 +3,7 @@ viaduct
 
 .. py:module:: pyrcs.other_assets.viaduct
 
-.. automodule:: viaduct
+.. automodule:: pyrcs.other_assets.viaduct
     :noindex:
     :no-members:
     :no-undoc-members:

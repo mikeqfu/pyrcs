@@ -3,7 +3,7 @@ station
 
 .. py:module:: pyrcs.other_assets.station
 
-.. automodule:: station
+.. automodule:: pyrcs.other_assets.station
     :noindex:
     :no-members:
     :no-undoc-members:

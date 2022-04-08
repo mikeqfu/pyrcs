@@ -3,7 +3,7 @@ tunnel
 
 .. py:module:: pyrcs.other_assets.tunnel
 
-.. automodule:: tunnel
+.. automodule:: pyrcs.other_assets.tunnel
     :noindex:
     :no-members:
     :no-undoc-members:

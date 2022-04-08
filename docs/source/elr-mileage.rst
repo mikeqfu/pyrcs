@@ -3,7 +3,7 @@ elr_mileage
 
 .. py:module:: pyrcs.line_data.elr_mileage
 
-.. automodule:: elr_mileage
+.. automodule:: pyrcs.line_data.elr_mileage
     :noindex:
     :no-members:
     :no-undoc-members:
