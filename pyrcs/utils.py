@@ -451,7 +451,7 @@ def make_file_pathname(cls, data_name, ext=".pickle", data_dir=None):
     return file_pathname
 
 
-def fetch_location_names_errata(k=None, regex=False, as_dataframe=False):
+def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_name=None):
     """
     Create a dictionary for rectifying location names.
 
@@ -463,6 +463,8 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False):
     :param as_dataframe: whether to return the created dictionary as a pandas.DataFrame,
         defaults to ``False``
     :type as_dataframe: bool
+    :param column_name: (if ``as_dataframe=True``) column name of the errata data as a dataframe
+    :type column_name: str or list or None
     :return: dictionary for rectifying location names
     :rtype: dict or pandas.DataFrame
 
@@ -494,7 +496,7 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False):
         re.compile('-En-Le-')              -en-le-
     """
 
-    json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
+    json_filename = "location-names-errata{}.json".format("" if not regex else "-regex")
     location_name_repl_dict = load_data(cd_data(json_filename))
 
     if regex:
@@ -503,8 +505,11 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False):
     replacement_dict = {k: location_name_repl_dict} if k else location_name_repl_dict
 
     if as_dataframe:
-        replacement_dict = pd.DataFrame.from_dict(
-            replacement_dict, orient='index', columns=['new_value'])
+        if column_name is None:
+            col_name = ['Name']
+        else:
+            col_name = [column_name] if isinstance(column_name, str) else column_name.copy()
+        replacement_dict = pd.DataFrame.from_dict(replacement_dict, orient='index', columns=col_name)
 
     return replacement_dict
 
