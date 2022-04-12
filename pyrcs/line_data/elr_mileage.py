@@ -8,7 +8,9 @@ import itertools
 from pyhelpers.dir import cd
 from pyhelpers.text import remove_punctuation
 
-from pyrcs.utils import *
+from ..converter import *
+from ..parser import *
+from ..utils import *
 
 
 class ELRMileages:
@@ -54,7 +56,7 @@ class ELRMileages:
             http://www.railwaycodes.org.uk/elrs/elr0.shtm
         """
 
-        print_connection_error(verbose=verbose)
+        print_conn_err(verbose=verbose)
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
@@ -437,7 +439,7 @@ class ELRMileages:
             except Exception as e:
                 if verbose == 2:
                     print("Failed.")
-                print_conn_err(verbose=verbose, e=e)
+                print_inst_conn_err(verbose=verbose, e=e)
 
             else:
                 try:
@@ -517,8 +519,8 @@ class ELRMileages:
 
         if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
             if update:
-                print_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.KEY))
+                print_inst_conn_err(verbose=verbose)
+                print_void_msg(data_name=self.KEY, verbose=verbose)
             data = [
                 self.collect_elr_by_initial(initial=x, update=False, verbose=verbose_1)
                 for x in string.ascii_lowercase]
@@ -540,6 +542,24 @@ class ELRMileages:
                 verbose=False)
 
         return elrs_data
+
+    def _mileage_file_dump_names(self, elr):
+        data_name = remove_punctuation(elr).lower()
+
+        if data_name == "prn":
+            data_name += "_"
+
+        dump_dir = self._cdd("mileage-files", data_name[0])
+
+        return data_name, dump_dir
+
+    def _dump_mileage_file(self, elr, mileage_file, dump_it, verbose):
+        if dump_it:
+            data_name, dump_dir = self._mileage_file_dump_names(elr)
+
+            save_data_to_file(
+                self, data=mileage_file, data_name=data_name, ext=".pickle", dump_dir=dump_dir,
+                verbose=verbose)
 
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
                              verbose=False):
@@ -592,21 +612,23 @@ class ELRMileages:
             7   10.0748  ...
             8   12.0968  ...
             9   14.0968  ...
-            10  19.1408  ...
-            11  19.1540  ...
-            12  23.0770  ...
-            13  26.1078  ...
-            14  28.1276  ...
-            15  32.1188  ...
-            16  38.1276  ...
-            17  43.0572  ...
-            18  46.0704  ...
-            19  49.1188  ...
-            20  49.1320  ...
-            21  55.1606  ...
-            22  64.0594  ...
+            10  16.1452  ...
+            11  19.1408  ...
+            12  19.1540  ...
+            13  23.0770  ...
+            14  26.1078  ...
+            15  28.1276  ...
+            16  32.1188  ...
+            17  32.1188  ...
+            18  38.1276  ...
+            19  43.0572  ...
+            20  46.0704  ...
+            21  49.1188  ...
+            22  49.1320  ...              0.00
+            23  55.1606  ...
+            24  64.0594  ...
 
-            [23 rows x 8 columns]
+            [25 rows x 8 columns]
 
             >>> gam_mileage_file = em.collect_mileage_file(elr='GAM')
             To collect mileage file of "GAM"
@@ -669,118 +691,130 @@ class ELRMileages:
             [29 rows x 8 columns]
         """
 
-        elr_ = remove_punctuation(elr)
+        elr_ = remove_punctuation(elr).upper()
 
         if elr_ != '':
 
             mileage_file = None
 
-            if confirmed("To collect mileage file of \"{}\"\n?".format(elr_.upper()),
-                         confirmation_required=confirmation_required):
-
-                # The URL of the mileage file for the ELR
-                url = home_page_url() + f'/elrs/_mileages/{elr_[0].lower()}/{elr_.lower()}.shtm'
+            if confirmed(f"To collect mileage file of \"{elr_}\"\n?", confirmation_required):
 
                 if verbose == 2:
-                    print("Collecting mileage file of \"{}\"".format(elr_.upper()), end=" ... ")
+                    print(f"Collecting mileage file of \"{elr_}\"", end=" ... ")
 
                 try:
+                    url = home_page_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
                     source = requests.get(url=url, headers=fake_requests_headers())
 
                 except Exception as e:
                     if verbose == 2:
                         print("Failed. ", end="")
-                    print_conn_err(verbose=verbose, e=e)
+                    print_inst_conn_err(verbose=verbose, e=e)
 
                 else:
                     try:
-                        source_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+                        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                        line_name = source_text.find('h3').text
-                        sub_line_name_ = source_text.find('h4')
-                        sub_line_name = sub_line_name_.text if sub_line_name_ else sub_line_name_
+                        line_name = soup.find(name='h3').text
 
-                        err404 = ['"404" error: page not found', '404 error: page not found']
+                        sub_line_name_ = soup.find(name='h4')
+                        if sub_line_name_ is not None:
+                            sub_line_name = sub_line_name_.get_text()
+                        else:
+                            sub_line_name = ''
 
-                        if line_name in err404 or sub_line_name in err404:
-                            elr_dat = self.collect_elr_by_initial(elr_[0])[elr_[0]]
-                            elr_dat = elr_dat[elr_dat.ELR == elr_]
+                        err404 = {'"404" error: page not found', '404 error: page not found'}
+                        if any(x in err404 for x in {line_name, sub_line_name}):
+                            elr_data = self.collect_elr_by_initial(elr_[0])[elr_[0]]
+                            elr_dat = elr_data[elr_data.ELR == elr_]
 
-                            notes = elr_dat.Notes.values[0]
+                            notes = elr_dat['Notes'].iloc[0]
                             if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes):
-                                new_elr = re.search(r'(?<= )[A-Z]{3}(\d)?', notes).group(0)
-                                mileage_file = self.collect_mileage_file(
-                                    elr=new_elr, parsed=parsed,
-                                    confirmation_required=confirmation_required,
-                                    dump_it=dump_it, verbose=verbose)
+                                elr_alt = re.search(r'(?<= )[A-Z]{3}(\d)?', notes).group(0)
+                                mileage_file_alt = self.collect_mileage_file(
+                                    elr=elr_alt, parsed=parsed, confirmation_required=False,
+                                    dump_it=False, verbose=verbose)
 
-                                return mileage_file
+                                if notes.startswith('Now'):
+                                    mileage_file_former = copy.copy(mileage_file_alt)
+
+                                    mileage_file_alt.update({'Formerly': elr_})
+                                    self._dump_mileage_file(elr_alt, mileage_file_alt, dump_it, verbose)
+
+                                    mileage_file_former.update(({'Now': elr_alt}))
+                                    self._dump_mileage_file(elr_, mileage_file_former, dump_it, verbose)
+
+                                return mileage_file_alt
 
                             else:
-                                line_name, mileages, datum = elr_dat[
-                                    ['Line name', 'Mileages', 'Datum']].values[0]
+                                val_cols = ['Line name', 'Mileages', 'Datum']
+                                line_name, mileages, datum = elr_dat[val_cols].values[0]
 
-                                if re.match(r'(\w ?)+ \((\w+ \w+)+.\)', line_name):
+                                if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
                                     line_name_ = re.search(
-                                        r'(?<=\w \()(\w+ \w+)+.(?=\))', line_name).group(0)
+                                        r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
                                     try:
-                                        location_a, _, location_b = re.split(
+                                        loc_a, _, loc_b = re.split(
                                             r' (and|&|to) ', line_name_)
                                         line_name = re.search(
-                                            r'(\w+ \w+)+.(?= \((\w ?)+\))', line_name).group(0)
+                                            r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
                                     except ValueError:
-                                        location_a, _, location_b = re.split(
-                                            r' (and|&|to) ', notes)
-                                        line_name = line_name_
+                                        try:
+                                            loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
+                                            line_name = line_name_
+                                        except ValueError:
+                                            loc_a, loc_b = '', ''
 
                                 elif elr_dat.Mileages.values[0].startswith('0.00') and \
                                         elr_dat.Datum.values[0] != '':
-                                    location_a = elr_dat.Datum.values[0]
-                                    location_b = re.split(r' (and|&|to) ', line_name)[2] \
-                                        if location_a in line_name else line_name
+                                    loc_a = elr_dat.Datum.values[0]
+                                    if loc_a in line_name:
+                                        loc_b = re.split(r' (and|&|to) ', line_name)[2]
+                                    else:
+                                        loc_b = line_name
 
                                 elif re.match(r'(\w ?)+ to (\w ?)+', notes):
-                                    location_a, location_b = notes.split(' to ')
+                                    loc_a, loc_b = notes.split(' to ')
 
                                 else:
+                                    loc_a, loc_b = '', ''
+
                                     try:
-                                        location_a, _, location_b = re.split(
-                                            r' (and|&|to|-) ', notes)
+                                        loc_a, _, loc_b = re.split(r' (and|&|to|-) ', notes)
                                     except (ValueError, TypeError):
                                         pass
 
                                     try:
-                                        location_a, _, location_b = re.split(
-                                            r' (and|&|to|-) ', line_name)
+                                        loc_a, _, loc_b = re.split(r' (and|&|to|-) ', line_name)
                                     except (ValueError, TypeError):
                                         pass
 
                                     if line_name:
-                                        location_a, location_b = line_name, line_name
-                                    else:
-                                        location_a, location_b = '', ''
+                                        loc_a, loc_b = line_name, line_name
 
-                                # location_b_ = re.sub(r' Branch| Curve', '', location_b) \
-                                #     if re.match(r'.*( Branch| Curve)$', location_b) \
-                                #     else location_b
+                                # if re.match(r'.*( Branch| Curve)$', loc_b):
+                                #     loc_b = re.sub(r' Branch| Curve', '', loc_b)
+                                # else:
+                                #     loc_b = loc_b
 
                                 miles_chains = mileages.split(' - ')
-                                locations = [location_a, location_b]
+                                locations = [loc_a, loc_b]
                                 parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
 
                         else:
                             line_name = line_name.split('\t')[1]
-                            parsed_content = [x.strip().split('\t', 1)
-                                              for x in source_text.find('pre').text.splitlines()
-                                              if x != '']
-                            parsed_content = [[y.replace('  ', ' ').replace('\t', ' ') for y in x]
-                                              for x in parsed_content]
-                            parsed_content = [[''] + x if (len(x) == 1) & ('Note that' not in x[0])
-                                              else x
-                                              for x in parsed_content]
+                            parsed_content = [
+                                x.strip().split('\t', 1) for x in soup.find('pre').text.splitlines()
+                                if x != '']
+                            parsed_content = [
+                                [y.replace('  ', ' ').replace('\t', ' ') for y in x]
+                                for x in parsed_content]
+                            parsed_content = [
+                                [''] + x if (len(x) == 1) & ('Note that' not in x[0]) else x
+                                for x in parsed_content]
 
                         # assert sub_headers[0] == elr
-                        if sub_line_name and sub_line_name not in err404:
+                        if sub_line_name and (sub_line_name not in err404):
                             sub_headers = sub_line_name.split('\t')[1]
                         else:
                             sub_headers = ''
@@ -803,27 +837,29 @@ class ELRMileages:
 
                         # Check if there is any missing note
                         if mileage_data.iloc[-1].Mileage == '':
-                            notes = [notes, mileage_data.iloc[-1].Node] if notes \
-                                else mileage_data.iloc[-1].Node
+                            if notes:
+                                notes = [notes, mileage_data.iloc[-1].Node]
+                            else:
+                                notes = mileage_data.iloc[-1].Node
                             mileage_data = mileage_data[:-1]
 
                         if len(mileage_data.iloc[-1].Mileage) > 6:
-                            notes = [notes, mileage_data.iloc[-1].Mileage] if notes \
-                                else mileage_data.iloc[-1].Mileage
+                            if notes:
+                                notes = [notes, mileage_data.iloc[-1].Mileage]
+                            else:
+                                notes = mileage_data.iloc[-1].Mileage
                             mileage_data = mileage_data[:-1]
 
                         # Make a dict of note
                         note_dat = {'Notes': notes}
 
-                        # Identify if there are multiple measures in 'mileage_data'
-                        # e.g. current and former measures
+                        # If there are multiple measures in 'mileage_data', e.g. current/former measures
                         mileage_data = self._parse_measures(mileage_data)
 
                         if parsed:
                             if isinstance(mileage_data, dict) and len(mileage_data) > 1:
                                 mileage_data = {
-                                    h: self._parse_mileage_data(dat) for h, dat in mileage_data.items()
-                                }
+                                    h: self._parse_mileage_data(dat) for h, dat in mileage_data.items()}
                             else:  # isinstance(dat, pd.DataFrame)
                                 mileage_data = self._parse_mileage_data(mileage_data)
 
@@ -834,14 +870,7 @@ class ELRMileages:
                         if verbose == 2:
                             print("Done.")
 
-                        if dump_it:
-                            data_name = elr_.lower()
-                            if data_name == "prn":
-                                data_name += "_x"
-
-                            save_data_to_file(
-                                self, data=mileage_file, data_name=data_name, ext=".pickle",
-                                dump_dir=self._cdd("mileage-files", data_name[0]), verbose=verbose)
+                        self._dump_mileage_file(elr_, mileage_file, dump_it, verbose)
 
                     except Exception as e:
                         print("Failed. {}.".format(e))
@@ -869,6 +898,36 @@ class ELRMileages:
 
             >>> em = ELRMileages()
 
+            >>> # Get the mileage file of 'AAL' (Now 'NAJ3')
+            >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL')
+            >>> type(aal_mileage_file)
+            dict
+            >>> list(aal_mileage_file.keys())
+            ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes', 'Formerly']
+
+            >>> aal_mileage_file['ELR']
+            'NAJ3'
+            >>> aal_mileage_file['Formerly']
+            'AAL'
+            >>> aal_mileage_file['Mileage']
+                Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
+            0    0.0000               ...       NAJ2             33.69
+            1    0.0594               ...        GUA            164.75
+            2    1.0396               ...
+            3    3.0682               ...
+            4    6.0704               ...
+            5    8.0572               ...        BSG              0.00
+            6    8.0990               ...        WEJ
+            7    9.0594               ...
+            8   13.0264               ...
+            9   17.0858               ...
+            10  17.0968               ...
+            11  18.0572               ...        DCL             81.10
+            12  18.0638               ...        DCL             81.12
+
+            [13 rows x 8 columns]
+
+            >>> # Get the mileage file of 'MLA'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA')
             >>> type(mla_mileage_file)
             dict
@@ -901,14 +960,12 @@ class ELRMileages:
 
         try:
             elr_ = remove_punctuation(elr)
-            data_name = elr_.lower()
-            if data_name == "prn":
-                data_name += "_x"
+
+            data_name, _ = self._mileage_file_dump_names(elr_)
 
             ext = ".pickle"
-            filename = data_name + ext
 
-            path_to_pickle = self._cdd("mileage-files", data_name[0], filename, mkdir=False)
+            path_to_pickle = self._cdd("mileage-files", data_name[0], data_name + ext, mkdir=False)
 
             if os.path.isfile(path_to_pickle) and not update:
                 mileage_file = load_data(path_to_pickle)
