@@ -121,7 +121,7 @@ def _collect_codes_and_notes(h3):
 
     codes_and_notes = None
 
-    p, ul, table = h3.find_next(name='p'), h3.find_next(name='ul'), h3.find_next(name='table')
+    _, ul, table = h3.find_next(name='p'), h3.find_next(name='ul'), h3.find_next(name='table')
 
     if ul is not None:
         if ul.find_previous('h3') == h3:

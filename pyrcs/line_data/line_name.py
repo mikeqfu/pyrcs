@@ -85,7 +85,6 @@ class LineNames:
         """
         Parse route column.
         """
-        
         if 'Watford - Euston suburban route' in x:
             route, route_note = 'Watford - Euston suburban route', x
         

@@ -195,11 +195,11 @@ class ELRMileages:
                     lambda x: yard_to_mileage(kilometer_to_yard(km=x.replace('≈', ''))))
 
                 # Might be wrong!
-                miles_chains = temp_mileage.map(lambda x: mileage_to_mile_chain(x))
+                miles_chains = temp_mileage.map(mileage_to_mile_chain)
 
             else:
                 miles_chains = mileage.map(lambda x: re.sub(r'/?\d+\.\d+km/?', '', x))
-                temp_mileage = miles_chains.map(lambda x: mile_chain_to_mileage(x))
+                temp_mileage = miles_chains.map(mile_chain_to_mileage)
             mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
 
         else:
@@ -338,7 +338,7 @@ class ELRMileages:
 
         #
         link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
-        link_nodes = conn_nodes[link_cols].applymap(lambda x: uncouple_elr_mileage(x))
+        link_nodes = conn_nodes[link_cols].applymap(uncouple_elr_mileage)
         link_elr_mileage = pd.concat(
             [pd.DataFrame(link_nodes[col].values.tolist(),
                           columns=[col + '_ELR', col + '_Mile_Chain'])
@@ -748,7 +748,7 @@ class ELRMileages:
 
                             else:
                                 val_cols = ['Line name', 'Mileages', 'Datum']
-                                line_name, mileages, datum = elr_dat[val_cols].values[0]
+                                line_name, mileages, _ = elr_dat[val_cols].values[0]
 
                                 if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
                                     line_name_ = re.search(

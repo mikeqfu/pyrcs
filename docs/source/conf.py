@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # == Project information ===========================================================================
-from pyrcs import __affiliation__, __author__, __copyright__, __description__, __package__, \
+from pyrcs import __affiliation__, __author__, __copyright__, __description__, __pkgname__, \
     __project__, __version__
 
 # General information about the project:
@@ -122,7 +122,7 @@ latex_theme = 'manual'
 # Grouping the document tree into LaTeX files:
 latex_documents = [
     ('index',  # source start file
-     __package__ + '.tex',  # target name
+     __pkgname__ + '.tex',  # target name
      __project__ + ' Documentation',  # title
      __author__,  # author
      latex_theme,  # document class ['howto', 'manual', or own class]
@@ -271,7 +271,7 @@ latex_elements = {
 
 man_pages = [  # How to group the document tree into manual pages
     ('index',  # startdocname
-     __package__,  # name
+     __pkgname__,  # name
      __project__ + ' Documentation',  # description
      [__author__],  # authors
      1  # section
@@ -282,7 +282,7 @@ man_pages = [  # How to group the document tree into manual pages
 
 texinfo_documents = [  # Grouping the document tree into Texinfo files
     (master_doc,  # source start file
-     __package__,  # target name
+     __pkgname__,  # target name
      __project__ + ' Documentation',  # title
      __author__,  # author
      __project__,  # dir menu entry

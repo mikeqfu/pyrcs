@@ -5,7 +5,6 @@ Parse web-page contents.
 import calendar
 import collections
 import copy
-import datetime
 import os
 import re
 import urllib.parse
@@ -156,14 +155,14 @@ def parse_tr(trs, ths, as_dataframe=False):
     n_columns = len(column_names)
     empty_rows = []
 
-    for k in range(len(records)):
-        n = n_columns - len(records[k])
+    for k, record in enumerate(records):
+        n = n_columns - len(record)
         if n == n_columns:
             empty_rows.append(k)
         elif n > 0:
-            records[k].extend(['\xa0'] * n)
-        elif n < 0 and records[k][2] == '\xa0':
-            del records[k][2]
+            record.extend(['\xa0'] * n)
+        elif n < 0 and record[2] == '\xa0':
+            del record[2]
 
     if len(empty_rows) > 0:
         for k in empty_rows:
