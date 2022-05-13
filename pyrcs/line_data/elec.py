@@ -1,5 +1,4 @@
-"""
-Collect `section codes for overhead line electrification (OLE) installations
+""" Collect `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 

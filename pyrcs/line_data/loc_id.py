@@ -1,5 +1,4 @@
-"""
-Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
+""" Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
 """
 
 from pyhelpers.dir import cd
@@ -415,6 +414,52 @@ class LocationIdentifiers:
 
         return explanatory_note
 
+    @staticmethod
+    def _collect_others_note(other_note_x):
+        """ Collect notes about the code columns """
+        if other_note_x is not None:
+            # Search for notes
+            n1 = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', other_note_x)
+            note = n1.group(0) if n1 is not None else ''
+
+            # Strip redundant characters
+            n2 = re.search(r'[\w ,]+(?= [\[(\'])', note)
+            if n2 is not None:
+                note = n2.group(0)
+
+        else:
+            note = ''
+
+        return note
+
+    @staticmethod
+    def _parse_stanox_note(x):
+        """ Parse STANOX note """
+        if x in ('-', '') or x is None:
+            data, note = '', ''
+
+        else:
+            if re.match(r'\d{5}$', x):
+                data = x
+                note = ''
+            elif re.match(r'\d{5}\*$', x):
+                data = x.rstrip('*')
+                note = 'Pseudo STANOX'
+            elif re.match(r'\d{5} \w.*', x):
+                data = re.search(r'\d{5}', x).group()
+                note = re.search(r'(?<= )\w.*', x).group()
+            else:
+                d = re.search(r'[\w *,]+(?= [\[(\'])', x)
+                data = d.group() if d is not None else x
+                note = 'Pseudo STANOX' if '*' in data else ''
+                n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
+                if n is not None:
+                    note = '; '.join(x for x in [note, n.group()] if x != '')
+                if '(' not in note and note.endswith(')'):
+                    note = note.rstrip(')')
+
+        return data, note
+
     def collect_codes_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
@@ -519,54 +564,14 @@ class LocationIdentifiers:
                     location_codes.drop(labels=idx, axis=0, inplace=True)
 
                     # Collect notes about the code columns
-                    def _collect_others_note(other_note_x):
-                        if other_note_x is not None:
-                            # Search for notes
-                            n1 = re.search(r'(?<=[\[(\'])[\w,? ]+(?=[)\]\'])', other_note_x)
-                            note = n1.group(0) if n1 is not None else ''
-
-                            # Strip redundant characters
-                            n2 = re.search(r'[\w ,]+(?= [\[(\'])', note)
-                            if n2 is not None:
-                                note = n2.group(0)
-
-                        else:
-                            note = ''
-
-                        return note
-
                     codes_col_names = location_codes.columns[1:-1]
                     location_codes[[x + '_Note' for x in codes_col_names]] = \
-                        location_codes[codes_col_names].applymap(_collect_others_note)
+                        location_codes[codes_col_names].applymap(self._collect_others_note)
 
                     # Parse STANOX note
-                    def _parse_stanox_note(x):
-                        if x in ('-', '') or x is None:
-                            data, note = '', ''
-                        else:
-                            if re.match(r'\d{5}$', x):
-                                data = x
-                                note = ''
-                            elif re.match(r'\d{5}\*$', x):
-                                data = x.rstrip('*')
-                                note = 'Pseudo STANOX'
-                            elif re.match(r'\d{5} \w.*', x):
-                                data = re.search(r'\d{5}', x).group()
-                                note = re.search(r'(?<= )\w.*', x).group()
-                            else:
-                                d = re.search(r'[\w *,]+(?= [\[(\'])', x)
-                                data = d.group() if d is not None else x
-                                note = 'Pseudo STANOX' if '*' in data else ''
-                                n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
-                                if n is not None:
-                                    note = '; '.join(x for x in [note, n.group()] if x != '')
-                                if '(' not in note and note.endswith(')'):
-                                    note = note.rstrip(')')
-                        return data, note
-
                     if not location_codes.empty:
                         location_codes[['STANOX', 'STANOX_Note']] = location_codes.STANOX.map(
-                            _parse_stanox_note).apply(pd.Series)
+                            self._parse_stanox_note).apply(pd.Series)
                     else:
                         # No data is available on the web page for the given 'key_word'
                         location_codes['STANOX_Note'] = location_codes.STANOX
@@ -615,6 +620,37 @@ class LocationIdentifiers:
                     print("Failed. {}.".format(e))
 
         return location_codes_initial
+
+    @staticmethod
+    def _parse_tbl_dat(h3_or_h4):
+
+        def _parse_code(x):
+            protocol = 'https://'
+
+            if '; ' in x and protocol in x:
+                temp = x.split('; ')
+                x0, x1 = temp[0], [y.split(protocol) for y in temp if protocol in y][0]
+                x1 = ' ('.join([x1[0], protocol + x1[1]]) + ')'
+                x_ = [x0, x1]
+            else:
+                x_ = [x, '']
+
+            return x_
+
+        tbl_dat = h3_or_h4.find_next('thead'), h3_or_h4.find_next('tbody')
+        thead, tbody = tbl_dat
+        ths = [x.text for x in thead.find_all('th')]
+        trs = tbody.find_all('tr')
+        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        if 'Code' in tbl.columns:
+            if tbl.Code.str.contains('https://').sum() > 0:
+                tbl_ext = tbl.Code.map(_parse_code).apply(pd.Series)
+                tbl_ext.columns = ['Code', 'Code_extra']
+                del tbl['Code']
+                tbl = pd.concat([tbl, tbl_ext], axis=1, sort=False)
+
+        return tbl
 
     def collect_other_systems_codes(self, confirmation_required=True, verbose=False):
         """
@@ -680,33 +716,6 @@ class LocationIdentifiers:
                 try:
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    def _parse_code(x):
-                        protocol = 'https://'
-                        if '; ' in x and protocol in x:
-                            temp = x.split('; ')
-                            x0, x1 = temp[0], [y.split(protocol) for y in temp if protocol in y][0]
-                            x1 = ' ('.join([x1[0], protocol + x1[1]]) + ')'
-                            x_ = [x0, x1]
-                        else:
-                            x_ = [x, '']
-                        return x_
-
-                    def _parse_tbl_dat(h3_or_h4):
-                        tbl_dat = h3_or_h4.find_next('thead'), h3_or_h4.find_next('tbody')
-                        thead, tbody = tbl_dat
-                        ths = [x.text for x in thead.find_all('th')]
-                        trs = tbody.find_all('tr')
-                        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-
-                        if 'Code' in tbl.columns:
-                            if tbl.Code.str.contains('https://').sum() > 0:
-                                tbl_ext = tbl.Code.map(_parse_code).apply(pd.Series)
-                                tbl_ext.columns = ['Code', 'Code_extra']
-                                del tbl['Code']
-                                tbl = pd.concat([tbl, tbl_ext], axis=1, sort=False)
-
-                        return tbl
-
                     other_systems_codes = collections.defaultdict(dict)
 
                     for h3 in soup.find_all('h3'):
@@ -716,16 +725,16 @@ class LocationIdentifiers:
                             while h4:
                                 prev_h3 = h4.find_previous('h3')
                                 if prev_h3.text == h3.text:
-                                    other_systems_codes[h3.text].update({h4.text: _parse_tbl_dat(h4)})
+                                    other_systems_codes[h3.text].update(
+                                        {h4.text: self._parse_tbl_dat(h4)})
                                     h4 = h4.find_next('h4')
                                 elif h3.text not in other_systems_codes.keys():
-                                    other_systems_codes.update({h3.text: _parse_tbl_dat(h3)})
+                                    other_systems_codes.update({h3.text: self._parse_tbl_dat(h3)})
                                     break
                                 else:
                                     break
-
                         else:
-                            other_systems_codes.update({h3.text: _parse_tbl_dat(h3)})
+                            other_systems_codes.update({h3.text: self._parse_tbl_dat(h3)})
 
                     other_systems_codes = {
                         self.KEY_TO_OTHER_SYSTEMS: other_systems_codes,
@@ -862,17 +871,17 @@ class LocationIdentifiers:
             ]
 
         # Select DataFrames only
-        location_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
-        location_codes_data_table = pd.concat(location_codes_data, ignore_index=True, sort=False)
+        loc_codes_data = (item[x] for item, x in zip(data, string.ascii_uppercase))
+        loc_codes_data_tbl = pd.concat(loc_codes_data, ignore_index=True, sort=False)
 
-        # Likely errors (spotted occasionally)
-        idx = location_codes_data_table[
-            location_codes_data_table.Location == 'Selby Melmerby Estates'].index
-        values = location_codes_data_table.loc[idx, 'STANME':'STANOX'].values
-        location_codes_data_table.loc[idx, 'STANME':'STANOX'] = ['', '']
-        idx = location_codes_data_table[
-            location_codes_data_table.Location == 'Selby Potter Group'].index
-        location_codes_data_table.loc[idx, 'STANME':'STANOX'] = values
+        # Likely errors in 'STANME' and 'STANOX' (spotted occasionally)
+        err_cols = ['STANME', 'STANOX']
+
+        row_idx = loc_codes_data_tbl[loc_codes_data_tbl.Location == 'Selby Melmerby Estates'].index[0]
+        loc_codes_data_tbl.loc[row_idx, err_cols] = ['', '']
+
+        row_idx = loc_codes_data_tbl[loc_codes_data_tbl.Location == 'Selby Potter Group'].index[0]
+        loc_codes_data_tbl.loc[row_idx, err_cols] = loc_codes_data_tbl.loc[row_idx, err_cols].values
 
         # Get the latest updated date
         last_updated_dates = (
@@ -888,7 +897,7 @@ class LocationIdentifiers:
 
         # Create a dict to include all information
         location_codes = {
-            self.KEY: location_codes_data_table,
+            self.KEY: loc_codes_data_tbl,
             self.KEY_TO_OTHER_SYSTEMS: other_systems_codes,
             self.KEY_TO_ADDITIONAL_NOTES: additional_notes,
             self.KEY_TO_LAST_UPDATED_DATE: latest_update_date,

@@ -559,7 +559,8 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                     print("Failed. {}".format(e))
 
         else:
-            print("Cancelled. ") if verbose == 2 else ""
+            if verbose == 2:
+                print("Cancelled. ")
             # site_map = load_data(path_to_file)
 
     return site_map
@@ -871,9 +872,10 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
                             for x in h1.find_all_next('a'))
 
                     else:
-                        all_next = [x.replace(':', '')
-                                    for x in h1.find_all_next(string=True)
-                                    if x != '\n' and x != '\xa0'][2:]
+                        all_next = [
+                            x.replace(':', '') for x in h1.find_all_next(string=True)
+                            if x != '\n' and x != '\xa0']
+                        all_next = all_next[2:]
                         h2s_list = [x.text.replace(':', '') for x in h2s]
                         all_next_a = [
                             (x.text, urllib.parse.urljoin(url, x.get('href')))

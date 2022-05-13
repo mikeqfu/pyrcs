@@ -1,5 +1,4 @@
-"""
-Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+""" Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
 """
 
 from pyhelpers.dir import cd
@@ -87,7 +86,7 @@ class LineNames:
         """
         if 'Watford - Euston suburban route' in x:
             route, route_note = 'Watford - Euston suburban route', x
-        
+
         elif ', including Moorgate - Farringdon' in x:
             route_note = 'including Moorgate - Farringdon'
             route = x.replace(', including Moorgate - Farringdon', '')

@@ -1,5 +1,4 @@
-"""
-Collect codes of infrastructure features.
+""" Collect codes of infrastructure features.
 
 This category includes:
 
@@ -10,9 +9,9 @@ This category includes:
 """
 
 import itertools
-import unicodedata
 
 import numpy as np
+import unicodedata
 from pyhelpers.dir import cd
 
 from ..parser import *

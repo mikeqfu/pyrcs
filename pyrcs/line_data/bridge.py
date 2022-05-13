@@ -1,5 +1,4 @@
-"""
-Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
+""" Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
 """
 
 from pyhelpers.dir import cd

@@ -1,5 +1,4 @@
-"""
-Collect data of railway codes.
+""" Collect data of railway codes.
 
 The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_
 and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.

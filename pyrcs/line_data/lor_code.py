@@ -1,5 +1,4 @@
-"""
-Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+""" Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
 """
 
 from pyhelpers.dir import cd
@@ -273,6 +272,41 @@ class LOR:
             self.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=2)
             self.get_page_urls(update=True, verbose=2)
 
+    @staticmethod
+    def _parse_h3_table(tbl, soup):
+
+        # Parse the column of Line Name
+        def _parse_line_name(x):
+            # re.search('\w+.*(?= \(\[\')', x).group()
+            # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
+            try:
+                line_name, line_name_note = x.split(' ([\'')
+                line_name_note = line_name_note.strip('\'])')
+
+            except ValueError:
+                line_name, line_name_note = x, None
+
+            return line_name, line_name_note
+
+        thead, tbody = tbl
+        ths = [x.text.replace('\n', ' ') for x in thead.find_all('th')]
+        trs = tbody.find_all('tr')
+        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+        line_name_info = tbl['Line Name'].map(_parse_line_name).apply(pd.Series)
+        line_name_info.columns = ['Line Name', 'Line Name Note']
+        codes_dat = pd.concat([tbl, line_name_info], axis=1, sort=False)
+
+        try:
+            note_dat_ = [
+                (x['id'].title(), x.text.strip().replace('\xa0', ''))
+                for x in soup.find('ol').findChildren('a')]
+            note_dat = dict(note_dat_)
+
+        except AttributeError:
+            note_dat = dict([('Note', None)])
+
+        return codes_dat, note_dat
+
     def collect_codes_by_prefix(self, prefix, update=False, verbose=False):
         """
         Collect `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ by a given prefix.
@@ -375,46 +409,13 @@ class LOR:
                 try:
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    # Parse the column of Line Name
-                    def _parse_line_name(x):
-                        # re.search('\w+.*(?= \(\[\')', x).group()
-                        # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
-                        try:
-                            line_name, line_name_note = x.split(' ([\'')
-                            line_name_note = line_name_note.strip('\'])')
-
-                        except ValueError:
-                            line_name, line_name_note = x, None
-
-                        return line_name, line_name_note
-
-                    def _parse_h3_table(tbl):
-                        thead, tbody = tbl
-                        ths = [x.text.replace('\n', ' ') for x in thead.find_all('th')]
-                        trs = tbody.find_all('tr')
-                        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-                        line_name_info = tbl['Line Name'].map(_parse_line_name).apply(pd.Series)
-                        line_name_info.columns = ['Line Name', 'Line Name Note']
-                        codes_dat = pd.concat([tbl, line_name_info], axis=1, sort=False)
-
-                        try:
-                            note_dat_ = [
-                                (x['id'].title(), x.text.strip().replace('\xa0', ''))
-                                for x in soup.find('ol').findChildren('a')]
-                            note_dat = dict(note_dat_)
-
-                        except AttributeError:
-                            note_dat = dict([('Note', None)])
-
-                        return codes_dat, note_dat
-
                     h3, table = soup.find_all(name='h3'), soup.find_all(name='table')
                     if len(h3) == 0:
-                        code_data, code_data_notes = _parse_h3_table(tbl=table)
+                        code_data, code_data_notes = self._parse_h3_table(table, soup=soup)
                         lor_codes_by_initials = {prefix_: code_data, 'Notes': code_data_notes}
                     else:
                         code_data_and_notes = [
-                            dict(zip([prefix_, 'Notes'], _parse_h3_table(x)))
+                            dict(zip([prefix_, 'Notes'], self._parse_h3_table(x, soup=soup)))
                             for x in zip(*[iter(table)] * 2)]
                         lor_codes_by_initials = {
                             prefix_: dict(zip([x.text for x in h3], code_data_and_notes))}

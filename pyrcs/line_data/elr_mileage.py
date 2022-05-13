@@ -1,5 +1,4 @@
-"""
-Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
+""" Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
 """
 
 import functools
@@ -236,7 +235,96 @@ class ELRMileages:
         return parsed_mileage
 
     @staticmethod
-    def _parse_node(node):
+    def _preprocess_node_x(node_x):
+        # node_x = node_x.replace(
+        #     ' with Freightliner terminal', ' & Freightliner Terminal').replace(
+        #     ' with curve to', ' with').replace(
+        #     ' (0.37 long)', '')
+        # pat = re.compile(
+        #     r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with '
+        #     r'([A-Z]){3}(\d)?( \(\d+\.\d+\))?')
+        pat = re.compile(
+            r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with ([A-Z]).*(\d)?( \(\d+\.\d+\))?')
+
+        if re.match(pat, node_x):
+            node_name = [x.group() for x in re.finditer(r'\w+.*(?= with)', node_x)]
+            conn_node = [x.group() for x in re.finditer(r'(?<= with )[^*]+', node_x)]
+
+        else:
+            node_name, conn_node = [node_x], [None]
+
+        return node_name + conn_node
+
+    @staticmethod
+    def _parse_prep_nodes(prep_nodes):
+        conn_node_lst = []
+        for n in prep_nodes.Connection:
+            if n is not None:
+                if re.match(r'[A-Z]{3}(\d)?( \(\d+.\d+\))? ?/ ?[A-Z]{3}(\d)?'
+                            r'( \(\d+.\d+\))?', n):
+                    m = [x.strip() for x in n.split('/')]
+                else:
+                    m = n.split(' and ')
+                if len(m) > 2:
+                    m = [' and '.join(m[:2]), ' and '.join(m[2:])]
+            else:
+                m = [n]
+            conn_node_lst.append(m)
+        #
+        assert isinstance(conn_node_lst, list)
+
+        for i in [conn_node_lst.index(c) for c in conn_node_lst if len(c) > 1]:
+            temp_lst = [x.replace('later ', '').rstrip(',').split(' and ')
+                        for x in conn_node_lst[i] if isinstance(x, str)]
+
+            conn_node_lst[i] = [v for lst in temp_lst for v in lst]
+            temp_lst = [x.split(', ') for x in conn_node_lst[i]]
+            conn_node_lst[i] = [v for lst in temp_lst for v in lst]
+
+        most_conn = max(len(c) for c in conn_node_lst)
+        # conn_node_list = [c + [None] * (most_conn - len(c)) for c in conn_node_list]
+
+        return pd.DataFrame(conn_node_lst,
+                            columns=['Link_{}'.format(n + 1) for n in range(most_conn)])
+
+    @staticmethod
+    def _uncouple_elr_mileage(node_x):
+        # e.g. x = 'ECM5 (44.64)' or x = 'DNT'
+        if node_x is None:
+            y = ['', '']
+        else:
+            # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
+            pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
+            pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+\.\d+\))?$)')
+            # pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
+            pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?]$')
+            pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
+            # if re.match(pat0, node_x):
+            #     y = ['', '']
+            if re.match(pat1, node_x):
+                y = [node_x, '']
+            elif re.match(pat2, node_x):
+                y = [z[:-1] if re.match(r'\d+.\d+\)', z) else z.strip() for z in node_x.split('(')]
+                y[0] = '' if len(y[0]) > 4 else y[0]
+            elif re.match(pat3, node_x):
+                try:
+                    y = [
+                        re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
+                        re.search(r'\d+\.\d+', node_x).group(0)]
+                except AttributeError:
+                    y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
+            elif re.match(pat4, node_x):
+                y = [
+                    re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
+                    mileage_to_mile_chain(yard_to_mileage(
+                        kilometer_to_yard(km=re.search(r'\d+\.\d+', node_x).group(0))))]
+            else:
+                y = [node_x, ''] if len(node_x) <= 4 else ['', '']
+            y[0] = y[0] if len(y[0]) <= 4 else ''
+
+        return y
+
+    def _parse_node(self, node):
         """
         Parse column of node data.
 
@@ -246,105 +334,18 @@ class ELRMileages:
         :rtype: pandas.DataFrame
         """
 
-        def preprocess_node_x(node_x):
-            # node_x = node_x.replace(
-            #     ' with Freightliner terminal', ' & Freightliner Terminal').replace(
-            #     ' with curve to', ' with').replace(
-            #     ' (0.37 long)', '')
-            # pat = re.compile(
-            #     r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with '
-            #     r'([A-Z]){3}(\d)?( \(\d+\.\d+\))?')
-            pat = re.compile(
-                r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with ([A-Z]).*(\d)?( \(\d+\.\d+\))?')
+        prep_node = pd.DataFrame(
+            (self._preprocess_node_x(n) for n in node), columns=['Node', 'Connection'])
 
-            if re.match(pat, node_x):
-                node_name = [x.group() for x in re.finditer(r'\w+.*(?= with)', node_x)]
-                conn_node = [x.group() for x in re.finditer(r'(?<= with )[^*]+', node_x)]
+        conn_nodes = self._parse_prep_nodes(prep_node)
 
-            else:
-                node_name, conn_node = [node_x], [None]
-
-            return node_name + conn_node
-
-        prep_node = pd.DataFrame((preprocess_node_x(n) for n in node),
-                                 columns=['Node', 'Connection'])
-
-        def parse_nodes(prep_nodes):
-            conn_node_lst = []
-            for n in prep_nodes.Connection:
-                if n is not None:
-                    if re.match(r'[A-Z]{3}(\d)?( \(\d+.\d+\))? ?/ ?[A-Z]{3}(\d)?'
-                                r'( \(\d+.\d+\))?', n):
-                        m = [x.strip() for x in n.split('/')]
-                    else:
-                        m = n.split(' and ')
-                    if len(m) > 2:
-                        m = [' and '.join(m[:2]), ' and '.join(m[2:])]
-                else:
-                    m = [n]
-                conn_node_lst.append(m)
-            #
-            assert isinstance(conn_node_lst, list)
-
-            for i in [conn_node_lst.index(c) for c in conn_node_lst if len(c) > 1]:
-                temp_lst = [x.replace('later ', '').rstrip(',').split(' and ')
-                            for x in conn_node_lst[i] if isinstance(x, str)]
-
-                conn_node_lst[i] = [v for lst in temp_lst for v in lst]
-                temp_lst = [x.split(', ') for x in conn_node_lst[i]]
-                conn_node_lst[i] = [v for lst in temp_lst for v in lst]
-
-            most_conn = max(len(c) for c in conn_node_lst)
-            # conn_node_list = [c + [None] * (most_conn - len(c)) for c in conn_node_list]
-
-            return pd.DataFrame(conn_node_lst,
-                                columns=['Link_{}'.format(n + 1) for n in range(most_conn)])
-
-        conn_nodes = parse_nodes(prep_node)
-
-        def uncouple_elr_mileage(node_x):
-            # e.g. x = 'ECM5 (44.64)' or x = 'DNT'
-            if node_x is None:
-                y = ['', '']
-            else:
-                # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
-                pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
-                pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+\.\d+\))?$)')
-                # pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
-                pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?]$')
-                pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
-                # if re.match(pat0, node_x):
-                #     y = ['', '']
-                if re.match(pat1, node_x):
-                    y = [node_x, '']
-                elif re.match(pat2, node_x):
-                    y = [z[:-1] if re.match(r'\d+.\d+\)', z) else z.strip()
-                         for z in node_x.split('(')]
-                    y[0] = '' if len(y[0]) > 4 else y[0]
-                elif re.match(pat3, node_x):
-                    try:
-                        y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
-                             re.search(r'\d+\.\d+', node_x).group(0)]
-                    except AttributeError:
-                        y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
-                elif re.match(pat4, node_x):
-                    y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
-                         mileage_to_mile_chain(yard_to_mileage(
-                             kilometer_to_yard(km=re.search(r'\d+\.\d+', node_x).group(0))))]
-                else:
-                    y = [node_x, ''] if len(node_x) <= 4 else ['', '']
-                y[0] = y[0] if len(y[0]) <= 4 else ''
-            return y
-
-        #
         link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
-        link_nodes = conn_nodes[link_cols].applymap(uncouple_elr_mileage)
+        link_nodes = conn_nodes[link_cols].applymap(self._uncouple_elr_mileage)
         link_elr_mileage = pd.concat(
-            [pd.DataFrame(link_nodes[col].values.tolist(),
-                          columns=[col + '_ELR', col + '_Mile_Chain'])
+            [pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
              for col in link_cols], axis=1, sort=False)
-        parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage],
-                                         axis=1, sort=False)
+
+        parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1, sort=False)
 
         return parsed_node_and_conn
 
@@ -561,6 +562,64 @@ class ELRMileages:
                 self, data=mileage_file, data_name=data_name, ext=".pickle", dump_dir=dump_dir,
                 verbose=verbose)
 
+    @staticmethod
+    def _get_parsed_contents(elr_dat, notes):
+        val_cols = ['Line name', 'Mileages', 'Datum']
+        line_name, mileages, _ = elr_dat[val_cols].values[0]
+
+        if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
+            line_name_ = re.search(
+                r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
+            try:
+                loc_a, _, loc_b = re.split(
+                    r' (and|&|to) ', line_name_)
+                line_name = re.search(
+                    r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
+            except ValueError:
+                try:
+                    loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
+                    line_name = line_name_
+                except ValueError:
+                    loc_a, loc_b = '', ''
+
+        elif elr_dat.Mileages.values[0].startswith('0.00') and \
+                elr_dat.Datum.values[0] != '':
+            loc_a = elr_dat.Datum.values[0]
+            if loc_a in line_name:
+                loc_b = re.split(r' (and|&|to) ', line_name)[2]
+            else:
+                loc_b = line_name
+
+        elif re.match(r'(\w ?)+ to (\w ?)+', notes):
+            loc_a, loc_b = notes.split(' to ')
+
+        else:
+            loc_a, loc_b = '', ''
+
+            try:
+                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', notes)
+            except (ValueError, TypeError):
+                pass
+
+            try:
+                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', line_name)
+            except (ValueError, TypeError):
+                pass
+
+            if line_name:
+                loc_a, loc_b = line_name, line_name
+
+        # if re.match(r'.*( Branch| Curve)$', loc_b):
+        #     loc_b = re.sub(r' Branch| Curve', '', loc_b)
+        # else:
+        #     loc_b = loc_b
+
+        miles_chains = mileages.split(' - ')
+        locations = [loc_a, loc_b]
+        parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
+
+        return line_name, parsed_content
+
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
                              verbose=False):
         """
@@ -747,59 +806,7 @@ class ELRMileages:
                                 return mileage_file_alt
 
                             else:
-                                val_cols = ['Line name', 'Mileages', 'Datum']
-                                line_name, mileages, _ = elr_dat[val_cols].values[0]
-
-                                if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
-                                    line_name_ = re.search(
-                                        r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
-                                    try:
-                                        loc_a, _, loc_b = re.split(
-                                            r' (and|&|to) ', line_name_)
-                                        line_name = re.search(
-                                            r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
-                                    except ValueError:
-                                        try:
-                                            loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
-                                            line_name = line_name_
-                                        except ValueError:
-                                            loc_a, loc_b = '', ''
-
-                                elif elr_dat.Mileages.values[0].startswith('0.00') and \
-                                        elr_dat.Datum.values[0] != '':
-                                    loc_a = elr_dat.Datum.values[0]
-                                    if loc_a in line_name:
-                                        loc_b = re.split(r' (and|&|to) ', line_name)[2]
-                                    else:
-                                        loc_b = line_name
-
-                                elif re.match(r'(\w ?)+ to (\w ?)+', notes):
-                                    loc_a, loc_b = notes.split(' to ')
-
-                                else:
-                                    loc_a, loc_b = '', ''
-
-                                    try:
-                                        loc_a, _, loc_b = re.split(r' (and|&|to|-) ', notes)
-                                    except (ValueError, TypeError):
-                                        pass
-
-                                    try:
-                                        loc_a, _, loc_b = re.split(r' (and|&|to|-) ', line_name)
-                                    except (ValueError, TypeError):
-                                        pass
-
-                                    if line_name:
-                                        loc_a, loc_b = line_name, line_name
-
-                                # if re.match(r'.*( Branch| Curve)$', loc_b):
-                                #     loc_b = re.sub(r' Branch| Curve', '', loc_b)
-                                # else:
-                                #     loc_b = loc_b
-
-                                miles_chains = mileages.split(' - ')
-                                locations = [loc_a, loc_b]
-                                parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
+                                line_name, parsed_content = self._get_parsed_contents(elr_dat, notes)
 
                         else:
                             line_name = line_name.split('\t')[1]

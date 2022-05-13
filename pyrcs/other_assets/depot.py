@@ -73,7 +73,7 @@ class Depots:
     def _cdd(self, *sub_dir, **kwargs):
         """
         Change directory to package data directory and subdirectories (and/or a file).
-        
+
         The directory for this module: ``"data\\other-assets\\depots"``.
 
         :param sub_dir: subdirectory or subdirectories (and/or a file)
@@ -92,8 +92,7 @@ class Depots:
         return path
 
     def collect_tops_codes(self, confirmation_required=True, verbose=False):
-        """
-        Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_ 
+        """ Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``

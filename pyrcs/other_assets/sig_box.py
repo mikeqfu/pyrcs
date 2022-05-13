@@ -622,6 +622,21 @@ class SignalBoxes:
 
         return ireland_codes_data
 
+    @staticmethod
+    def _parse_tbl_dat(h3_or_h4, ths):
+        trs = []
+        tr = h3_or_h4.find_next('tr')
+        while tr:
+            if not tr.td.has_attr('colspan'):
+                trs.append(tr)
+                tr = tr.find_next('tr')
+            else:
+                break
+
+        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        return tbl
+
     def collect_wr_mas_dates(self, confirmation_required=True, verbose=False):
         """
         Collect data of `WR (western region) MAS (multiple aspect signalling) dates
@@ -719,20 +734,6 @@ class SignalBoxes:
 
                     ths = [th.text for th in soup.find('thead').find_all('th')]
 
-                    def _parse_tbl_dat(h3_or_h4):
-                        trs = []
-                        tr = h3_or_h4.find_next('tr')
-                        while tr:
-                            if not tr.td.has_attr('colspan'):
-                                trs.append(tr)
-                                tr = tr.find_next('tr')
-                            else:
-                                break
-
-                        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-
-                        return tbl
-
                     wr_mas_dates = collections.defaultdict(dict)
 
                     for h3 in soup.find_all('h3'):
@@ -742,16 +743,16 @@ class SignalBoxes:
                             while h4:
                                 prev_h3 = h4.find_previous('h3')
                                 if prev_h3.text == h3.text:
-                                    wr_mas_dates[h3.text].update({h4.text: _parse_tbl_dat(h4)})
+                                    wr_mas_dates[h3.text].update({h4.text: self._parse_tbl_dat(h4, ths)})
                                     h4 = h4.find_next('h4')
                                 elif h3.text not in wr_mas_dates.keys():
-                                    wr_mas_dates.update({h3.text: _parse_tbl_dat(h3)})
+                                    wr_mas_dates.update({h3.text: self._parse_tbl_dat(h3, ths)})
                                     break
                                 else:
                                     break
 
                         else:
-                            wr_mas_dates.update({h3.text: _parse_tbl_dat(h3)})
+                            wr_mas_dates.update({h3.text: self._parse_tbl_dat(h3, ths)})
 
                     last_updated_date = get_last_updated_date(url)
 

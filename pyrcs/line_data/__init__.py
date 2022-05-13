@@ -1,6 +1,5 @@
-"""
-A sub-package of modules for collecting codes of
-`line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+""" A sub-package of modules for collecting codes of `line data
+<http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
 
 See also :py:class:`~pyrcs.collector.LineData`.
 """
