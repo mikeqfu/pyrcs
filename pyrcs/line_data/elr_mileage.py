@@ -1,5 +1,4 @@
-""" Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ codes.
-"""
+"""Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_."""
 
 import functools
 import itertools
@@ -13,8 +12,7 @@ from ..utils import *
 
 
 class ELRMileages:
-    """
-    A class for collecting data of `Engineer's Line References (ELRs)`_.
+    """A class for collecting data of `Engineer's Line References (ELRs)`_.
 
     .. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """

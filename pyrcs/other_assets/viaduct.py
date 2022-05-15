@@ -1,6 +1,4 @@
-"""
-Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
-"""
+"""Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_."""
 
 import itertools
 
@@ -11,8 +9,7 @@ from ..utils import *
 
 
 class Viaducts:
-    """
-    A class for collecting codes of `railway viaducts`_.
+    """A class for collecting codes of `railway viaducts`_.
 
     .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """

@@ -1,6 +1,4 @@
-"""
-Provide a number of utilities (helper functions).
-"""
+"""Provide a number of utilities (helper functions)."""
 
 import copy
 import os

@@ -1,4 +1,5 @@
-""" Collect data of railway codes.
+"""
+Collect data of railway codes.
 
 The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_
 and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
@@ -16,8 +17,7 @@ from .utils import home_page_url, is_home_connectable, print_conn_err, print_ins
 
 
 class LineData:
-    """
-    A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
+    """A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
     for collecting `line data`_.
 
     .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
@@ -193,8 +193,7 @@ class LineData:
 
 
 class OtherAssets:
-    """
-    A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
+    """A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
     for collecting `other assets`_.
 
     .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
@@ -287,8 +286,7 @@ class OtherAssets:
         self.Features = feature.Features(update=update, verbose=False)
 
     def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
-        """
-        Update pre-packed data of the `other assets`_.
+        """Update pre-packed data of the `other assets`_.
 
         .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 

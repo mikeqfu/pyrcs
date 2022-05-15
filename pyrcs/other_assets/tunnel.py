@@ -1,6 +1,4 @@
-"""
-Collect data of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
-"""
+"""Collect data of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_."""
 
 import itertools
 
@@ -12,8 +10,7 @@ from ..utils import *
 
 
 class Tunnels:
-    """
-    A class for collecting data of `railway tunnel lengths`_.
+    """A class for collecting data of `railway tunnel lengths`_.
 
     .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """

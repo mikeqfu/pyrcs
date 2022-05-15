@@ -1,4 +1,5 @@
-""" Collect codes of infrastructure features.
+"""
+Collect codes of infrastructure features.
 
 This category includes:
 
@@ -22,8 +23,10 @@ class _HABDWILD:
     """
     A class for `HABDs and WILDs <http://www.railwaycodes.org.uk/features/habdwild.shtm>`_.
 
-    - HABD: Hot axle box detector
-    - WILD: Wheel impact load detector
+    .. note::
+
+        - HABD: Hot axle box detector
+        - WILD: Wheel impact load detector
     """
     #: Name of the data
     NAME = 'Hot axle box detectors (HABDs) and wheel impact load detectors (WILDs)'
@@ -124,9 +127,7 @@ def _parse_telegraph_in_use_term(x):
 
 
 class Features:
-    """
-    A class for collecting codes of several infrastructure features.
-    """
+    """A class for collecting codes of several infrastructure features."""
 
     #: Name of the data
     NAME = 'Infrastructure features'

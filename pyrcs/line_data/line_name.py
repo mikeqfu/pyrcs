@@ -1,5 +1,4 @@
-""" Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
-"""
+"""Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_."""
 
 from pyhelpers.dir import cd
 
@@ -8,8 +7,7 @@ from ..utils import *
 
 
 class LineNames:
-    """
-    A class for collecting data of `railway line names`_.
+    """A class for collecting data of `railway line names`_.
 
     .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
     """
@@ -81,30 +79,28 @@ class LineNames:
 
     @staticmethod
     def _parse_route(x):
-        """
-        Parse route column.
-        """
+        """Parse route column."""
         if 'Watford - Euston suburban route' in x:
             route, route_note = 'Watford - Euston suburban route', x
 
         elif ', including Moorgate - Farringdon' in x:
             route_note = 'including Moorgate - Farringdon'
             route = x.replace(', including Moorgate - Farringdon', '')
-        
+
         elif re.match(r'.+(?= \[\')', x):
             route, route_note = re.split(r' \[\'\(?', x)
             route_note = route_note.strip(")']")
-        
+
         elif re.match(r'.+\)$', x):
             if re.match(r'.+(?= - \()', x):
                 route, route_note = x, None
             else:
                 route, route_note = re.split(r' \(\[?\'?', x)
                 route_note = route_note.rstrip('\'])')
-        
+
         else:
             route, route_note = x, None
-        
+
         return route, route_note
 
     def collect_codes(self, confirmation_required=True, verbose=False):

@@ -1,4 +1,5 @@
-""" Collect `section codes for overhead line electrification (OLE) installations
+"""
+Collect `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
@@ -51,10 +52,7 @@ def _collect_notes(h3):
 
 
 def _collect_codes_without_list(h3):
-    """
-    h3 = h3.find_next('h3')
-    """
-
+    # h3 = h3.find_next('h3')
     sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
     notes = _collect_notes(h3=h3)

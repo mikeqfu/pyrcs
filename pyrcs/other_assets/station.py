@@ -1,6 +1,4 @@
-"""
-Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
-"""
+"""Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_."""
 
 import numpy as np
 from pyhelpers.dir import cd
@@ -64,8 +62,7 @@ def _parse_owner_and_operator(x):
 
 
 class Stations:
-    """
-    A class for collecting `railway station data`_.
+    """A class for collecting `railway station data`_.
 
     .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
     """

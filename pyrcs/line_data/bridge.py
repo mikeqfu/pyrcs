@@ -1,5 +1,4 @@
-""" Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
-"""
+"""Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_."""
 
 from pyhelpers.dir import cd
 from pyhelpers.ops import split_list_by_size
@@ -9,8 +8,7 @@ from ..utils import *
 
 
 class Bridges:
-    """
-    A class for collecting data of `railway bridges`_.
+    """A class for collecting data of `railway bridges`_.
 
     .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
     """

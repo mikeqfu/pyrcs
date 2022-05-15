@@ -1,6 +1,5 @@
-"""
-Collect data of `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
-"""
+"""Collect data of `signal box prefix codes
+<http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_."""
 
 from pyhelpers.dir import cd
 
@@ -9,8 +8,7 @@ from ..utils import *
 
 
 class SignalBoxes:
-    """
-    A class for collecting data of `signal box prefix codes`_.
+    """A class for collecting data of `signal box prefix codes`_.
 
     .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """

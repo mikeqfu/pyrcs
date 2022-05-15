@@ -1,5 +1,4 @@
-""" Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
-"""
+"""Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_."""
 
 from pyhelpers.dir import cd
 
@@ -8,8 +7,7 @@ from ..utils import *
 
 
 class TrackDiagrams:
-    """
-    A class for collecting data of British `railway track diagrams`_.
+    """A class for collecting data of British `railway track diagrams`_.
 
     .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """

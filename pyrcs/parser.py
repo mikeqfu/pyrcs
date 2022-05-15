@@ -1,6 +1,4 @@
-"""
-Parse web-page contents.
-"""
+"""Parse web-page contents."""
 
 import calendar
 import collections

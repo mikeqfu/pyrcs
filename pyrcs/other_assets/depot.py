@@ -1,6 +1,4 @@
-"""
-Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
-"""
+"""Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_."""
 
 from pyhelpers.dir import cd
 
@@ -92,7 +90,7 @@ class Depots:
         return path
 
     def collect_tops_codes(self, confirmation_required=True, verbose=False):
-        """ Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
+        """Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``

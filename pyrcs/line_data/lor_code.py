@@ -1,5 +1,4 @@
-""" Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
-"""
+"""Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes."""
 
 from pyhelpers.dir import cd
 
@@ -8,13 +7,14 @@ from ..utils import *
 
 
 class LOR:
-    """
-    A class for collecting data of `Line of Route (LOR/PRIDE)`_.
-
-    'LOR' and 'PRIDE' stands for 'Line Of Route' and 'Possession Resource Information Database',
-    respectively.
+    """A class for collecting data of `Line of Route (LOR/PRIDE)`_.
 
     .. _`Line of Route (LOR/PRIDE)`: http://www.railwaycodes.org.uk/pride/pride0.shtm
+
+    .. note::
+
+        'LOR' and 'PRIDE' stands for 'Line Of Route' and 'Possession Resource Information Database',
+        respectively.
     """
 
     #: Name of the data

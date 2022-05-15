@@ -1,5 +1,4 @@
-""" Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_.
-"""
+"""Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_."""
 
 from pyhelpers.dir import cd
 
@@ -21,8 +20,7 @@ def _collect_list(p, list_head_tag):
 
 
 def _amendment_to_location_names():
-    """
-    Create a replacement dictionary for location name amendments.
+    """Create a replacement dictionary for location name amendments.
 
     :return: dictionary of regular-expression amendments to location names
     :rtype: dict
@@ -128,10 +126,9 @@ def _parse_note_page(note_url, parser='html.parser', verbose=False):
 
 
 class LocationIdentifiers:
-    """
-    A class for collecting data of
+    """A class for collecting data of
     `location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_
-    (including `other systems <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_ station).
+    (including `other systems' station codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_).
     """
 
     #: Name of the data
@@ -433,8 +430,7 @@ class LocationIdentifiers:
         return note
 
     @staticmethod
-    def _parse_stanox_note(x):
-        """ Parse STANOX note """
+    def _parse_stanox_note(x):  # Parse STANOX note
         if x in ('-', '') or x is None:
             data, note = '', ''
 
@@ -755,9 +751,9 @@ class LocationIdentifiers:
 
     def fetch_other_systems_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `other systems' codes`_.
+        Fetch data of `other systems' station codes`_.
 
-        .. _`other systems' codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
+        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
