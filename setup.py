@@ -16,14 +16,15 @@ setuptools.setup(
     url=__home_page__,
     author=metadata['Author'],
     author_email=metadata['Email'],
-    keywords=[
-        'Python', 'Railway Codes', 'Railway', 'Bridges', 'CRS', 'NLC', 'TIPLOC',
-        'STANOX', 'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations',
-        'Signal boxes', 'Tunnels', 'Viaducts', 'Depots', 'Tracks',
-    ],
+    license=metadata['License'],
     project_urls={
         'Documentation': f'https://{__pkgname__}.readthedocs.io/en/{__version__}/',
         'Source': __home_page__,
         'Bug Tracker': __home_page__ + '/issues',
     },
+    keywords=[
+        'Python', 'Railway Codes', 'Railway', 'Bridges', 'CRS', 'NLC', 'TIPLOC',
+        'STANOX', 'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations',
+        'Signal boxes', 'Tunnels', 'Viaducts', 'Depots', 'Tracks',
+    ],
 )
