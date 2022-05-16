@@ -2,8 +2,11 @@
 PyRCS
 #####
 
-|Python| |Documentation| |License| |Codacy grade| |DOI|
+|PyPI| |Python| |Documentation| |License| |Codacy grade| |DOI|
 
+.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
+    :alt: PyPI - Release
+    :target: https://pypi.org/project/pyrcs/
 .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
     :alt: Python version
     :target: https://www.python.org/downloads/
