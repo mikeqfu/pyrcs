@@ -1,14 +1,28 @@
-"""Collect data of `signal box prefix codes
-<http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_."""
+"""
+Collect data of `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
+"""
 
+import collections
+import os
+import string
+import urllib.parse
+
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import confirm_msg, fetch_data_from_file, home_page_url, init_data_dir, \
+    is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, print_void_msg, \
+    save_data_to_file, validate_initial
 
 
 class SignalBoxes:
-    """A class for collecting data of `signal box prefix codes`_.
+    """
+    A class for collecting data of `signal box prefix codes`_.
 
     .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
     """
@@ -91,7 +105,7 @@ class SignalBoxes:
 
     def collect_prefix_codes(self, initial, update=False, verbose=False):
         """
-        Collect signal box prefix codes beginning with ``initial`` from source web page.
+        Collect signal box prefix codes beginning with a given initial letter from source web page.
 
         :param initial: initial letter of signal box name (for specifying a target URL)
         :type initial: str
@@ -99,7 +113,7 @@ class SignalBoxes:
         :type update: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of signal box prefix codes beginning with ``initial`` and
+        :return: data of signal box prefix codes beginning with the given initial letter and
             date of when the data was last updated
         :rtype: dict
 

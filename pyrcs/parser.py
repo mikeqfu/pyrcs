@@ -1,4 +1,6 @@
-"""Parse web-page contents."""
+"""
+Parse web-page contents.
+"""
 
 import calendar
 import collections
@@ -16,6 +18,9 @@ from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
 from .utils import cd_data, home_page_url, print_conn_err, print_inst_conn_err
+
+
+# == Preprocess contents ===========================================================================
 
 
 def _parse_other_tags_in_td_contents(td_content):
@@ -231,6 +236,48 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
     return tables
 
 
+def parse_date(str_date, as_date_type=False):
+    """
+    Parse a date.
+
+    :param str_date: string-type date
+    :type str_date: str
+    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
+    :type as_date_type: bool
+    :return: parsed date as a string or `datetime.date`_
+    :rtype: str or datetime.date
+
+    .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
+
+    **Examples**::
+
+        >>> from pyrcs.parser import parse_date
+
+        >>> str_date_dat = '2020-01-01'
+
+        >>> parsed_date_dat = parse_date(str_date_dat)
+        >>> parsed_date_dat
+        '2020-01-01'
+
+        >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
+        >>> parsed_date_dat
+        datetime.date(2020, 1, 1)
+    """
+
+    try:
+        temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
+        # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
+    except (TypeError, calendar.IllegalMonthError):
+        month_name = find_similar_str(x=str_date, lookup_list=calendar.month_name)
+        err_month_ = find_similar_str(x=month_name, lookup_list=str_date.split(' '))
+        temp_date = dateutil.parser.parse(
+            timestr=str_date.replace(err_month_, month_name), fuzzy=True)
+
+    parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
+
+    return parsed_date
+
+
 def parse_location_name(location_name):
     """
     Parse location name (and its associated note).
@@ -326,46 +373,7 @@ def parse_location_name(location_name):
     return dat, note
 
 
-def parse_date(str_date, as_date_type=False):
-    """
-    Parse a date.
-
-    :param str_date: string-type date
-    :type str_date: str
-    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
-    :type as_date_type: bool
-    :return: parsed date as a string or `datetime.date`_
-    :rtype: str or datetime.date
-
-    .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
-
-    **Examples**::
-
-        >>> from pyrcs.parser import parse_date
-
-        >>> str_date_dat = '2020-01-01'
-
-        >>> parsed_date_dat = parse_date(str_date_dat)
-        >>> parsed_date_dat
-        '2020-01-01'
-
-        >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
-        >>> parsed_date_dat
-        datetime.date(2020, 1, 1)
-    """
-
-    try:
-        temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
-        # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
-    except (TypeError, calendar.IllegalMonthError):
-        month_name = find_similar_str(x=str_date, lookup_list=calendar.month_name)
-        err_month_ = find_similar_str(x=month_name, lookup_list=str_date.split(' '))
-        temp_date = dateutil.parser.parse(
-            timestr=str_date.replace(err_month_, month_name), fuzzy=True)
-
-    parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
-
-    return parsed_date
+# == Extract information ===========================================================================
 
 
 def _parse_dd_or_dt_contents(dd_or_dt_contents):

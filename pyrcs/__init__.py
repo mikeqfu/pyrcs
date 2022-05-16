@@ -1,4 +1,6 @@
-"""Package initialization."""
+"""
+Package initialization.
+"""
 
 import datetime
 import json

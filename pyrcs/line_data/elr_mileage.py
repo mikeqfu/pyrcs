@@ -1,18 +1,34 @@
-"""Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_."""
+"""
+Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
+"""
 
+import copy
 import functools
 import itertools
+import os
+import re
+import string
+import urllib.parse
 
+import bs4
+import numpy as np
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data, save_data
 from pyhelpers.text import remove_punctuation
 
-from ..converter import *
-from ..parser import *
-from ..utils import *
+from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, yard_to_mileage
+from ..parser import get_catalogue, get_last_updated_date, parse_table
+from ..utils import collect_in_fetch_verbose, home_page_url, init_data_dir, is_home_connectable, \
+    is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
+    validate_initial
 
 
 class ELRMileages:
-    """A class for collecting data of `Engineer's Line References (ELRs)`_.
+    """
+    A class for collecting data of `Engineer's Line References (ELRs)`_.
 
     .. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
     """
@@ -368,7 +384,7 @@ class ELRMileages:
 
     def collect_elr_by_initial(self, initial, update=False, verbose=False):
         """
-        Collect Engineer's Line References (ELRs) for the given initial letter from source web page.
+        Collect Engineer's Line References (ELRs) for a given initial letter from source web page.
 
         :param initial: initial letter of an ELR, e.g. ``'a'``, ``'z'``
         :type initial: str
@@ -376,7 +392,7 @@ class ELRMileages:
         :type update: bool
         :param verbose: whether to print relevant information in console, defaults to ``True``
         :type verbose: bool or int
-        :return: data of ELRs whose names start with the given ``initial`` and
+        :return: data of ELRs whose names start with the given initial letter and
             date of when the data was last updated
         :rtype: dict
 

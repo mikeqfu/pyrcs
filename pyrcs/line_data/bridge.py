@@ -1,14 +1,24 @@
-"""Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_."""
+"""
+Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
+"""
 
+import os
+import re
+import urllib.parse
+
+import bs4
+import requests
 from pyhelpers.dir import cd
-from pyhelpers.ops import split_list_by_size
+from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_introduction, get_last_updated_date
+from ..utils import fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
+    print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class Bridges:
-    """A class for collecting data of `railway bridges`_.
+    """
+    A class for collecting data of `railway bridges`_.
 
     .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
     """

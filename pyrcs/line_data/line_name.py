@@ -1,13 +1,23 @@
-"""Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_."""
+"""
+Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+"""
 
+import re
+import urllib.parse
+
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_table
+from ..utils import fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
+    print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class LineNames:
-    """A class for collecting data of `railway line names`_.
+    """
+    A class for collecting data of `railway line names`_.
 
     .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
     """
@@ -22,6 +32,7 @@ class LineNames:
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
+
         """
         :param data_dir: name of data directory, defaults to ``None``
         :type data_dir: str or None

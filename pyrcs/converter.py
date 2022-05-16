@@ -1,4 +1,6 @@
-"""Change data into a desired form."""
+"""
+Change data into a desired form.
+"""
 
 import copy
 import numbers
@@ -7,42 +9,7 @@ import numpy as np
 import pandas as pd
 
 
-def fix_stanox(stanox):
-    """
-    Fix the format of a given
-    `STANOX (station number) <https://wiki.openraildata.com/index.php?title=STANOX_Areas>`_ code.
-
-    :param stanox: STANOX code
-    :type stanox: str or int or None
-    :return: standard STANOX code
-    :rtype: str
-
-    **Examples**::
-
-        >>> from pyrcs.converter import fix_stanox
-
-        >>> fixed_stanox = fix_stanox(stanox=65630)
-        >>> fixed_stanox
-        '65630'
-
-        >>> fixed_stanox = fix_stanox(stanox='2071')
-        >>> fixed_stanox
-        '02071'
-
-        >>> fixed_stanox = fix_stanox(stanox=2071)
-        >>> fixed_stanox
-        '02071'
-    """
-
-    if isinstance(stanox, str):
-        stanox_ = copy.copy(stanox)
-    else:  # isinstance(stanox, (int, float)) or stanox is None
-        stanox_ = '' if pd.isna(stanox) else str(int(stanox))
-
-    if len(stanox_) < 5 and stanox_ != '':
-        stanox_ = '0' * (5 - len(stanox_)) + stanox_
-
-    return stanox_
+# == Convert mileage data ==========================================================================
 
 
 def fix_mileage(mileage):
@@ -85,28 +52,6 @@ def fix_mileage(mileage):
         mileage_ = copy.copy(mileage)
 
     return mileage_
-
-
-def kilometer_to_yard(km):
-    """
-    Make kilometer-to-yard conversion.
-
-    :param km: kilometer
-    :type km: int or float or None
-    :return: yard
-    :rtype: float
-
-    **Example**::
-
-        >>> from pyrcs.converter import kilometer_to_yard
-
-        >>> kilometer_to_yard(1)
-        1093.6132983377079
-    """
-
-    yards = np.nan if km is None else km * 1093.6132983377079
-
-    return yards
 
 
 def yard_to_mileage(yard, as_str=True):
@@ -403,3 +348,66 @@ def shift_mileage_by_yard(mileage, shift_yards, as_numeric=True):
         shifted_mileage = mileage_str_to_num(mileage=shifted_mileage)
 
     return shifted_mileage
+
+
+# == Convert other data ============================================================================
+
+
+def fix_stanox(stanox):
+    """
+    Fix the format of a given
+    `STANOX (station number) <https://wiki.openraildata.com/index.php?title=STANOX_Areas>`_ code.
+
+    :param stanox: STANOX code
+    :type stanox: str or int or None
+    :return: standard STANOX code
+    :rtype: str
+
+    **Examples**::
+
+        >>> from pyrcs.converter import fix_stanox
+
+        >>> fixed_stanox = fix_stanox(stanox=65630)
+        >>> fixed_stanox
+        '65630'
+
+        >>> fixed_stanox = fix_stanox(stanox='2071')
+        >>> fixed_stanox
+        '02071'
+
+        >>> fixed_stanox = fix_stanox(stanox=2071)
+        >>> fixed_stanox
+        '02071'
+    """
+
+    if isinstance(stanox, str):
+        stanox_ = copy.copy(stanox)
+    else:  # isinstance(stanox, (int, float)) or stanox is None
+        stanox_ = '' if pd.isna(stanox) else str(int(stanox))
+
+    if len(stanox_) < 5 and stanox_ != '':
+        stanox_ = '0' * (5 - len(stanox_)) + stanox_
+
+    return stanox_
+
+
+def kilometer_to_yard(km):
+    """
+    Make kilometer-to-yard conversion.
+
+    :param km: kilometer
+    :type km: int or float or None
+    :return: yard
+    :rtype: float
+
+    **Example**::
+
+        >>> from pyrcs.converter import kilometer_to_yard
+
+        >>> kilometer_to_yard(1)
+        1093.6132983377079
+    """
+
+    yards = np.nan if km is None else km * 1093.6132983377079
+
+    return yards

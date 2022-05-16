@@ -1,9 +1,25 @@
-"""Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_."""
+"""
+Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_.
+"""
 
-from pyhelpers.dir import cd
+import collections
+import os
+import re
+import string
+import urllib.parse
 
-from ..parser import *
-from ..utils import *
+import bs4
+import pandas as pd
+import requests
+from pyhelpers.dir import cd, validate_dir
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data, save_data
+
+from ..parser import get_catalogue, get_hypertext, get_last_updated_date, get_page_catalogue, \
+    parse_date, parse_location_name, parse_tr
+from ..utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, home_page_url, \
+    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
+    print_void_msg, save_data_to_file, validate_initial
 
 
 def _collect_list(p, list_head_tag):
@@ -126,9 +142,10 @@ def _parse_note_page(note_url, parser='html.parser', verbose=False):
 
 
 class LocationIdentifiers:
-    """A class for collecting data of
-    `location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_
-    (including `other systems' station codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_).
+    """
+    A class for collecting data of
+    `location identifiers <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_
+    (including `other systems' station codes <http://www.railwaycodes.org.uk/crs/crs1.shtm>`_).
     """
 
     #: Name of the data
@@ -459,7 +476,7 @@ class LocationIdentifiers:
     def collect_codes_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
-        <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ for a given ``initial`` letter.
+        <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_ for a given initial letter.
 
         :param initial: initial letter of station/junction name or certain word for specifying URL
         :type initial: str
@@ -467,7 +484,7 @@ class LocationIdentifiers:
         :type update: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of locations beginning with ``initial`` and
+        :return: data of locations beginning with the given initial letter and
             date of when the data was last updated
         :rtype: dict
 
@@ -650,8 +667,9 @@ class LocationIdentifiers:
 
     def collect_other_systems_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `other systems' codes <http://www.railwaycodes.org.uk/crs/CRS1.shtm>`_
-        from source web page.
+        Collect data of `other systems' station codes`_ from source web page.
+
+        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
@@ -753,7 +771,7 @@ class LocationIdentifiers:
         """
         Fetch data of `other systems' station codes`_.
 
-        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
+        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -802,10 +820,7 @@ class LocationIdentifiers:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes`_ and `other systems' codes`_.
-
-        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
-        .. _`other systems' codes`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
+        Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes`_ and `other systems' station codes`_.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -815,6 +830,9 @@ class LocationIdentifiers:
         :type verbose: bool or int
         :return: data of location codes and date of when the data was last updated
         :rtype: dict
+
+        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`: http://www.railwaycodes.org.uk/crs/crs0.shtm
+        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
 
         **Examples**::
 

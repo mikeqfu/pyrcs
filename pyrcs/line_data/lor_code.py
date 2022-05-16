@@ -1,13 +1,26 @@
-"""Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes."""
+"""
+Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+"""
 
+import os
+import re
+import urllib.parse
+
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import fetch_data_from_file, home_page_url, init_data_dir, is_home_connectable, \
+    print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file
 
 
 class LOR:
-    """A class for collecting data of `Line of Route (LOR/PRIDE)`_.
+    """
+    A class for collecting data of `Line of Route (LOR/PRIDE)`_.
 
     .. _`Line of Route (LOR/PRIDE)`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
@@ -182,7 +195,7 @@ class LOR:
 
     def get_page_urls(self, update=False, verbose=False):
         """
-        Get URLs to PRIDE/LOR codes with different prefixes.
+        Get URLs to `PRIDE/LOR codes`_ with different prefixes.
 
         :param update: whether to do an update check (for the package data), defaults to ``False``
         :type update: bool
@@ -190,6 +203,8 @@ class LOR:
         :type verbose: bool or int
         :return: a list of URLs of web pages hosting LOR codes for each prefix
         :rtype: list or None
+
+        .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
         **Examples**::
 

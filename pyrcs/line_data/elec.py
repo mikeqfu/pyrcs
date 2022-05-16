@@ -4,11 +4,21 @@ Collect `section codes for overhead line electrification (OLE) installations
 """
 
 import itertools
+import os
+import re
+import urllib.parse
 
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
+    get_page_catalogue, parse_tr
+from ..utils import cd_data, fetch_all_verbose, fetch_data_from_file, home_page_url, init_data_dir, \
+    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 def _collect_notes(h3):
@@ -52,7 +62,9 @@ def _collect_notes(h3):
 
 
 def _collect_codes_without_list(h3):
-    # h3 = h3.find_next('h3')
+    """
+    h3 = h3.find_next('h3')
+    """
     sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
     notes = _collect_notes(h3=h3)

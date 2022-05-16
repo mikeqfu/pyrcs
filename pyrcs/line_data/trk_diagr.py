@@ -1,13 +1,25 @@
-"""Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_."""
+"""
+Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+"""
 
+import os
+import urllib.parse
+
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_last_updated_date
+from ..utils import cd_data, fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
+    print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class TrackDiagrams:
-    """A class for collecting data of British `railway track diagrams`_.
+    """
+    A class for collecting data of British `railway track diagrams`_.
 
     .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
     """

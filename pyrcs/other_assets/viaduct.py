@@ -1,15 +1,25 @@
-"""Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_."""
+"""
+Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+"""
 
 import itertools
+import os
+import re
+import urllib.parse
 
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_table
+from ..utils import home_page_url, init_data_dir, is_home_connectable, print_conn_err, \
+    print_inst_conn_err, save_data_to_file, validate_page_name
 
 
 class Viaducts:
-    """A class for collecting codes of `railway viaducts`_.
+    """
+    A class for collecting codes of `railway viaducts`_.
 
     .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """

@@ -1,10 +1,24 @@
-"""Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_."""
+"""
+Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+"""
 
+import os
+import re
+import string
+import urllib.parse
+
+import bs4
 import numpy as np
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import cd_data, collect_in_fetch_verbose, home_page_url, init_data_dir, \
+    is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
+    validate_initial
 
 
 def _parse_degrees(x):
@@ -236,7 +250,7 @@ class Stations:
         """
         Collect `data of railway station locations
         <http://www.railwaycodes.org.uk/stations/station0.shtm>`_
-        (mileages, operators and grid coordinates) for a given ``initial`` letter.
+        (mileages, operators and grid coordinates) for a given initial letter.
 
         :param initial: initial letter of locations of the railway station data
         :type initial: str
@@ -244,7 +258,7 @@ class Stations:
         :type update: bool
         :param verbose: whether to print relevant information in console, defaults to ``False``
         :type verbose: bool or int
-        :return: data of railway station locations beginning with ``initial`` and
+        :return: data of railway station locations beginning with the given initial letter and
             date of when the data was last updated
         :rtype: dict
 

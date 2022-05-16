@@ -1,7 +1,7 @@
 """
 Collect data of railway codes.
 
-The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_
+The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_ \
 and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 """
 
@@ -17,8 +17,8 @@ from .utils import home_page_url, is_home_connectable, print_conn_err, print_ins
 
 
 class LineData:
-    """A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
-    for collecting `line data`_.
+    """A class representation of all modules of the subpackage \
+    :py:mod:`~pyrcs.line_data` for collecting `line data`_.
 
     .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
     """
@@ -193,8 +193,8 @@ class LineData:
 
 
 class OtherAssets:
-    """A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
-    for collecting `other assets`_.
+    """A class representation of all modules of the subpackage \
+    :py:mod:`~pyrcs.other_assets` for collecting `other assets`_.
 
     .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
     """

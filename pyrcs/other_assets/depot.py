@@ -1,9 +1,19 @@
-"""Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_."""
+"""
+Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+"""
 
+import re
+import urllib.parse
+
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import confirm_msg, fetch_data_from_file, home_page_url, init_data_dir, \
+    is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class Depots:
@@ -90,7 +100,8 @@ class Depots:
         return path
 
     def collect_tops_codes(self, confirmation_required=True, verbose=False):
-        """Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
+        """
+        Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
@@ -530,7 +541,8 @@ class Depots:
     def collect_gwr_codes(self, confirmation_required=True, verbose=False):
         """
         Collect `Great Western Railway (GWR) depot codes
-        <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_ from source web page.
+        <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_
+        from source web page.
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool

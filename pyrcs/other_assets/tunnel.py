@@ -1,16 +1,28 @@
-"""Collect data of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_."""
+"""
+Collect data of `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
+"""
 
 import itertools
+import os
+import re
+import urllib.parse
 
+import bs4
 import numpy as np
+import pandas as pd
+import requests
 from pyhelpers.dir import cd
+from pyhelpers.ops import fake_requests_headers
+from pyhelpers.store import load_data
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import home_page_url, init_data_dir, is_home_connectable, print_conn_err, \
+    print_inst_conn_err, print_void_msg, save_data_to_file, validate_page_name
 
 
 class Tunnels:
-    """A class for collecting data of `railway tunnel lengths`_.
+    """
+    A class for collecting data of `railway tunnel lengths`_.
 
     .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
     """

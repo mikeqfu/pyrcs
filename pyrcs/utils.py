@@ -1,4 +1,6 @@
-"""Provide a number of utilities (helper functions)."""
+"""
+Provide a number of utilities (i.e. helper functions).
+"""
 
 import copy
 import os
@@ -12,7 +14,8 @@ from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
 
 
-# == Specifying address of web pages ===============================================================
+# == Specify address of web pages ==================================================================
+
 
 def home_page_url():
     """
@@ -32,7 +35,8 @@ def home_page_url():
     return 'http://www.railwaycodes.org.uk/'
 
 
-# == Validating inputs =============================================================================
+# == Validate inputs ===============================================================================
+
 
 def is_home_connectable():
     """
@@ -193,7 +197,8 @@ def fetch_all_verbose(data_dir, verbose):
     return verbose_
 
 
-# == Printing messages =============================================================================
+# == Print messages ================================================================================
+
 
 def confirm_msg(data_name):
     """
@@ -323,7 +328,8 @@ def print_void_msg(data_name, verbose):
         print("No data of \"{}\" has been freshly collected.".format(data_name.title()))
 
 
-# == Saving and retrieving pre-packed data =========================================================
+# == Save and retrieve pre-packed data =============================================================
+
 
 def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
     """

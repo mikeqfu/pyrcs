@@ -1,8 +1,8 @@
 """
-A sub-package of modules for collecting codes of
-`other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+A sub-package of modules for collecting codes of `other assets
+<http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 
-See also :py:class:`~pyrcs.collector.OtherAssets`.
+(See also :py:class:`~pyrcs.collector.OtherAssets`.)
 """
 
 from .depot import Depots

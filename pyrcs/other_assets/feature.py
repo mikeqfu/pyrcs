@@ -10,13 +10,20 @@ This category includes:
 """
 
 import itertools
+import re
+import urllib.parse
 
+import bs4
 import numpy as np
+import requests
 import unicodedata
 from pyhelpers.dir import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
 
-from ..parser import *
-from ..utils import *
+from ..parser import get_catalogue, get_last_updated_date, parse_table, parse_tr
+from ..utils import confirm_msg, fetch_data_from_file, home_page_url, \
+    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
+    save_data_to_file
 
 
 class _HABDWILD:
@@ -28,6 +35,7 @@ class _HABDWILD:
         - HABD: Hot axle box detector
         - WILD: Wheel impact load detector
     """
+
     #: Name of the data
     NAME = 'Hot axle box detectors (HABDs) and wheel impact load detectors (WILDs)'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
@@ -42,6 +50,7 @@ class _WaterTroughs:
     """
     A class for `water troughs locations <http://www.railwaycodes.org.uk/features/troughs.shtm>`_.
     """
+
     #: Name of the data
     NAME = 'Water trough locations'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
@@ -56,6 +65,7 @@ class _Telegraph:
     """
     A class for `telegraph code words <http://www.railwaycodes.org.uk/features/telegraph.shtm>`_.
     """
+
     #: Name of the data
     NAME = 'Telegraph code words'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
@@ -70,6 +80,7 @@ class _Buzzer:
     """
     A class for `buzzer codes <http://www.railwaycodes.org.uk/features/buzzer.shtm>`_.
     """
+
     #: Name of the data
     NAME = 'Buzzer codes'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
@@ -106,7 +117,7 @@ def _parse_vulgar_fraction_in_length(x):
         yd = int(re.search(r'\d+(?=yd)', x).group(0))
 
     elif re.match(r'\d+&frac\d+;yd', x):  # e.g. '506&frac23;yd'
-        yd, frac = re.search(r'([0-9]+)&frac([0-9]+)(?=;yd)', x).groups()
+        yd, frac = re.search(r'(\d+)&frac(\d+)(?=;yd)', x).groups()
         yd = int(yd) + int(frac[0]) / int(frac[1])
 
     else:  # e.g. '557½yd'
@@ -127,7 +138,9 @@ def _parse_telegraph_in_use_term(x):
 
 
 class Features:
-    """A class for collecting codes of several infrastructure features."""
+    """
+    A class for collecting codes of several infrastructure features.
+    """
 
     #: Name of the data
     NAME = 'Infrastructure features'
@@ -202,8 +215,10 @@ class Features:
         Collect codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
         from source web page.
 
-            - HABDs - Hot axle box detectors
-            - WILDs - Wheel impact load detectors
+        .. note::
+
+            - HABDs: Hot axle box detectors
+            - WILDs: Wheel impact load detectors
 
         :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
         :type confirmation_required: bool
