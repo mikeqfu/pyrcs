@@ -247,7 +247,7 @@ def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
 
     if verbose == 2:
         if confirmation_required:
-            print(f"Collecting the data", end=end)
+            print("Collecting the data", end=end)
         else:
             print(f"Collecting the data of \"{data_name}\"", end=end)
 

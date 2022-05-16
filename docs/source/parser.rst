@@ -9,14 +9,25 @@ parser
     :no-undoc-members:
     :no-inherited-members:
 
+Preprocess contents
+~~~~~~~~~~~~~~~~~~~
+
 .. autosummary::
     :toctree: _generated/
     :template: function.rst
 
     parse_tr
     parse_table
-    parse_location_name
     parse_date
+    parse_location_name
+
+Extract information
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: _generated/
+    :template: function.rst
+
     get_site_map
     get_last_updated_date
     get_financial_year

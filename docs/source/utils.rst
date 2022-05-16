@@ -9,8 +9,8 @@ utils
     :no-undoc-members:
     :no-inherited-members:
 
-Validating inputs
-~~~~~~~~~~~~~~~~~
+Validate inputs
+~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
@@ -23,8 +23,8 @@ Validating inputs
     collect_in_fetch_verbose
     fetch_all_verbose
 
-Printing messages
-~~~~~~~~~~~~~~~~~
+Print messages
+~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/
@@ -36,8 +36,8 @@ Printing messages
     print_inst_conn_err
     print_void_msg
 
-Saving and retrieving pre-packed data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Save and retrieve pre-packed data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: _generated/

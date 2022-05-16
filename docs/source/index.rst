@@ -4,20 +4,23 @@ PyRCS
 
 .. only:: html
 
-    |PyPI| |Python| |License| |Downloads| |DOI|
+    |PyPI| |Python| |Documentation| |License| |Codacy grade| |DOI|
 
-    .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs?color=yellow&label=PyPI
+    .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
         :alt: PyPI - Release
         :target: https://pypi.org/project/pyrcs/
-    .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs?label=Python
+    .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
         :alt: Python version
         :target: https://www.python.org/downloads/
-    .. |License| image:: https://img.shields.io/pypi/l/pyrcs?label=License
+    .. |Documentation| image:: https://img.shields.io/readthedocs/pyrcs
+        :alt: PyRCS Documentation
+        :target: https://pyrcs.readthedocs.io/en/latest/
+    .. |License| image:: https://img.shields.io/pypi/l/pyrcs
         :alt: License for PyRCS
         :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
-    .. |Downloads| image:: https://img.shields.io/pypi/dm/pyrcs?label=Downloads
-        :alt: PyPI - Downloads
-        :target: https://pypistats.org/packages/pyrcs
+    .. |Codacy grade| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
+        :alt: Codacy grade for PyRCS
+        :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
     .. |DOI| image:: https://zenodo.org/badge/92501006.svg
         :alt: Zenodo - DOI
         :target: https://zenodo.org/badge/latestdoi/92501006
