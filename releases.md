@@ -1,5 +1,19 @@
 ### Release history
 
+
+#### **[0.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.0)**
+
+(*16 May 2022*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.15...0.3.0) since [0.2.15](https://pypi.org/project/pyrcs/0.2.15/):**
+
+- Split the module old [utils](https://github.com/mikeqfu/pyrcs/blob/dd7bb9df95ee86939b790eaba1f79e10bc54d1a4/pyrcs/utils.py) into three new modules: [utils](https://github.com/mikeqfu/pyrcs/commit/c55830dd3c250425916ba275eb9429972441b7e5), [converter](https://github.com/mikeqfu/pyrcs/commit/19c8d3911c86db02fbc94f64bb4a22e9de88fa6c) and [parser](https://github.com/mikeqfu/pyrcs/commit/34be0c12604694eb580bf55192e2ebe7fa0645d1).
+- Made extensive modifications (with bug fixes).
+
+**For more information and detailed specifications, check out [PyRCS 0.3.0 documentation](https://pyrcs.readthedocs.io/en/0.3.0/).**
+
+<br/>
+
 #### **[0.2.15](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.15)**
 
 (*27 March 2021*)
