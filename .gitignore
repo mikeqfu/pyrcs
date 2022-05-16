@@ -21,3 +21,4 @@ pyrcs/data/*
 !pyrcs/data/metadata.json
 tests/*
 !tests/data/
+.pypirc
