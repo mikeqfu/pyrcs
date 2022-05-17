@@ -12,14 +12,14 @@ PyRCS
     .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
         :alt: Python version
         :target: https://www.python.org/downloads/
-    .. |Documentation| image:: https://img.shields.io/readthedocs/pyrcs
-        :alt: PyRCS Documentation
-        :target: https://pyrcs.readthedocs.io/en/latest/
+    .. |Documentation| image:: https://readthedocs.org/projects/pyrcs/badge/?version=latest
+        :alt: Documentation status
+        :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
     .. |License| image:: https://img.shields.io/pypi/l/pyrcs
-        :alt: License for PyRCS
+        :alt: License
         :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
     .. |Codacy grade| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
-        :alt: Codacy grade for PyRCS
+        :alt: Codacy grade (Code quality)
         :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
     .. |DOI| image:: https://zenodo.org/badge/92501006.svg
         :alt: Zenodo - DOI
