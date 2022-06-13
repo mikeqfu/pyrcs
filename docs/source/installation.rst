@@ -9,7 +9,7 @@ To install the latest release of pyrcs from `PyPI`_ via `pip`_:
 .. _`PyPI`: https://pypi.org/project/pyrcs/
 .. _`pip`: https://pip.pypa.io/en/stable/cli/pip/
 
-.. code-block:: console
+.. code-block:: bash
 
    pip install --upgrade pyrcs
 
@@ -17,7 +17,7 @@ To install the most recent version of pyrcs hosted on `GitHub`_:
 
 .. _`GitHub`: https://github.com/mikeqfu/pyrcs
 
-.. code-block:: console
+.. code-block:: bash
 
    pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
 
