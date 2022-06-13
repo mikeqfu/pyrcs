@@ -1,6 +1,18 @@
 ### Release history
 
+<br/>
 
+#### **[0.3.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.1)**
+
+(*14 June 2022*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.0...0.3.1) since [0.3.0](https://pypi.org/project/pyrcs/0.3.0/):**
+
+- Update import statements due to [a major change](https://github.com/mikeqfu/pyhelpers/releases/tag/1.4.0) in the dependency package [PyHelpers](https://pypi.org/project/pyhelpers/).
+
+**For more information and detailed specifications, check out [PyRCS 0.3.1 documentation](https://pyrcs.readthedocs.io/en/0.3.1/).**
+
+<br/>
 
 #### **[0.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.0)**
 
