@@ -1,6 +1,4 @@
-"""
-Update package data.
-"""
+"""Update package data."""
 
 import time
 

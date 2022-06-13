@@ -1,6 +1,4 @@
-"""
-Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
-"""
+"""Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_."""
 
 import re
 import urllib.parse

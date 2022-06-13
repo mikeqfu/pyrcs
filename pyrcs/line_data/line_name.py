@@ -1,6 +1,4 @@
-"""
-Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
-"""
+"""Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_."""
 
 import re
 import urllib.parse

@@ -1,6 +1,4 @@
-"""
-Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
-"""
+"""Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_."""
 
 import os
 import urllib.parse

@@ -1,6 +1,4 @@
-"""
-Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
-"""
+"""Collect codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_."""
 
 import itertools
 import os

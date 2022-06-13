@@ -1,6 +1,4 @@
-"""
-Change data into a desired form.
-"""
+"""Change data into a desired form."""
 
 import copy
 import numbers

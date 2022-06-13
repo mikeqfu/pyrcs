@@ -1,6 +1,4 @@
-"""
-Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
-"""
+"""Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_."""
 
 import copy
 import functools
