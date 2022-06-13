@@ -32,7 +32,18 @@ The `installation <https://pyrcs.readthedocs.io/en/latest/installation.html>`_ o
 Documentation
 #############
 
-The PyRCS documentation is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_] [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_].
+The PyRCS documentation (including detailed examples and a quick-start tutorial) is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_] [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_].
+
+Installation
+############
+
+To install the latest release of pyrcs from `PyPI <https://pypi.org/project/pyrcs/>`_ via `pip <https://pip.pypa.io/en/stable/cli/pip/>`_:
+
+.. code-block:: bash
+
+   pip install --upgrade pyrcs
+
+**Note:** For more information, please also refer to `Installation <https://pyrcs.readthedocs.io/en/latest/installation.html>`_.
 
 License
 #######
@@ -42,7 +53,21 @@ PyRCS is licensed under `GNU General Public License v3 <https://github.com/mikeq
 Cite as
 #######
 
-Qian Fu, 2020. PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. `doi:10.5281/zenodo.4026744 <https://doi.org/10.5281/zenodo.4026744>`_
+Fu, Q. (2020). PyRCS: an open-source tool for collecting railway codes used in different UK rail industry systems. Zenodo. `doi:10.5281/zenodo.4026744 <https://doi.org/10.5281/zenodo.4026744>`_
+
+.. code-block:: bibtex
+
+    @software{qian_fu_pyrcs_4026744,
+      author       = {Qian Fu},
+      title        = {{PyRCS: an open-source tool for collecting railway
+                       codes used in different UK rail industry systems}},
+      year         = 2020,
+      publisher    = {Zenodo},
+      doi          = {10.5281/zenodo.4026744},
+      url          = {https://doi.org/10.5281/zenodo.4026744}
+    }
+
+**Note:** Please also refer to the export options from `Zenodo <https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224026744%22&sort=-version&all_versions=True>`_ to reference the specific version as appropriate when using PyRCS.
 
 Acknowledgement
 ###############
