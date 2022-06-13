@@ -32,7 +32,7 @@ The `installation <https://pyrcs.readthedocs.io/en/latest/installation.html>`_ o
 Documentation
 #############
 
-The PyRCS documentation (incl. detailed examples and a quick-start tutorial) is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_] [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_].
+The PyRCS documentation (including detailed examples and a quick-start tutorial) is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_] [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_].
 
 Installation
 ############
