@@ -8,7 +8,7 @@ import urllib.parse
 
 import bs4
 import requests
-from pyhelpers.dir import cd
+from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
 from ..parser import get_introduction, get_last_updated_date

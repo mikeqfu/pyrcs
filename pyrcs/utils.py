@@ -9,7 +9,7 @@ import string
 
 import pandas as pd
 import pkg_resources
-from pyhelpers.dir import validate_dir
+from pyhelpers.dirs import validate_dir
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
 

@@ -14,7 +14,7 @@ import bs4
 import numpy as np
 import pandas as pd
 import requests
-from pyhelpers.dir import cd
+from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import remove_punctuation

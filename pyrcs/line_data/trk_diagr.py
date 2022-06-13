@@ -8,7 +8,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dir import cd
+from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 

@@ -17,7 +17,7 @@ import bs4
 import numpy as np
 import requests
 import unicodedata
-from pyhelpers.dir import cd
+from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 
 from ..parser import get_catalogue, get_last_updated_date, parse_table, parse_tr
