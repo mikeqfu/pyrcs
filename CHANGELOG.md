@@ -1,4 +1,4 @@
-### Release history
+### Changelog / Release notes
 
 <br/>
 
