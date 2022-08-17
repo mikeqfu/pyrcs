@@ -11,8 +11,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 
 from ..parser import get_last_updated_date
-from ..utils import cd_data, fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
-    print_conn_err, print_inst_conn_err, save_data_to_file
+from ..utils import cd_data, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class TrackDiagrams:
@@ -137,7 +137,7 @@ class TrackDiagrams:
             else:
                 try:
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-                    h3 = {x.get_text(strip=True) for x in soup.find_all('h3', text=True)}
+                    h3 = {x.get_text(strip=True) for x in soup.find_all('h3', string=True)}
                     items = {self.KEY: h3}
 
                     if verbose == 2:
@@ -148,7 +148,7 @@ class TrackDiagrams:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return items
 
@@ -216,7 +216,7 @@ class TrackDiagrams:
 
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    h3 = soup.find('h3', text=True, attrs={'class': None})
+                    h3 = soup.find('h3', string=True, attrs={'class': None})
                     while h3:
                         # Description
                         if h3.text == 'Miscellaneous':
@@ -263,7 +263,7 @@ class TrackDiagrams:
                         dump_dir=cd_data("catalogue"), verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return track_diagrams_catalogue
 

@@ -15,7 +15,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, home_page_url, init_data_dir, \
+from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
     is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, print_void_msg, \
     save_data_to_file, validate_initial
 
@@ -199,7 +199,7 @@ class SignalBoxes:
                         dump_dir=self._cdd("a-z"), verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return signal_box_prefix_codes
 
@@ -417,7 +417,7 @@ class SignalBoxes:
                         ext=".pickle", verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return non_national_rail_codes_data
 
@@ -582,7 +582,7 @@ class SignalBoxes:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return ireland_codes_data
 
@@ -781,7 +781,7 @@ class SignalBoxes:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
                 return wr_mas_dates_data
 
@@ -969,7 +969,7 @@ class SignalBoxes:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
                 return bell_codes_
 

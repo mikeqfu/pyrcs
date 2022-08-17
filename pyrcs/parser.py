@@ -15,7 +15,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, home_page_url, print_conn_err, print_inst_conn_err
+from .utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
 
 
 # == Preprocess contents ===========================================================================
@@ -560,7 +560,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                         save_data(site_map, path_to_file, indent=4, verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         else:
             if verbose == 2:
@@ -783,15 +783,6 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                     try:
-                        # try:
-                        #     cold_soup = soup.find('div', attrs={'class': "background"}).find('nav')
-                        #
-                        #     if cold_soup is None:
-                        #         cold_soup = soup.find_all('span', attrs={'class': "background"})[-1]
-                        #
-                        # except AttributeError:
-                        #     cold_soup = soup.find('div', attrs={'class': 'fixed'})
-
                         cold_soup = soup.find(name='div', attrs={'class': 'fixed'})
 
                         catalogue = {
@@ -1027,7 +1018,8 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
                 feature_urls = []
                 for item_name in feature_names:
                     text_pat = re.compile(r'.*{}.*'.format(item_name), re.IGNORECASE)
-                    a = nav.find('a', text=text_pat)
+                    a = nav.find('a', string=text_pat)
+
                     feature_urls.append(urllib.parse.urljoin(url, a.get('href')))
 
                 page_catalogue['URL'] = feature_urls

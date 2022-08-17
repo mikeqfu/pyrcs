@@ -17,8 +17,8 @@ from pyhelpers.store import load_data
 
 from ..parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
     get_page_catalogue, parse_tr
-from ..utils import cd_data, fetch_all_verbose, fetch_data_from_file, home_page_url, init_data_dir, \
-    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from ..utils import cd_data, fetch_all_verbose, fetch_data_from_file, format_err_msg, home_page_url, \
+    init_data_dir, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 def _collect_notes(h3):
@@ -222,11 +222,11 @@ class Electrification:
 
             >>> elec = Electrification()
 
-            >>> print(elec.NAME)
-            Section codes for overhead line electrification (OLE) installations
+            >>> elec.NAME
+            'Section codes for overhead line electrification (OLE) installations'
 
-            >>> print(elec.URL)
-            http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
+            >>> elec.URL
+            'http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm'
         """
 
         print_conn_err(verbose=verbose)
@@ -380,7 +380,7 @@ class Electrification:
                         ext=".pickle", verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return national_network_ole
 
@@ -603,7 +603,7 @@ class Electrification:
                         ext=".pickle", verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return independent_lines_ole
 
@@ -798,7 +798,7 @@ class Electrification:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return ohns_codes
 
@@ -955,7 +955,7 @@ class Electrification:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return etz_ole
 

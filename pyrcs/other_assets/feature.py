@@ -21,9 +21,8 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 
 from ..parser import get_catalogue, get_last_updated_date, parse_table, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, home_page_url, \
-    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
-    save_data_to_file
+from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class _HABDWILD:
@@ -329,7 +328,7 @@ class Features:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return habds_and_wilds_codes
 
@@ -491,7 +490,7 @@ class Features:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return water_troughs_codes
 
@@ -661,7 +660,7 @@ class Features:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return telegraph_code_words
 
@@ -819,7 +818,7 @@ class Features:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return buzzer_codes
 

@@ -10,7 +10,7 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, home_page_url, init_data_dir, \
+from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
     is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
@@ -180,7 +180,7 @@ class Depots:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return two_char_tops_codes_data
 
@@ -295,9 +295,6 @@ class Depots:
 
             else:
                 try:
-                    # four_digit_pre_tops_codes.columns = [
-                    #     x.replace(' click to sort', '') for x in list(headers_)]
-
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                     thead, tbody = soup.find('thead'), soup.find('tbody')
@@ -344,7 +341,7 @@ class Depots:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return four_digit_pre_tops_codes_data
 
@@ -483,7 +480,7 @@ class Depots:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return system_1950_codes_data
 
@@ -648,7 +645,7 @@ class Depots:
                         verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return gwr_depot_codes
 

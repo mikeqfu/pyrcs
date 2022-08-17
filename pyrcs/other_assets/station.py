@@ -14,7 +14,7 @@ from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_data
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import cd_data, collect_in_fetch_verbose, home_page_url, init_data_dir, \
+from ..utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
     is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
     validate_initial
 
@@ -219,7 +219,7 @@ class Stations:
                         dump_dir=cd_data("catalogue"), verbose=verbose, indent=4)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return catalogue
 
@@ -386,7 +386,7 @@ class Stations:
                         dump_dir=self._cdd("a-z"), verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return location_codes_
 

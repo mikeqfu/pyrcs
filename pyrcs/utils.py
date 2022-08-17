@@ -87,6 +87,7 @@ def is_str_float(x):
     try:
         float(x)  # float(re.sub('[()~]', '', text))
         is_float = True
+
     except ValueError:
         is_float = False
 
@@ -127,12 +128,25 @@ def validate_initial(x, as_is=False):
 
 def validate_page_name(cls, page_no, valid_page_no):
     """
-    Get
+    Get a valid page name.
 
-    :param cls:
-    :param page_no:
-    :param valid_page_no:
-    :return:
+    :param cls: instance of a class
+    :type cls: any
+    :param page_no: page number
+    :type page_no: int or str
+    :param valid_page_no: all valid page numbers
+    :type valid_page_no: set or list or tuple
+    :return: validated page name of the given ``cls``
+    :rtype: str
+
+    .. seealso::
+
+        - Examples for the methods
+          :meth:`Tunnels.collect_codes_by_page()
+          <pyrcs.other_assets.tunnel.Tunnels.collect_codes_by_page>`
+          and
+          :meth:`Tunnels.collect_codes_by_page()
+          <pyrcs.other_assets.viaduct.Viaducts.collect_codes_by_page>`.
     """
 
     assert page_no in valid_page_no, f"Valid `page_no` must be one of {valid_page_no}."
@@ -217,7 +231,7 @@ def confirm_msg(data_name):
         ?
     """
 
-    cfm_msg = "To collect data of {}\n?".format(data_name)
+    cfm_msg = f"To collect data of {data_name}\n?"
 
     return cfm_msg
 
@@ -272,6 +286,25 @@ def print_conn_err(verbose=False):
                   "The current instance relies on local backup.")
 
 
+def format_err_msg(e):
+    """
+    Format an error message.
+
+    :param e: subclass of Exception
+    :type e: typing.Type[Exception] or None
+    :return: an error message
+    :rtype: str
+    """
+
+    if e:
+        err_msg = f"{e}"
+        err_msg = err_msg + "." if not err_msg.endswith(".") else err_msg
+    else:
+        err_msg = ""
+
+    return err_msg
+
+
 def print_inst_conn_err(update=False, verbose=False, e=None):
     """
     Print a message about unsuccessful attempts to establish a connection to the Internet
@@ -283,7 +316,7 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :param e: error message
-    :type e: Exception or None
+    :type e: typing.Type[Exception] or None
 
     **Example**::
 
@@ -294,14 +327,14 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     """
 
     if e is None:
-        msg = "The Internet connection is not available."
+        err_msg = "The Internet connection is not available."
     else:
-        msg = "{}".format(e)
+        err_msg = format_err_msg(e)
 
     if update and verbose:
-        print(msg + " Failed to update the data.")
+        print((err_msg + " " if err_msg else err_msg) + "Failed to update the data.")
     elif verbose:
-        print(msg)
+        print(err_msg)
 
 
 def print_void_msg(data_name, verbose):
@@ -323,7 +356,7 @@ def print_void_msg(data_name, verbose):
     """
 
     if verbose:
-        print("No data of \"{}\" has been freshly collected.".format(data_name.title()))
+        print(f"No data of \"{data_name.title()}\" has been freshly collected.")
 
 
 # == Save and retrieve pre-packed data =============================================================
@@ -532,7 +565,7 @@ def _update_location_names_errata(new_items, regex, verbose=False):
 
     new_items_keys = list(new_items.keys())
 
-    if confirmed("To update \"{}\" with {{\"{}\"... }}?".format(json_filename, new_items_keys[0])):
+    if confirmed(f"To update \"{json_filename}\" with {{\"{new_items_keys[0]}\"... }}?"):
         path_to_json = cd_data(json_filename)
         location_name_repl_dict = load_data(path_to_json)
 
@@ -608,7 +641,7 @@ def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose,
         :py:func:`pyrcs.utils.save_data_to_file`, defaults to ``None``
     :type save_data_kwargs: dict or None
     :param kwargs: [optional] parameters of the ``cls``.``method`` being called
-    :type kwargs: any
+    :type kwargs: typing.Any
     :return: data fetched for the desired cluster
     :rtype: dict or None
     """
@@ -634,7 +667,8 @@ def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose,
 
     except Exception as e:
         if verbose:
-            print("Some errors occurred when fetching the data. {}".format(e))
+            print(f"Some errors occurred when fetching the data. {format_err_msg(e)}")
+
         data = None
 
     return data

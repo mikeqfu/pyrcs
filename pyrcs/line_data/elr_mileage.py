@@ -19,9 +19,9 @@ from pyhelpers.text import remove_punctuation
 
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, yard_to_mileage
 from ..parser import get_catalogue, get_last_updated_date, parse_table
-from ..utils import collect_in_fetch_verbose, home_page_url, init_data_dir, is_home_connectable, \
-    is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
-    validate_initial
+from ..utils import collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
+    is_home_connectable, is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, \
+    save_data_to_file, validate_initial
 
 
 class ELRMileages:
@@ -477,7 +477,7 @@ class ELRMileages:
                     save_data(elrs, path_to_pickle, verbose=verbose)
 
                 except Exception as e:  # e.g. the requested URL is not available:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return elrs
 

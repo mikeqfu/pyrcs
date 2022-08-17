@@ -9,8 +9,8 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 
 from ..parser import get_catalogue, get_last_updated_date, parse_table
-from ..utils import fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
-    print_conn_err, print_inst_conn_err, save_data_to_file
+from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class LineNames:
@@ -197,7 +197,7 @@ class LineNames:
                         self, data=line_names_data, data_name=self.KEY, ext=".pickle", verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return line_names_data
 

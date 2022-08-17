@@ -12,8 +12,8 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import fetch_data_from_file, home_page_url, init_data_dir, is_home_connectable, \
-    print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file
+from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file
 
 
 class LOR:
@@ -244,7 +244,7 @@ class LOR:
 
                     links = soup.find_all(
                         name='a', href=re.compile('^pride|elrmapping'),
-                        text=re.compile('.*(codes|converter|Historical)'))
+                        string=re.compile('.*(codes|converter|Historical)'))
 
                     lor_page_urls = list(dict.fromkeys([self.URL.replace(
                         os.path.basename(self.URL), x['href'])
@@ -445,7 +445,7 @@ class LOR:
                         ext=".pickle", dump_dir=self._cdd("prefixes"), verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
         return lor_codes_by_initials
 
@@ -596,9 +596,9 @@ class LOR:
 
                     elr_lor_dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-                    elr_links = soup.find_all(name='td', text=re.compile(r'([A-Z]{3})(\d)?'))
+                    elr_links = soup.find_all(name='td', string=re.compile(r'([A-Z]{3})(\d)?'))
                     lor_links = soup.find_all(name='a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
-                    #
+
                     # if len(elr_links) != len(elr_lor_dat):
                     #     duplicates = \
                     #         elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
@@ -608,7 +608,7 @@ class LOR:
                     #         if not lor_links[i].endswith(
                     #                 duplicates['LOR code'].loc[i].lower()):
                     #             lor_links.insert(i, lor_links[i - 1])
-                    #
+
                     elr_lor_dat['ELR_URL'] = [
                         urllib.parse.urljoin(home_page_url(), x.a.get('href')) if x.a else None
                         for x in elr_links
@@ -631,7 +631,7 @@ class LOR:
                         ext=".pickle", verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return elr_lor_converter
 

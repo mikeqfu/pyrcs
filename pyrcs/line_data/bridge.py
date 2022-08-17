@@ -10,8 +10,8 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
 from ..parser import get_introduction, get_last_updated_date
-from ..utils import fetch_data_from_file, home_page_url, init_data_dir, print_collect_msg, \
-    print_conn_err, print_inst_conn_err, save_data_to_file
+from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class Bridges:
@@ -48,11 +48,11 @@ class Bridges:
 
             >>> bdg = Bridges()
 
-            >>> print(bdg.NAME)
-            Railway bridges
+            >>> bdg.NAME
+            'Railway bridges'
 
-            >>> print(bdg.URL)
-            http://www.railwaycodes.org.uk/bridges/bridges0.shtm
+            >>> bdg.URL
+            'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
         """
 
         print_conn_err(verbose=verbose)
@@ -222,7 +222,7 @@ class Bridges:
                         indent=4)
 
                 except Exception as e:
-                    print("Failed. {}".format(e))
+                    print(f"Failed. {format_err_msg(e)}")
 
             return bridges_data
 
