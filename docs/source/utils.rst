@@ -33,6 +33,7 @@ Print messages
     confirm_msg
     print_collect_msg
     print_conn_err
+    format_err_msg
     print_inst_conn_err
     print_void_msg
 
