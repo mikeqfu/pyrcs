@@ -13,7 +13,14 @@ venv/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Customised
+# Pytest / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+
+# pyrcs
 .idea/
 pyrcs/data/*
 !pyrcs/data/location-names-repl.json
@@ -21,4 +28,6 @@ pyrcs/data/*
 !pyrcs/data/metadata.json
 tests/*
 !tests/data/
+!tests/__init__.py
+!tests/test_*.py
 .pypirc
