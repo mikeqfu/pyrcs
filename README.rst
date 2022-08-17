@@ -29,11 +29,6 @@ The `installation <https://pyrcs.readthedocs.io/en/latest/installation.html>`_ o
 
 .. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
 
-Documentation
-#############
-
-The PyRCS documentation (including detailed examples and a quick-start tutorial) is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_] [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_].
-
 Installation
 ############
 
@@ -44,6 +39,11 @@ To install the latest release of pyrcs from `PyPI <https://pypi.org/project/pyrc
    pip install --upgrade pyrcs
 
 **Note:** For more information, please also refer to `Installation <https://pyrcs.readthedocs.io/en/latest/installation.html>`_.
+
+Documentation
+#############
+
+The full PyRCS documentation (including detailed examples and a quick-start tutorial) is hosted on `ReadTheDocs <https://readthedocs.org/projects/pyrcs/>`_: [`PDF <https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/>`_] [`HTML <https://pyrcs.readthedocs.io/en/latest/>`_].
 
 License
 #######
