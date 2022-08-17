@@ -54,11 +54,11 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> print(tunl.NAME)
-            Railway tunnel lengths
+            >>> tunl.NAME
+            'Railway tunnel lengths'
 
-            >>> print(tunl.URL)
-            http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
+            >>> tunl.URL
+            'http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm'
         """
 
         print_conn_err(verbose=verbose)

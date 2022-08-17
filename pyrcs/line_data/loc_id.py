@@ -597,7 +597,7 @@ class LocationIdentifiers:
 
                         note_urls = [
                             urllib.parse.urljoin(self.catalogue[beginning_with], x['href'])
-                            for x in web_page_text.find_all('a', href=True, text='note')
+                            for x in web_page_text.find_all('a', href=True, string='note')
                         ]
                         add_notes = [_parse_note_page(note_url) for note_url in note_urls]
 
@@ -787,20 +787,20 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> os_dat = lid.fetch_other_systems_codes()
+            >>> os_codes = lid.fetch_other_systems_codes()
 
-            >>> type(os_dat)
+            >>> type(os_codes)
             dict
-            >>> list(os_dat.keys())
+            >>> list(os_codes.keys())
             ['Other systems', 'Last updated date']
 
             >>> lid.KEY_TO_OTHER_SYSTEMS
             'Other systems'
 
-            >>> os_codes = os_dat[lid.KEY_TO_OTHER_SYSTEMS]
-            >>> type(os_codes)
+            >>> os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
+            >>> type(os_codes_dat)
             collections.defaultdict
-            >>> list(os_codes.keys())
+            >>> list(os_codes_dat.keys())
             ['Córas Iompair Éireann (Republic of Ireland)',
              'Crossrail',
              'Croydon Tramlink',
@@ -839,20 +839,20 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> loc_dat = lid.fetch_codes()
-            >>> type(loc_dat)
+            >>> loc_codes = lid.fetch_codes()
+            >>> type(loc_codes)
             dict
-            >>> list(loc_dat.keys())
+            >>> list(loc_codes.keys())
             ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
 
             >>> lid.KEY
             'LocationID'
 
-            >>> loc_codes = loc_dat['LocationID']
+            >>> loc_codes_dat = loc_codes['LocationID']
 
-            >>> type(loc_codes)
+            >>> type(loc_codes_dat)
             pandas.core.frame.DataFrame
-            >>> loc_codes.head()
+            >>> loc_codes_dat.head()
                                            Location CRS  ... STANME_Note STANOX_Note
             0                                Aachen      ...
             1                    Abbeyhill Junction      ...

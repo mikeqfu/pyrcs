@@ -9,7 +9,7 @@ from .parser import get_site_map
 from .utils import is_home_connectable, print_conn_err
 
 
-def _update_prepacked_data(verbose=False, interval=5):
+def _update_prepacked_data(verbose=False, interval=5, **kwargs):
     """
     Update pre-packed data.
 
@@ -30,7 +30,7 @@ def _update_prepacked_data(verbose=False, interval=5):
         print("Unable to update the data.")
 
     else:
-        if confirmed("To update the backup resources\n?"):
+        if confirmed("To update the backup resources\n?", **kwargs):
 
             # Site map
             print("\nSite map:")

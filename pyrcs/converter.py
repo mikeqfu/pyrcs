@@ -30,18 +30,22 @@ def fix_mileage(mileage):
         >>> fixed_mileage = fix_mileage(mileage='.1100')
         >>> fixed_mileage
         '0.1100'
+
+        >>> fixed_mileage = fix_mileage(mileage=29)
+        >>> fixed_mileage
+        '29.0000'
     """
 
     if isinstance(mileage, float):
         mileage_ = fix_mileage(str(mileage))
 
     elif mileage and mileage != '0':
-        if '.' in mileage:
-            miles, yards = mileage.split('.')
+        if '.' in str(mileage):
+            miles, yards = str(mileage).split('.')
             if miles == '':
                 miles = '0'
         else:
-            miles, yards = mileage, '0'
+            miles, yards = str(mileage), '0'
         if len(yards) < 4:
             yards += '0' * (4 - len(yards))
         mileage_ = '.'.join([miles, yards])
@@ -79,9 +83,13 @@ def yard_to_mileage(yard, as_str=True):
         >>> mileage_dat
         ''
 
-        >>> mileage_dat = yard_to_mileage(yard=12320)
+        >>> mileage_dat = yard_to_mileage(yard=1760)
         >>> mileage_dat
-        '7.0000'
+        '1.0000'
+
+        >>> mileage_dat = yard_to_mileage(yard=12330)
+        >>> mileage_dat
+        '7.0010'
     """
 
     if pd.notnull(yard) and yard != '':
@@ -238,6 +246,12 @@ def mile_yard_to_mileage(mile, yard, as_numeric=True):
         >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
         >>> mileage_data
         '10.1500'
+
+        >>> m, y = 10, 500
+
+        >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
+        >>> mileage_data
+        '10.0500'
     """
 
     mile_, yard_ = map(str, (mile, yard))
@@ -330,7 +344,7 @@ def shift_mileage_by_yard(mileage, shift_yards, as_numeric=True):
         >>> n_mileage
         0.0616
 
-        >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220.99)
+        >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221)
         >>> n_mileage
         0.0617
 

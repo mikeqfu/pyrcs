@@ -113,11 +113,11 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> print(stn.NAME)
-            Railway station data
+            >>> stn.NAME
+            'Railway station data'
 
-            >>> print(stn.URL)
-            http://www.railwaycodes.org.uk/stations/station0.shtm
+            >>> stn.URL
+            'http://www.railwaycodes.org.uk/stations/station0.shtm'
         """
 
         print_conn_err(verbose=verbose)

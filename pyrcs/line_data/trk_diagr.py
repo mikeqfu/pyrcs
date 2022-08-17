@@ -51,11 +51,11 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> print(td.NAME)
-            Railway track diagrams
+            >>> td.NAME
+            'Railway track diagrams'
 
-            >>> print(td.URL)
-            http://www.railwaycodes.org.uk/line/diagrams0.shtm
+            >>> td.URL
+            'http://www.railwaycodes.org.uk/line/diagrams0.shtm'
         """
 
         print_conn_err(verbose=verbose)

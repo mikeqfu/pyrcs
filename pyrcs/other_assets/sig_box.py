@@ -67,11 +67,11 @@ class SignalBoxes:
 
             >>> sb = SignalBoxes()
 
-            >>> print(sb.NAME)
-            Signal box prefix codes
+            >>> sb.NAME
+            'Signal box prefix codes'
 
-            >>> print(sb.URL)
-            http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
+            >>> sb.URL
+            'http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm'
         """
 
         print_conn_err(verbose=verbose)

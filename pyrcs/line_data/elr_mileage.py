@@ -60,11 +60,11 @@ class ELRMileages:
 
             >>> em = ELRMileages()
 
-            >>> print(em.NAME)
-            Engineer's Line References (ELRs)
+            >>> em.NAME
+            "Engineer's Line References (ELRs)"
 
-            >>> print(em.URL)
-            http://www.railwaycodes.org.uk/elrs/elr0.shtm
+            >>> em.URL
+            'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
         """
 
         print_conn_err(verbose=verbose)

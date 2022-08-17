@@ -61,11 +61,11 @@ class Depots:
 
             >>> depots = Depots()
 
-            >>> print(depots.NAME)
-            Depot codes
+            >>> depots.NAME
+            'Depot codes'
 
-            >>> print(depots.URL)
-            http://www.railwaycodes.org.uk/depots/depots0.shtm
+            >>> depots.URL
+            'http://www.railwaycodes.org.uk/depots/depots0.shtm'
         """
 
         print_conn_err(verbose=verbose)

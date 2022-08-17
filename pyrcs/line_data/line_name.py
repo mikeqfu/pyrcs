@@ -50,11 +50,11 @@ class LineNames:
 
             >>> ln = LineNames()
 
-            >>> print(ln.NAME)
-            Railway line names
+            >>> ln.NAME
+            'Railway line names'
 
-            >>> print(ln.URL)
-            http://www.railwaycodes.org.uk/misc/line_names.shtm
+            >>> ln.URL
+            'http://www.railwaycodes.org.uk/misc/line_names.shtm'
         """
 
         print_conn_err(verbose=verbose)

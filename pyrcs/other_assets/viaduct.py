@@ -51,11 +51,11 @@ class Viaducts:
 
             >>> vdct = Viaducts()
 
-            >>> print(vdct.NAME)
-            Railway viaducts
+            >>> vdct.NAME
+            'Railway viaducts'
 
-            >>> print(vdct.URL)
-            http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm
+            >>> vdct.URL
+            'http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm'
         """
 
         print_conn_err(verbose=verbose)

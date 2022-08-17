@@ -178,8 +178,8 @@ class Features:
 
             >>> feats = Features()
 
-            >>> print(feats.NAME)
-            Infrastructure features
+            >>> feats.NAME
+            'Infrastructure features'
         """
 
         print_conn_err(verbose=verbose)

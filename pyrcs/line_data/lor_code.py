@@ -65,11 +65,11 @@ class LOR:
 
             >>> lor = LOR()
 
-            >>> print(lor.NAME)
-            Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes
+            >>> lor.NAME
+            'Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes'
 
-            >>> print(lor.URL)
-            http://www.railwaycodes.org.uk/pride/pride0.shtm
+            >>> lor.URL
+            'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         """
 
         print_conn_err(verbose=verbose)
