@@ -24,6 +24,8 @@ __copyright__ = f'2019-{datetime.datetime.now().year}, {__author__}'
 __version__ = metadata['Version']
 __license__ = metadata['License']
 
+__first_release_date__ = metadata['First release']
+
 __all__ = [
     'LineData',
     'OtherAssets',

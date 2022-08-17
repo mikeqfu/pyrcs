@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # == Project information ===========================================================================
-from pyrcs import __affiliation__, __author__, __copyright__, __description__, __pkgname__, \
-    __project__, __version__
+from pyrcs import __affiliation__, __author__, __copyright__, __description__, __first_release_date__, \
+    __pkgname__, __project__, __version__
 
 # General information about the project:
 project = __project__
@@ -128,10 +128,9 @@ latex_documents = [
      ),
 ]
 
-first_release_date = 'August 2019'
-affiliation_school, affiliation_univ = __affiliation__.split(', ')
+affil_centre, affil_school, affil_univ = __affiliation__.split(', ')
 
-# Customized title page
+# Custom title page:
 latex_maketitle = r'''
     \newgeometry{top=1.1in,bottom=1.1in,right=1.0in,left=1.0in}
     \pagenumbering{roman}
@@ -145,22 +144,22 @@ latex_maketitle = r'''
         
         \vspace{5mm}
         \textit{\large {{%s}}} \par
+        
         \vspace{5mm}
-        \textbf{\textit{\LARGE {{Release %s}}}} \par
+        \LARGE \textbf{\textit{{Release %s}}} \par
 
         \vspace{45mm}
         \LARGE \textbf{{%s}} \par
+        \Large \textit{{%s}} \par
+        \Large \textit{{%s}} \par
+        \Large \textit{{%s}} \par
 
-        \vspace{5mm}
-        \textit{\Large {{%s}}} \par
-        \textit{\Large {{%s}}} \par
-
-        \vspace{35mm}
-        \textbf{\Large {{First release:}}} \Large %s \par
-        \textbf{\Large {{Last updated:}}} \Large \MonthYearFormat\today \par
+        \vspace{50mm}
+        \Large {{First release:}} \large \textbf{{%s}} \par
+        \Large {{Last updated:}} \large \textbf{{\MonthYearFormat\today}} \par
     
-        \vspace{30mm}
-        \Large \textcopyright \space Copyright %s \par
+        \vspace{20mm}
+        \large \textcopyright \space Copyright %s \par
 
     \end{titlepage}
     \restoregeometry
@@ -179,14 +178,16 @@ latex_maketitle = r'''
 
     \clearpage
     \pagenumbering{arabic}
-    ''' % (__project__,
-           __description__.rstrip('.'),
-           release,
-           __author__,
-           affiliation_school,
-           affiliation_univ,
-           first_release_date,
-           __copyright__)
+    ''' % (
+    __project__,
+    __description__.rstrip('.'),
+    release,
+    __author__,
+    affil_centre,
+    affil_school,
+    affil_univ,
+    __first_release_date__,
+    __copyright__)
 
 latex_preamble = r'''
     \setlength{\headheight}{14pt}
@@ -222,8 +223,8 @@ latex_preamble = r'''
 
 # LaTeX customization:
 latex_elements = {
-    'papersize': 'a4paper',
-    'pointsize': '11pt',
+    'papersize': 'a4paper',  # The paper size ('letterpaper' or 'a4paper')
+    'pointsize': '11pt',  # The font size ('10pt', '11pt' or '12pt')
     'pxunit': '0.25bp',
 
     'fontpkg': '\\usepackage{amsmath,amsfonts,amssymb,amsthm}',
@@ -231,7 +232,7 @@ latex_elements = {
 
     'preamble': latex_preamble,
 
-    'figure_align': 'H',  # 'htbp',
+    'figure_align': 'H',  # Latex figure (float) alignment; optional: 'htbp'
     'extraclassoptions': 'openany,oneside',
 
     'maketitle': latex_maketitle,
