@@ -291,7 +291,7 @@ def format_err_msg(e):
     Format an error message.
 
     :param e: subclass of Exception
-    :type e: typing.Type[Exception] or None
+    :type e: Exception or None
     :return: an error message
     :rtype: str
     """
@@ -316,7 +316,7 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool or int
     :param e: error message
-    :type e: typing.Type[Exception] or None
+    :type e: Exception or None
 
     **Example**::
 

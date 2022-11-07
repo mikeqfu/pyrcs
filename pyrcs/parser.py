@@ -43,7 +43,7 @@ def parse_tr(trs, ths, as_dataframe=False):
     See also [`PT-1 <https://stackoverflow.com/questions/28763891/>`_].
 
     :param trs: contents under ``<tr>`` tags of a web page
-    :type trs: bs4.ResultSet
+    :type trs: bs4.ResultSet or list
     :param ths: list of column names (usually under a ``<th>`` tag) of a requested table
     :type ths: list or bs4.element.Tag
     :param as_dataframe: whether to return the parsed data in tabular form
