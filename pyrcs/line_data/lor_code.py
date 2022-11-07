@@ -301,7 +301,7 @@ class LOR:
 
             return line_name, line_name_note
 
-        thead, tbody = tbl
+        thead, tbody = tbl[0].find('thead'), tbl[0].find('tbody')
         ths = [x.text.replace('\n', ' ') for x in thead.find_all('th')]
         trs = tbody.find_all('tr')
         tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)

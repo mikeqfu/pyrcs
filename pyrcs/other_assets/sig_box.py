@@ -390,7 +390,8 @@ class SignalBoxes:
                         tbl_dat = desc.find_next('table')
                         if tbl_dat.find_previous('h3').text == non_national_rail_name:
                             ths = [th.text for th in tbl_dat.find_all('th')]  # header
-                            trs = tbl_dat.find_next('table').find_all('tr')
+                            # trs = tbl_dat.find_next('table').find_all('tr')
+                            trs = tbl_dat.find_all('tr')
                             data = parse_tr(trs=trs, ths=ths, as_dataframe=True)
                         else:
                             data = None
@@ -947,7 +948,8 @@ class SignalBoxes:
                     for h3 in h3s:
                         thead = h3.find_next('table').find('thead')
                         ths = [th.text for th in thead.find_all('th')]
-                        trs = thead.find_next('table').find_all('tr')
+                        # trs = thead.find_next('table').find_all('tr')
+                        trs = thead.find_all('tr')
                         dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
                         notes = h3.find_next('p').text
