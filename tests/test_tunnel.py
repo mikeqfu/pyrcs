@@ -8,33 +8,36 @@ from pyrcs.other_assets import Tunnels
 tunl = Tunnels()
 
 
-def test_collect_codes_by_page():
-    tunl_len_1 = tunl.collect_codes_by_page(page_no=1, update=True, verbose=True)
+class TestTunnels:
 
-    assert isinstance(tunl_len_1, dict)
-    assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
+    @staticmethod
+    def test_collect_codes_by_page():
+        tunl_len_1 = tunl.collect_codes_by_page(page_no=1, update=True, verbose=True)
 
-    tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
-    assert isinstance(tunl_len_1_codes, pd.DataFrame)
+        assert isinstance(tunl_len_1, dict)
+        assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
 
-    tunl_len_1 = tunl.collect_codes_by_page(page_no=1)
+        tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
+        assert isinstance(tunl_len_1_codes, pd.DataFrame)
 
-    assert isinstance(tunl_len_1, dict)
-    assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
+        tunl_len_1 = tunl.collect_codes_by_page(page_no=1)
 
-    tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
-    assert isinstance(tunl_len_1_codes, pd.DataFrame)
+        assert isinstance(tunl_len_1, dict)
+        assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
 
+        tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
+        assert isinstance(tunl_len_1_codes, pd.DataFrame)
 
-def test_fetch_codes():
-    tunl_len_codes = tunl.fetch_codes()
+    @staticmethod
+    def test_fetch_codes():
+        tunl_len_codes = tunl.fetch_codes()
 
-    assert isinstance(tunl_len_codes, dict)
-    assert list(tunl_len_codes.keys()) == ['Tunnels', 'Last updated date']
+        assert isinstance(tunl_len_codes, dict)
+        assert list(tunl_len_codes.keys()) == ['Tunnels', 'Last updated date']
 
-    tunl_len_codes_dat = tunl_len_codes[tunl.KEY]
+        tunl_len_codes_dat = tunl_len_codes[tunl.KEY]
 
-    assert isinstance(tunl_len_codes_dat, dict)
+        assert isinstance(tunl_len_codes_dat, dict)
 
 
 if __name__ == '__main__':

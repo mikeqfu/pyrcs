@@ -5,8 +5,9 @@ import pytest
 
 
 class TestInit:
-
-    def test_LineData(self):
+    
+    @staticmethod
+    def test_LineData():
         from pyrcs import LineData
 
         ld = LineData()
@@ -26,7 +27,8 @@ class TestInit:
         line_names_codes_dat = line_names_codes[ld.LineNames.KEY]
         assert isinstance(line_names_codes_dat, pd.DataFrame)
 
-    def test_OtherAssets(self):
+    @staticmethod
+    def test_OtherAssets():
         from pyrcs import OtherAssets
 
         oa = OtherAssets()

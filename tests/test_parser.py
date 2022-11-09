@@ -8,10 +8,13 @@ import pandas as pd
 import pytest
 import requests
 
+from pyrcs.line_data import Electrification
+
 
 class TestParser:
 
-    def test_parse_tr(self):
+    @staticmethod
+    def test_parse_tr():
         from pyrcs.parser import parse_tr
 
         example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
@@ -27,7 +30,8 @@ class TestParser:
         assert tables_list[0] == [
             'AAL', 'Ashendon and Aynho Line', '0.00 - 18.29', 'Ashendon Junction', 'Now NAJ3']
 
-    def test_parse_table(self):
+    @staticmethod
+    def test_parse_table():
         from pyrcs.parser import parse_table
 
         source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
@@ -40,7 +44,8 @@ class TestParser:
         assert records_dat[0] == [
             'AAL', 'Ashendon and Aynho Line', '0.00 - 18.29', 'Ashendon Junction', 'Now NAJ3']
 
-    def test_parse_date(self):
+    @staticmethod
+    def test_parse_date():
         from pyrcs.parser import parse_date
 
         str_date_dat = '2020-01-01'
@@ -51,7 +56,8 @@ class TestParser:
         parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
         assert parsed_date_dat == datetime.date(2020, 1, 1)
 
-    def test_parse_location_name(self):
+    @staticmethod
+    def test_parse_location_name():
         from pyrcs.parser import parse_location_name
 
         dat_and_note = parse_location_name('Abbey Wood')
@@ -71,24 +77,26 @@ class TestParser:
         dat_and_note = parse_location_name(location_dat)
         assert dat_and_note == ('Ashford International', 'domestic portion')
 
-    def test_get_site_map(self):
+    @staticmethod
+    def test_get_site_map():
         from pyrcs.parser import get_site_map
 
         site_map_dat = get_site_map(update=True, confirmation_required=False, verbose=True)
 
-        assert type(site_map_dat) == collections.OrderedDict
+        assert isinstance(site_map_dat, collections.OrderedDict)
         assert list(site_map_dat.keys()) == [
             'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
         assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
 
         site_map_dat = get_site_map()
 
-        assert type(site_map_dat) == collections.OrderedDict
+        assert isinstance(site_map_dat, collections.OrderedDict)
         assert list(site_map_dat.keys()) == [
             'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
         assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
 
-    def test_get_last_updated_date(self):
+    @staticmethod
+    def test_get_last_updated_date():
         from pyrcs.parser import get_last_updated_date
 
         url_a = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
@@ -102,13 +110,15 @@ class TestParser:
         last_upd_date = get_last_updated_date(url=ldm_url)
         assert last_upd_date is None
 
-    def test_get_financial_year(self):
+    @staticmethod
+    def test_get_financial_year():
         from pyrcs.parser import get_financial_year
 
         financial_year = get_financial_year(date=datetime.datetime(2021, 3, 31))
         assert financial_year == 2020
-    
-    def test_get_introduction(self):
+
+    @staticmethod
+    def test_get_introduction():
         from pyrcs.parser import get_introduction
 
         bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
@@ -116,7 +126,8 @@ class TestParser:
         intro_text = get_introduction(url=bridges_url)
         assert isinstance(intro_text, str)
 
-    def test_get_catalogue(self):
+    @staticmethod
+    def test_get_catalogue():
         from pyrcs.parser import get_catalogue
 
         elr_cat = get_catalogue(
@@ -126,8 +137,9 @@ class TestParser:
 
         line_data_cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
         assert isinstance(line_data_cat, dict)
-        
-    def test_get_category_menu(self):
+
+    @staticmethod
+    def test_get_category_menu():
         from pyrcs.parser import get_category_menu
 
         menu = get_category_menu(
@@ -141,10 +153,10 @@ class TestParser:
 
         assert isinstance(menu, dict)
         assert list(menu.keys()) == ['Line data']
-    
-    def test_get_heading_text(self):
+
+    @staticmethod
+    def test_get_heading_text():
         from pyrcs.parser import get_heading_text
-        from pyrcs.line_data import Electrification
         from pyhelpers.ops import fake_requests_headers
 
         elec = Electrification()
@@ -157,8 +169,9 @@ class TestParser:
 
         h3_text = get_heading_text(heading_tag=h3, elem_tag_name='em')
         assert h3_text == 'Beamish Tramway'
-        
-    def test_get_page_catalogue(self):
+
+    @staticmethod
+    def test_get_page_catalogue():
         from pyrcs.parser import get_page_catalogue
         from pyhelpers.settings import pd_preferences
 
@@ -168,12 +181,10 @@ class TestParser:
 
         elec_catalogue = get_page_catalogue(elec_url)
         assert isinstance(elec_catalogue, pd.DataFrame)
-    
-    def test_get_hypertext(self):
+
+    @staticmethod
+    def test_get_hypertext():
         from pyrcs.parser import get_hypertext
-        from pyrcs.line_data import Electrification
-        import bs4
-        import requests
 
         elec = Electrification()
 

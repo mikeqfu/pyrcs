@@ -6,7 +6,8 @@ import pytest
 
 class TestConverter:
 
-    def test_fix_mileage(self):
+    @staticmethod
+    def test_fix_mileage():
         from pyrcs.converter import fix_mileage
 
         fixed_mileage = fix_mileage(mileage=29.011)
@@ -18,7 +19,8 @@ class TestConverter:
         fixed_mileage = fix_mileage(mileage=29)
         assert fixed_mileage == '29.0000'
 
-    def test_yard_to_mileage(self):
+    @staticmethod
+    def test_yard_to_mileage():
         from pyrcs.converter import yard_to_mileage
 
         mileage_dat = yard_to_mileage(yard=396)
@@ -36,7 +38,8 @@ class TestConverter:
         mileage_dat = yard_to_mileage(yard=12330)
         assert mileage_dat == '7.0010'
 
-    def test_mileage_to_yard(self):
+    @staticmethod
+    def test_mileage_to_yard():
         from pyrcs.converter import mileage_to_yard
 
         yards_dat = mileage_to_yard(mileage='0.0396')
@@ -48,7 +51,8 @@ class TestConverter:
         yards_dat = mileage_to_yard(mileage=1.0396)
         assert yards_dat == 2156
 
-    def test_mile_chain_to_mileage(self):
+    @staticmethod
+    def test_mile_chain_to_mileage():
         from pyrcs.converter import mile_chain_to_mileage
 
         # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
@@ -59,7 +63,8 @@ class TestConverter:
         mileage_data = mile_chain_to_mileage(mile_chain=None)
         assert mileage_data == ''
 
-    def test_mileage_to_mile_chain(self):
+    @staticmethod
+    def test_mileage_to_mile_chain():
         from pyrcs.converter import mileage_to_mile_chain
 
         mile_chain_data = mileage_to_mile_chain(mileage='0.0396')
@@ -72,7 +77,8 @@ class TestConverter:
         miles_chains_dat = mileage_to_mile_chain(mileage=None)
         assert miles_chains_dat == ''
 
-    def test_mile_yard_to_mileage(self):
+    @staticmethod
+    def test_mile_yard_to_mileage():
         from pyrcs.converter import mile_yard_to_mileage
 
         m, y = 10, 1500
@@ -88,7 +94,8 @@ class TestConverter:
         mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
         assert mileage_data == '10.0500'
 
-    def test_mileage_str_to_num(self):
+    @staticmethod
+    def test_mileage_str_to_num():
         from pyrcs.converter import mileage_str_to_num
 
         mileage_num = mileage_str_to_num(mileage='0.0396')
@@ -97,7 +104,8 @@ class TestConverter:
         mileage_num = mileage_str_to_num(mileage='')
         assert pd.isna(mileage_num)
 
-    def test_mileage_num_to_str(self):
+    @staticmethod
+    def test_mileage_num_to_str():
         from pyrcs.converter import mileage_num_to_str
 
         mileage_str = mileage_num_to_str(mileage=0.0396)
@@ -106,7 +114,8 @@ class TestConverter:
         mileage_str = mileage_num_to_str(mileage=None)
         assert mileage_str == ''
 
-    def test_shift_mileage_by_yard(self):
+    @staticmethod
+    def test_shift_mileage_by_yard():
         from pyrcs.converter import shift_mileage_by_yard
 
         n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220)
@@ -118,7 +127,8 @@ class TestConverter:
         n_mileage = shift_mileage_by_yard(mileage=10, shift_yards=220)
         assert n_mileage == 10.022
 
-    def test_fix_stanox(self):
+    @staticmethod
+    def test_fix_stanox():
         from pyrcs.converter import fix_stanox
 
         fixed_stanox = fix_stanox(stanox=65630)
@@ -130,7 +140,8 @@ class TestConverter:
         fixed_stanox = fix_stanox(stanox=2071)
         assert fixed_stanox == '02071'
 
-    def test_kilometer_to_yard(self):
+    @staticmethod
+    def test_kilometer_to_yard():
         from pyrcs.converter import kilometer_to_yard
 
         assert kilometer_to_yard(1) == 1093.6132983377079

@@ -54,11 +54,11 @@ def test_print_collect_msg(capfd):
     from pyrcs.utils import print_collect_msg
 
     print_collect_msg("Railway Codes", verbose=2, confirmation_required=True)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == 'Collecting the data ... '
 
     print_collect_msg("Railway Codes", verbose=2, confirmation_required=False)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == 'Collecting the data of "Railway Codes" ... '
 
 
@@ -66,11 +66,11 @@ def test_print_inst_conn_err(capfd):
     from pyrcs.utils import print_inst_conn_err
 
     print_inst_conn_err(verbose=True)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == 'The Internet connection is not available.\n'
 
     print_inst_conn_err(update=True, verbose=True, e='')
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == 'Failed to update the data.\n'
 
 
@@ -78,7 +78,7 @@ def test_print_void_msg(capfd):
     from pyrcs.utils import print_void_msg
 
     print_void_msg(data_name="Railway Codes", verbose=True)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == 'No data of "Railway Codes" has been freshly collected.\n'
 
 
@@ -129,7 +129,7 @@ def test_fetch_data_from_file(capfd):
 
     data = fetch_data_from_file(
         cls=None, method=None, data_name=None, ext=None, update=None, dump_dir=None, verbose=True)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert out == "Some errors occurred when fetching the data. " \
                   "'NoneType' object has no attribute 'lower'.\n"
     assert data is None

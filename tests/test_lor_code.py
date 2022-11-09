@@ -6,11 +6,12 @@ import pytest
 from pyrcs.line_data import LOR
 
 lor = LOR()
-    
+
 
 class TestLORCode:
 
-    def test_get_keys_to_prefixes(self):
+    @staticmethod
+    def test_get_keys_to_prefixes():
         keys_to_pfx = lor.get_keys_to_prefixes(update=True, verbose=True)
         assert set(keys_to_pfx) == {'CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR'}
 
@@ -24,14 +25,16 @@ class TestLORCode:
         keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
         assert isinstance(keys_to_pfx_codes, pd.DataFrame)
 
-    def test_get_page_urls(self):
+    @staticmethod
+    def test_get_page_urls():
         lor_urls = lor.get_page_urls(update=True, verbose=True)
         assert isinstance(lor_urls, list)
 
         lor_urls = lor.get_page_urls()
         assert isinstance(lor_urls, list)
 
-    def test_collect_codes_by_prefix(self):
+    @staticmethod
+    def test_collect_codes_by_prefix():
         lor_codes_cy = lor.collect_codes_by_prefix(prefix='CY', update=True, verbose=True)
 
         assert isinstance(lor_codes_cy, dict)
@@ -50,21 +53,23 @@ class TestLORCode:
         nw_codes = lor_codes_nw['NW/NZ']
         assert isinstance(nw_codes, pd.DataFrame)
 
-    def test_fetch_codes(self):
+    @staticmethod
+    def test_fetch_codes():
         lor_codes_dat = lor.fetch_codes()
         assert isinstance(lor_codes_dat, dict)
 
         l_codes = lor_codes_dat['LOR']
         assert isinstance(l_codes, dict)
 
-    def test_fetch_elr_lor_converter(self):
+    @staticmethod
+    def test_fetch_elr_lor_converter():
         elr_lor_conv = lor.fetch_elr_lor_converter(update=True, verbose=True)
 
         assert isinstance(elr_lor_conv, dict)
         assert list(elr_lor_conv.keys()) == ['ELR/LOR converter', 'Last updated date']
         elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
         assert isinstance(elr_loc_conv_data, pd.DataFrame)
-        
+
         elr_lor_conv = lor.fetch_elr_lor_converter()
 
         assert isinstance(elr_lor_conv, dict)

@@ -8,24 +8,27 @@ from pyrcs.other_assets import Depots
 depots = Depots()
 
 
-def test_fetch_codes():
-    depots_codes = depots.fetch_codes(update=True, verbose=True)
+class TestDepots:
 
-    assert isinstance(depots_codes, dict)
-    assert list(depots_codes.keys()) == ['Depots', 'Last updated date']
+    @staticmethod
+    def test_fetch_codes():
+        depots_codes = depots.fetch_codes(update=True, verbose=True)
 
-    depots_codes_dat = depots_codes[depots.KEY]
-    assert isinstance(depots_codes_dat, dict)
-    assert isinstance(depots_codes_dat[depots.KEY_TO_PRE_TOPS], pd.DataFrame)
+        assert isinstance(depots_codes, dict)
+        assert list(depots_codes.keys()) == ['Depots', 'Last updated date']
 
-    depots_codes = depots.fetch_codes()
+        depots_codes_dat = depots_codes[depots.KEY]
+        assert isinstance(depots_codes_dat, dict)
+        assert isinstance(depots_codes_dat[depots.KEY_TO_PRE_TOPS], pd.DataFrame)
 
-    assert isinstance(depots_codes, dict)
-    assert list(depots_codes.keys()) == ['Depots', 'Last updated date']
+        depots_codes = depots.fetch_codes()
 
-    depots_codes_dat = depots_codes[depots.KEY]
-    assert isinstance(depots_codes_dat, dict)
-    assert isinstance(depots_codes_dat[depots.KEY_TO_PRE_TOPS], pd.DataFrame)
+        assert isinstance(depots_codes, dict)
+        assert list(depots_codes.keys()) == ['Depots', 'Last updated date']
+
+        depots_codes_dat = depots_codes[depots.KEY]
+        assert isinstance(depots_codes_dat, dict)
+        assert isinstance(depots_codes_dat[depots.KEY_TO_PRE_TOPS], pd.DataFrame)
 
 
 if __name__ == '__main__':
