@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 
-class TestInit:
-    
+class TestCollector:
+
     @staticmethod
     def test_LineData():
         from pyrcs import LineData

@@ -25,7 +25,7 @@ class TestParser:
 
         tables_list = parse_tr(trs=trs_dat, ths=ths_dat)  # returns a list of lists
 
-        assert type(tables_list) == list
+        assert isinstance(tables_list, list)
         assert len(tables_list) // 100 == 1
         assert tables_list[0] == [
             'AAL', 'Ashendon and Aynho Line', '0.00 - 18.29', 'Ashendon Junction', 'Now NAJ3']
@@ -39,7 +39,7 @@ class TestParser:
         columns_dat, records_dat = parse_table(source_dat)
 
         assert columns_dat == ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
-        assert type(records_dat) == list
+        assert isinstance(records_dat, list)
         assert len(records_dat) // 100 == 1
         assert records_dat[0] == [
             'AAL', 'Ashendon and Aynho Line', '0.00 - 18.29', 'Ashendon Junction', 'Now NAJ3']
