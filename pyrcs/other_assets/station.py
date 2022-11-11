@@ -328,6 +328,12 @@ class Stations:
                         ths = [re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
                         stn_loc = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
+                        # Check station name and CRS
+                        temp = stn_loc['Station'].str.rsplit('\t\t', expand=True)
+                        temp.columns = ['Station', 'CRS']
+                        stn_loc.loc[:, 'Station'] = temp['Station']
+                        stn_loc.insert(loc=1, column='CRS', value=temp['CRS'].str.strip('()'))
+
                         # Check 'row spans'
                         temp0 = stn_loc['Degrees Longitude'].str.split(' / ')
                         temp1 = stn_loc[temp0.map(len).map(lambda x: True if x > 1 else False)]
