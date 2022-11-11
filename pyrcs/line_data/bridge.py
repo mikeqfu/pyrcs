@@ -188,14 +188,20 @@ class Bridges:
                     for h4 in h4s:
                         h4_text = h4.get_text(strip=True)
 
+                        h4_dat = None
+
                         h4_ul = h4.find_next(name='ul')
+                        if isinstance(h4_ul, bs4.Tag):
+                            h4_ul_lis = h4_ul.find_all(name='li')
+                            h4_dat = {}
+                            for h4_ul_li in h4_ul_lis:
+                                h4_dat.update(self._parse_h4_ul_li(h4_ul_li))
+                        elif h4_ul is None:
+                            h4_pre = h4.find_next('pre')
+                            if isinstance(h4_pre, bs4.Tag):
+                                h4_dat = dict([x.split('\t') for x in h4_pre.text.split('\n')])
 
-                        h4_ul_lis = h4_ul.find_all(name='li')
-                        h4_ul_lis_dict = {}
-                        for h4_ul_li in h4_ul_lis:
-                            h4_ul_lis_dict.update(self._parse_h4_ul_li(h4_ul_li))
-
-                        bridges_data.update({h4_text: h4_ul_lis_dict})
+                        bridges_data.update({h4_text: h4_dat})
 
                     # Key to text presentation conventions
                     keys_h3 = h4s[-1].find_next(name='h3')
