@@ -22,16 +22,20 @@ from .utils import cd_data, format_err_msg, home_page_url, print_conn_err, print
 
 
 def _parse_other_tags_in_td_contents(td_content):
-    if not isinstance(td_content, str):
-        td_text = td_content.get_text()
-
-        if td_content.name == 'em':
-            td_text = f'[{td_text}]'
-        elif td_content.name == 'q':
-            td_text = f'"{td_text}"'
+    if isinstance(td_content, str):
+        td_text = td_content
 
     else:
-        td_text = td_content
+        tag_name = td_content.name
+        td_text = td_content.get_text()
+
+        if tag_name == 'em':
+            td_text = f'[{td_text}]'
+        elif tag_name == 'q':
+            td_text = f'"{td_text}"'
+        elif tag_name == 'span':
+            if td_content.get('class') == ['r']:
+                td_text = f'\t\t{td_text}'
 
     return td_text
 
@@ -90,6 +94,8 @@ def parse_tr(trs, ths, as_dataframe=False):
 
         for td_no, td in enumerate(tds):
             text = ''.join([_parse_other_tags_in_td_contents(x) for x in td.contents])
+            if text.startswith('\t\t('):
+                text = text[text.find(')') + 1:]+text[:text.find(')') + 1]
             # if '/\r\n' in text or '\r\n' in text:
             #     txt = text.replace('/\r\n', ' / ').replace('\r\n', ' / ')
             # elif '\n' in text:
