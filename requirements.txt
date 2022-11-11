@@ -1,9 +1,11 @@
-build==0.8.0
+atomicwrites==1.4.1
+build==0.9.0
 jupyter==1.0.0
-jupyterlab==3.4.5
+jupyterlab==3.5.0
 pip-chill==1.0.1
-pyhelpers==1.4.2
-pytest-cov==3.0.0
+py==1.11.0
+pyhelpers==1.4.3
+pytest-cov==4.0.0
 sphinx-copybutton==0.5.0
-sphinx-rtd-theme==1.0.0
+sphinx-rtd-theme==1.1.1
 twine==4.0.1
