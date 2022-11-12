@@ -31,13 +31,37 @@ def _parse_other_tags_in_td_contents(td_content):
 
         if tag_name == 'em':
             td_text = f'[{td_text}]'
+
         elif tag_name == 'q':
             td_text = f'"{td_text}"'
-        elif tag_name == 'span':
-            if td_content.get('class') == ['r']:
+
+        elif tag_name in {'span', 'a'}:
+            td_class = td_content.get('class')
+            td_class_child = td_content.findChild('span')
+
+            if td_class == ['r']:
+                if td_text == 'no CRS?':
+                    td_text = f'\t\t / [{td_text}]'
+                elif '\n ' in td_text:
+                    td_text = ' '.join(
+                        [f'\t\t{x}' if x.startswith('(') and x.endswith(')') else f' / [{x}]'
+                         for x in td_text.split('\n ')])
+                elif '(' not in td_text and ')' not in td_text:
+                    td_text = f'\t\t / [{td_text}]'
+                else:
+                    td_text = f'\t\t{td_text}'
+
+            elif not td_class and td_class_child:
                 td_text = f'\t\t{td_text}'
 
     return td_text
+
+
+def _move_element_to_end(text_, char='\t\t'):
+    for i, x in enumerate(text_):
+        if char in x:
+            text_.append(text_.pop(i))
+            break
 
 
 def parse_tr(trs, ths, as_dataframe=False):
@@ -93,9 +117,10 @@ def parse_tr(trs, ths, as_dataframe=False):
             tds = tds[:ths_len]
 
         for td_no, td in enumerate(tds):
-            text = ''.join([_parse_other_tags_in_td_contents(x) for x in td.contents])
-            if text.startswith('\t\t('):
-                text = text[text.find(')') + 1:]+text[:text.find(')') + 1]
+            text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
+            _move_element_to_end(text_, char='\t\t')
+            text = ''.join(text_)
+
             # if '/\r\n' in text or '\r\n' in text:
             #     txt = text.replace('/\r\n', ' / ').replace('\r\n', ' / ')
             # elif '\n' in text:
@@ -105,6 +130,7 @@ def parse_tr(trs, ths, as_dataframe=False):
             #         txt = '; '.join(txt_)  # new_separator.join(txt_)
             #     else:
             #         txt = ('{} ({})' if not set(text) & {'(', ')'} else '{} {}').format(txt0, txt1)
+
             old_sep, new_sep = re.compile(r'/?\r?\n'), ' / '
             if len(re.findall(old_sep, text)) > 0:
                 txt = re.sub(r'/?\r?\n', new_sep, text)
@@ -152,9 +178,9 @@ def parse_tr(trs, ths, as_dataframe=False):
     #             else:
     #                 tbl_lst[idx].insert(x[1] + 1, x[3])
 
-    if isinstance(ths, bs4.element.Tag):
+    if isinstance(ths, bs4.Tag):
         column_names = [th.text.strip() for th in ths.find_all('th')]
-    elif all(isinstance(x, bs4.element.Tag) for x in ths):
+    elif all(isinstance(x, bs4.Tag) for x in ths):
         column_names = [th.text.strip() for th in ths]
     else:
         column_names = copy.copy(ths)
