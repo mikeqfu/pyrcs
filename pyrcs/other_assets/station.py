@@ -6,7 +6,6 @@ import string
 import urllib.parse
 
 import bs4
-import numpy as np
 import pandas as pd
 import requests
 from pyhelpers.dirs import cd
@@ -17,60 +16,6 @@ from ..parser import get_catalogue, get_last_updated_date, parse_tr
 from ..utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
     is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
     validate_initial
-
-
-def _parse_degrees(x):
-    if x.strip() == '':
-        y = np.nan
-    else:
-        y = float(re.sub(r'(c\.)|≈', '', x))
-
-    return y
-
-
-def _parse_station(x):
-    """
-    x = stn_loc['Station'][3]
-    """
-
-    x_ = x.split(' / ')
-    note_ = 'believed no CRS issued'
-
-    if len(x_) > 1:
-        stn_name, stn_note = x_
-    elif f'[{note_}]' in x:
-        stn_name, stn_note = re.sub(r'(\[)?{}(])?'.format(note_), '', x).strip(), note_
-    else:
-        stn_name, stn_note = x, ''
-
-    crs_code = ''
-    crs_code_ = stn_name[-6:]
-    if crs_code_.startswith(' ('):
-        crs_code = stn_name[-4:-1]  # stn_name[stn_name.find('(') + 1:stn_name.find(')')]
-        stn_name = stn_name[:-6]
-
-    return stn_name, crs_code, stn_note
-
-
-def _parse_owner_and_operator(x):
-    """
-    x = stn_loc['Owner'][2]
-    """
-
-    sep = ' / '
-    x_ = x.split(sep)
-
-    if len(x_) > 1:
-        owner_or_operator = x_[0]
-        if len(x_[1:]) > 1:
-            former_owners_or_operators = sep.join(x_[1:])
-        else:
-            former_owners_or_operators = x_[1:]
-
-    else:
-        owner_or_operator, former_owners_or_operators = x_[0], ''
-
-    return owner_or_operator, former_owners_or_operators
 
 
 class Stations:
@@ -244,6 +189,154 @@ class Stations:
 
         return path
 
+    @staticmethod
+    def check_row_spans(dat):
+        """
+        Check data where there are row spans.
+
+        :param dat: preprocessed data of the station locations
+        :type dat: pandas.DataFrame
+        :return: data with row spans (if any)
+        :rtype: pandas.DataFrame
+        """
+
+        temp0 = dat['Degrees Longitude'].str.split(' / ')
+        temp1 = dat[temp0.map(len).map(lambda x: True if x > 1 else False)]
+
+        cols = ['ELR', 'Mileage', 'Degrees Longitude', 'Degrees Latitude', 'Grid Reference']
+        cols_ = [x for x in temp1.columns if x not in cols]
+
+        temp_dat = []
+        for col in cols:
+            # noinspection PyUnresolvedReferences
+            temp2 = temp1[col].map(lambda x: x.split(' / '))
+
+            if cols.index(col) == 0:
+                # noinspection PyTypeChecker
+                temp_dat_ = temp1[cols_].join(temp2).explode(col)
+                temp_dat_.index = range(len(temp_dat_))
+            else:
+                temp_dat_ = temp2.explode(col).to_frame()
+
+            temp_dat.append(temp_dat_)
+
+        temp_data = pd.concat(temp_dat, axis=1)
+        temp_data = temp_data[dat.columns.to_list()]
+
+        dat_ = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
+
+        dat_.sort_values(['Station'], ignore_index=True, inplace=True)
+
+        return dat_
+
+    @staticmethod
+    def parse_coordinates_columns(dat):
+        """
+        Parse ``'Degrees Longitude'`` and ``'Degrees Latitude'`` of the station locations data.
+
+        :param dat: preprocessed data of the station locations
+        :type dat: pandas.DataFrame
+        :return: data with parsed coordinates
+        :rtype: pandas.DataFrame
+        """
+
+        dat_ = dat.copy()
+        ll_col_names = ['Degrees Longitude', 'Degrees Latitude']
+
+        dat_.loc[:, ll_col_names] = dat_[ll_col_names].applymap(
+            lambda x: None if x.strip() == '' else float(re.sub(r'(c\.)|≈', '', x)))
+
+        return dat_
+
+    @staticmethod
+    def parse_station_column(dat):
+        """
+        Parse ``'Station'`` of the station locations data.
+
+        :param dat: preprocessed data of the station locations
+        :type dat: pandas.DataFrame
+        :return: data with parsed station names and their corresponding CRS
+        :rtype: pandas.DataFrame
+
+        **Tests**::
+
+            x = 'Hythe Road\t\t / [CRS awaited]'
+            x = 'Heathrow Junction [sometimes referred to as Heathrow Interchange]\t\t / [no CRS?]'
+        """
+
+        dat_ = dat.copy()
+
+        temp1 = dat_['Station'].str.split('\t\t', expand=True)
+        temp1.columns = ['Station', 'CRS']
+        dat_.loc[:, 'Station'] = temp1['Station']
+
+        # Get notes for stations
+        stn_note_ = pd.Series('', index=dat_.index)
+        for i, x in enumerate(temp1['Station']):
+            if '[' in x and ']':
+                y = re.search(r' \[(.*)]', x).group(0)  # Station Note
+                dat_.loc[i, 'Station'] = x.replace(y, '')
+                stn_note_[i] = y.strip(' []')
+
+        dat_.insert(loc=dat_.columns.get_loc('Station') + 1, column='Station Note', value=stn_note_)
+
+        temp2 = temp1['CRS'].str.split(' / ', expand=True).fillna('')
+        if temp2.shape[1] == 1:
+            temp2.columns = ['CRS']
+            temp2 = pd.concat([temp2, pd.DataFrame('', index=temp2.index, columns=['CRS Note'])], axis=1)
+        else:
+            temp2.columns = ['CRS', 'CRS Note']
+            temp2.loc[:, 'CRS Note'] = temp2['CRS Note'].str.strip('[]')
+
+        temp2.loc[:, 'CRS'] = temp2['CRS'].str.replace(r'[()]', '', regex=True)
+
+        dat_ = pd.concat([dat_, temp2], axis=1)
+
+        return dat_
+
+    @staticmethod
+    def parse_owner_and_operator_columns(dat):
+        """
+        Parse ``'Owner'`` and ``'Operator'`` of the station locations data.
+
+        :param dat: preprocessed data of the station locations
+        :type dat: pandas.DataFrame
+        :return: data with parsed information of owners and operators
+        :rtype: pandas.DataFrame
+        """
+
+        def _parse_owner_and_operator(x, sep=' / '):
+            """
+            x = dat_['Owner'][0]
+            """
+            x_ = x.split(sep)
+
+            if len(x_) > 1:
+                owner_or_operator = x_[0]
+                if len(x_[1:]) > 1:
+                    former_owners_or_operators = sep.join(x_[1:])
+                else:
+                    former_owners_or_operators = x_[1:]
+            else:
+                owner_or_operator, former_owners_or_operators = x_[0], ''
+
+            return owner_or_operator, former_owners_or_operators
+
+        dat_ = dat.copy()
+
+        owner_operator = []
+        for col in ['Owner', 'Operator']:
+            temp = pd.DataFrame(
+                dat_[col].map(_parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col])
+
+            del dat_[col]
+
+            owner_operator.append(temp)
+
+        dat_ = pd.concat([dat_] + owner_operator, axis=1)
+
+        return dat_
+
     def collect_locations_by_initial(self, initial, update=False, verbose=False):
         """
         Collect `data of railway station locations
@@ -278,12 +371,11 @@ class Stations:
             >>> stn_locations_a_codes.head()
                        Station  ...                                    Former Operator
             0       Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-            1       Abbey Wood  ...
-            2             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            1             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            2  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
             3        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            4  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
-
-            [5 rows x 13 columns]
+            4         Aberdare  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            [5 rows x 14 columns]
         """
 
         beginning_with = validate_initial(initial)
@@ -293,20 +385,19 @@ class Stations:
         path_to_pickle = self._cdd("a-z", initial_ + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
-            location_codes_ = load_data(path_to_pickle)
+            data = load_data(path_to_pickle)
 
         else:
             if verbose == 2:
                 print("Collecting data of {} of stations beginning with '{}')".format(
                     self.KEY_TO_STN.lower(), beginning_with), end=" ... ")
 
-            location_codes_ = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
+            data = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
+            # url = stn.URL.replace('station0', 'station{}'.format(beginning_with.lower()))
+            url = self.URL.replace('station0', 'station{}'.format(initial_))
             try:
-                url = self.URL.replace('station0', 'station{}'.format(initial_))
-                # url = stn.URL.replace('station0', 'station{}'.format(beginning_with.lower()))
                 source = requests.get(url=url, headers=fake_requests_headers())
-
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
@@ -326,75 +417,33 @@ class Stations:
                         # Create a DataFrame of the requested table
                         trs = tbody.find_all(name='tr')
                         ths = [re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
-                        stn_loc = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+                        dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-                        # Check station name and CRS
-                        temp = stn_loc['Station'].str.rsplit('\t\t', expand=True)
-                        temp.columns = ['Station', 'CRS']
-                        stn_loc.loc[:, 'Station'] = temp['Station']
-                        stn_loc.insert(loc=1, column='CRS', value=temp['CRS'].str.strip('()'))
+                        parser_funcs = [
+                            self.check_row_spans,
+                            self.parse_coordinates_columns,
+                            self.parse_station_column,
+                            self.parse_owner_and_operator_columns,
+                        ]
+                        for parser_func in parser_funcs:
+                            dat = parser_func(dat)
 
-                        # Check 'row spans'
-                        temp0 = stn_loc['Degrees Longitude'].str.split(' / ')
-                        temp1 = stn_loc[temp0.map(len).map(lambda x: True if x > 1 else False)]
-                        cols = [
-                            'ELR', 'Mileage', 'Degrees Longitude', 'Degrees Latitude', 'Grid Reference']
-                        cols_ = [x for x in temp1.columns if x not in cols]
-                        temp_dat = []
-                        for col in cols:
-                            # noinspection PyUnresolvedReferences
-                            temp2 = temp1[col].map(lambda x: x.split(' / '))
-                            if cols.index(col) == 0:
-                                # noinspection PyTypeChecker
-                                temp_dat_ = temp1[cols_].join(temp2).explode(col)
-                                temp_dat_.index = range(len(temp_dat_))
-                            else:
-                                temp_dat_ = temp2.explode(col).to_frame()
-                            temp_dat.append(temp_dat_)
-
-                        temp_data = pd.concat(temp_dat, axis=1)
-                        temp_data = temp_data[stn_loc.columns.to_list()]
-
-                        stn_loc = pd.concat(
-                            [stn_loc.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
-
-                        stn_loc.sort_values(['Station'], inplace=True)
-
-                        # Convert data type of the longitudes and latitudes
-                        ll_col_names = ['Degrees Longitude', 'Degrees Latitude']
-                        stn_loc.loc[:, ll_col_names] = stn_loc[ll_col_names].applymap(_parse_degrees)
-
-                        # Cleanse 'Station'
-                        stn_col_name = 'Station'
-                        stn_info = stn_loc[stn_col_name].map(_parse_station).apply(pd.Series)
-                        stn_info.columns = [stn_col_name, 'CRS', 'Note']
-                        del stn_loc[stn_col_name]
-                        stn_loc = pd.concat([stn_info, stn_loc], axis=1)
-
-                        # Parse 'Owner'
-                        owner_operator = []
-                        for col in ['Owner', 'Operator']:
-                            temp_info = stn_loc[col].map(_parse_owner_and_operator).apply(pd.Series)
-                            temp_info.columns = [col, 'Former ' + col]
-                            del stn_loc[col]
-                            owner_operator.append(temp_info)
-
-                        location_codes_[beginning_with] = pd.concat([stn_loc] + owner_operator, axis=1)
+                        data[beginning_with] = dat
 
                         last_updated_date = get_last_updated_date(url=url, parsed=True)
-                        location_codes_[self.KEY_TO_LAST_UPDATED_DATE] = last_updated_date
+                        data[self.KEY_TO_LAST_UPDATED_DATE] = last_updated_date
 
                         if verbose == 2:
                             print("Done.")
 
                     save_data_to_file(
-                        self, data=location_codes_, data_name=beginning_with, ext=ext,
-                        dump_dir=self._cdd("a-z"), verbose=verbose)
+                        self, data=data, data_name=beginning_with, ext=ext, dump_dir=self._cdd("a-z"),
+                        verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
 
-        return location_codes_
+        return data
 
     def fetch_locations(self, update=False, dump_dir=None, verbose=False):
         """
@@ -432,12 +481,11 @@ class Stations:
             >>> stn_location_codes_dat.head()
                        Station  ...                                    Former Operator
             0       Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-            1       Abbey Wood  ...
-            2             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            3        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            4  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
-
-            [5 rows x 13 columns]
+            1             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            2        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            3  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
+            4         Aberdare  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            [5 rows x 14 columns]
         """
 
         verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
