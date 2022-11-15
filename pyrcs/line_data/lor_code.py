@@ -1,5 +1,6 @@
 """Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes."""
 
+import itertools
 import os
 import re
 import urllib.parse
@@ -58,6 +59,7 @@ class LOR:
         :ivar str last_updated_date: last updated date
         :ivar str data_dir: path to the data directory
         :ivar str current_data_dir: path to the current data directory
+        :ivar list valid_prefixes: valid prefixes
 
         **Examples**::
 
@@ -79,6 +81,8 @@ class LOR:
         self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
+
+        self.valid_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
 
     def _cdd(self, *sub_dir, **kwargs):
         """
@@ -121,8 +125,7 @@ class LOR:
             >>> lor = LOR()
 
             >>> keys_to_pfx = lor.get_keys_to_prefixes()
-
-            >>> print(keys_to_pfx)
+            >>> keys_to_pfx
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
 
             >>> keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=False)
@@ -172,7 +175,7 @@ class LOR:
             else:
                 try:
                     if prefixes_only:
-                        keys_to_prefixes = lor_pref.Prefixes.tolist()
+                        keys_to_prefixes = lor_pref['Prefixes'].to_list()
                     else:
                         keys_to_prefixes = {
                             self.KEY_P: lor_pref,
@@ -188,6 +191,9 @@ class LOR:
                         keys_to_prefixes = []
                     else:
                         keys_to_prefixes = {self.KEY_P: None, self.KEY_TO_LAST_UPDATED_DATE: None}
+
+            if len(keys_to_prefixes) > 0 and prefixes_only:
+                setattr(self, 'valid_prefixes', keys_to_prefixes)
 
         return keys_to_prefixes
 
@@ -211,10 +217,10 @@ class LOR:
             >>> lor = LOR()
 
             >>> lor_urls = lor.get_page_urls()
-
-            >>> lor_urls[:2]
-            ['http://www.railwaycodes.org.uk/pride/pridecy.shtm',
-             'http://www.railwaycodes.org.uk/pride/prideea.shtm']
+            >>> type(lor_urls)
+            list
+            >>> lor_urls[0]
+            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
         """
 
         data_name = "prefix-page-urls"
@@ -286,39 +292,118 @@ class LOR:
             self.get_page_urls(update=True, verbose=2)
 
     @staticmethod
-    def _parse_h3_table(tbl, soup):
+    def _parse_line_name(x):
+        """
+        Parse the column of 'Line Name'.
 
-        # Parse the column of Line Name
-        def _parse_line_name(x):
-            # re.search('\w+.*(?= \(\[\')', x).group()
-            # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
-            try:
-                line_name, line_name_note = x.split(' ([\'')
-                line_name_note = line_name_note.strip('\'])')
+        :return: line name and its corresponding note
+        :rtype: tuple
+        """
+        # re.search('\w+.*(?= \(\[\')', x).group()
+        # re.search('(?<=\(\[\')\w+.*(?=\')', x).group()
+        try:
+            line_name, line_name_note = x.split(' ([\'')
+            line_name_note = line_name_note.strip('\'])')
 
-            except ValueError:
-                line_name, line_name_note = x, None
+        except ValueError:
+            line_name, line_name_note = x, ''
 
-            return line_name, line_name_note
+        return line_name, line_name_note
 
-        thead, tbody = tbl[0].find('thead'), tbl[0].find('tbody')
+    @staticmethod
+    def _parse_ra(x):
+        # x = '3✖Originally reported as RA4'
+        if '✖' in x:
+            ra_dat, ra_note = x.split('✖')
+        elif x == '[unknown]':
+            ra_dat, ra_note = '', 'unknown'
+        else:
+            ra_dat, ra_note = x, ''
+
+        return ra_dat, ra_note
+
+    def _parse_h3_table(self, tbl):
+        # thead, tbody = tbl[0].find('thead'), tbl[0].find('tbody')
+        thead, tbody = tbl.find('thead'), tbl.find('tbody')
         ths = [x.text.replace('\n', ' ') for x in thead.find_all('th')]
         trs = tbody.find_all('tr')
-        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-        line_name_info = tbl['Line Name'].map(_parse_line_name).apply(pd.Series)
-        line_name_info.columns = ['Line Name', 'Line Name Note']
-        codes_dat = pd.concat([tbl, line_name_info], axis=1, sort=False)
+        tbl_ = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        ln_col_name, ra_col_name = 'Line Name', 'Route Availability (RA)'
+
+        tbl_[[ln_col_name, ln_col_name + ' Note']] = pd.DataFrame(
+            tbl_[ln_col_name].map(self._parse_line_name).to_list(), index=tbl_.index)
+
+        tbl_[[ra_col_name, 'RA Note']] = pd.DataFrame(
+            tbl_[ra_col_name].map(self._parse_ra).to_list(), index=tbl_.index)
 
         try:
-            note_dat_ = [
-                (x['id'].title(), x.text.strip().replace('\xa0', ''))
-                for x in soup.find('ol').findChildren('a')]
-            note_dat = dict(note_dat_)
+            # note_dat_ = [
+            #     (x['id'].title(), x.text.strip().replace('\xa0', ''))
+            #     for x in soup.find('ol').findChildren('a')]
+            # note_dat = dict(note_dat_)
+            note = tbl.find_previous('p').text
 
         except AttributeError:
-            note_dat = dict([('Note', None)])
+            # note = dict([('Note', None)])
+            note = ''
 
-        return codes_dat, note_dat
+        return tbl_, note
+
+    def _collect_codes_by_prefix(self, prefix_, data_name, verbose):
+        if prefix_ in ("NW", "NZ"):
+            url = home_page_url() + '/pride/pridenw.shtm'
+            prefix_ = "NW/NZ"
+        else:
+            url = home_page_url() + '/pride/pride{}.shtm'.format(prefix_.lower())
+
+        if verbose == 2:
+            print("To collect LOR codes prefixed by \"{}\". ".format(prefix_), end=" ... ")
+
+        lor_codes_by_initials = None
+
+        try:
+            source = requests.get(url=url, headers=fake_requests_headers())
+
+        except Exception as e:
+            if verbose == 2:
+                print("Failed. ", end="")
+            print_inst_conn_err(verbose=verbose, e=e)
+
+        else:
+            try:
+                soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+                h3, table = soup.find_all(name='h3'), soup.find_all(name='table')
+                if len(h3) == 0:
+                    code_data, code_notes = self._parse_h3_table(table[0])
+                    lor_codes_by_initials = {prefix_: code_data, 'Notes': code_notes}
+
+                else:
+                    # code_data_and_notes = [
+                    #     dict(zip([prefix_, 'Notes'], self._parse_h3_table(x, soup=soup)))
+                    #     for x in zip(*[iter(table)] * 2)]
+                    data_and_note = [self._parse_h3_table(tbl) for tbl in table]
+                    keys = [(h3_.text, h3_.text + ' note') for h3_ in h3]
+                    code_data_and_notes = dict(zip(*map(
+                        itertools.chain.from_iterable, [keys, data_and_note])))
+                    lor_codes_by_initials = {prefix_: code_data_and_notes}
+
+                last_updated_date = get_last_updated_date(url=url)
+
+                lor_codes_by_initials.update({self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
+
+                if verbose == 2:
+                    print("Done.")
+
+                save_data_to_file(
+                    self, data=lor_codes_by_initials, data_name=data_name,
+                    ext=".pickle", dump_dir=self._cdd("prefixes"), verbose=verbose)
+
+            except Exception as e:
+                print(f"Failed. {format_err_msg(e)}")
+
+        return lor_codes_by_initials
 
     def collect_codes_by_prefix(self, prefix, update=False, verbose=False):
         """
@@ -344,15 +429,13 @@ class LOR:
             dict
             >>> list(lor_codes_cy.keys())
             ['CY', 'Notes', 'Last updated date']
-
             >>> cy_codes = lor_codes_cy['CY']
             >>> type(cy_codes)
             pandas.core.frame.DataFrame
             >>> cy_codes.head()
-                 Code  ... Line Name Note
-            0   CY240  ...           None
-            1  CY1540  ...           None
-
+                 Code  ...                       RA Note
+            0   CY240  ...           Caerwent branch RA4
+            1  CY1540  ...  Pembroke - Pembroke Dock RA6
             [2 rows x 5 columns]
 
             >>> lor_codes_nw = lor.collect_codes_by_prefix(prefix='NW')
@@ -362,34 +445,38 @@ class LOR:
             ['NW/NZ', 'Notes', 'Last updated date']
             >>> nw_codes = lor_codes_nw['NW/NZ']
             >>> nw_codes.head()
-                 Code  ... Line Name Note
-            0  NW1001  ...           None
-            1  NW1002  ...           None
-            2  NW1003  ...           None
-            3  NW1004  ...           None
-            4  NW1005  ...           None
-
+                 Code  ... RA Note
+            0  NW1001  ...
+            1  NW1002  ...
+            2  NW1003  ...
+            3  NW1004  ...
+            4  NW1005  ...
             [5 rows x 5 columns]
 
             >>> lor_codes_xr = lor.collect_codes_by_prefix(prefix='XR')
+            >>> type(lor_codes_xr)
+            dict
+            >>> list(lor_codes_xr.keys())
+            ['XR', 'Last updated date']
             >>> xr_codes = lor_codes_xr['XR']
             >>> type(xr_codes)
             dict
             >>> list(xr_codes.keys())
-            ['Current codes', 'Past codes']
-            >>> xr_codes['Current codes']['XR'].head()
-                Code  ... Line Name Note
-            0  XR001  ...           None
-            1  XR002  ...           None
-
+            ['Current codes', 'Current codes note', 'Past codes', 'Past codes note']
+            >>> xr_codes['Past codes'].head()
+                Code  ... RA Note
+            0  XR001  ...
+            1  XR002  ...
+            [2 rows x 5 columns]
+            >>> xr_codes['Current codes'].head()
+                Code  ...                     RA Note
+            0  XR001  ...  Originally reported as RA4
+            1  XR002  ...  Originally reported as RA4
             [2 rows x 5 columns]
         """
 
-        valid_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
-
         prefix_ = prefix.upper()
-
-        assert prefix_ in valid_prefixes, "`prefix` must be one of {}".format(", ".join(valid_prefixes))
+        assert prefix_ in self.valid_prefixes, f"`prefix` must be one of {self.valid_prefixes}"
 
         data_name = "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower()
         ext = ".pickle"
@@ -399,53 +486,8 @@ class LOR:
             lor_codes_by_initials = load_data(path_to_pickle)
 
         else:
-            if prefix_ in ("NW", "NZ"):
-                url = home_page_url() + '/pride/pridenw.shtm'
-                prefix_ = "NW/NZ"
-            else:
-                url = home_page_url() + '/pride/pride{}.shtm'.format(prefix_.lower())
-
-            if verbose == 2:
-                print("To collect LOR codes prefixed by \"{}\". ".format(prefix_), end=" ... ")
-
-            lor_codes_by_initials = None
-
-            try:
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    h3, table = soup.find_all(name='h3'), soup.find_all(name='table')
-                    if len(h3) == 0:
-                        code_data, code_data_notes = self._parse_h3_table(table, soup=soup)
-                        lor_codes_by_initials = {prefix_: code_data, 'Notes': code_data_notes}
-                    else:
-                        code_data_and_notes = [
-                            dict(zip([prefix_, 'Notes'], self._parse_h3_table(x, soup=soup)))
-                            for x in zip(*[iter(table)] * 2)]
-                        lor_codes_by_initials = {
-                            prefix_: dict(zip([x.text for x in h3], code_data_and_notes))}
-
-                    last_updated_date = get_last_updated_date(url=url)
-
-                    lor_codes_by_initials.update({self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=lor_codes_by_initials, data_name=data_name,
-                        ext=".pickle", dump_dir=self._cdd("prefixes"), verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
+            lor_codes_by_initials = self._collect_codes_by_prefix(
+                prefix_=prefix_, data_name=data_name, verbose=verbose)
 
         return lor_codes_by_initials
 
@@ -473,6 +515,8 @@ class LOR:
             >>> lor_codes_dat = lor.fetch_codes()
             >>> type(lor_codes_dat)
             dict
+            >>> list(lor_codes_dat.keys())
+            ['LOR', 'Last updated date']
             >>> l_codes = lor_codes_dat['LOR']
             >>> type(l_codes)
             dict
@@ -485,10 +529,30 @@ class LOR:
             >>> list(cy_codes.keys())
             ['CY', 'Notes', 'Last updated date']
             >>> cy_codes['CY']
-                 Code  ... Line Name Note
-            0   CY240  ...           None
-            1  CY1540  ...           None
+                 Code  ...                       RA Note
+            0   CY240  ...           Caerwent branch RA4
+            1  CY1540  ...  Pembroke - Pembroke Dock RA6
+            [2 rows x 5 columns]
 
+            >>> xr_codes = l_codes['XR']
+            >>> type(xr_codes)
+            dict
+            >>> list(xr_codes.keys())
+            ['XR', 'Last updated date']
+            >>> xr_codes_ = xr_codes['XR']
+            >>> type(xr_codes_)
+            dict
+            >>> list(xr_codes_.keys())
+            ['Current codes', 'Current codes note', 'Past codes', 'Past codes note']
+            >>> xr_codes_['Past codes'].head()
+                Code  ... RA Note
+            0  XR001  ...
+            1  XR002  ...
+            [2 rows x 5 columns]
+            >>> xr_codes_['Current codes'].head()
+                Code  ...                     RA Note
+            0  XR001  ...  Originally reported as RA4
+            1  XR002  ...  Originally reported as RA4
             [2 rows x 5 columns]
         """
 
@@ -563,7 +627,6 @@ class LOR:
             2   ABE  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             3  ABE1  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             4  ABE2  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
-
             [5 rows x 6 columns]
         """
 
@@ -672,7 +735,6 @@ class LOR:
             2   ABE  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             3  ABE1  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
             4  ABE2  ...  http://www.railwaycodes.org.uk/pride/prideln.s...
-
             [5 rows x 6 columns]
         """
 
