@@ -64,7 +64,7 @@ class TrackDiagrams:
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-        self.catalogue = self._fetch_catalogue(update=update, verbose=True if verbose == 2 else False)
+        self.catalogue = self.fetch_catalogue(update=update, verbose=True if verbose == 2 else False)
 
     def _cdd(self, *sub_dir, **kwargs):
         """
@@ -152,7 +152,64 @@ class TrackDiagrams:
 
         return items
 
-    def _collect_catalogue(self, confirmation_required=True, verbose=False):
+    def _collect_catalogue(self, source, data_name, verbose):
+        track_diagrams_catalogue_ = {}
+
+        try:
+            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+            h3 = soup.find('h3', string=True, attrs={'class': None})
+            while h3:
+                # Description
+                if h3.text == 'Miscellaneous':
+                    desc = [x.text for x in h3.find_next_siblings('p')]
+                else:
+                    desc = h3.find_next_sibling('p').text.replace('\xa0', '')
+
+                # Extract details
+                cold_soup = h3.find_next('div', attrs={'class': 'columns'})
+                if cold_soup:
+                    info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
+                    urls = [
+                        urllib.parse.urljoin(self.URL, a.get('href'))
+                        for a in cold_soup.find_all('a')]
+                else:
+                    cold_soup = h3.find_next('a', attrs={'target': '_blank'})
+                    info, urls = [], []
+
+                    while cold_soup:
+                        info.append(cold_soup.text)
+                        urls.append(urllib.parse.urljoin(self.URL, cold_soup['href']))
+                        if h3.text == 'Miscellaneous':
+                            cold_soup = cold_soup.find_next('a')
+                        else:
+                            cold_soup = cold_soup.find_next_sibling('a')
+
+                meta = pd.DataFrame(data=zip(info, urls), columns=['Description', 'FileURL'])
+
+                track_diagrams_catalogue_.update({h3.text: (desc, meta)})
+
+                h3 = h3.find_next_sibling('h3')
+
+            track_diagrams_catalogue = {
+                self.KEY: track_diagrams_catalogue_,
+                self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
+            }
+
+            if verbose == 2:
+                print("Done.")
+
+            save_data_to_file(
+                self, data=track_diagrams_catalogue, data_name=data_name, ext=".pickle",
+                dump_dir=cd_data("catalogue"), verbose=verbose)
+
+        except Exception as e:
+            print(f"Failed. {format_err_msg(e)}")
+            track_diagrams_catalogue = None
+
+        return track_diagrams_catalogue
+
+    def collect_catalogue(self, confirmation_required=True, verbose=False):
         """
         Collect catalogue of sample railway track diagrams from source web page.
 
@@ -169,7 +226,7 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> track_diagrams_catalog = td._collect_catalogue()
+            >>> track_diagrams_catalog = td.collect_catalogue()
             To collect the catalogue of track diagrams
             ? [No]|Yes: yes
             >>> type(track_diagrams_catalog)
@@ -197,10 +254,7 @@ class TrackDiagrams:
         data_name = self.KEY.lower()
 
         if confirmed("To collect the catalogue of {}\n?".format(data_name), confirmation_required):
-
             print_collect_msg(data_name, verbose=verbose, confirmation_required=confirmation_required)
-
-            track_diagrams_catalogue = None
 
             try:
                 source = requests.get(url=self.URL, headers=fake_requests_headers())
@@ -211,63 +265,11 @@ class TrackDiagrams:
                 print_inst_conn_err(verbose=verbose, e=e)
 
             else:
-                try:
-                    track_diagrams_catalogue_ = {}
+                track_diagrams_catalogue = self._collect_catalogue(source, data_name, verbose)
 
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+                return track_diagrams_catalogue
 
-                    h3 = soup.find('h3', string=True, attrs={'class': None})
-                    while h3:
-                        # Description
-                        if h3.text == 'Miscellaneous':
-                            desc = [x.text for x in h3.find_next_siblings('p')]
-                        else:
-                            desc = h3.find_next_sibling('p').text.replace('\xa0', '')
-
-                        # Extract details
-                        cold_soup = h3.find_next('div', attrs={'class': 'columns'})
-                        if cold_soup:
-                            info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
-                            urls = [
-                                urllib.parse.urljoin(self.URL, a.get('href'))
-                                for a in cold_soup.find_all('a')
-                            ]
-                        else:
-                            cold_soup = h3.find_next('a', attrs={'target': '_blank'})
-                            info, urls = [], []
-
-                            while cold_soup:
-                                info.append(cold_soup.text)
-                                urls.append(urllib.parse.urljoin(self.URL, cold_soup['href']))
-                                if h3.text == 'Miscellaneous':
-                                    cold_soup = cold_soup.find_next('a')
-                                else:
-                                    cold_soup = cold_soup.find_next_sibling('a')
-
-                        meta = pd.DataFrame(data=zip(info, urls), columns=['Description', 'FileURL'])
-
-                        track_diagrams_catalogue_.update({h3.text: (desc, meta)})
-
-                        h3 = h3.find_next_sibling('h3')
-
-                    track_diagrams_catalogue = {
-                        self.KEY: track_diagrams_catalogue_,
-                        self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=track_diagrams_catalogue, data_name=data_name, ext=".pickle",
-                        dump_dir=cd_data("catalogue"), verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return track_diagrams_catalogue
-
-    def _fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
+    def fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
         """
         Fetch the catalogue of railway track diagrams.
 
@@ -287,7 +289,7 @@ class TrackDiagrams:
 
             >>> td = TrackDiagrams()
 
-            >>> trk_diagr_cat = td._fetch_catalogue()
+            >>> trk_diagr_cat = td.fetch_catalogue()
             >>> type(trk_diagr_cat)
             dict
             >>> list(trk_diagr_cat.keys())
@@ -311,7 +313,7 @@ class TrackDiagrams:
         """
 
         track_diagrams_catalogue = fetch_data_from_file(
-            cls=self, method='_collect_catalogue', data_name=self.KEY, ext=".pickle",
+            cls=self, method='collect_catalogue', data_name=self.KEY, ext=".pickle",
             update=update, dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
 
         return track_diagrams_catalogue
