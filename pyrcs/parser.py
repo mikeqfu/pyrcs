@@ -64,7 +64,7 @@ def _move_element_to_end(text_, char='\t\t'):
             break
 
 
-def parse_tr(trs, ths, as_dataframe=False):
+def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     """
     Parse a list of parsed HTML <tr> elements.
 
@@ -74,6 +74,8 @@ def parse_tr(trs, ths, as_dataframe=False):
     :type trs: bs4.ResultSet or list
     :param ths: list of column names (usually under a ``<th>`` tag) of a requested table
     :type ths: list or bs4.element.Tag
+    :param sep: separator that replaces the one in the raw data
+    :type sep: str or None
     :param as_dataframe: whether to return the parsed data in tabular form
     :type as_dataframe: bool
     :return: a list of lists that each comprises a row of the requested table
@@ -131,9 +133,12 @@ def parse_tr(trs, ths, as_dataframe=False):
             #     else:
             #         txt = ('{} ({})' if not set(text) & {'(', ')'} else '{} {}').format(txt0, txt1)
 
-            old_sep, new_sep = re.compile(r'/?\r?\n'), ' / '
-            if len(re.findall(old_sep, text)) > 0:
-                txt = re.sub(r'/?\r?\n', new_sep, text)
+            if sep:
+                old_sep = re.compile(r'/?\r?\n')
+                if len(re.findall(old_sep, text)) > 0:
+                    txt = re.sub(r'/?\r?\n', sep, text)
+                else:
+                    txt = text
             else:
                 txt = text
 
@@ -306,101 +311,6 @@ def parse_date(str_date, as_date_type=False):
     parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
 
     return parsed_date
-
-
-def parse_location_name(location_name):
-    """
-    Parse location name (and its associated note).
-
-    :param location_name: location name (in raw data)
-    :type location_name: str or None
-    :return: location name and note (if any)
-    :rtype: tuple
-
-    **Examples**::
-
-        >>> from pyrcs.parser import parse_location_name
-
-        >>> dat_and_note = parse_location_name('Abbey Wood')
-        >>> dat_and_note
-        ('Abbey Wood', '')
-
-        >>> dat_and_note = parse_location_name(None)
-        >>> dat_and_note
-        ('', '')
-
-        >>> dat_and_note = parse_location_name('Abercynon (formerly Abercynon South)')
-        >>> dat_and_note
-        ('Abercynon', 'formerly Abercynon South')
-
-        >>> location_dat = 'Allerton (reopened as Liverpool South Parkway)'
-        >>> dat_and_note = parse_location_name(location_dat)
-        >>> dat_and_note
-        ('Allerton', 'reopened as Liverpool South Parkway')
-
-        >>> location_dat = 'Ashford International [domestic portion]'
-        >>> dat_and_note = parse_location_name(location_dat)
-        >>> dat_and_note
-        ('Ashford International', 'domestic portion')
-    """
-
-    if location_name is None:
-        dat, note = '', ''
-
-    else:
-        # Location name
-        d = re.search(r'.*(?= \[[\"\']\()', location_name)
-        if d is not None:
-            dat = d.group()
-        elif ' [unknown feature, labelled "do not use"]' in location_name:
-            dat = re.search(r'\w+(?= \[unknown feature, )', location_name).group()
-        elif ') [formerly' in location_name:
-            dat = re.search(r'.*(?= \[formerly)', location_name).group()
-        else:
-            m_pattern = re.compile(
-                r'[Oo]riginally |'
-                r'[Ff]ormerly |'
-                r'[Ll]ater |'
-                r'[Pp]resumed |'
-                r' \(was |'
-                r' \(in |'
-                r' \(at |'
-                r' \(also |'
-                r' \(second code |'
-                r'\?|'
-                r'\n|'
-                r' \(\[\'|'
-                r' \(definition unknown\)|'
-                r' \(reopened |'
-                r'( portion])$')
-            x_tmp = re.search(r'(?=[\[(]).*(?<=[])])|(?=\().*(?<=\) \[)', location_name)
-            x_tmp = x_tmp.group() if x_tmp is not None else location_name
-            if re.search(m_pattern, location_name):
-                dat = ' '.join(location_name.replace(x_tmp, '').split())
-            else:
-                dat = location_name
-
-        # Note
-        y = location_name.replace(dat, '', 1).strip()
-        if y == '':
-            note = ''
-        else:
-            n = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', y)
-            if n is None:
-                n = re.search(
-                    r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*'
-                    r'(?=(\)[\'\"]])|(][\'\"]\))|])', y)
-            elif '"now deleted"' in y and y.startswith('(') and y.endswith(')'):
-                n = re.search(r'(?<=\().*(?=\))', y)
-            note = n.group() if n is not None else ''
-            if note.endswith('\'') or note.endswith('"'):
-                note = note[:-1]
-
-        if 'STANOX ' in dat and 'STANOX ' in location_name and note == '':
-            dat = location_name[0:location_name.find('STANOX')].strip()
-            note = location_name[location_name.find('STANOX'):]
-
-    return dat, note
 
 
 # == Extract information ===========================================================================
