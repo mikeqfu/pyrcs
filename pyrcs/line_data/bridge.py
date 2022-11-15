@@ -132,7 +132,6 @@ class Bridges:
             >>> bdg_codes = bdg.collect_codes()
             To collect data of railway bridges
             ? [No]|Yes: yes
-
             >>> type(bdg_codes)
             dict
             >>> list(bdg_codes.keys())
@@ -143,6 +142,7 @@ class Bridges:
              'London Overground',
              'Anglia',
              'London Underground',
+             'Addendum',
              'Key to text presentation conventions']
 
             >>> bdg_codes['Key to text presentation conventions']
@@ -199,6 +199,7 @@ class Bridges:
                         elif h4_ul is None:
                             h4_pre = h4.find_next('pre')
                             if isinstance(h4_pre, bs4.Tag):
+                                # noinspection PyTypeChecker
                                 h4_dat = dict([x.split('\t') for x in h4_pre.text.split('\n')])
 
                         bridges_data.update({h4_text: h4_dat})
@@ -265,6 +266,7 @@ class Bridges:
              'London Overground',
              'Anglia',
              'London Underground',
+             'Addendum',
              'Key to text presentation conventions']
 
             >>> bdg_codes['Key to text presentation conventions']

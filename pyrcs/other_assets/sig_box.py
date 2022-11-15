@@ -124,7 +124,6 @@ class SignalBoxes:
             >>> sb = SignalBoxes()
 
             >>> sb_a_codes = sb.collect_prefix_codes(initial='a')
-
             >>> type(sb_a_codes)
             dict
             >>> list(sb_a_codes.keys())
@@ -140,7 +139,6 @@ class SignalBoxes:
             2    R           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
             3   AW               Abbey Wood  ...      13 July 1975      Dartford (D)
             4   AE         Abbey Works East  ...   1 November 1987  Port Talbot (PT)
-
             [5 rows x 8 columns]
         """
 
@@ -223,7 +221,6 @@ class SignalBoxes:
             >>> sb = SignalBoxes()
 
             >>> sb_prefix_codes = sb.fetch_prefix_codes()
-
             >>> type(sb_prefix_codes)
             dict
             >>> list(sb_prefix_codes.keys())
@@ -242,7 +239,6 @@ class SignalBoxes:
             2    R           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
             3   AW               Abbey Wood  ...      13 July 1975      Dartford (D)
             4   AE         Abbey Works East  ...   1 November 1987  Port Talbot (PT)
-
             [5 rows x 8 columns]
         """
 
@@ -304,7 +300,6 @@ class SignalBoxes:
             >>> nnr_codes = sb.collect_non_national_rail_codes()
             To collect data of non-national rail signal box prefix codes
             ? [No]|Yes: yes
-
             >>> type(nnr_codes)
             dict
             >>> list(nnr_codes.keys())
@@ -344,7 +339,6 @@ class SignalBoxes:
             2    S  ...                                     -
             3    X  ...                                     -
             4    R  ...                                     -
-
             [5 rows x 5 columns]
         """
 
@@ -444,7 +438,6 @@ class SignalBoxes:
             >>> sb = SignalBoxes()
 
             >>> nnr_codes = sb.fetch_non_national_rail_codes()
-
             >>> type(nnr_codes)
             dict
             >>> list(nnr_codes.keys())
@@ -484,7 +477,6 @@ class SignalBoxes:
             2    S  ...                                     -
             3    X  ...                                     -
             4    R  ...                                     -
-
             [5 rows x 5 columns]
         """
 
@@ -922,7 +914,6 @@ class SignalBoxes:
         """
 
         if confirmed(confirm_msg(self.KEY_TO_BELL_CODES), confirmation_required=confirmation_required):
-
             print_collect_msg(
                 self.KEY_TO_BELL_CODES, verbose=verbose, confirmation_required=confirmation_required)
 
@@ -939,22 +930,20 @@ class SignalBoxes:
                 print_inst_conn_err(verbose=verbose, e=e)
 
             else:
+                bell_codes = collections.OrderedDict()
+
                 try:
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    bell_codes = collections.OrderedDict()
-
                     h3s = soup.find_all('h3')
                     for h3 in h3s:
-                        thead = h3.find_next('table').find('thead')
-                        ths = [th.text for th in thead.find_all('th')]
-                        # trs = thead.find_next('table').find_all('tr')
-                        trs = thead.find_all('tr')
+                        tbl = h3.find_next('table')
+                        trs, ths = tbl.find_all('tr'), [th.text for th in tbl.find_all('th')]
                         dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
                         notes = h3.find_next('p').text
 
-                        bell_codes[h3.text] = {'Codes': dat, 'Notes': notes}
+                        bell_codes.update({h3.text: {'Codes': dat, 'Notes': notes}})
 
                     last_updated_date = get_last_updated_date(url)
 

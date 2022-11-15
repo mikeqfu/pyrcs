@@ -198,50 +198,60 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> tunl_len_1 = tunl.collect_codes_by_page(page_no=1)
-            >>> type(tunl_len_1)
+            >>> page_1 = tunl.collect_codes_by_page(page_no=1)
+            >>> type(page_1)
             dict
-            >>> list(tunl_len_1.keys())
+            >>> list(page_1.keys())
             ['Page 1 (A-F)', 'Last updated date']
-
-            >>> tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
-            >>> type(tunl_len_1_codes)
+            >>> page_1_codes = page_1['Page 1 (A-F)']
+            >>> type(page_1_codes)
             pandas.core.frame.DataFrame
-            >>> tunl_len_1_codes.head()
+            >>> page_1_codes.head()
                          Name  Other names, remarks  ... Length (metres) Length (note)
             0    Abbotscliffe                        ...       1775.7648
             1      Abercanaid           see Merthyr  ...             NaN   Unavailable
             2     Aberchalder         see Loch Oich  ...             NaN   Unavailable
             3  Aberdovey No 1  also called Frongoch  ...        182.8800
             4  Aberdovey No 2    also called Morfor  ...        200.2536
+            [5 rows x 10 columns]
 
-            [5 rows x 11 columns]
-
-            >>> tunl_len_4 = tunl.collect_codes_by_page(page_no=4)
-            >>> type(tunl_len_4)
+            >>> page_4 = tunl.collect_codes_by_page(page_no=4)
+            >>> type(page_4)
             dict
-            >>> list(tunl_len_4.keys())
+            >>> list(page_4.keys())
             ['Page 4 (others)', 'Last updated date']
-
-            >>> tunl_len_4_codes = tunl_len_4['Page 4 (others)']
-            >>> type(tunl_len_4_codes)
+            >>> page_4_codes = page_4['Page 4 (others)']
+            >>> type(page_4_codes)
             dict
-            >>> list(tunl_len_4_codes.keys())
+            >>> list(page_4_codes.keys())
             ['Tunnels on industrial and other minor lines',
              'Large bridges that are not officially tunnels but could appear to be so']
 
-            >>> tunl_len_4_dat = tunl_len_4_codes['Tunnels on industrial and other minor lines']
-            >>> type(tunl_len_4_dat)
+            >>> key1 = 'Tunnels on industrial and other minor lines'
+            >>> page_4_dat = page_4_codes[key1]
+            >>> type(page_4_dat)
             pandas.core.frame.DataFrame
-            >>> tunl_len_4_dat.head()
+            >>> page_4_dat.head()
                                   Name Other names, remarks  ... Length (metres) Length (note)
             0             Ashes Quarry                       ...         56.6928
             1        Ashey Down Quarry                       ...         33.8328
             2  Baileycroft Quarry No 1                       ...         28.3464
             3  Baileycroft Quarry No 2                       ...         21.0312
             4            Basfords Hill                       ...         46.6344
-
             [5 rows x 6 columns]
+
+            >>> key2 = 'Large bridges that are not officially tunnels but could appear to be so'
+            >>> page_4_dat_ = page_4_codes[key2]
+            >>> type(page_4_dat_)
+            pandas.core.frame.DataFrame
+            >>> page_4_dat_.head()
+                            Name Other names, remarks  ... Length (metres) Length (note)
+            0  A470/A472 (north)                       ...         35.6616
+            1  A470/A472 (south)                       ...         28.3464
+            2               A720                       ...        145.3896
+            3                 A9        Aberdeen line  ...        141.7320
+            4                 A9           Perth line  ...        146.3040
+            [5 rows x 8 columns]
         """
 
         page_name = validate_page_name(self, page_no, valid_page_no=set(range(1, 5)))
@@ -302,7 +312,10 @@ class Tunnels:
 
                     last_updated_date = get_last_updated_date(url=url)
 
-                    codes_on_page = {page_name: codes_, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+                    codes_on_page = {
+                        page_name: codes_,
+                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
+                    }
 
                     if verbose == 2:
                         print("Done.")
@@ -311,7 +324,7 @@ class Tunnels:
                         self, data=codes_on_page, data_name=data_name, ext=ext, verbose=verbose)
 
                 except Exception as e:
-                    print("Failed. \"{}\": {}".format(page_name, e))
+                    print(f"Failed. \"{page_name}\": {e}")
 
         return codes_on_page
 
@@ -339,7 +352,6 @@ class Tunnels:
             >>> tunl = Tunnels()
 
             >>> tunl_len_codes = tunl.fetch_codes()
-
             >>> type(tunl_len_codes)
             dict
             >>> list(tunl_len_codes.keys())
@@ -354,18 +366,50 @@ class Tunnels:
             >>> list(tunl_len_codes_dat.keys())
             ['Page 1 (A-F)', 'Page 2 (G-P)', 'Page 3 (Q-Z)', 'Page 4 (others)']
 
-            >>> page_1 = tunl_len_codes_dat['Page 1 (A-F)']
-            >>> type(page_1)
+            >>> page_1_codes = tunl_len_codes_dat['Page 1 (A-F)']
+            >>> type(page_1_codes)
             pandas.core.frame.DataFrame
-            >>> page_1.head()
+            >>> page_1_codes.head()
                          Name  Other names, remarks  ... Length (metres) Length (note)
             0    Abbotscliffe                        ...       1775.7648
             1      Abercanaid           see Merthyr  ...             NaN   Unavailable
             2     Aberchalder         see Loch Oich  ...             NaN   Unavailable
             3  Aberdovey No 1  also called Frongoch  ...        182.8800
             4  Aberdovey No 2    also called Morfor  ...        200.2536
+            [5 rows x 10 columns]
 
-            [5 rows x 11 columns]
+            >>> page_4_codes = tunl_len_codes_dat['Page 4 (others)']
+            >>> type(page_4_codes)
+            dict
+            >>> list(page_4_codes.keys())
+            ['Tunnels on industrial and other minor lines',
+             'Large bridges that are not officially tunnels but could appear to be so']
+
+            >>> key1 = 'Tunnels on industrial and other minor lines'
+            >>> page_4_dat = page_4_codes[key1]
+            >>> type(page_4_dat)
+            pandas.core.frame.DataFrame
+            >>> page_4_dat.head()
+                                  Name Other names, remarks  ... Length (metres) Length (note)
+            0             Ashes Quarry                       ...         56.6928
+            1        Ashey Down Quarry                       ...         33.8328
+            2  Baileycroft Quarry No 1                       ...         28.3464
+            3  Baileycroft Quarry No 2                       ...         21.0312
+            4            Basfords Hill                       ...         46.6344
+            [5 rows x 6 columns]
+
+            >>> key2 = 'Large bridges that are not officially tunnels but could appear to be so'
+            >>> page_4_dat_ = page_4_codes[key2]
+            >>> type(page_4_dat_)
+            pandas.core.frame.DataFrame
+            >>> page_4_dat_.head()
+                            Name Other names, remarks  ... Length (metres) Length (note)
+            0  A470/A472 (north)                       ...         35.6616
+            1  A470/A472 (south)                       ...         28.3464
+            2               A720                       ...        145.3896
+            3                 A9        Aberdeen line  ...        141.7320
+            4                 A9           Perth line  ...        146.3040
+            [5 rows x 8 columns]
         """
 
         verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)

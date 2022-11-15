@@ -337,7 +337,6 @@ class Electrification:
             2    A  ...               Fenchurch Street
             3    A  ...  Guide Bridge Station Junction
             4   AB  ...
-
             [5 rows x 4 columns]
         """
 
@@ -439,7 +438,6 @@ class Electrification:
             2    A  ...               Fenchurch Street
             3    A  ...  Guide Bridge Station Junction
             4   AB  ...
-
             [5 rows x 4 columns]
         """
 
@@ -478,7 +476,6 @@ class Electrification:
             2                        Black Country Living Museum  ...
             3                                  Blackpool Tramway  ...
             4  Brighton and Rottingdean Seashore Electric Rai...  ...
-
             [5 rows x 3 columns]
         """
 
@@ -554,13 +551,13 @@ class Electrification:
              'Luas [Dublin]',
              'Manchester Metrolink',
              'Manx Electric Railway',
-             'Midland Metro [West Midlands]',
              'Nottingham Express Transit',
              'Seaton Tramway',
              'Sheffield Supertram',
              'Snaefell Mountain Railway',
              'Summerlee, Museum of Scottish Industrial Life Tramway',
-             'Tyne & Wear Metro']
+             'Tyne & Wear Metro',
+             'West Midlands Metro [West Midlands]']
 
             >>> indep_lines_codes_dat['Beamish Tramway']
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
@@ -658,13 +655,13 @@ class Electrification:
              'Luas [Dublin]',
              'Manchester Metrolink',
              'Manx Electric Railway',
-             'Midland Metro [West Midlands]',
              'Nottingham Express Transit',
              'Seaton Tramway',
              'Sheffield Supertram',
              'Snaefell Mountain Railway',
              'Summerlee, Museum of Scottish Industrial Life Tramway',
-             'Tyne & Wear Metro']
+             'Tyne & Wear Metro',
+             'West Midlands Metro [West Midlands]']
 
             >>> indep_lines_codes_dat['Beamish Tramway']
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
@@ -699,7 +696,6 @@ class Electrification:
             >>> ohl_ns_codes = elec.collect_ohns_codes()
             To collect section codes for OLE installations: national network neutral sections
             ? [No]|Yes: yes
-
             >>> type(ohl_ns_codes)
             dict
             >>> list(ohl_ns_codes.keys())
@@ -714,20 +710,12 @@ class Electrification:
             >>> list(ohl_ns_codes_dat.keys())
             ['Codes', 'Notes']
             >>> ohl_ns_codes_dat['Codes']
-                  ELR          OHNS Name  ...     Tracks                                 Dates
-            0    ARG1         Rutherglen  ...
-            1    ARG2    Finnieston East  ...       Down
-            2    ARG2    Finnieston West  ...         Up
-            3    AYR1   Shields Junction  ...     Up Ayr
-            4    AYR1   Shields Junction  ...   Down Ayr
-            ..    ...                ...  ...        ...                                   ...
-            436   WWD       Law Junction  ...
-            437   WWD  Holytown Junction  ...                           Installed October 2018
-            438   XRC          Royal Oak  ...  Westbound
-            439   YKR              Yoker  ...             Installed ??, removed ≈11 March 1979
-            440   YKR            Dalmuir  ...             Installed ??, removed ≈11 March 1979
-
-            [441 rows x 5 columns]
+                ELR         OHNS Name  Mileage    Tracks Dates
+            0  ARG1        Rutherglen  0m 03ch
+            1  ARG2   Finnieston East  4m 23ch      Down
+            2  ARG2   Finnieston West  4m 57ch        Up
+            3  AYR1  Shields Junction  0m 68ch    Up Ayr
+            4  AYR1  Shields Junction  0m 69ch  Down Ayr
         """
 
         cfm_msg = self._cfm_msg(key=self.KEY_TO_OHNS)
@@ -825,7 +813,6 @@ class Electrification:
             >>> elec = Electrification()
 
             >>> ohl_ns_codes = elec.fetch_ohns_codes()
-
             >>> type(ohl_ns_codes)
             dict
             >>> list(ohl_ns_codes.keys())
@@ -839,21 +826,13 @@ class Electrification:
             dict
             >>> list(ohl_ns_codes_dat.keys())
             ['Codes', 'Notes']
-            >>> ohl_ns_codes_dat['Codes']
-                  ELR          OHNS Name  ...     Tracks                                 Dates
-            0    ARG1         Rutherglen  ...
-            1    ARG2    Finnieston East  ...       Down
-            2    ARG2    Finnieston West  ...         Up
-            3    AYR1   Shields Junction  ...     Up Ayr
-            4    AYR1   Shields Junction  ...   Down Ayr
-            ..    ...                ...  ...        ...                                   ...
-            436   WWD       Law Junction  ...
-            437   WWD  Holytown Junction  ...                           Installed October 2018
-            438   XRC          Royal Oak  ...  Westbound
-            439   YKR              Yoker  ...             Installed ??, removed ≈11 March 1979
-            440   YKR            Dalmuir  ...             Installed ??, removed ≈11 March 1979
-
-            [441 rows x 5 columns]
+            >>> ohl_ns_codes_dat['Codes'].head()
+                ELR         OHNS Name  Mileage    Tracks Dates
+            0  ARG1        Rutherglen  0m 03ch
+            1  ARG2   Finnieston East  4m 23ch      Down
+            2  ARG2   Finnieston West  4m 57ch        Up
+            3  AYR1  Shields Junction  0m 68ch    Up Ayr
+            4  AYR1  Shields Junction  0m 69ch  Down Ayr
         """
 
         ohns_codes = fetch_data_from_file(
@@ -884,7 +863,6 @@ class Electrification:
             >>> rail_etz_codes = elec.collect_etz_codes()
             To collect section codes for OLE installations: national network energy tariff zones
             ? [No]|Yes: yes
-
             >>> type(rail_etz_codes)
             dict
             >>> list(rail_etz_codes.keys())

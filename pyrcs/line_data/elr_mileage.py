@@ -108,34 +108,32 @@ class ELRMileages:
         :type: pandas.DataFrame
         """
 
-        test_temp = mileage_data[~mileage_data.Mileage.astype(bool)]
+        dat = mileage_data.copy()
+
+        test_temp = dat[~dat['Mileage'].astype(bool)]
         if not test_temp.empty:
-            test_temp_node, sep_rows_idx = test_temp.Node.tolist(), test_temp.index[-1]
+            test_temp_node, sep_rows_idx = test_temp['Node'].tolist(), test_temp.index[-1]
 
             if '1949 measure' in test_temp_node:
-                mileage_data.Node = mileage_data.Node.str.replace('1949 measure', 'Current measure')
+                dat.loc[:, 'Node'] = dat['Node'].str.replace('1949 measure', 'Current measure')
                 test_temp_node = [re.sub(r'1949 ', 'Current ', x) for x in test_temp_node]
 
             if 'Distances in km' in test_temp_node:
-                temp_mileage_data = mileage_data[~mileage_data.Node.str.contains('Distances in km')]
-                temp_mileages = temp_mileage_data.Mileage.map(
+                dat_ = dat[~dat['Node'].str.contains('Distances in km')]
+                temp_mileages = dat_['Mileage'].map(
                     lambda x: mileage_to_mile_chain(yard_to_mileage(kilometer_to_yard(km=x))))
-                temp_mileage_data.Mileage = temp_mileages.tolist()
-                checked_mileage_data = temp_mileage_data
+                dat_['Mileage'] = temp_mileages.tolist()
 
             elif 'One measure' in test_temp_node:
-                sep_rows_idx = mileage_data[
-                    mileage_data.Node.str.contains('Alternative measure')].index[0]
-                mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
-                checked_mileage_data = {
-                    'One measure': mileage_data_1[~mileage_data_1.Node.str.contains('One measure')],
-                    'Alternative measure':
-                        mileage_data_2[~mileage_data_2.Node.str.contains('Alternative measure')]}
+                sep_rows_idx = dat[dat['Node'].str.contains('Alternative measure')].index[0]
+                m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
+                dat_ = {
+                    'One measure': m_dat_1[~m_dat_1['Node'].str.contains('One measure')],
+                    'Alternative measure': m_dat_2[~m_dat_2['Node'].str.contains('Alternative measure')],
+                }
 
             elif 'This line has two \'legs\':' in test_temp_node:
-                temp_mileage_data = mileage_data.iloc[1:].drop_duplicates()
-                temp_mileage_data.index = range(len(temp_mileage_data))
-                checked_mileage_data = temp_mileage_data
+                dat_ = dat.iloc[1:].drop_duplicates(ignore_index=True)
 
             else:
                 test_temp_text = [' '.join(x) for x in itertools.product(
@@ -145,47 +143,39 @@ class ELRMileages:
                 num_of_measures = sum(alt_sep_rows_idx)
 
                 if num_of_measures == 1:  #
-                    mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
+                    m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
 
-                    if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', test_temp_node[0]):
-                        measure_ = re.sub(r'(Original)|(Former)|(Alternative)|(Usual)', r'Current',
-                                          test_temp_node[0])
+                    x = test_temp_node[0]
+                    if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', x):
+                        measure_ = re.sub(r'(Original)|(Former)|(Alternative)|(Usual)', r'Current', x)
                     else:
-                        measure_ = re.sub(
-                            r'(Current)|(Later)|(One)', r'Previous', test_temp_node[0])
+                        measure_ = re.sub(r'(Current)|(Later)|(One)', r'Previous', x)
 
-                    checked_mileage_data = {
-                        measure_: mileage_data_1.loc[0:sep_rows_idx, :],
-                        test_temp_node[0]: mileage_data_2.loc[sep_rows_idx + 1:, :]}
+                    dat_ = {
+                        measure_: m_dat_1.loc[0:sep_rows_idx, :],
+                        test_temp_node[0]: m_dat_2.loc[sep_rows_idx + 1:, :],
+                    }
 
                 elif num_of_measures == 2:  # e.g. elr='BTJ'
                     sep_rows_idx_items = [test_temp_text[x] for x in np.where(alt_sep_rows_idx)[0]]
+                    sep_rows_idx = dat[dat['Node'].isin(sep_rows_idx_items)].index[-1]
 
-                    sep_rows_idx = \
-                        mileage_data[mileage_data.Node.isin(sep_rows_idx_items)].index[-1]
+                    m_dat_list = np.split(dat, [sep_rows_idx], axis=0)  # m_dat_1, m_dat_2
+                    sep_rows_idx_items_checked = map(
+                        lambda x: x[x['Node'].isin(sep_rows_idx_items)]['Node'].iloc[0], m_dat_list)
+                    m_dat_list_ = map(lambda x: x[~x['Node'].isin(sep_rows_idx_items)], m_dat_list)
 
-                    mileage_data_1, mileage_data_2 = np.split(mileage_data, [sep_rows_idx], axis=0)
-
-                    sep_rows_idx_items_checked = [
-                        mileage_data_1[mileage_data_1.Node.isin(sep_rows_idx_items)].Node.iloc[0],
-                        mileage_data_2[mileage_data_2.Node.isin(sep_rows_idx_items)].Node.iloc[0]]
-
-                    mileage_data_1 = mileage_data_1[~mileage_data_1.Node.isin(sep_rows_idx_items)]
-                    mileage_data_2 = mileage_data_2[~mileage_data_2.Node.isin(sep_rows_idx_items)]
-
-                    checked_mileage_data = dict(zip(sep_rows_idx_items_checked,
-                                                    [mileage_data_1, mileage_data_2]))
+                    dat_ = dict(zip(sep_rows_idx_items_checked, m_dat_list_))
 
                 else:
-                    if mileage_data.loc[sep_rows_idx, 'Mileage'] == '':
-                        mileage_data.loc[sep_rows_idx, 'Mileage'] = \
-                            mileage_data.loc[sep_rows_idx - 1, 'Mileage']
-                    checked_mileage_data = mileage_data
+                    if dat.loc[sep_rows_idx, 'Mileage'] == '':
+                        dat.loc[sep_rows_idx, 'Mileage'] = dat.loc[sep_rows_idx - 1, 'Mileage']
+                    dat_ = dat
 
         else:
-            checked_mileage_data = mileage_data
+            dat_ = dat
 
-        return checked_mileage_data
+        return dat_
 
     @staticmethod
     def _parse_mileage(mileage):
@@ -240,9 +230,8 @@ class ELRMileages:
             miles_chains = temp_mileage.copy()
             temp_mileage = [mile_chain_to_mileage(m) for m in temp_mileage]
 
-        parsed_mileage = pd.DataFrame({'Mileage': temp_mileage,
-                                       'Mileage_Note': mileage_note,
-                                       'Miles_Chains': miles_chains})
+        parsed_mileage = pd.DataFrame(
+            {'Mileage': temp_mileage, 'Mileage_Note': mileage_note, 'Miles_Chains': miles_chains})
 
         return parsed_mileage
 
@@ -296,8 +285,10 @@ class ELRMileages:
         most_conn = max(len(c) for c in conn_node_lst)
         # conn_node_list = [c + [None] * (most_conn - len(c)) for c in conn_node_list]
 
-        return pd.DataFrame(conn_node_lst,
-                            columns=['Link_{}'.format(n + 1) for n in range(most_conn)])
+        prep_nodes_ = pd.DataFrame(
+            conn_node_lst, columns=['Link_{}'.format(n + 1) for n in range(most_conn)])
+
+        return prep_nodes_
 
     @staticmethod
     def _uncouple_elr_mileage(node_x):
@@ -357,7 +348,7 @@ class ELRMileages:
             [pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
              for col in link_cols], axis=1, sort=False)
 
-        parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1, sort=False)
+        parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1)
 
         return parsed_node_and_conn
 
@@ -416,7 +407,6 @@ class ELRMileages:
             2  AAV  ...
             3  ABB  ...       Now AHB
             4  ABB  ...
-
             [5 rows x 5 columns]
 
             >>> elrs_q_codes = em.collect_elr_by_initial(initial='Q')
@@ -428,7 +418,6 @@ class ELRMileages:
             2   QDS  ...
             3   QLT  ...
             4  QLT1  ...
-
             [5 rows x 5 columns]
         """
 
@@ -506,8 +495,8 @@ class ELRMileages:
             >>> list(elrs_codes.keys())
             ['ELRs and mileages', 'Last updated date']
 
-            >>> print(em.KEY)
-            ELRs
+            >>> em.KEY
+            'ELRs and mileages'
 
             >>> elrs_codes_dat = elrs_codes[em.KEY]
             >>> type(elrs_codes_dat)
@@ -519,7 +508,6 @@ class ELRMileages:
             2  AAV  ...
             3  ABB  ...       Now AHB
             4  ABB  ...
-
             [5 rows x 5 columns]
         """
 
@@ -551,7 +539,7 @@ class ELRMileages:
 
         if dump_dir is not None:
             save_data_to_file(
-                cls=self, data=elrs_data, data_name=self.NAME, ext=".pickle", dump_dir=dump_dir,
+                self, data=elrs_data, data_name=self.NAME, ext=".pickle", dump_dir=dump_dir,
                 verbose=False)
 
         return elrs_data
@@ -580,13 +568,11 @@ class ELRMileages:
         line_name, mileages, _ = elr_dat[val_cols].values[0]
 
         if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
-            line_name_ = re.search(
-                r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
+            line_name_ = re.search(r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
+
             try:
-                loc_a, _, loc_b = re.split(
-                    r' (and|&|to) ', line_name_)
-                line_name = re.search(
-                    r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
+                loc_a, _, loc_b = re.split(r' (and|&|to) ', line_name_)
+                line_name = re.search(r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
             except ValueError:
                 try:
                     loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
@@ -594,8 +580,7 @@ class ELRMileages:
                 except ValueError:
                     loc_a, loc_b = '', ''
 
-        elif elr_dat.Mileages.values[0].startswith('0.00') and \
-                elr_dat.Datum.values[0] != '':
+        elif elr_dat.Mileages.values[0].startswith('0.00') and elr_dat.Datum.values[0] != '':
             loc_a = elr_dat.Datum.values[0]
             if loc_a in line_name:
                 loc_b = re.split(r' (and|&|to) ', line_name)[2]
@@ -698,7 +683,6 @@ class ELRMileages:
             22  49.1320  ...              0.00
             23  55.1606  ...
             24  64.0594  ...
-
             [25 rows x 8 columns]
 
             >>> gam_mileage_file = em.collect_mileage_file(elr='GAM')
@@ -708,7 +692,6 @@ class ELRMileages:
                Mileage Mileage_Note Miles_Chains  ... Link_1 Link_1_ELR Link_1_Mile_Chain
             0   8.1518                      8.69  ...   None
             1  10.0264                     10.12  ...   None
-
             [2 rows x 8 columns]
 
             >>> sld_mileage_file = em.collect_mileage_file(elr='SLD')
@@ -721,7 +704,6 @@ class ELRMileages:
             2  31.1474                     31.67  ...   None
             3  32.1078                     32.49  ...   None
             4  32.1232                     32.56  ...   None
-
             [5 rows x 8 columns]
 
             >>> elr_mileage_file = em.collect_mileage_file(elr='ELR')
@@ -758,7 +740,6 @@ class ELRMileages:
             26  154.1078               ...
             27  154.1628               ...
             28  154.1650               ...       MAC3            109.53
-
             [29 rows x 8 columns]
         """
 
@@ -857,9 +838,9 @@ class ELRMileages:
                         # Check if there is any missing note
                         if mileage_data.iloc[-1].Mileage == '':
                             if notes:
-                                notes = [notes, mileage_data.iloc[-1].Node]
+                                notes = [notes, mileage_data.iloc[-1]['Node']]
                             else:
-                                notes = mileage_data.iloc[-1].Node
+                                notes = mileage_data.iloc[-1]['Node']
                             mileage_data = mileage_data[:-1]
 
                         if len(mileage_data.iloc[-1].Mileage) > 6:
@@ -926,8 +907,8 @@ class ELRMileages:
 
             >>> aal_mileage_file['ELR']
             'NAJ3'
-            >>> aal_mileage_file['Formerly']
-            'AAL'
+            >>> aal_mileage_file['Notes']
+            'Note that Ashendon Junction up line junction is on NAJ2'
             >>> aal_mileage_file['Mileage']
                 Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0    0.0000               ...       NAJ2             33.69
@@ -943,7 +924,6 @@ class ELRMileages:
             10  17.0968               ...
             11  18.0572               ...        DCL             81.10
             12  18.0638               ...        DCL             81.12
-
             [13 rows x 8 columns]
 
             >>> # Get the mileage file of 'MLA'
@@ -952,28 +932,23 @@ class ELRMileages:
             dict
             >>> list(mla_mileage_file.keys())
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-
             >>> mla_mileage_file_mileages = mla_mileage_file['Mileage']
             >>> type(mla_mileage_file_mileages)
             dict
             >>> list(mla_mileage_file_mileages.keys())
             ['Current measure', 'Original measure']
-
             >>> mla_mileage_file_mileages['Original measure']
               Mileage Mileage_Note  ... Link_3_ELR Link_3_Mile_Chain
             0  4.1386               ...       NEM4              0.00
             1  5.0616               ...
             2  5.1122               ...
-
             [3 rows x 14 columns]
-
             >>> mla_mileage_file_mileages['Current measure']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  MRL2 (4.44)       MRL2              4.44
             1  0.0572                      0.26  ...         None
             2  0.1540                      0.70  ...         None
             3  0.1606                      0.73  ...         None
-
             [4 rows x 8 columns]
         """
 
@@ -1031,7 +1006,6 @@ class ELRMileages:
             >>> elr_1 = 'AAM'
             >>> mileage_file_1 = em.collect_mileage_file(elr_1, confirmation_required=False)
             >>> mf_1_mileages = mileage_file_1['Mileage']
-
             >>> mf_1_mileages.head()
               Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
             0  0.0000               ...
@@ -1039,22 +1013,18 @@ class ELRMileages:
             2  0.0396               ...
             3  1.1012               ...
             4  1.1408               ...
-
             [5 rows x 11 columns]
 
             >>> elr_2 = 'ANZ'
             >>> mileage_file_2 = em.collect_mileage_file(elr_2, confirmation_required=False)
             >>> mf_2_mileages = mileage_file_2['Mileage']
-
             >>> mf_2_mileages.head()
                Mileage Mileage_Note Miles_Chains  ...      Link_1 Link_1_ELR Link_1_Mile_Chain
             0  84.0924                     84.42  ...         BEA        BEA
             1  84.1364                     84.62  ...  AAM (0.18)        AAM              0.18
-
             [2 rows x 8 columns]
 
             >>> elr_1_dest, elr_2_orig = em.search_conn(elr_1, mf_1_mileages, elr_2, mf_2_mileages)
-
             >>> elr_1_dest
             '0.0396'
             >>> elr_2_orig
@@ -1121,16 +1091,16 @@ class ELRMileages:
             >>> conn = em.get_conn_mileages(start_elr='NAY', end_elr='LTN2')
             >>> (s_dest_mlg, c_elr, c_orig_mlg, c_dest_mlg, e_orig_mlg) = conn
 
-            >>> print(s_dest_mlg)
-            5.1606
-            >>> print(c_elr)
-            NOL
-            >>> print(c_orig_mlg)
-            5.1606
-            >>> print(c_dest_mlg)
-            0.0638
-            >>> print(e_orig_mlg)
-            123.1320
+            >>> s_dest_mlg
+            '5.1606'
+            >>> c_elr
+            'NOL'
+            >>> c_orig_mlg
+            '5.1606'
+            >>> c_dest_mlg
+            '0.0638'
+            >>> e_orig_mlg
+            '123.1320'
 
         .. _get_conn_mileages-example-2:
 
@@ -1212,14 +1182,7 @@ class ELRMileages:
                 start_dest_mileage, conn_orig_mileage = '', ''
 
         else:
-            (start_dest_mileage,
-             conn_elr,
-             conn_orig_mileage,
-             conn_dest_mileage,
-             end_orig_mileage) = [''] * 5
+            (start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage) = \
+                [''] * 5
 
-        return (start_dest_mileage,
-                conn_elr,
-                conn_orig_mileage,
-                conn_dest_mileage,
-                end_orig_mileage)
+        return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage

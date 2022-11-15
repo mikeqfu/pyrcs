@@ -110,23 +110,22 @@ class Viaducts:
 
             >>> vdct = Viaducts()
 
-            >>> vdct_1_codes = vdct.collect_codes_by_page(page_no=1)
-            >>> type(vdct_1_codes)
+            >>> page_1_codes = vdct.collect_codes_by_page(page_no=1)
+            >>> type(page_1_codes)
             dict
-            >>> list(vdct_1_codes.keys())
+            >>> list(page_1_codes.keys())
             ['Page 1 (A-C)', 'Last updated date']
 
-            >>> vdct_1_codes_dat = vdct_1_codes['Page 1 (A-C)']
-            >>> type(vdct_1_codes_dat)
+            >>> page_1_dat = page_1_codes['Page 1 (A-C)']
+            >>> type(page_1_dat)
             pandas.core.frame.DataFrame
-            >>> vdct_1_codes_dat.head()
+            >>> page_1_dat.head()
                         Name  ... Spans
             0       7 Arches  ...     7
             1        36 Arch  ...    36
             2        42 Arch  ...
             3           A698  ...     5
             4  Abattoir Road  ...     8
-
             [5 rows x 7 columns]
         """
 
@@ -219,17 +218,16 @@ class Viaducts:
              'Page 5 (Q-S)',
              'Page 6 (T-Z)']
 
-            >>> vdct_codes_dat_6 = vdct_codes_dat['Page 6 (T-Z)']
-            >>> type(vdct_codes_dat_6)
+            >>> page_6_codes = vdct_codes_dat['Page 6 (T-Z)']
+            >>> type(page_6_codes)
             pandas.core.frame.DataFrame
-            >>> vdct_codes_dat_6.head()
+            >>> page_6_codes.head()
                      Name                                  Notes  ... End mileage Spans
             0   Tadcaster  crosses River Wharfe; grade II listed  ...                11
             1        Taff                         see Red Bridge  ...
             2        Taff                                         ...
             3  Taff River                  also called Afon Taff  ...   170m 42ch
             4  Taffs Well                         see River Taff  ...
-
             [5 rows x 7 columns]
         """
 

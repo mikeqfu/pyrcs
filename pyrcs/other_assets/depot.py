@@ -136,7 +136,6 @@ class Depots:
             2   AC  ...  Became WH from 1994
             3   AC  ...
             4   AD  ...
-
             [5 rows x 5 columns]
         """
 
@@ -224,7 +223,6 @@ class Depots:
             2   AC  ...  Became WH from 1994
             3   AC  ...
             4   AD  ...
-
             [5 rows x 5 columns]
         """
 
@@ -753,6 +751,17 @@ class Depots:
             2  2003              Blackburn  London Midland            False
             3  2004  Bolton Trinity Street  London Midland            False
             4  2006                Burnley  London Midland            False
+
+            >>> depots.KEY_TO_TOPS
+            'Two character TOPS codes'
+            >>> depots_codes_dat[depots.KEY_TO_TOPS].head()
+              Code  ...                Notes
+            0   AB  ...          Closed 1987
+            1   AB  ...
+            2   AC  ...  Became WH from 1994
+            3   AC  ...
+            4   AD  ...
+            [5 rows x 5 columns]
         """
 
         verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)

@@ -259,9 +259,7 @@ class Features:
             2  BAG2  ...                             previously at 74m 51ch
             3  BAG2  ...                          removed 29 September 1997
             4  BAG2  ...           present in 1969, later moved to 89m 00ch
-
             [5 rows x 5 columns]
-
             >>> wild_dat = hw_codes_dat['WILD']
             >>> type(wild_dat)
             pandas.core.frame.DataFrame
@@ -272,7 +270,6 @@ class Features:
             2  BML1  ...
             3  BML1  ...
             4  CGJ3  ...  moved to 183m 68ch from 8 September 2018 / mov...
-
             [5 rows x 5 columns]
         """
 
@@ -380,9 +377,7 @@ class Features:
             2  BAG2  ...                             previously at 74m 51ch
             3  BAG2  ...                          removed 29 September 1997
             4  BAG2  ...           present in 1969, later moved to 89m 00ch
-
             [5 rows x 5 columns]
-
             >>> wild_dat = hw_codes_dat['WILD']
             >>> type(wild_dat)
             pandas.core.frame.DataFrame
@@ -393,7 +388,6 @@ class Features:
             2  BML1  ...
             3  BML1  ...
             4  CGJ3  ...  moved to 183m 68ch from 8 September 2018 / mov...
-
             [5 rows x 5 columns]
         """
 
@@ -442,7 +436,6 @@ class Features:
             2  CGJ2  ...      0.666667
             3  CGJ6  ...    561.000000
             4  CGJ6  ...    560.000000
-
             [5 rows x 6 columns]
         """
 
@@ -515,9 +508,7 @@ class Features:
 
             >>> feats = Features()
 
-            >>> # wt_codes = feats.fetch_water_troughs(update=True, verbose=True)
             >>> wt_codes = feats.fetch_water_troughs()
-
             >>> type(wt_codes)
             dict
             >>> list(wt_codes.keys())
@@ -536,7 +527,6 @@ class Features:
             2  CGJ2  ...      0.666667
             3  CGJ6  ...    561.000000
             4  CGJ6  ...    560.000000
-
             [5 rows x 6 columns]
         """
 
@@ -591,9 +581,7 @@ class Features:
             2  ABREAST  ...  GWR, 1939 / Railway Executive, 1950
             3  ABREAST  ...   British Transport Commission, 1958
             4   ABSENT  ...                            GWR, 1939
-
             [5 rows x 3 columns]
-
             >>> tel_unofficial_codes = tel_codes_dat['Unofficial codes']
             >>> type(tel_unofficial_codes)
             pandas.core.frame.DataFrame
@@ -699,7 +687,6 @@ class Features:
             dict
             >>> list(tel_codes_dat.keys())
             ['Official codes', 'Unofficial codes']
-
             >>> tel_official_codes = tel_codes_dat['Official codes']
             >>> type(tel_official_codes)
             pandas.core.frame.DataFrame
@@ -710,9 +697,7 @@ class Features:
             2  ABREAST  ...  GWR, 1939 / Railway Executive, 1950
             3  ABREAST  ...   British Transport Commission, 1958
             4   ABSENT  ...                            GWR, 1939
-
             [5 rows x 3 columns]
-
             >>> tel_unofficial_codes = tel_codes_dat['Unofficial codes']
             >>> type(tel_unofficial_codes)
             pandas.core.frame.DataFrame
@@ -921,8 +906,35 @@ class Features:
             2  CGJ2  ...      0.666667
             3  CGJ6  ...    561.000000
             4  CGJ6  ...    560.000000
-
             [5 rows x 6 columns]
+
+            >>> hw_codes_dat = feats_codes_dat[feats.KEY_TO_HABD_WILD]
+            >>> type(hw_codes_dat)
+            dict
+            >>> list(hw_codes_dat.keys())
+            ['HABD', 'WILD']
+            >>> habd_dat = hw_codes_dat['HABD']
+            >>> type(habd_dat)
+            pandas.core.frame.DataFrame
+            >>> habd_dat.head()
+                ELR  ...                                              Notes
+            0  BAG2  ...
+            1  BAG2  ...  installed 29 September 1997, later moved to 74...
+            2  BAG2  ...                             previously at 74m 51ch
+            3  BAG2  ...                          removed 29 September 1997
+            4  BAG2  ...           present in 1969, later moved to 89m 00ch
+            [5 rows x 5 columns]
+            >>> wild_dat = hw_codes_dat['WILD']
+            >>> type(wild_dat)
+            pandas.core.frame.DataFrame
+            >>> wild_dat.head()
+                ELR  ...                                              Notes
+            0  AYR3  ...
+            1  BAG2  ...
+            2  BML1  ...
+            3  BML1  ...
+            4  CGJ3  ...  moved to 183m 68ch from 8 September 2018 / mov...
+            [5 rows x 5 columns]
         """
 
         verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)

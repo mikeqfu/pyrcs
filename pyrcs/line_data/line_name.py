@@ -152,7 +152,6 @@ class LineNames:
             2          Argyle Line  ...       None
             3     Arun Valley Line  ...       None
             4  Atlantic Coast Line  ...       None
-
             [5 rows x 3 columns]
         """
 
@@ -232,7 +231,6 @@ class LineNames:
             'Line names'
 
             >>> line_names_codes_dat = line_names_codes[ln.KEY]
-
             >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
             >>> line_names_codes_dat.head()
@@ -242,7 +240,6 @@ class LineNames:
             2          Argyle Line  ...       None
             3     Arun Valley Line  ...       None
             4  Atlantic Coast Line  ...       None
-
             [5 rows x 3 columns]
         """
 
