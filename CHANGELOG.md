@@ -2,6 +2,20 @@
 
 <br/>
 
+#### **[0.3.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.3)**
+
+(*15 November 2022*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.2...0.3.3) since [0.3.2](https://pypi.org/project/pyrcs/0.3.2/):**
+
+- Fixed a major bug in the function [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/3348c9cdfe62197405d68fa8aa8d5c053a9fae78) in the module [parser](https://github.com/mikeqfu/pyrcs/blob/4f63edb931e1a174b5ce61326d2741f3a6e3a7a9/pyrcs/parser.py).
+- Improved the following classes with bugs fixes: [LocationIdentifiers](https://github.com/mikeqfu/pyrcs/commit/68a8ae4ac202af90a0181fcc11371f45b8869c5a), [LOR](https://github.com/mikeqfu/pyrcs/commit/3a1137f56fbda55da72315f872671d8d27b62401) and [Stations](https://github.com/mikeqfu/pyrcs/commit/2a62e5ac7c9461f151efa7d9fc95227bc30ac4c2).
+- Transform the function [parse_location_name()](https://github.com/mikeqfu/pyrcs/commit/12759e6b0e22a61f46a3189a5efc1c5aa0758d13) into a class method [LocationIdentifiers.parse_location_name()](https://github.com/mikeqfu/pyrcs/commit/68a8ae4ac202af90a0181fcc11371f45b8869c5a#diff-9892665521535dc0b2b16a9a95a1c7c2cbae159ebc7233522df340514a2b7200R417).
+
+**For more information and detailed specifications, check out [PyRCS 0.3.3 documentation](https://pyrcs.readthedocs.io/en/0.3.3/).**
+
+<br/>
+
 #### **[0.3.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.2)**
 
 (*18 August 2022*)
