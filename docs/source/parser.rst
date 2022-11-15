@@ -19,7 +19,6 @@ Preprocess contents
     parse_tr
     parse_table
     parse_date
-    parse_location_name
 
 Extract information
 ~~~~~~~~~~~~~~~~~~~
