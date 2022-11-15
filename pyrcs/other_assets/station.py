@@ -390,16 +390,16 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> stn_locations_a = stn.collect_locations_by_initial(initial='a')
-            >>> type(stn_locations_a)
+            >>> stn_loc_a_codes = stn.collect_locations_by_initial(initial='a')
+            >>> type(stn_loc_a_codes)
             dict
-            >>> list(stn_locations_a.keys())
+            >>> list(stn_loc_a_codes.keys())
             ['A', 'Last updated date']
 
-            >>> stn_locations_a_codes = stn_locations_a['A']
-            >>> type(stn_locations_a_codes)
+            >>> stn_loc_a_codes_dat = stn_loc_a_codes['A']
+            >>> type(stn_loc_a_codes_dat)
             pandas.core.frame.DataFrame
-            >>> stn_locations_a_codes.head()
+            >>> stn_loc_a_codes_dat.head()
                   Station  ...                                    Former Operator
             0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
             1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
@@ -407,7 +407,7 @@ class Stations:
             3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             [5 rows x 14 columns]
-            >>> stn_locations_a_codes.columns.to_list()
+            >>> stn_loc_a_codes_dat.columns.to_list()
             ['Station',
              'Station Note',
              'ELR',
@@ -422,7 +422,7 @@ class Stations:
              'Former Owner',
              'Operator',
              'Former Operator']
-            >>> stn_locations_a_codes[['Station', 'ELR', 'Mileage']].head()
+            >>> stn_loc_a_codes_dat[['Station', 'ELR', 'Mileage']].head()
                   Station  ELR   Mileage
             0  Abbey Wood  NKL  11m 43ch
             1  Abbey Wood  XRS  24.458km
@@ -525,19 +525,19 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> stn_location_codes = stn.fetch_locations()
-            >>> type(stn_location_codes)
+            >>> stn_loc_codes = stn.fetch_locations()
+            >>> type(stn_loc_codes)
             dict
-            >>> list(stn_location_codes.keys())
+            >>> list(stn_loc_codes.keys())
             ['Mileages, operators and grid coordinates', 'Last updated date']
 
             >>> stn.KEY_TO_STN
             'Mileages, operators and grid coordinates'
 
-            >>> stn_location_codes_dat = stn_location_codes[stn.KEY_TO_STN]
-            >>> type(stn_location_codes_dat)
+            >>> stn_loc_codes_dat = stn_loc_codes[stn.KEY_TO_STN]
+            >>> type(stn_loc_codes_dat)
             pandas.core.frame.DataFrame
-            >>> stn_location_codes_dat.head()
+            >>> stn_loc_codes_dat.head()
                   Station  ...                                    Former Operator
             0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
             1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
@@ -545,7 +545,7 @@ class Stations:
             3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             [5 rows x 14 columns]
-            >>> stn_location_codes_dat.columns.to_list()
+            >>> stn_loc_codes_dat.columns.to_list()
             ['Station',
              'Station Note',
              'ELR',
@@ -560,7 +560,7 @@ class Stations:
              'Former Owner',
              'Operator',
              'Former Operator']
-            >>> stn_location_codes_dat[['Station', 'ELR', 'Mileage']].head()
+            >>> stn_loc_codes_dat[['Station', 'ELR', 'Mileage']].head()
                   Station  ELR   Mileage
             0  Abbey Wood  NKL  11m 43ch
             1  Abbey Wood  XRS  24.458km

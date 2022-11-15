@@ -765,16 +765,16 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> loc_a = lid.collect_codes_by_initial(initial='a')
-            >>> type(loc_a)
+            >>> loc_a_codes = lid.collect_codes_by_initial(initial='a')
+            >>> type(loc_a_codes)
             dict
-            >>> list(loc_a.keys())
+            >>> list(loc_a_codes.keys())
             ['A', 'Additional notes', 'Last updated date']
 
-            >>> loc_a_codes = loc_a['A']
-            >>> type(loc_a_codes)
+            >>> loc_a_codes_dat = loc_a_codes['A']
+            >>> type(loc_a_codes_dat)
             pandas.core.frame.DataFrame
-            >>> loc_a_codes.head()
+            >>> loc_a_codes_dat.head()
                                           Location CRS  ... STANME_Note STANOX_Note
             0                                   A1      ...
             1                       A463 Traded In      ...
