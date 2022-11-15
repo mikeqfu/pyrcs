@@ -67,13 +67,13 @@ class Stations:
 
         print_conn_err(verbose=verbose)
 
-        self.catalogue = self._get_station_data_catalogue(update=update, verbose=False)
+        self.catalogue = self.get_catalogue(update=update, verbose=False)
 
         self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
 
-    def _get_station_data_catalogue(self, update=False, verbose=False):
+    def get_catalogue(self, update=False, verbose=False):
         """
         Get catalogue of railway station data.
 
@@ -90,7 +90,7 @@ class Stations:
 
             >>> stn = Stations()
 
-            >>> stn_data_cat = stn._get_station_data_catalogue()
+            >>> stn_data_cat = stn.get_catalogue()
             >>> type(stn_data_cat)
             dict
             >>> list(stn_data_cat.keys())
@@ -135,8 +135,7 @@ class Stations:
 
                     hot_soup = {
                         a.text: urllib.parse.urljoin(self.URL, a.get('href'))
-                        for a in cold_soup.find_all('a')
-                    }
+                        for a in cold_soup.find_all('a')}
 
                     catalogue = {}
                     for k, v in hot_soup.items():
@@ -223,11 +222,11 @@ class Stations:
         temp_data = pd.concat(temp_dat, axis=1)
         temp_data = temp_data[dat.columns.to_list()]
 
-        dat_ = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
+        dat = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
 
-        dat_.sort_values(['Station'], ignore_index=True, inplace=True)
+        dat.sort_values(['Station'], ignore_index=True, inplace=True)
 
-        return dat_
+        return dat
 
     @staticmethod
     def parse_coordinates_columns(dat):
@@ -240,13 +239,12 @@ class Stations:
         :rtype: pandas.DataFrame
         """
 
-        dat_ = dat.copy()
         ll_col_names = ['Degrees Longitude', 'Degrees Latitude']
 
-        dat_.loc[:, ll_col_names] = dat_[ll_col_names].applymap(
+        dat[ll_col_names] = dat[ll_col_names].applymap(
             lambda x: None if x.strip() == '' else float(re.sub(r'(c\.)|≈', '', x)))
 
-        return dat_
+        return dat
 
     @staticmethod
     def parse_station_column(dat):
@@ -264,38 +262,66 @@ class Stations:
             x = 'Heathrow Junction [sometimes referred to as Heathrow Interchange]\t\t / [no CRS?]'
         """
 
-        dat_ = dat.copy()
-
-        temp1 = dat_['Station'].str.split('\t\t', expand=True)
+        temp1 = dat['Station'].str.split('\t\t', expand=True)
         temp1.columns = ['Station', 'CRS']
-        dat_.loc[:, 'Station'] = temp1['Station']
+        dat['Station'] = temp1['Station']
 
         # Get notes for stations
-        stn_note_ = pd.Series('', index=dat_.index)
+        stn_note_ = pd.Series('', index=dat.index)
         for i, x in enumerate(temp1['Station']):
             if '[' in x and ']':
                 y = re.search(r' \[(.*)]', x).group(0)  # Station Note
-                dat_.loc[i, 'Station'] = x.replace(y, '')
+                dat.loc[i, 'Station'] = x.replace(y, '')
                 stn_note_[i] = y.strip(' []')
 
-        dat_.insert(loc=dat_.columns.get_loc('Station') + 1, column='Station Note', value=stn_note_)
+        dat.insert(loc=dat.columns.get_loc('Station') + 1, column='Station Note', value=stn_note_)
 
-        temp2 = temp1['CRS'].str.split(' / ', expand=True).fillna('')
+        temp2 = temp1['CRS'].str.replace(' / /', ' &&& ').str.split(' / ', expand=True).fillna('')
+
         if temp2.shape[1] == 1:
             temp2.columns = ['CRS']
             temp2 = pd.concat([temp2, pd.DataFrame('', index=temp2.index, columns=['CRS Note'])], axis=1)
         else:
             temp2.columns = ['CRS', 'CRS Note']
-            temp2.loc[:, 'CRS Note'] = temp2['CRS Note'].str.strip('[]')
+            temp2['CRS Note'] = temp2['CRS Note'].str.strip('[]')
 
-        temp2.loc[:, 'CRS'] = temp2['CRS'].str.replace(r'[()]', '', regex=True)
+        temp2['CRS'] = temp2['CRS'].str.replace(r'[()]', '', regex=True).map(
+            lambda z: ' and '.join(['{} [{}]'.format(*z_.split('✖')) for z_ in z.split(' &&& ')])
+            if ' &&& ' in z else z)
 
-        dat_ = pd.concat([dat_, temp2], axis=1)
+        dat = pd.concat([dat, temp2], axis=1)
 
-        return dat_
+        return dat
 
     @staticmethod
-    def parse_owner_and_operator_columns(dat):
+    def _parse_owner_and_operator(x, sep=' / '):
+        """
+        x = dat['Owner'][0]
+        x = dat['Owner'][1]
+        """
+
+        if ' / and / ' in x:
+            y, y_ = x.replace(' / and / ', ' &&& '), ''
+
+        elif ' / ' in x:
+            x_ = x.split(sep)
+
+            # y - Owners or operators; y_ - Former owners or operators
+            if len(x_) > 1:
+                y = x_[0]
+                y_ = x_[1] if len(x_[1:]) == 1 else sep.join(x_[1:])
+            else:
+                y, y_ = x_[0], ''
+
+        else:
+            y, y_ = x, ''
+
+        if '✖' in y and ' &&& ' in y:
+            y = ' and '.join(['{} [{}]'.format(*z.split('✖')) for z in y.split(' &&& ')])
+
+        return y, y_
+
+    def parse_owner_and_operator_columns(self, dat):
         """
         Parse ``'Owner'`` and ``'Operator'`` of the station locations data.
 
@@ -305,37 +331,42 @@ class Stations:
         :rtype: pandas.DataFrame
         """
 
-        def _parse_owner_and_operator(x, sep=' / '):
-            """
-            x = dat_['Owner'][0]
-            """
-            x_ = x.split(sep)
-
-            if len(x_) > 1:
-                owner_or_operator = x_[0]
-                if len(x_[1:]) > 1:
-                    former_owners_or_operators = sep.join(x_[1:])
-                else:
-                    former_owners_or_operators = x_[1:]
-            else:
-                owner_or_operator, former_owners_or_operators = x_[0], ''
-
-            return owner_or_operator, former_owners_or_operators
-
-        dat_ = dat.copy()
-
         owner_operator = []
         for col in ['Owner', 'Operator']:
             temp = pd.DataFrame(
-                dat_[col].map(_parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col])
-
-            del dat_[col]
-
+                dat[col].map(self._parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col])
+            del dat[col]
             owner_operator.append(temp)
 
-        dat_ = pd.concat([dat_] + owner_operator, axis=1)
+        dat = pd.concat([dat] + owner_operator, axis=1)
 
-        return dat_
+        return dat
+
+    @staticmethod
+    def parse_elr_mileage_columns(dat):
+        """
+        Parse ``'ELR'`` and ``'Mileage'`` of the station locations data.
+
+        :param dat: preprocessed data of the station locations
+        :type dat: pandas.DataFrame
+        :return: data with parsed ``'ELR'`` and ``'Mileage'``
+        :rtype: pandas.DataFrame
+        """
+
+        dat['Mileage'] = dat['Mileage'].map(lambda x: ']'.join(x.replace(' / (', ' [').rsplit(')', 1)))
+
+        em_col_names = ['ELR', 'Mileage']
+        dat[em_col_names] = dat[em_col_names].applymap(
+            lambda x: x.replace(' /  / ', ' / ').replace(' /  [', ' [').split(' / ')
+            if ' / ' in x else x)
+
+        # Where the Mileage data indicates the start and end
+        idx = dat[dat[em_col_names].apply(
+            lambda x: len(x.Mileage) != len(x.ELR) and isinstance(x.Mileage, list),
+            axis=1)].index
+        dat.loc[idx, 'Mileage'] = dat.loc[idx, 'Mileage'].map(lambda x: ' - '.join(x))
+
+        return dat
 
     def collect_locations_by_initial(self, initial, update=False, verbose=False):
         """
@@ -369,13 +400,35 @@ class Stations:
             >>> type(stn_locations_a_codes)
             pandas.core.frame.DataFrame
             >>> stn_locations_a_codes.head()
-                       Station  ...                                    Former Operator
-            0       Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-            1             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            2  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
-            3        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            4         Aberdare  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+                  Station  ...                                    Former Operator
+            0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
+            1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
+            2        Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             [5 rows x 14 columns]
+            >>> stn_locations_a_codes.columns.to_list()
+            ['Station',
+             'Station Note',
+             'ELR',
+             'Mileage',
+             'Status',
+             'Degrees Longitude',
+             'Degrees Latitude',
+             'Grid Reference',
+             'CRS',
+             'CRS Note',
+             'Owner',
+             'Former Owner',
+             'Operator',
+             'Former Operator']
+            >>> stn_locations_a_codes[['Station', 'ELR', 'Mileage']].head()
+                  Station  ELR   Mileage
+            0  Abbey Wood  NKL  11m 43ch
+            1  Abbey Wood  XRS  24.458km
+            2        Aber  CAR   8m 69ch
+            3   Abercynon  CAM  16m 28ch
+            4   Abercynon  ABD  16m 28ch
         """
 
         beginning_with = validate_initial(initial)
@@ -419,19 +472,25 @@ class Stations:
                         ths = [re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
                         dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
+                        dat_ = dat.copy()
+
                         parser_funcs = [
                             self.check_row_spans,
                             self.parse_coordinates_columns,
                             self.parse_station_column,
                             self.parse_owner_and_operator_columns,
+                            self.parse_elr_mileage_columns,
                         ]
                         for parser_func in parser_funcs:
-                            dat = parser_func(dat)
+                            dat_ = parser_func(dat_)
 
-                        data[beginning_with] = dat
+                        # Explode by ELR and Mileage
+                        dat_ = dat_.explode(column=['ELR', 'Mileage'], ignore_index=True)
 
-                        last_updated_date = get_last_updated_date(url=url, parsed=True)
-                        data[self.KEY_TO_LAST_UPDATED_DATE] = last_updated_date
+                        data = {
+                            beginning_with: dat_.sort_values('Station', ignore_index=True),
+                            self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url=url, parsed=True)
+                        }
 
                         if verbose == 2:
                             print("Done.")
@@ -479,13 +538,35 @@ class Stations:
             >>> type(stn_location_codes_dat)
             pandas.core.frame.DataFrame
             >>> stn_location_codes_dat.head()
-                       Station  ...                                    Former Operator
-            0       Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-            1             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            2        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-            3  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
-            4         Aberdare  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+                  Station  ...                                    Former Operator
+            0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
+            1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
+            2        Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+            4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             [5 rows x 14 columns]
+            >>> stn_location_codes_dat.columns.to_list()
+            ['Station',
+             'Station Note',
+             'ELR',
+             'Mileage',
+             'Status',
+             'Degrees Longitude',
+             'Degrees Latitude',
+             'Grid Reference',
+             'CRS',
+             'CRS Note',
+             'Owner',
+             'Former Owner',
+             'Operator',
+             'Former Operator']
+            >>> stn_location_codes_dat[['Station', 'ELR', 'Mileage']].head()
+                  Station  ELR   Mileage
+            0  Abbey Wood  NKL  11m 43ch
+            1  Abbey Wood  XRS  24.458km
+            2        Aber  CAR   8m 69ch
+            3   Abercynon  CAM  16m 28ch
+            4   Abercynon  ABD  16m 28ch
         """
 
         verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
