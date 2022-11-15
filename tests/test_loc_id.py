@@ -31,6 +31,26 @@ class TestLocationIdentifiers:
         assert isinstance(exp_note_dat, pd.DataFrame)
 
     @staticmethod
+    def test__parse_location_name():
+        dat = lid._parse_location_name('Abbey Wood')
+        assert dat == ('Abbey Wood', '')
+
+        dat = lid._parse_location_name(None)
+        assert dat == ('', '')
+
+        dat = lid._parse_location_name('Abercynon (formerly Abercynon South)')
+        assert dat == ('Abercynon', 'formerly Abercynon South')
+
+        dat = lid._parse_location_name('Allerton (reopened as Liverpool South Parkway)')
+        assert dat == ('Allerton', 'reopened as Liverpool South Parkway')
+
+        dat = lid._parse_location_name('Ashford International [domestic portion]')
+        assert dat == ('Ashford International', 'domestic portion')
+
+        dat = lid._parse_location_name('Ayr [unknown feature]')
+        assert dat == ('Ayr', 'unknown feature')
+
+    @staticmethod
     def test_collect_codes_by_initial():
         loc_a = lid.collect_codes_by_initial(initial='a', update=True, verbose=True)
         assert isinstance(loc_a, dict)

@@ -12,10 +12,10 @@ class TestStations:
 
     @staticmethod
     def test__get_station_data_catalogue():
-        stn_data_cat = stn._get_station_data_catalogue(update=True, verbose=True)
+        stn_data_cat = stn.get_catalogue(update=True, verbose=True)
         assert isinstance(stn_data_cat, dict)
 
-        stn_data_cat = stn._get_station_data_catalogue()
+        stn_data_cat = stn.get_catalogue()
         assert isinstance(stn_data_cat, dict)
 
     @staticmethod

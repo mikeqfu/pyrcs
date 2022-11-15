@@ -53,6 +53,13 @@ class TestLORCode:
         nw_codes = lor_codes_nw['NW/NZ']
         assert isinstance(nw_codes, pd.DataFrame)
 
+        lor_codes_xr = lor.collect_codes_by_prefix(prefix='XR')
+        assert isinstance(lor_codes_xr, dict)
+        xr_codes = lor_codes_xr['XR']
+        assert isinstance(xr_codes, dict)
+        assert list(xr_codes.keys()) == [
+            'Current codes', 'Current codes note', 'Past codes', 'Past codes note']
+
     @staticmethod
     def test_fetch_codes():
         lor_codes_dat = lor.fetch_codes()

@@ -57,27 +57,6 @@ class TestParser:
         assert parsed_date_dat == datetime.date(2020, 1, 1)
 
     @staticmethod
-    def test_parse_location_name():
-        from pyrcs.parser import parse_location_name
-
-        dat_and_note = parse_location_name('Abbey Wood')
-        assert dat_and_note == ('Abbey Wood', '')
-
-        dat_and_note = parse_location_name(None)
-        assert dat_and_note == ('', '')
-
-        dat_and_note = parse_location_name('Abercynon (formerly Abercynon South)')
-        assert dat_and_note == ('Abercynon', 'formerly Abercynon South')
-
-        location_dat = 'Allerton (reopened as Liverpool South Parkway)'
-        dat_and_note = parse_location_name(location_dat)
-        assert dat_and_note == ('Allerton', 'reopened as Liverpool South Parkway')
-
-        location_dat = 'Ashford International [domestic portion]'
-        dat_and_note = parse_location_name(location_dat)
-        assert dat_and_note == ('Ashford International', 'domestic portion')
-
-    @staticmethod
     def test_get_site_map():
         from pyrcs.parser import get_site_map
 
