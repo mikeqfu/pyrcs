@@ -16,7 +16,7 @@ def _update_prepacked_data(verbose=False, interval=5, **kwargs):
     :param verbose: whether to print relevant information in console, defaults to ``False``
     :type verbose: bool
     :param interval: time gap (in seconds) between updating different classes, defaults to ``5``
-    :type interval: int
+    :type interval: int or float
 
     **Example**::
 
@@ -30,7 +30,7 @@ def _update_prepacked_data(verbose=False, interval=5, **kwargs):
         print("Unable to update the data.")
 
     else:
-        if confirmed("To update the backup resources\n?", **kwargs):
+        if confirmed("To update the backup/data resources\n?", **kwargs):
 
             # Site map
             print("\nSite map:")

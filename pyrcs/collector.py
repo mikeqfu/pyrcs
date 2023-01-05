@@ -121,7 +121,7 @@ class LineData:
         :type verbose: bool or int
         :param interval: time gap (in seconds) between the updating of different classes,
             defaults to ``5``
-        :type interval: int
+        :type interval: int or float
         :param init_update: whether to update the data for instantiation of each subclass,
             defaults to ``False``
         :type init_update: bool
@@ -176,14 +176,11 @@ class LineData:
                 print(f"\n{self.LineNames.NAME}:")
                 _ = self.LineNames.fetch_codes(update=True, verbose=verbose)
 
-                # time.sleep(time_gap)
+                time.sleep(interval)
 
-                # # Track diagrams
-                # print(f"\n{self.TrackDiagrams.NAME}:")
-                # # noinspection PyProtectedMember
-                # _ = self.TrackDiagrams._get_items(update=True, verbose=verbose)
-                # # noinspection PyProtectedMember
-                # _ = self.TrackDiagrams._fetch_catalogue(update=True, verbose=verbose)
+                # Track diagrams
+                print(f"\n{self.TrackDiagrams.NAME}:")
+                _ = self.TrackDiagrams.fetch_catalogue(update=True, verbose=verbose)
 
                 time.sleep(interval)
 
