@@ -67,7 +67,7 @@ Fu, Q. (2020). PyRCS: an open-source tool for collecting railway codes used in d
       url          = {https://doi.org/10.5281/zenodo.4026744}
     }
 
-**Note:** Please also refer to the export options from `Zenodo <https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224026744%22&sort=-version&all_versions=True>`_ to reference the specific version as appropriate when using PyRCS.
+**Note:** Please also refer to the export options from `Zenodo <https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224026744%22&sort=-version&all_versions=True>`_ to reference the specific version of PyRCS as appropriate.
 
 Acknowledgement
 ###############
