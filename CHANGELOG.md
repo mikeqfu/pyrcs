@@ -2,6 +2,18 @@
 
 <br/>
 
+#### **[0.3.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.4)**
+
+(*9 January 2023*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.3...0.3.4) since [0.3.3](https://pypi.org/project/pyrcs/0.3.3/):**
+
+- Improved the modules [collector](https://github.com/mikeqfu/pyrcs/blob/c77554a4686b630d0b95bc155722c7e5c7a7c453/pyrcs/collector.py) and [_updater](https://github.com/mikeqfu/pyrcs/blob/c77554a4686b630d0b95bc155722c7e5c7a7c453/pyrcs/_updater.py) with a [bug fix](https://github.com/mikeqfu/pyrcs/commit/986637ed7df18bc5e656d4ba0aab736105f4dfb7). 
+
+**For more information and detailed specifications, check out [PyRCS 0.3.4 documentation](https://pyrcs.readthedocs.io/en/0.3.4/).**
+
+<br/>
+
 #### **[0.3.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.3)**
 
 (*15 November 2022*)
