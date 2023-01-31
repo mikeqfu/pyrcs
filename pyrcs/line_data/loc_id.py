@@ -466,38 +466,43 @@ class LocationIdentifiers:
             # Location name
             d = re.search(r'.*(?= \[[\"\']\()', x)
             if d is not None:
-                x_ = d.group()
+                x_ = d.group(0)
             elif ' [unknown feature' in x:  # ' [unknown feature, labelled "do not use"]' in x
                 x_ = re.search(r'\w.*(?= \[unknown feature(, )?)', x).group(0)
             elif ') [formerly' in x:
                 x_ = re.search(r'.*(?= \[formerly)', x).group(0)
+            elif '✖' in x:
+                x_ = re.search(r'.*(?=✖)', x).group(0)
             else:
-                x_pat = re.compile(
-                    r'[Oo]riginally |'
-                    r'[Ff]ormerly |'
-                    r'[Ll]ater |'
-                    r'[Pp]resumed |'
-                    r' \(was |'
-                    r' \(in |'
-                    r' \(at |'
-                    r' \(also |'
-                    r' \(second code |'
-                    r'\?|'
-                    r'\n|'
-                    r' \(\[\'|'
-                    r' \(definition unknown\)|'
-                    r' \(reopened |'
-                    r'( portion])$|'
-                    r'[Ss]ee '
-                )
                 x_tmp = re.search(r'(?=[\[(]).*(?<=[])])|(?=\().*(?<=\) \[)', x)
-                x_tmp = x_tmp.group(0) if x_tmp is not None else x
-                x_ = ' '.join(x.replace(x_tmp, '').split()) if re.search(x_pat, x) else x
+                if x_tmp is not None:
+                    x_tmp = x_tmp.group(0)
+                    x_pat = re.compile(r'[Oo]riginally |'
+                                       r'[Ff]ormerly |'
+                                       r'[Ll]ater |'
+                                       r'[Pp]resumed |'
+                                       r' \(was |'
+                                       r' \(in |'
+                                       r' \(at |'
+                                       r' \(also |'
+                                       r' \(second code |'
+                                       r'\?|'
+                                       r'\n|'
+                                       r' \(\[\'|'
+                                       r' \(definition unknown\)|'
+                                       r' \(reopened |'
+                                       r'( portion])$|'
+                                       r'[Ss]ee ')
+                    x_ = ' '.join(x.replace(x_tmp, '').split()) if re.search(x_pat, x) else x
+                else:
+                    x_ = x
 
             # Note
             y_ = x.replace(x_, '', 1).strip()
             if y_ == '':
                 note = ''
+            elif '✖' in y_:
+                note = re.search(r'(?<=✖).*', y_).group(0)
             else:
                 note_ = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', y_)
                 if note_ is None:
@@ -540,7 +545,32 @@ class LocationIdentifiers:
         data.replace(_amendment_to_location_names(), regex=True, inplace=True)
 
     @staticmethod
-    def cleanse_mult_alt_codes(data):
+    def _count_sep(x):
+        if '\r\n' in x:
+            r_n_counts = x.count('\r\n')
+        elif '\r' in x:
+            r_n_counts = x.count('\r')
+        else:
+            if '~LO\n' in x:  # Ad hoc
+                x = x.replace('~LO\n', '')
+            r_n_counts = x.count('\n')
+        return r_n_counts
+
+    @staticmethod
+    def _split_dat_and_note(x):
+        if '\r\n' in x:
+            x_ = x.split('\r\n')
+        elif '\r' in x:
+            x_ = x.split('\r')
+        elif '\n' in x:
+            if '~LO\n' in x:  # Ad hoc
+                x = x.replace('~LO\n', '')
+            x_ = x.split('\n')
+        else:
+            x_ = x
+        return x_
+
+    def cleanse_mult_alt_codes(self, data):
         """
         Cleanse multiple alternatives for every code column.
 
@@ -551,19 +581,9 @@ class LocationIdentifiers:
         """
 
         data_ = data.copy()
+        code_col_names = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
 
-        code_col_names = ['CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
-
-        def _count_sep(x):
-            if '\r\n' in x:
-                y = x.count('\r\n')
-            elif '\r' in x:
-                y = x.count('\r')
-            else:
-                y = x.count('\n')
-            return y
-
-        r_n_counts = data_[code_col_names].applymap(_count_sep)
+        r_n_counts = data_[code_col_names].applymap(self._count_sep)
         # r_n_counts = pd.concat([data[c].str.count(r'\r(\n)?') for c in code_col_names], axis=1)
         r_n_counts_ = r_n_counts.mul(-1).add(r_n_counts.max(axis=1), axis='index')
 
@@ -573,26 +593,29 @@ class LocationIdentifiers:
                 if d > 0:
                     dat = data_.loc[i, col]
                     if '\r\n' in dat:
-                        data_.loc[i, col] = dat + ''.join(['\r\n'] * d)
+                        if col == 'Location':
+                            data_.loc[i, col] = dat + ''.join(['\r\n' + dat.split('\r\n')[-1]] * d)
+                        else:
+                            data_.loc[i, col] = dat + ''.join(['\r\n'] * d)
                     elif '\r' in dat:
-                        data_.loc[i, col] = dat + ''.join(['\r'] * d)
-                    else:  # '\n' in dat:
-                        data_.loc[i, col] = dat + ''.join(['\n'] * d)
+                        if col == 'Location':
+                            data_.loc[i, col] = dat + ''.join(['\r' + dat.split('\r')[-1]] * d)
+                        else:
+                            data_.loc[i, col] = dat + ''.join(['\r'] * d)
+                    else:  # e.g. '\n' in dat:
+                        if col == 'Location':
+                            data_.loc[i, col] = '\n'.join([dat] * (d + 1))
+                        else:
+                            data_.loc[i, col] = dat + ''.join(['\n'] * d)
 
-        def _split_dat_and_note(x):
-            if '\r\n' in x:
-                x_ = x.split('\r\n')
-            elif '\r' in x:
-                x_ = x.split('\r')
-            elif '\n' in x:
-                x_ = x.split('\n')
-            else:
-                x_ = x
-            return x_
+        data_[code_col_names] = data_[code_col_names].applymap(self._split_dat_and_note)
 
-        data_[code_col_names] = data_[code_col_names].applymap(_split_dat_and_note)
+        data_ = data_.explode(code_col_names, ignore_index=True)
 
-        return data_.explode(code_col_names, ignore_index=True)
+        temp = data_.select_dtypes(['object'])
+        data_[temp.columns] = temp.apply(lambda x: x.str.strip())
+
+        return data_
 
     @staticmethod
     def _get_code_note(x):
@@ -836,20 +859,20 @@ class LocationIdentifiers:
                     # data.replace({'\xa0': ''}, regex=True, inplace=True)
 
                     dat = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
-                    repl = {'\xa0': '', '\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
-                    data = dat.replace(repl, regex=True)
+                    dat = dat.replace({'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
+                    data = dat.replace({'\xa0': ''}, regex=True)
 
                     # Parse location names and their corresponding notes
                     self.parse_location_name(data=data)
 
                     # Cleanse multiple alternatives for every code column
-                    data = self.cleanse_mult_alt_codes(data)
+                    data = self.cleanse_mult_alt_codes(data=data)
 
                     # Get note for every code column
-                    self.get_code_notes(data)
+                    self.get_code_notes(data=data)
 
                     # Further parse STANOX note
-                    self.parse_stanox_note(data)
+                    self.parse_stanox_note(data=data)
 
                     additional_notes = self._get_additional_notes(
                         data=data, beginning_with=beginning_with, soup=soup)
