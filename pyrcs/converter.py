@@ -420,6 +420,6 @@ def kilometer_to_yard(km):
         1093.6132983377079
     """
 
-    yards = np.nan if km is None else km * 1093.6132983377079
+    yards = np.nan if km is None else float(km) * 1093.6132983377079
 
     return yards
