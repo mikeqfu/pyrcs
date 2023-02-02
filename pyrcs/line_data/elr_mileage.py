@@ -225,8 +225,12 @@ class ELRMileages:
                         temp_mileage.append(m1)
                         mileage_note.append(m2.strip() + ' (Alternative)')
                     else:
-                        temp_mileage.append(m.strip(' ').replace(' ', '.'))
+                        if re.match(r'\d+,\d+', m):
+                            temp_mileage.append(m.strip(' ').replace(',', '.'))
+                        else:
+                            temp_mileage.append(m.strip(' ').replace(' ', '.'))
                         mileage_note.append('')
+
             miles_chains = temp_mileage.copy()
             temp_mileage = [mile_chain_to_mileage(m) for m in temp_mileage]
 
@@ -344,9 +348,11 @@ class ELRMileages:
 
         link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
         link_nodes = conn_nodes[link_cols].applymap(self._uncouple_elr_mileage)
-        link_elr_mileage = pd.concat(
-            [pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
-             for col in link_cols], axis=1, sort=False)
+
+        dat = [
+            pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
+            for col in link_cols]
+        link_elr_mileage = pd.concat(dat, axis=1, sort=False)
 
         parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1)
 
