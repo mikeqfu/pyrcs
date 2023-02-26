@@ -19,7 +19,7 @@ def home_page_url():
     """
     Specify the homepage URL of the data source.
 
-    :return: URL of the data source homepage
+    :return: URL of the data source homepage.
     :rtype: str
 
     **Example**::
@@ -40,7 +40,7 @@ def is_home_connectable():
     """
     Check whether the Railway Codes website is connectable.
 
-    :return: whether the Railway Codes website is connectable
+    :return: Whether the Railway Codes website is connectable.
     :rtype: bool
 
     **Example**::
@@ -62,9 +62,9 @@ def is_str_float(x):
     """
     Check if a string-type variable can express a float-type value.
 
-    :param x: a string-type variable
+    :param x: A string-type variable.
     :type x: str
-    :return: whether ``str_val`` can express a float value
+    :return: Whether ``str_val`` can express a float value.
     :rtype: bool
 
     **Examples**::
@@ -290,9 +290,9 @@ def format_err_msg(e):
     """
     Format an error message.
 
-    :param e: subclass of Exception
+    :param e: Subclass of Exception.
     :type e: Exception or None
-    :return: an error message
+    :return: An error message.
     :rtype: str
     """
 
@@ -402,20 +402,20 @@ def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
     return path
 
 
-def init_data_dir(cls, data_dir, category, cluster=None, **kwargs):
+def init_data_dir(cls_instance, data_dir, category, cluster=None, **kwargs):
     """
     Specify an initial data directory for (an instance of) a class for a data cluster.
 
-    :param cls: (an instance of) a class for a certain data cluster
-    :type cls: object
-    :param data_dir: name of a folder where the pickle file is to be saved
+    :param cls_instance: An instance of a class for a certain data cluster.
+    :type cls_instance: object
+    :param data_dir: The name of a folder where the pickle file is to be saved.
     :type data_dir: str or None
-    :param category: name of a data category, e.g. ``"line-data"``
+    :param category: The name of a data category, e.g. ``"line-data"``.
     :type category: str
-    :param cluster: replacement for ``cls.KEY``
+    :param cluster: A replacement for ``cls.KEY``.
     :type cluster: str or None
-    :param kwargs: [optional] parameters of the function :py:func:`~pyrcs.utils.cd_data`
-    :return: pathnames of a default data directory and a current data directory
+    :param kwargs: [optional] parameters of the function :func:`~pyrcs.utils.cd_data`.
+    :return: Pathnames of a default data directory and a current data directory.
     :rtype: tuple[str, os.PathLike[str]]
 
     **Example**::
@@ -434,30 +434,30 @@ def init_data_dir(cls, data_dir, category, cluster=None, **kwargs):
     """
 
     if data_dir:
-        cls.data_dir = validate_dir(data_dir)
+        cls_instance.data_dir = validate_dir(data_dir)
 
     else:
-        cluster_ = cls.__getattribute__('KEY') if cluster is None else copy.copy(cluster)
-        cls.data_dir = cd_data(category, cluster_.lower().replace(" ", "-"), **kwargs)
+        cluster_ = cls_instance.__getattribute__('KEY') if cluster is None else copy.copy(cluster)
+        cls_instance.data_dir = cd_data(category, cluster_.lower().replace(" ", "-"), **kwargs)
 
-    cls.current_data_dir = copy.copy(cls.data_dir)
+    cls_instance.current_data_dir = copy.copy(cls_instance.data_dir)
 
-    return cls.data_dir, cls.current_data_dir
+    return cls_instance.data_dir, cls_instance.current_data_dir
 
 
-def make_file_pathname(cls, data_name, ext=".pickle", data_dir=None):
+def make_file_pathname(cls, data_name, ext=".pkl", data_dir=None):
     """
     Make a pathname for saving data as a file of a certain format.
 
-    :param cls: (an instance of) a class for a certain data cluster
+    :param cls: (An instance of) a class for a certain data cluster.
     :type cls: object
-    :param data_name: key to the dict-type data of a certain code cluster
+    :param data_name: The key to the dict-type data of a certain code cluster.
     :type data_name: str
-    :param ext: file extension, defaults to ``".pickle"``
+    :param ext: A file extension, defaults to ``".pkl"``.
     :type ext: str
-    :param data_dir: name of a folder where the data is saved, defaults to ``None``
+    :param data_dir: The name of a folder where the data is saved, defaults to ``None``.
     :type data_dir: str or None
-    :return: a pathname for saving the data
+    :return: A pathname for saving the data.
     :rtype: str
 
     **Example**::
@@ -468,9 +468,9 @@ def make_file_pathname(cls, data_name, ext=".pickle", data_dir=None):
 
         >>> bridges = Bridges()
 
-        >>> example_pathname = make_file_pathname(bridges, data_name="example-data", ext=".pickle")
+        >>> example_pathname = make_file_pathname(bridges, data_name="example-data", ext=".pkl")
         >>> os.path.relpath(example_pathname)
-        'pyrcs\\data\\line-data\\bridges\\example-data.pickle'
+        'pyrcs\\data\\line-data\\bridges\\example-data.pkl'
     """
 
     filename = data_name.lower().replace(" ", "-") + ext
@@ -605,7 +605,7 @@ def save_data_to_file(cls, data, data_name, ext, dump_dir=None, verbose=False, *
         if isinstance(ext, str):
             file_ext = "." + ext if not ext.startswith(".") else copy.copy(ext)
         else:
-            file_ext = ".pickle"
+            file_ext = ".pkl"
 
         path_to_file = make_file_pathname(cls=cls, data_name=data_name, ext=file_ext, data_dir=dump_dir)
 
@@ -638,7 +638,7 @@ def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose,
     :param data_dir: pathname of a directory where the data is fetched, defaults to ``None``
     :type data_dir: str or os.PathLike[str] or None
     :param save_data_kwargs: equivalent of ``kwargs`` used by the function
-        :py:func:`pyrcs.utils.save_data_to_file`, defaults to ``None``
+        :func:`pyrcs.utils.save_data_to_file`, defaults to ``None``
     :type save_data_kwargs: dict or None
     :param kwargs: [optional] parameters of the ``cls``.``method`` being called
     :type kwargs: typing.Any

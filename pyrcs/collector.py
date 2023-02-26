@@ -18,7 +18,7 @@ from .utils import home_page_url, is_home_connectable, print_conn_err, print_ins
 
 class LineData:
     """A class representation of all modules of the subpackage \
-    :py:mod:`~pyrcs.line_data` for collecting `line data`_.
+    :mod:`~pyrcs.line_data` for collecting `line data`_.
 
     .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
     """
@@ -144,49 +144,52 @@ class LineData:
                 if init_update:
                     self.__init__(update=init_update)
 
+                update_args = {'update': True, 'verbose': verbose}
+
                 # ELR and mileages
                 print(f"\n{self.ELRMileages.NAME}:")
-                _ = self.ELRMileages.fetch_elr(update=True, verbose=verbose)
+                _ = self.ELRMileages.fetch_elr(**update_args)
 
                 time.sleep(interval)
 
                 # Electrification
                 print(f"\n{self.Electrification.NAME}:")
-                _ = self.Electrification.fetch_codes(update=True, verbose=verbose)
+                _ = self.Electrification.get_indep_line_catalogue(**update_args)
+                _ = self.Electrification.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Location
                 print(f"\n{self.LocationIdentifiers.NAME}:")
-                _ = self.LocationIdentifiers.fetch_codes(update=True, verbose=verbose)
+                _ = self.LocationIdentifiers.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Line of routes
                 print(f"\n{self.LOR.NAME}:")
-                _ = self.LOR.get_keys_to_prefixes(prefixes_only=True, update=True, verbose=verbose)
-                _ = self.LOR.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=verbose)
-                _ = self.LOR.get_page_urls(update=True, verbose=verbose)
-                _ = self.LOR.fetch_codes(update=True, verbose=verbose)
-                _ = self.LOR.fetch_elr_lor_converter(update=True, verbose=verbose)
+                _ = self.LOR.get_keys_to_prefixes(prefixes_only=True, **update_args)
+                _ = self.LOR.get_keys_to_prefixes(prefixes_only=False, **update_args)
+                _ = self.LOR.get_page_urls(**update_args)
+                _ = self.LOR.fetch_codes(**update_args)
+                _ = self.LOR.fetch_elr_lor_converter(**update_args)
 
                 time.sleep(interval)
 
                 # Line names
                 print(f"\n{self.LineNames.NAME}:")
-                _ = self.LineNames.fetch_codes(update=True, verbose=verbose)
+                _ = self.LineNames.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Track diagrams
                 print(f"\n{self.TrackDiagrams.NAME}:")
-                _ = self.TrackDiagrams.fetch_catalogue(update=True, verbose=verbose)
+                _ = self.TrackDiagrams.fetch_catalogue(**update_args)
 
                 time.sleep(interval)
 
                 # Bridges
                 print(f"\n{self.Bridges.NAME}:")
-                _ = self.Bridges.fetch_codes(update=True, verbose=verbose)
+                _ = self.Bridges.fetch_codes(**update_args)
 
 
 class OtherAssets:
@@ -316,40 +319,42 @@ class OtherAssets:
                 if init_update:
                     self.__init__(update=init_update)
 
+                update_args = {'update': True, 'verbose': verbose}
+
                 # Signal boxes
                 print(f"\n{self.SignalBoxes.NAME}:")
-                _ = self.SignalBoxes.fetch_prefix_codes(update=True, verbose=verbose)
-                _ = self.SignalBoxes.fetch_non_national_rail_codes(update=True, verbose=verbose)
-                _ = self.SignalBoxes.fetch_ireland_codes(update=True, verbose=verbose)
-                _ = self.SignalBoxes.fetch_wr_mas_dates(update=True, verbose=verbose)
-                _ = self.SignalBoxes.fetch_bell_codes(update=True, verbose=verbose)
+                _ = self.SignalBoxes.fetch_prefix_codes(**update_args)
+                _ = self.SignalBoxes.fetch_non_national_rail_codes(**update_args)
+                _ = self.SignalBoxes.fetch_ireland_codes(**update_args)
+                _ = self.SignalBoxes.fetch_wr_mas_dates(**update_args)
+                _ = self.SignalBoxes.fetch_bell_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Tunnels
                 print(f"\n{self.Tunnels.NAME}:")
-                _ = self.Tunnels.fetch_codes(update=True, verbose=verbose)
+                _ = self.Tunnels.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Viaducts
                 print(f"\n{self.Viaducts.NAME}:")
-                _ = self.Viaducts.fetch_codes(update=True, verbose=verbose)
+                _ = self.Viaducts.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Stations
                 print(f"\n{self.Stations.NAME}:")
-                _ = self.Stations.fetch_locations(update=True, verbose=verbose)
+                _ = self.Stations.fetch_locations(**update_args)
 
                 time.sleep(interval)
 
                 # Depots
                 print(f"\n{self.Depots.NAME}:")
-                _ = self.Depots.fetch_codes(update=True, verbose=verbose)
+                _ = self.Depots.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
                 # Features
                 print(f"\n{self.Features.NAME}:")
-                _ = self.Features.fetch_codes(update=True, verbose=verbose)
+                _ = self.Features.fetch_codes(**update_args)
