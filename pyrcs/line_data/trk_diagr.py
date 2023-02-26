@@ -114,7 +114,7 @@ class TrackDiagrams:
         """
 
         dat_name = self.KEY.lower()
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_cat = cd_data("catalogue", dat_name.replace(" ", "-") + ext)
 
         if os.path.isfile(path_to_cat) and not update:
@@ -200,7 +200,7 @@ class TrackDiagrams:
                 print("Done.")
 
             save_data_to_file(
-                self, data=track_diagrams_catalogue, data_name=data_name, ext=".pickle",
+                self, data=track_diagrams_catalogue, data_name=data_name, ext=".pkl",
                 dump_dir=cd_data("catalogue"), verbose=verbose)
 
         except Exception as e:
@@ -313,7 +313,7 @@ class TrackDiagrams:
         """
 
         track_diagrams_catalogue = fetch_data_from_file(
-            cls=self, method='collect_catalogue', data_name=self.KEY, ext=".pickle",
+            cls=self, method='collect_catalogue', data_name=self.KEY, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
 
         return track_diagrams_catalogue

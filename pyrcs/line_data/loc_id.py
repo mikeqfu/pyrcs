@@ -355,7 +355,7 @@ class LocationIdentifiers:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=explanatory_note, data_name=self.KEY_TO_MSCEN, ext=".pickle",
+                        self, data=explanatory_note, data_name=self.KEY_TO_MSCEN, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -407,7 +407,7 @@ class LocationIdentifiers:
 
         explanatory_note = fetch_data_from_file(
             cls=self, method='collect_explanatory_note', data_name=self.KEY_TO_MSCEN,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return explanatory_note
 
@@ -809,7 +809,7 @@ class LocationIdentifiers:
 
         beginning_with = validate_initial(initial)
 
-        path_to_pickle = self._cdd("a-z", beginning_with.lower() + ".pickle")
+        path_to_pickle = self._cdd("a-z", beginning_with.lower() + ".pkl")
 
         if os.path.isfile(path_to_pickle) and not update:
             location_codes_initial = load_data(path_to_pickle)
@@ -1023,7 +1023,7 @@ class LocationIdentifiers:
 
                     save_data_to_file(
                         self, data=other_systems_codes, data_name=self.KEY_TO_OTHER_SYSTEMS,
-                        ext=".pickle", verbose=verbose)
+                        ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {e}")
@@ -1076,7 +1076,7 @@ class LocationIdentifiers:
 
         other_systems_codes = fetch_data_from_file(
             cls=self, method='collect_other_systems_codes', data_name=self.KEY_TO_OTHER_SYSTEMS,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return other_systems_codes
 
@@ -1179,7 +1179,7 @@ class LocationIdentifiers:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=location_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=location_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return location_codes
@@ -1318,7 +1318,7 @@ class LocationIdentifiers:
             if dump_it:
                 dump_dir_ = validate_dir(dump_dir) if dump_dir else self._cdd("xref-dicts")
                 data_name = "-".join(keys) + ("" if initials is None else "-" + "".join(initials))
-                ext = ".json" if as_dict and len(keys) == 1 else ".pickle"
+                ext = ".json" if as_dict and len(keys) == 1 else ".pkl"
 
                 save_data_to_file(
                     self, data=location_codes_dictionary, data_name=data_name, ext=ext,

@@ -321,7 +321,7 @@ class Features:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=habds_and_wilds_codes, data_name=self.KEY_TO_HABD_WILD, ext=".pickle",
+                        self, data=habds_and_wilds_codes, data_name=self.KEY_TO_HABD_WILD, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -392,7 +392,7 @@ class Features:
         """
 
         habds_and_wilds_codes = fetch_data_from_file(
-            cls=self, method='collect_habds_and_wilds', data_name=self.KEY_TO_HABD_WILD, ext=".pickle",
+            cls=self, method='collect_habds_and_wilds', data_name=self.KEY_TO_HABD_WILD, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return habds_and_wilds_codes
@@ -479,7 +479,7 @@ class Features:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=water_troughs_codes, data_name=self.KEY_TO_TROUGH, ext=".pickle",
+                        self, data=water_troughs_codes, data_name=self.KEY_TO_TROUGH, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -531,7 +531,7 @@ class Features:
         """
 
         troughs_locations_codes = fetch_data_from_file(
-            cls=self, method='collect_water_troughs', data_name=self.KEY_TO_TROUGH, ext=".pickle",
+            cls=self, method='collect_water_troughs', data_name=self.KEY_TO_TROUGH, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return troughs_locations_codes
@@ -644,7 +644,7 @@ class Features:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=telegraph_code_words, data_name=self.KEY_TO_TELEGRAPH, ext=".pickle",
+                        self, data=telegraph_code_words, data_name=self.KEY_TO_TELEGRAPH, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -711,7 +711,7 @@ class Features:
         """
 
         telegraph_code_words = fetch_data_from_file(
-            cls=self, method='collect_telegraph_codes', data_name=self.KEY_TO_TELEGRAPH, ext=".pickle",
+            cls=self, method='collect_telegraph_codes', data_name=self.KEY_TO_TELEGRAPH, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return telegraph_code_words
@@ -799,7 +799,7 @@ class Features:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=buzzer_codes, data_name=self.KEY_TO_BUZZER, ext=".pickle",
+                        self, data=buzzer_codes, data_name=self.KEY_TO_BUZZER, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -850,7 +850,7 @@ class Features:
         """
 
         buzzer_codes = fetch_data_from_file(
-            cls=self, method='collect_buzzer_codes', data_name=self.KEY_TO_BUZZER, ext=".pickle",
+            cls=self, method='collect_buzzer_codes', data_name=self.KEY_TO_BUZZER, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return buzzer_codes
@@ -956,7 +956,7 @@ class Features:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=features_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=features_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return features_codes

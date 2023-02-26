@@ -376,7 +376,7 @@ class Electrification:
 
                     save_data_to_file(
                         self, data=national_network_ole, data_name=self.KEY_TO_NATIONAL_NETWORK,
-                        ext=".pickle", verbose=verbose)
+                        ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -443,7 +443,7 @@ class Electrification:
 
         national_network_ole = fetch_data_from_file(
             cls=self, method='collect_national_network_codes', data_name=self.KEY_TO_NATIONAL_NETWORK,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return national_network_ole
 
@@ -480,7 +480,7 @@ class Electrification:
         """
 
         data_name = "electrification-independent-lines"
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_file = cd_data("catalogue", data_name + ext)
 
         if os.path.isfile(path_to_file) and not update:
@@ -597,7 +597,7 @@ class Electrification:
 
                     save_data_to_file(
                         self, data=independent_lines_ole, data_name=self.KEY_TO_INDEPENDENT_LINES,
-                        ext=".pickle", verbose=verbose)
+                        ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -669,7 +669,7 @@ class Electrification:
 
         independent_lines_ole = fetch_data_from_file(
             cls=self, method='collect_indep_lines_codes', data_name=self.KEY_TO_INDEPENDENT_LINES,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return independent_lines_ole
 
@@ -782,8 +782,7 @@ class Electrification:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=ohns_codes, data_name=self.KEY_TO_OHNS, ext=".pickle",
-                        verbose=verbose)
+                        self, data=ohns_codes, data_name=self.KEY_TO_OHNS, ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -836,7 +835,7 @@ class Electrification:
         """
 
         ohns_codes = fetch_data_from_file(
-            cls=self, method='collect_ohns_codes', data_name=self.KEY_TO_OHNS, ext=".pickle",
+            cls=self, method='collect_ohns_codes', data_name=self.KEY_TO_OHNS, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return ohns_codes
@@ -929,7 +928,7 @@ class Electrification:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=etz_ole, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES, ext=".pickle",
+                        self, data=etz_ole, data_name=self.KEY_TO_ENERGY_TARIFF_ZONES, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -994,7 +993,7 @@ class Electrification:
 
         etz_ole = fetch_data_from_file(
             cls=self, method='collect_etz_codes', data_name=self.KEY_TO_ENERGY_TARIFF_ZONES,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return etz_ole
 
@@ -1053,7 +1052,7 @@ class Electrification:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=ole_section_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=ole_section_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return ole_section_codes

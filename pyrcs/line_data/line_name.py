@@ -193,7 +193,7 @@ class LineNames:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=line_names_data, data_name=self.KEY, ext=".pickle", verbose=verbose)
+                        self, data=line_names_data, data_name=self.KEY, ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -244,7 +244,7 @@ class LineNames:
         """
 
         line_names_data = fetch_data_from_file(
-            cls=self, method='collect_codes', data_name=self.KEY, ext=".pickle",
+            cls=self, method='collect_codes', data_name=self.KEY, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return line_names_data

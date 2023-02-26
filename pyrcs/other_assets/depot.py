@@ -175,7 +175,7 @@ class Depots:
                     }
 
                     save_data_to_file(
-                        self, data=two_char_tops_codes_data, data_name=self.KEY_TO_TOPS, ext=".pickle",
+                        self, data=two_char_tops_codes_data, data_name=self.KEY_TO_TOPS, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -227,7 +227,7 @@ class Depots:
         """
 
         two_char_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pickle",
+            cls=self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return two_char_tops_codes_data
@@ -335,7 +335,7 @@ class Depots:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=four_digit_pre_tops_codes_data, data_name=data_name, ext=".pickle",
+                        self, data=four_digit_pre_tops_codes_data, data_name=data_name, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -388,7 +388,7 @@ class Depots:
         data_name = re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS)
 
         four_digit_pre_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_pre_tops_codes', data_name=data_name, ext=".pickle",
+            cls=self, method='collect_pre_tops_codes', data_name=data_name, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return four_digit_pre_tops_codes_data
@@ -474,7 +474,7 @@ class Depots:
 
                     save_data_to_file(
                         self, data=system_1950_codes_data,
-                        data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM), ext=".pickle",
+                        data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM), ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -526,7 +526,7 @@ class Depots:
 
         system_1950_data = fetch_data_from_file(
             cls=self, method='collect_1950_system_codes',
-            data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(), ext=".pickle",
+            data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(), ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return system_1950_data
@@ -639,7 +639,7 @@ class Depots:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=gwr_depot_codes, data_name=self.KEY_TO_GWR, ext=".pickle",
+                        self, data=gwr_depot_codes, data_name=self.KEY_TO_GWR, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -697,7 +697,7 @@ class Depots:
         """
 
         gwr_depot_codes = fetch_data_from_file(
-            cls=self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pickle",
+            cls=self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return gwr_depot_codes
@@ -779,7 +779,7 @@ class Depots:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=depot_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=depot_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return depot_codes

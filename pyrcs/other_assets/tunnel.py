@@ -257,7 +257,7 @@ class Tunnels:
         page_name = validate_page_name(self, page_no, valid_page_no=set(range(1, 5)))
 
         data_name = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower()
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd(data_name + ext)
 
         if os.path.exists(path_to_pickle) and not update:
@@ -434,7 +434,7 @@ class Tunnels:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=tunnel_lengths, data_name=self.KEY, ext=".pickle",
+                self, data=tunnel_lengths, data_name=self.KEY, ext=".pkl",
                 dump_dir=dump_dir, verbose=verbose)
 
         return tunnel_lengths

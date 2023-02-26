@@ -434,7 +434,7 @@ class Stations:
         beginning_with = validate_initial(initial)
         initial_ = beginning_with.lower()
 
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd("a-z", initial_ + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -606,7 +606,7 @@ class Stations:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=railway_station_data, data_name=self.KEY_TO_STN, ext=".pickle",
+                self, data=railway_station_data, data_name=self.KEY_TO_STN, ext=".pkl",
                 dump_dir=dump_dir, verbose=verbose)
 
         return railway_station_data

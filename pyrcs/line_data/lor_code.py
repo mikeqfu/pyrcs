@@ -147,7 +147,7 @@ class LOR:
         """
 
         data_name = "{}prefixes".format("" if prefixes_only else "keys-to-")
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd(data_name + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -224,7 +224,7 @@ class LOR:
         """
 
         data_name = "prefix-page-urls"
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd(data_name + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -282,8 +282,8 @@ class LOR:
             >>> lor._update_catalogue()
             To update catalogue
             ? [No]|Yes: yes
-            Updating "keys-to-prefixes.pickle" at "pyrcs\\dat\\line-data\\lor" ... Done.
-            Updating "prefix-page-urls.pickle" at "pyrcs\\dat\\line-data\\lor" ... Done.
+            Updating "keys-to-prefixes.pkl" at "pyrcs\\dat\\line-data\\lor" ... Done.
+            Updating "prefix-page-urls.pkl" at "pyrcs\\dat\\line-data\\lor" ... Done.
         """
 
         if confirmed("To update catalogue\n?", confirmation_required=confirmation_required):
@@ -398,7 +398,7 @@ class LOR:
 
                 save_data_to_file(
                     self, data=lor_codes_by_initials, data_name=data_name,
-                    ext=".pickle", dump_dir=self._cdd("prefixes"), verbose=verbose)
+                    ext=".pkl", dump_dir=self._cdd("prefixes"), verbose=verbose)
 
             except Exception as e:
                 print(f"Failed. {format_err_msg(e)}")
@@ -479,7 +479,7 @@ class LOR:
         assert prefix_ in self.valid_prefixes, f"`prefix` must be one of {self.valid_prefixes}"
 
         data_name = "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower()
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd("prefixes", data_name + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -586,7 +586,7 @@ class LOR:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=lor_data, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=lor_data, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return lor_data
@@ -691,7 +691,7 @@ class LOR:
 
                     save_data_to_file(
                         self, data=elr_lor_converter, data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
-                        ext=".pickle", verbose=verbose)
+                        ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -740,6 +740,6 @@ class LOR:
 
         elr_lor_converter = fetch_data_from_file(
             cls=self, method='collect_elr_lor_converter', data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return elr_lor_converter

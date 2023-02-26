@@ -145,7 +145,7 @@ class SignalBoxes:
         beginning_with = validate_initial(initial)
         initial_ = beginning_with.lower()
 
-        ext = ".pickle"
+        ext = ".pkl"
         path_to_pickle = self._cdd("a-z", initial_ + ext)
 
         if os.path.isfile(path_to_pickle) and not update:
@@ -274,7 +274,7 @@ class SignalBoxes:
 
         if dump_dir is not None:
             save_data_to_file(
-                self, data=signal_boxes_codes, data_name=self.KEY, ext=".pickle", dump_dir=dump_dir,
+                self, data=signal_boxes_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
         return signal_box_prefix_codes
@@ -409,7 +409,7 @@ class SignalBoxes:
 
                     save_data_to_file(
                         self, data=non_national_rail_codes_data, data_name=self.KEY_TO_NON_NATIONAL_RAIL,
-                        ext=".pickle", verbose=verbose)
+                        ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -482,7 +482,7 @@ class SignalBoxes:
 
         non_national_rail_codes_data = fetch_data_from_file(
             cls=self, method='collect_non_national_rail_codes', data_name=self.KEY_TO_NON_NATIONAL_RAIL,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return non_national_rail_codes_data
 
@@ -571,7 +571,7 @@ class SignalBoxes:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=ireland_codes_data, data_name=self.KEY_TO_IRELAND, ext=".pickle",
+                        self, data=ireland_codes_data, data_name=self.KEY_TO_IRELAND, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -623,7 +623,7 @@ class SignalBoxes:
 
         ireland_codes_data = fetch_data_from_file(
             cls=self, method='collect_ireland_codes', data_name=self.KEY_TO_IRELAND,
-            ext=".pickle", update=update, dump_dir=dump_dir, verbose=verbose)
+            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return ireland_codes_data
 
@@ -770,7 +770,7 @@ class SignalBoxes:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=wr_mas_dates_data, data_name=self.KEY_TO_WRMASD, ext=".pickle",
+                        self, data=wr_mas_dates_data, data_name=self.KEY_TO_WRMASD, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -854,7 +854,7 @@ class SignalBoxes:
         """
 
         wr_mas_dates_data = fetch_data_from_file(
-            cls=self, method='collect_wr_mas_dates', data_name=self.KEY_TO_WRMASD, ext=".pickle",
+            cls=self, method='collect_wr_mas_dates', data_name=self.KEY_TO_WRMASD, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return wr_mas_dates_data
@@ -956,7 +956,7 @@ class SignalBoxes:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=bell_codes_, data_name=self.KEY_TO_BELL_CODES, ext=".pickle",
+                        self, data=bell_codes_, data_name=self.KEY_TO_BELL_CODES, ext=".pkl",
                         verbose=verbose)
 
                 except Exception as e:
@@ -1020,7 +1020,7 @@ class SignalBoxes:
         """
 
         bell_codes_ = fetch_data_from_file(
-            cls=self, method='collect_bell_codes', data_name=self.KEY_TO_BELL_CODES, ext=".pickle",
+            cls=self, method='collect_bell_codes', data_name=self.KEY_TO_BELL_CODES, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return bell_codes_
