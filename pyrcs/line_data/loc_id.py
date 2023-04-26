@@ -570,6 +570,18 @@ class LocationIdentifiers:
             x_ = x
         return x_
 
+    @staticmethod
+    def _fix_special_cases(data):
+        x1 = 'Ely Papworth Sidings English Welsh & Scottish Railway International\n' \
+             'Ely Papworth Sidings DB Schenker International'
+        if x1 in data['Location'].values:
+            x1_ = 'Ely Papworth Sidings English Welsh & Scottish Railway International\n' \
+                  'Ely Papworth Sidings DB Schenker International\n' \
+                  'Ely Papworth Sidings DB Schenker International'
+            data.loc[data['Location'] == x1, 'Location'] = x1_
+
+        return data
+
     def cleanse_mult_alt_codes(self, data):
         """
         Cleanse multiple alternatives for every code column.
@@ -581,10 +593,13 @@ class LocationIdentifiers:
         """
 
         data_ = data.copy()
+
+        data_ = self._fix_special_cases(data_)
+
         code_col_names = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
 
         r_n_counts = data_[code_col_names].applymap(self._count_sep)
-        # r_n_counts = pd.concat([data[c].str.count(r'\r(\n)?') for c in code_col_names], axis=1)
+        # r_n_counts_ = r_n_counts.add(r_n_counts.max(axis=1), axis='index')
         r_n_counts_ = r_n_counts.mul(-1).add(r_n_counts.max(axis=1), axis='index')
 
         for col in code_col_names:
