@@ -1,12 +1,12 @@
 """Provide a number of helper functions."""
 
 import copy
+import importlib.resources
 import os
 import re
 import string
 
 import pandas as pd
-import pkg_resources
 from pyhelpers.dirs import validate_dir
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
@@ -19,7 +19,7 @@ def home_page_url():
     """
     Specify the homepage URL of the data source.
 
-    :return: URL of the data source homepage.
+    :return: URL of the data source homepage
     :rtype: str
 
     **Example**::
@@ -40,7 +40,7 @@ def is_home_connectable():
     """
     Check whether the Railway Codes website is connectable.
 
-    :return: Whether the Railway Codes website is connectable.
+    :return: whether the Railway Codes website is connectable
     :rtype: bool
 
     **Example**::
@@ -62,9 +62,9 @@ def is_str_float(x):
     """
     Check if a string-type variable can express a float-type value.
 
-    :param x: A string-type variable.
+    :param x: a string-type variable
     :type x: str
-    :return: Whether ``str_val`` can express a float value.
+    :return: whether ``str_val`` can express a float value
     :rtype: bool
 
     **Examples**::
@@ -133,9 +133,9 @@ def validate_page_name(cls, page_no, valid_page_no):
     :param cls: instance of a class
     :type cls: any
     :param page_no: page number
-    :type page_no: int or str
+    :type page_no: int | str
     :param valid_page_no: all valid page numbers
-    :type valid_page_no: set or list or tuple
+    :type valid_page_no: set | list | tuple
     :return: validated page name of the given ``cls``
     :rtype: str
 
@@ -162,11 +162,11 @@ def collect_in_fetch_verbose(data_dir, verbose):
     (used only if it is necessary to re-collect data when trying to fetch the data).
 
     :param data_dir: name of a folder where the pickle file is to be saved
-    :type data_dir: str or None
+    :type data_dir: str | None
     :param verbose: whether to print relevant information in console
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: whether to print relevant information in console when collecting data
-    :rtype: bool or int
+    :rtype: bool | int
 
     **Example**::
 
@@ -187,11 +187,11 @@ def fetch_all_verbose(data_dir, verbose):
     (used only when trying to fetch all data of a cluster).
 
     :param data_dir: name of a folder where the pickle file is to be saved
-    :type data_dir: str or None
+    :type data_dir: str | None
     :param verbose: whether to print relevant information in console
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: whether to print relevant information in console when collecting data
-    :rtype: bool or int
+    :rtype: bool | int
 
     **Example**::
 
@@ -243,7 +243,7 @@ def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
     :param data_name: name of the data being collected
     :type data_name: str
     :param verbose: whether to print relevant information in console
-    :type verbose: bool or int
+    :type verbose: bool | int
     :param confirmation_required: whether to confirm before proceeding
     :type confirmation_required: bool
     :param end: string appended after the last value, defaults to ``" ... "``.
@@ -269,7 +269,7 @@ def print_conn_err(verbose=False):
     Print a message about unsuccessful attempts to establish a connection to the Internet.
 
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
 
     **Example**::
 
@@ -291,7 +291,7 @@ def format_err_msg(e):
     Format an error message.
 
     :param e: Subclass of Exception.
-    :type e: Exception or None
+    :type e: Exception | None
     :return: An error message.
     :rtype: str
     """
@@ -314,9 +314,9 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
         defaults to ``False``
     :type update: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :param e: error message
-    :type e: Exception or None
+    :type e: Exception | None
 
     **Example**::
 
@@ -345,7 +345,7 @@ def print_void_msg(data_name, verbose):
     :param data_name: name of the data being collected
     :type data_name: str
     :param verbose: whether to print relevant information in console
-    :type verbose: bool or int
+    :type verbose: bool | int
 
     **Example**::
 
@@ -388,7 +388,7 @@ def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
         'pyrcs\\data'
     """
 
-    path = pkg_resources.resource_filename(__name__, data_dir)
+    path = importlib.resources.files(__package__).joinpath(data_dir)
     for x in sub_dir:
         path = os.path.join(path, x)
 
@@ -409,11 +409,11 @@ def init_data_dir(cls_instance, data_dir, category, cluster=None, **kwargs):
     :param cls_instance: An instance of a class for a certain data cluster.
     :type cls_instance: object
     :param data_dir: The name of a folder where the pickle file is to be saved.
-    :type data_dir: str or None
+    :type data_dir: str | None
     :param category: The name of a data category, e.g. ``"line-data"``.
     :type category: str
     :param cluster: A replacement for ``cls.KEY``.
-    :type cluster: str or None
+    :type cluster: str | None
     :param kwargs: [optional] parameters of the function :func:`~pyrcs.utils.cd_data`.
     :return: Pathnames of a default data directory and a current data directory.
     :rtype: tuple[str, os.PathLike[str]]
@@ -456,7 +456,7 @@ def make_file_pathname(cls, data_name, ext=".pkl", data_dir=None):
     :param ext: A file extension, defaults to ``".pkl"``.
     :type ext: str
     :param data_dir: The name of a folder where the data is saved, defaults to ``None``.
-    :type data_dir: str or None
+    :type data_dir: str | None
     :return: A pathname for saving the data.
     :rtype: str
 
@@ -491,7 +491,7 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_
     Create a dictionary for rectifying location names.
 
     :param k: key of the created dictionary, defaults to ``None``
-    :type k: str or int or float or bool or None
+    :type k: str | int | float | bool | None
     :param regex: whether to create a dictionary for replacement based on regular expressions,
         defaults to ``False``
     :type regex: bool
@@ -499,9 +499,9 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_
         defaults to ``False``
     :type as_dataframe: bool
     :param column_name: (if ``as_dataframe=True``) column name of the errata data as a dataframe
-    :type column_name: str or list or None
+    :type column_name: str | list | None
     :return: dictionary for rectifying location names
-    :rtype: dict or pandas.DataFrame
+    :rtype: dict | pandas.DataFrame
 
     **Examples**::
 
@@ -558,7 +558,7 @@ def _update_location_names_errata(new_items, regex, verbose=False):
     :param regex: whether this update is for regular-expression dictionary
     :type regex: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     """
 
     json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
@@ -584,15 +584,15 @@ def save_data_to_file(cls, data, data_name, ext, dump_dir=None, verbose=False, *
     :param cls: (an instance of) a class for a certain data cluster
     :type cls: object
     :param data: data collected for a certain cluster
-    :type data: pandas.DataFrame or list or dict
+    :type data: pandas.DataFrame | list | dict
     :param data_name: key to the dict-type data of a certain cluster
     :type data_name: str
     :param ext: whether to save the data as a file, or file extension
-    :type ext: bool or str
+    :type ext: bool | str
     :param dump_dir: pathname of a directory where the data file is to be dumped, defaults to ``None``
-    :type dump_dir: str or None
+    :type dump_dir: str | None
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :param kwargs: [optional] parameters of the function `pyhelpers.store.save_data()`_
 
     .. _`pyhelpers.store.save_data()`:
@@ -628,22 +628,22 @@ def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose,
     :param data_name: key to the dict-type data of a certain cluster
     :type data_name: str
     :param ext: whether to save the data as a file, or file extension
-    :type ext: bool or str
+    :type ext: bool | str
     :param update: whether to do an update check (for the package data), defaults to ``False``
     :type update: bool
     :param dump_dir: pathname of a directory where the data file is to be dumped, defaults to ``None``
-    :type dump_dir: str or os.PathLike[str] or None
+    :type dump_dir: str | os.PathLike[str] | None
     :param verbose: whether to print relevant information in console
-    :type verbose: bool or int
+    :type verbose: bool | int
     :param data_dir: pathname of a directory where the data is fetched, defaults to ``None``
-    :type data_dir: str or os.PathLike[str] or None
+    :type data_dir: str | os.PathLike[str] | None
     :param save_data_kwargs: equivalent of ``kwargs`` used by the function
         :func:`pyrcs.utils.save_data_to_file`, defaults to ``None``
-    :type save_data_kwargs: dict or None
+    :type save_data_kwargs: dict | None
     :param kwargs: [optional] parameters of the ``cls``.``method`` being called
     :type kwargs: typing.Any
     :return: data fetched for the desired cluster
-    :rtype: dict or None
+    :rtype: dict | None
     """
 
     try:

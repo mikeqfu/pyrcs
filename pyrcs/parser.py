@@ -61,7 +61,7 @@ def _move_element_to_end(text_, char='\t\t'):
     for i, x in enumerate(text_):
         if char in x:
             text_.append(text_.pop(i))
-            break
+            # break
 
 
 def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
@@ -70,16 +70,16 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
 
     See also [`PT-1 <https://stackoverflow.com/questions/28763891/>`_].
 
-    :param trs: contents under ``<tr>`` tags of a web page
-    :type trs: bs4.ResultSet or list
-    :param ths: list of column names (usually under a ``<th>`` tag) of a requested table
-    :type ths: list or bs4.element.Tag
-    :param sep: separator that replaces the one in the raw data
-    :type sep: str or None
+    :param trs: contents under ``<tr>`` tags of a web page.
+    :type trs: bs4.ResultSet | list
+    :param ths: list of column names (usually under a ``<th>`` tag) of a requested table.
+    :type ths: list | bs4.element.Tag
+    :param sep: separator that replaces the one in the raw data.
+    :type sep: str | None
     :param as_dataframe: whether to return the parsed data in tabular form
     :type as_dataframe: bool
     :return: a list of lists that each comprises a row of the requested table
-    :rtype: pandas.DataFrame or typing.List[list]
+    :rtype: pandas.DataFrame | typing.List[list]
 
     **Example**::
 
@@ -223,8 +223,8 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
     :param as_dataframe: whether to return the parsed data in tabular form
     :type as_dataframe: bool
     :return: a list of lists each comprising a row of the requested table
-        (see also :py:func:`pyrcs.utils.parse_tr`) and a list of column names of the requested table
-    :rtype: tuple[list, list] or pandas.DataFrame or list
+        (see also :func:`pyrcs.utils.parse_tr`) and a list of column names of the requested table
+    :rtype: tuple[list, list] | pandas.DataFrame | list
 
     **Examples**::
 
@@ -280,7 +280,7 @@ def parse_date(str_date, as_date_type=False):
     :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
     :type as_date_type: bool
     :return: parsed date as a string or `datetime.date`_
-    :rtype: str or datetime.date
+    :rtype: str | datetime.date
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
 
@@ -449,9 +449,9 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
     :type confirmation_required: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: dictionary of site map data
-    :rtype: collections.OrderedDict or None
+    :rtype: collections.OrderedDict | None
 
     **Examples**::
 
@@ -523,9 +523,9 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
     :type as_date_type: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: date of when the specified web page was last updated
-    :rtype: str or datetime.date or None
+    :rtype: str | datetime.date | None
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
 
@@ -624,7 +624,7 @@ def get_introduction(url, delimiter='\n', verbose=True):
     :param delimiter: delimiter used for separating paragraphs, defaults to ``'\\n'``
     :type delimiter: str
     :param verbose: whether to print relevant information in console, defaults to ``True``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: introductory texts on the given web page
     :rtype: str
 
@@ -671,9 +671,9 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
     :param json_it: whether to save the catalogue as a JSON file, defaults to ``True``
     :type json_it: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: catalogue in the form {'<title>': '<URL>'}
-    :rtype: dict or None
+    :rtype: dict | None
 
     **Examples**::
 
@@ -762,9 +762,9 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
     :type json_it: bool
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: a category menu
-    :rtype: dict or None
+    :rtype: dict | None
 
     **Example**::
 
@@ -905,7 +905,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
     :param feature_tag_name: tag name of the headings of each feature, defaults to ``'h3'``
     :type feature_tag_name: str
     :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
+    :type verbose: bool | int
     :return: catalogue of the main page of a data cluster
     :rtype: pandas.DataFrame
 
@@ -981,7 +981,7 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
     Get text that is with a hyperlink.
 
     :param hypertext_tag: tag of hypertext (i.e. text that is with a hyperlink)
-    :type hypertext_tag: bs4.element.Tag or bs4.element.PageElement
+    :type hypertext_tag: bs4.element.Tag | bs4.element.PageElement
     :param hyperlink_tag_name:
     :type hyperlink_tag_name: str
     :param md_style: whether to return the obtained hypertext in markdown style, defaults to ``True``
