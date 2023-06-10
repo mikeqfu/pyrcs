@@ -15,19 +15,18 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
+from pyrcs.utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
 
 
 # == Preprocess contents ===========================================================================
 
 
-def _parse_other_tags_in_td_contents(td_content):
-    if isinstance(td_content, str):
-        td_text = td_content
+def _parse_other_tags_in_td_contents(x):
+    if isinstance(x, str):
+        td_text = x.strip(' ')
 
     else:
-        tag_name = td_content.name
-        td_text = td_content.get_text()
+        tag_name, td_text = x.name, x.text
 
         if tag_name == 'em':
             td_text = f'[{td_text}]'
@@ -36,16 +35,15 @@ def _parse_other_tags_in_td_contents(td_content):
             td_text = f'"{td_text}"'
 
         elif tag_name in {'span', 'a'}:
-            td_class = td_content.get('class')
-            td_class_child = td_content.findChild('span')
+            td_class, td_class_child = x.get('class'), x.findChild('span')
 
             if td_class == ['r']:
                 if td_text == 'no CRS?':
                     td_text = f'\t\t / [{td_text}]'
                 elif '\n ' in td_text:
                     td_text = ' '.join(
-                        [f'\t\t{x}' if x.startswith('(') and x.endswith(')') else f' / [{x}]'
-                         for x in td_text.split('\n ')])
+                        [f'\t\t{y}' if y.startswith('(') and y.endswith(')') else f' / [{y}]'
+                         for y in td_text.split('\n ')])
                 elif '(' not in td_text and ')' not in td_text:
                     td_text = f'\t\t / [{td_text}]'
                 else:
@@ -119,33 +117,22 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
             tds = tds[:ths_len]
 
         for td_no, td in enumerate(tds):
-            text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
-            _move_element_to_end(text_, char='\t\t')
-            text = ''.join(text_)
-
-            # if '/\r\n' in text or '\r\n' in text:
-            #     txt = text.replace('/\r\n', ' / ').replace('\r\n', ' / ')
-            # elif '\n' in text:
-            #     txt_ = text.split('\n')
-            #     txt0, txt1 = txt_[0], ''.join(txt_[1:])
-            #     if all(re.match(r'(\w+ )+\[.*]', x) for x in {txt0, txt1}):
-            #         txt = '; '.join(txt_)  # new_separator.join(txt_)
-            #     else:
-            #         txt = ('{} ({})' if not set(text) & {'(', ')'} else '{} {}').format(txt0, txt1)
+            if td.find('td'):
+                text_ = td.find('a').contents + ["\t\t / "]
+            else:
+                text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
+            # _move_element_to_end(text_, char='\t\t')
+            text = ' '.join(sorted([x for x in text_ if x.strip(' ')], key=lambda x: '\t\t' in x))
 
             if sep:
                 old_sep = re.compile(r'/?\r?\n')
                 if len(re.findall(old_sep, text)) > 0:
-                    txt = re.sub(r'/?\r?\n', sep, text)
-                else:
-                    txt = text
-            else:
-                txt = text
+                    text = re.sub(r'/?\r?\n', sep, text)
 
             if td.has_attr('rowspan'):
-                row_spanned.append((no, int(td['rowspan']), td_no, txt))
+                row_spanned.append((no, int(td['rowspan']), td_no, text))
 
-            data.append(txt)
+            data.append(text)
 
         records.append(data)
 
