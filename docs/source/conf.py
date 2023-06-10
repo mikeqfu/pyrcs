@@ -49,7 +49,7 @@ def linkcode_resolve(domain, info):
     import inspect
     import warnings
 
-    import pyhelpers
+    import pyrcs
 
     if domain != 'py' or not info['module']:
         return None
@@ -97,10 +97,10 @@ def linkcode_resolve(domain, info):
         line_spec = ""
 
     # fn = os.path.relpath(fn, start=os.path.abspath(".."))
-    fn = os.path.relpath(fn, start=os.path.dirname(pyhelpers.__file__))
+    fn = os.path.relpath(fn, start=os.path.dirname(pyrcs.__file__))
 
-    # f"https://github.com/mikeqfu/pyhelpers/blob/{pyhelpers.__version__}/pyhelpers/{fn}{line_spec}"
-    url = f"https://github.com/mikeqfu/pyhelpers/blob/master/pyhelpers/{fn}{line_spec}"
+    # f"https://github.com/mikeqfu/pyrcs/blob/{pyrcs.__version__}/pyrcs/{fn}{line_spec}"
+    url = f"https://github.com/mikeqfu/pyrcs/blob/master/pyrcs/{fn}{line_spec}"
 
     return url
 
