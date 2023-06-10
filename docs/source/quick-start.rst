@@ -1,8 +1,8 @@
 .. _pyrcs-tutorial:
 
-========
-Tutorial
-========
+===========
+Quick start
+===========
 
 To demonstrate how PyRCS works, this brief tutorial provides a quick guide with examples of getting the following three categories of codes, which are frequently used in the railway system in the UK:
 
@@ -15,7 +15,7 @@ To demonstrate how PyRCS works, this brief tutorial provides a quick guide with 
 .. _`Railway station data`: http://www.railwaycodes.org.uk/stations/station1.shtm
 
 
-.. _tutorial-location-identifiers:
+.. _quickstart-location-identifiers:
 
 Location identifiers
 ====================
@@ -55,7 +55,7 @@ The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categ
     - The instance ``ld`` refers to all classes under the category of `line data`_.
     - Here ``lid_`` is equivalent to ``lid``.
 
-.. _tutorial-location-identifiers-given-initial:
+.. _quickstart-location-identifiers-given-initial:
 
 Location identifiers given a specific initial letter
 ----------------------------------------------------
@@ -108,7 +108,7 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
     >>> print("Last updated date: {}".format(loc_a_codes_dat['Last updated date']))
 
 
-.. _tutorial-all-location-identifiers:
+.. _quickstart-all-location-identifiers:
 
 All available location identifiers
 ----------------------------------
@@ -189,7 +189,7 @@ A snapshot of the data contained in ``loc_codes`` is demonstrated below:
     [5 rows x 5 columns]
 
 
-.. _tutorial-elrs-and-mileages:
+.. _quickstart-elrs-and-mileages:
 
 ELRs and mileages
 =================
@@ -207,7 +207,7 @@ ELRs and mileages
     >>> em.URL
     'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
 
-.. _tutorial-elrs:
+.. _quickstart-elrs:
 
 Engineer's Line References (ELRs)
 ---------------------------------
@@ -289,7 +289,7 @@ A snapshot of the data contained in ``elrs_codes`` is demonstrated below:
 
     [5 rows x 5 columns]
 
-.. _tutorial-mileage-files-given-elr:
+.. _quickstart-mileage-files-given-elr:
 
 Mileage file of a given ELR
 ---------------------------
@@ -342,7 +342,7 @@ A snapshot of the data contained in ``amm_mileage_file`` is demonstrated below:
     [5 rows x 11 columns]
 
 
-.. _tutorial-railway-station-data:
+.. _quickstart-railway-station-data:
 
 Railway station data
 ====================
@@ -382,7 +382,7 @@ Now let's import the class and create an instance of it:
 
     - The instances ``stn_`` and ``stn`` are of the same class :class:`~station.Stations`.
 
-.. _tutorial-railway-station-locations-given-initial:
+.. _quickstart-railway-station-locations-given-initial:
 
 Railway station locations given a specific initial letter
 ---------------------------------------------------------
@@ -452,7 +452,7 @@ A snapshot of the data contained in ``stn_loc_a`` is demonstrated below:
     >>> print("Last updated date: {}".format(stn_loc_a_codes['Last updated date']))
 
 
-.. _tutorial-all-railway-station-locations:
+.. _quickstart-all-railway-station-locations:
 
 All available railway station locations
 ---------------------------------------
@@ -524,9 +524,9 @@ A snapshot of the data contained in ``stn_loc_codes`` is demonstrated below:
 
 
 
-.. _tutorial-the-end:
+.. _quickstart-the-end:
 
-**This is the end of the** :ref:`tutorial<pyrcs-tutorial>`.
+**This is the end of the** :doc:`quick-start`.
 
 -----------------------------------------------------------
 
@@ -534,4 +534,4 @@ Any issues regarding the use of the package are all welcome and should be logged
 
 .. _`Bug Tracker`: https://github.com/mikeqfu/pyrcs/issues
 
-For more details and examples, check :ref:`sub-packages and modules<pyrcs-sub-pkg-and-mod>`.
+For more details and examples, check :doc:`sub-pkg-and-mod`.

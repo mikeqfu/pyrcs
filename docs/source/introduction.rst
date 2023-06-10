@@ -4,8 +4,8 @@
     About PyRCS
     ===========
 
-PyRCS is an open-source Python package for collecting and handling various codes (used in different UK rail industry systems), which are made available from `Railway Codes`_ website. This tool is intended for those, such as researchers and practitioners, who are the website users or work with the UK's railway codes by using Python programming language. It can facilitate access to, and manipulation of, the relevant data.
+PyRCS is an open-source Python package designed to simplifies the collection and management of diverse codes used in different systems within the UK rail industry. It serves as a practical toolkit for researchers, practitioners, and individuals who frequently interact with the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website and work extensively with railway codes in the UK. Leveraging the capabilities of the Python programming language, PyRCS enables efficient access to and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
 
-The :ref:`installation<pyrcs-installation>` of PyRCS includes a set of pre-packed data. When users request data of a category that is specified on the `Railway Codes`_ website, the pre-packed data of the category is loaded by default. Beyond that, it also offers capabilities to directly access the most up-to-date data on the data source website, and update the relevant pre-packed data as well.
+During :doc:`installation`, PyRCS includes a set of pre-packaged data. When users request data from a specific category listed on the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website, PyRCS automatically loads the corresponding pre-packaged data for that category by default. Additionally, it provides functionality that enables direct access to the latest data from the data source website, ensuring users can stay updated with the most current information. Furthermore, PyRCS users can conveniently update the relevant pre-packaged data, keeping their data resources synchronized with the latest developments.
 
-.. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
+With PyRCS, users can leverage Python's power to streamline workflows and enhance productivity when working with railway codes in the UK rail industry.

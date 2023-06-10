@@ -23,12 +23,7 @@ version = __version__  # The short X.Y version
 release = version  # The full version, including alpha/beta/rc tags
 
 # == General configuration =========================================================================
-import sphinx_rtd_theme
-
-_ = sphinx_rtd_theme.get_html_theme_path()
-
-# Sphinx extension module names, which can be named 'sphinx.ext.*' or custom ones:
-extensions = [
+extensions = [  # Sphinx extension module names, which can be named 'sphinx.ext.*' or custom ones:
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.autosectionlabel',
@@ -37,9 +32,78 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.githubpages',
     'sphinx.ext.todo',
+    'sphinx.ext.linkcode',
+    'sphinx.ext.doctest',
     'sphinx_rtd_theme',
     'sphinx_copybutton',
 ]
+
+
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object.
+
+    (Adapted from https://github.com/pandas-dev/pandas/blob/main/doc/source/conf.py)
+    """
+
+    import inspect
+    import warnings
+
+    import pyhelpers
+
+    if domain != 'py' or not info['module']:
+        return None
+
+    module_name, full_name = info['module'], info['fullname']
+
+    sub_module_name = sys.modules.get(module_name)
+    if sub_module_name is None:
+        return None
+
+    obj = sub_module_name
+    for part in full_name.split('.'):
+        try:
+            with warnings.catch_warnings():
+                # Accessing deprecated objects will generate noisy warnings
+                warnings.simplefilter('ignore', FutureWarning)
+                obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
+    except TypeError:
+        try:  # property
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+        except (AttributeError, TypeError):
+            fn = None
+    if not fn:
+        return None
+
+    source = [0]
+    try:
+        source, line_no = inspect.getsourcelines(obj)
+    except TypeError:
+        try:  # property
+            source, line_no = inspect.getsourcelines(obj.fget)
+        except (AttributeError, TypeError):
+            line_no = None
+    except OSError:
+        line_no = None
+
+    if line_no:
+        line_spec = f"#L{line_no}-L{line_no + len(source) - 1}"
+    else:
+        line_spec = ""
+
+    # fn = os.path.relpath(fn, start=os.path.abspath(".."))
+    fn = os.path.relpath(fn, start=os.path.dirname(pyhelpers.__file__))
+
+    # f"https://github.com/mikeqfu/pyhelpers/blob/{pyhelpers.__version__}/pyhelpers/{fn}{line_spec}"
+    url = f"https://github.com/mikeqfu/pyhelpers/blob/master/pyhelpers/{fn}{line_spec}"
+
+    return url
+
 
 # Enable to reference numbered figures:
 numfig = True
@@ -96,7 +160,7 @@ html_css_files = ['rtd_overrides.css', 'copy_button.css']
 html_js_files = ['prompt_button.js']
 
 # Output file base name for HTML help builder:
-htmlhelp_basename = project + 'doc'  # Default is 'pydoc'.
+htmlhelp_basename = __project__ + 'doc'  # Default is 'pydoc'.
 
 # == Options for LaTeX output ======================================================================
 from pygments.formatters.latex import LatexFormatter
@@ -128,7 +192,7 @@ latex_documents = [
      ),
 ]
 
-affil_centre, affil_school, affil_univ = __affiliation__.split(', ')
+affil_dept, affil_sch, affil_univ = __affiliation__.split(', ')
 
 # Custom title page:
 latex_maketitle = r'''
@@ -143,8 +207,7 @@ latex_maketitle = r'''
         \textbf{\Huge {{%s}}}
         
         \vspace{5mm}
-        \textit{\large {{%s}}} \par
-        
+        \textit{\Large {{%s}}} \par
         \vspace{5mm}
         \LARGE \textbf{\textit{{Release %s}}} \par
 
@@ -158,7 +221,7 @@ latex_maketitle = r'''
         \Large {{First release:}} \large \textbf{{%s}} \par
         \Large {{Last updated:}} \large \textbf{{\MonthYearFormat\today}} \par
     
-        \vspace{20mm}
+        \vspace{15mm}
         \large \textcopyright \space Copyright %s \par
 
     \end{titlepage}
@@ -180,11 +243,11 @@ latex_maketitle = r'''
     \pagenumbering{arabic}
     ''' % (
     __project__,
-    __description__.rstrip('.'),
+    __description__.rstrip('.').replace('different UK', 'different \\newline UK'),
     release,
     __author__,
-    affil_centre,
-    affil_school,
+    affil_dept,
+    affil_sch,
     affil_univ,
     __first_release_date__,
     __copyright__)
@@ -223,8 +286,8 @@ latex_preamble = r'''
 
 # LaTeX customization:
 latex_elements = {
-    'papersize': 'a4paper',  # The paper size ('letterpaper' or 'a4paper')
-    'pointsize': '11pt',  # The font size ('10pt', '11pt' or '12pt')
+    'papersize': 'a4paper',
+    'pointsize': '11pt',
     'pxunit': '0.25bp',
 
     'fontpkg': '\\usepackage{amsmath,amsfonts,amssymb,amsthm}',
