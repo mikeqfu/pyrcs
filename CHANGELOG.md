@@ -2,6 +2,22 @@
 
 <br/>
 
+#### **[0.3.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.6)**
+
+(*10 June 2023*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.5...0.3.6) since [0.3.5](https://pypi.org/project/pyrcs/0.3.5/):**
+
+- Improved the following functions and classes with bug fixes:
+  - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/66914b12e42bf81f7f19415ec50598efdaf0d03d) in the module [parser](https://github.com/mikeqfu/pyrcs/blob/203ab72e713c54537c4e9a4721c16c930deafd44/pyrcs/parser.py);
+  - [format_err_msg()](https://github.com/mikeqfu/pyrcs/commit/83e311bddcc6247f58ad2dd165195278ff7a0fe8) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/203ab72e713c54537c4e9a4721c16c930deafd44/pyrcs/utils.py);
+  - [Stations](https://github.com/mikeqfu/pyrcs/commit/0b5062bf64214fd5ca3cd9ec7c50a33b570ad4ad) in the module [other_assets.station](https://github.com/mikeqfu/pyrcs/blob/203ab72e713c54537c4e9a4721c16c930deafd44/pyrcs/other_assets/station.py);
+  - [LocationIdentifiers](https://github.com/mikeqfu/pyrcs/commit/ac582ccde71e3e9309dba983ec04cb13c181a942) in the module [line_data.loc_id](https://github.com/mikeqfu/pyrcs/blob/203ab72e713c54537c4e9a4721c16c930deafd44/pyrcs/line_data/loc_id.py).
+
+**For more information and detailed specifications, check out [PyRCS 0.3.6 documentation](https://pyrcs.readthedocs.io/en/0.3.6/).**
+
+<br/>
+
 #### **[0.3.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.5)**
 
 (*26 February 2023*)
