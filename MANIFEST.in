@@ -1,2 +1,5 @@
 # Include package data
 recursive-include pyrcs/data *
+
+# Exclude tests
+recursive-exclude tests *
