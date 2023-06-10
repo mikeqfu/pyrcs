@@ -11,11 +11,12 @@ import requests
 from pyhelpers.dirs import cd
 from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_data
+from pyhelpers.text import remove_punctuation
 
-from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
-    is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file, \
-    validate_initial
+from pyrcs.parser import get_catalogue, get_last_updated_date, parse_tr
+from pyrcs.utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, \
+    init_data_dir, is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, \
+    save_data_to_file, validate_initial
 
 
 class Stations:
@@ -189,6 +190,38 @@ class Stations:
         return path
 
     @staticmethod
+    def split_elr_mileage_column(dat):
+        if 'ELRMileage' in dat.columns:
+            temp = dat['ELRMileage'].str.split(r'\t\t / | / \[', n=1, regex=True, expand=True)
+            temp.columns = ['ELR', 'Mileage']
+
+            # elr_dat = temp['ELR'].str.strip().str.replace(' ', ' &&& ')
+            # elr_dat = temp['ELR'].str.strip().str.replace('  /  ', ' &&& ')
+
+            def _to_repl(x, repl=' &&& '):
+                if '  /  ' in x:
+                    y = x.replace('  /  ', repl)
+                elif ' / ' in x:
+                    y = x.replace(' / ', repl)
+                elif ' ' in x:
+                    y = x.replace(' ', repl)
+                else:
+                    y = x
+                return y
+
+            elr_dat = temp['ELR'].str.strip().map(_to_repl)
+
+            temp['Mileage'] = temp['Mileage'].str.split('\t\t / ').fillna('').map(
+                lambda x: [' / '.join(x_.strip(' []').split('  ')) for x_ in x])
+            mil_dat = temp['Mileage'].map(lambda x: x[0] if len(x) == 1 else ' &&& '.join(x))
+
+            dat.drop(columns=['ELRMileage'], inplace=True)
+            dat.insert(1, 'ELR', elr_dat)
+            dat.insert(2, 'Mileage', mil_dat)
+
+        return dat
+
+    @staticmethod
     def check_row_spans(dat):
         """
         Check data where there are row spans.
@@ -199,34 +232,35 @@ class Stations:
         :rtype: pandas.DataFrame
         """
 
-        temp0 = dat['Degrees Longitude'].str.split(' / ')
-        temp1 = dat[temp0.map(len).map(lambda x: True if x > 1 else False)]
+        # temp0 = dat['Degrees Longitude'].str.split(' / ')
+        temp0 = dat['Degrees Longitude'].str.split(r' / |\r', regex=True)
+        temp1 = dat[temp0.map(lambda x: True if len(x) > 1 else False)]
 
         cols = ['ELR', 'Mileage', 'Degrees Longitude', 'Degrees Latitude', 'Grid Reference']
         cols_ = [x for x in temp1.columns if x not in cols]
 
         temp_dat = []
         for col in cols:
-            # noinspection PyUnresolvedReferences
-            temp2 = temp1[col].map(lambda x: x.split(' / '))
+            temp2 = temp1[col].str.split(r' &&& |\r| / ', regex=True)
 
             if cols.index(col) == 0:
-                # noinspection PyTypeChecker
-                temp_dat_ = temp1[cols_].join(temp2).explode(col)
-                temp_dat_.index = range(len(temp_dat_))
+                temp_dat_ = temp1[cols_].join(temp2).explode(col, ignore_index=True)
             else:
-                temp_dat_ = temp2.explode(col).to_frame()
+                temp_dat_ = temp2.explode(ignore_index=True).to_frame(name=col)
 
             temp_dat.append(temp_dat_)
 
         temp_data = pd.concat(temp_dat, axis=1)
         temp_data = temp_data[dat.columns.to_list()]
 
-        dat = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
+        dat0 = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
 
-        dat.sort_values(['Station'], ignore_index=True, inplace=True)
+        dat0[['ELR', 'Mileage']] = dat0[['ELR', 'Mileage']].applymap(lambda x: x.split(' &&& '))
+        dat0 = dat0.explode(['ELR', 'Mileage'], ignore_index=True)
 
-        return dat
+        dat0.sort_values(['Station'], ignore_index=True, inplace=True)
+
+        return dat0
 
     @staticmethod
     def parse_coordinates_columns(dat):
@@ -262,21 +296,25 @@ class Stations:
             x = 'Heathrow Junction [sometimes referred to as Heathrow Interchange]\t\t / [no CRS?]'
         """
 
-        temp1 = dat['Station'].str.split('\t\t', expand=True)
+        temp1 = dat['Station'].str.split('\t\t', n=1, expand=True)
         temp1.columns = ['Station', 'CRS']
-        dat['Station'] = temp1['Station']
+        dat['Station'] = temp1['Station'].str.rstrip(' / ').str.strip()
 
         # Get notes for stations
         stn_note_ = pd.Series('', index=dat.index)
         for i, x in enumerate(temp1['Station']):
-            if '[' in x and ']':
-                y = re.search(r' \[(.*)]', x).group(0)  # Station Note
-                dat.loc[i, 'Station'] = x.replace(y, '')
-                stn_note_[i] = y.strip(' []')
+            if '[' in x and ']' in x:
+                y = re.search(r' \[(.*)](✖.*)?', x).group(0)  # Station Note
+                dat.loc[i, 'Station'] = x.replace(y, '').strip()
+                if '✖' in y:
+                    stn_note_[i] = '; '.join([y_.strip(' []') for y_ in y.split('✖')])
+                else:
+                    stn_note_[i] = y.strip(' []')
 
         dat.insert(loc=dat.columns.get_loc('Station') + 1, column='Station Note', value=stn_note_)
 
-        temp2 = temp1['CRS'].str.replace(' / /', ' &&& ').str.split(' / ', expand=True).fillna('')
+        temp2 = temp1['CRS'].str.replace(' / /', ' &&& ').str.split(
+            r'  | / ', regex=True, expand=True).fillna('')
 
         if temp2.shape[1] == 1:
             temp2.columns = ['CRS']
@@ -287,14 +325,14 @@ class Stations:
 
         temp2['CRS'] = temp2['CRS'].str.replace(r'[()]', '', regex=True).map(
             lambda z: ' and '.join(['{} [{}]'.format(*z_.split('✖')) for z_ in z.split(' &&& ')])
-            if ' &&& ' in z else z)
+            if ' &&& ' in z else z).str.strip()
 
         dat = pd.concat([dat, temp2], axis=1)
 
         return dat
 
     @staticmethod
-    def _parse_owner_and_operator(x, sep=' / '):
+    def _parse_owner_and_operator(x):
         """
         x = dat['Owner'][0]
         x = dat['Owner'][1]
@@ -303,13 +341,13 @@ class Stations:
         if ' / and / ' in x:
             y, y_ = x.replace(' / and / ', ' &&& '), ''
 
-        elif ' / ' in x:
-            x_ = x.split(sep)
+        elif ' / ' in x or '\r' in x:
+            x_ = re.split(r' / |\r', x)
 
             # y - Owners or operators; y_ - Former owners or operators
             if len(x_) > 1:
                 y = x_[0]
-                y_ = x_[1] if len(x_[1:]) == 1 else sep.join(x_[1:])
+                y_ = x_[1] if len(x_[1:]) == 1 else ' / '.join(x_[1:])
             else:
                 y, y_ = x_[0], ''
 
@@ -318,6 +356,9 @@ class Stations:
 
         if '✖' in y and ' &&& ' in y:
             y = ' and '.join(['{} [{}]'.format(*z.split('✖')) for z in y.split(' &&& ')])
+
+        if ' [from' in y:
+            y = remove_punctuation(y)
 
         return y, y_
 
@@ -334,37 +375,12 @@ class Stations:
         owner_operator = []
         for col in ['Owner', 'Operator']:
             temp = pd.DataFrame(
-                dat[col].map(self._parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col])
+                dat[col].map(self._parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col],
+                index=dat.index)
             del dat[col]
             owner_operator.append(temp)
 
         dat = pd.concat([dat] + owner_operator, axis=1)
-
-        return dat
-
-    @staticmethod
-    def parse_elr_mileage_columns(dat):
-        """
-        Parse ``'ELR'`` and ``'Mileage'`` of the station locations data.
-
-        :param dat: preprocessed data of the station locations
-        :type dat: pandas.DataFrame
-        :return: data with parsed ``'ELR'`` and ``'Mileage'``
-        :rtype: pandas.DataFrame
-        """
-
-        dat['Mileage'] = dat['Mileage'].map(lambda x: ']'.join(x.replace(' / (', ' [').rsplit(')', 1)))
-
-        em_col_names = ['ELR', 'Mileage']
-        dat[em_col_names] = dat[em_col_names].applymap(
-            lambda x: x.replace(' /  / ', ' / ').replace(' /  [', ' [').split(' / ')
-            if ' / ' in x else x)
-
-        # Where the Mileage data indicates the start and end
-        idx = dat[dat[em_col_names].apply(
-            lambda x: len(x.Mileage) != len(x.ELR) and isinstance(x.Mileage, list),
-            axis=1)].index
-        dat.loc[idx, 'Mileage'] = dat.loc[idx, 'Mileage'].map(lambda x: ' - '.join(x))
 
         return dat
 
@@ -447,7 +463,7 @@ class Stations:
 
             data = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
-            # url = stn.URL.replace('station0', 'station{}'.format(beginning_with.lower()))
+            # url = stn.URL.replace('station0', 'station{}'.format(initial_))
             url = self.URL.replace('station0', 'station{}'.format(initial_))
             try:
                 source = requests.get(url=url, headers=fake_requests_headers())
@@ -464,31 +480,54 @@ class Stations:
                     if any(x is None for x in {thead, tbody}):
                         if verbose == 2:
                             print(f"There are no stations starting with '{beginning_with}'.")
-                            # f"There are no British towns starting with '{beginning_with}'.
 
                     else:
                         # Create a DataFrame of the requested table
                         trs = tbody.find_all(name='tr')
                         ths = [re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
-                        dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+                        dat_ = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-                        dat_ = dat.copy()
+                        dat = dat_.copy()
 
                         parser_funcs = [
+                            self.split_elr_mileage_column,
                             self.check_row_spans,
                             self.parse_coordinates_columns,
                             self.parse_station_column,
                             self.parse_owner_and_operator_columns,
-                            self.parse_elr_mileage_columns,
                         ]
                         for parser_func in parser_funcs:
-                            dat_ = parser_func(dat_)
+                            dat = parser_func(dat)
+
+                        # # Debugging
+                        # for parser_func in parser_funcs:
+                        #     try:
+                        #         dat_ = parser_func(dat_)
+                        #     except Exception:
+                        #         print(parser_func)
+                        #         break
 
                         # Explode by ELR and Mileage
-                        dat_ = dat_.explode(column=['ELR', 'Mileage'], ignore_index=True)
+                        dat = dat.explode(column=['ELR', 'Mileage'], ignore_index=True)
+
+                        errata_ = {
+                            "-By-": "-by-",
+                            "-In-": "-in-",
+                            "-En-Le-": "-en-le-",
+                            "-La-": "-la-",
+                            "-Le-": "-le-",
+                            "-On-": "-on-",
+                            "-The-": "-the-",
+                            " Of ": " of ",
+                            "-Super-": "-super-",
+                            "-Upon-": "-upon-",
+                            "-Under-": "-under-",
+                            "-Y-": "-y-",
+                        }
+                        dat['Station'].replace(errata_, regex=True, inplace=True)
 
                         data = {
-                            beginning_with: dat_.sort_values('Station', ignore_index=True),
+                            beginning_with: dat.sort_values('Station', ignore_index=True),
                             self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url=url, parsed=True)
                         }
 
