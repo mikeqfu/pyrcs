@@ -297,8 +297,8 @@ def format_err_msg(e):
     """
 
     if e:
-        err_msg = f"{e}"
-        err_msg = err_msg + "." if not err_msg.endswith(".") else err_msg
+        e_ = f"{e}"
+        err_msg = e_ + "." if not e_.endswith((".", "!", "?")) else e_
     else:
         err_msg = ""
 
