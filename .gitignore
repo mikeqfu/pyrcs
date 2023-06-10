@@ -27,7 +27,6 @@ pyrcs/data/*
 !pyrcs/data/location-names-repl-regex.json
 !pyrcs/data/metadata.json
 tests/*
-!tests/data/
-!tests/__init__.py
-!tests/test_*.py
+!tests/*.py
 .pypirc
+cmd.txt
