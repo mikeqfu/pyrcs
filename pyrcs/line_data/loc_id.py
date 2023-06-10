@@ -9,13 +9,14 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
+from pyhelpers._cache import _format_err_msg
 from pyhelpers.dirs import cd, validate_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
-from ..parser import get_catalogue, get_hypertext, get_last_updated_date, get_page_catalogue, \
+from pyrcs.parser import get_catalogue, get_hypertext, get_last_updated_date, get_page_catalogue, \
     parse_date, parse_tr
-from ..utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, home_page_url, \
+from pyrcs.utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, home_page_url, \
     init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
     print_void_msg, save_data_to_file, validate_initial
 
@@ -359,7 +360,7 @@ class LocationIdentifiers:
                         verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {e}")
+                    print(f"Failed. {_format_err_msg(e)}")
                     explanatory_note = None
 
             return explanatory_note
@@ -545,14 +546,76 @@ class LocationIdentifiers:
         data.replace(_amendment_to_location_names(), regex=True, inplace=True)
 
     @staticmethod
+    def _extra_annotations():
+        extra_annotations = [
+            ('✖Earlier code ', '✖Later code'),
+            ('✖Later code ', '✖Earlier code'),
+            ('✖Earlier code, soon replaced ', '✖Later code introduced before station opened'),
+            ('✖Later code introduced before station opened ', '✖Earlier code, soon replaced'),
+            ('✖Original code ', '✖Later code'),
+            ('✖Later code ', '✖Original code'),
+            ('✖Original code ', '✖Later code from station opening'),
+            ('✖Later code from station opening ', '✖Original code'),
+            ('✖Newer designation? ', '✖Older designation?'),
+            ('✖Older designation? ', '✖Newer designation?'),
+            ('✖Both codes quoted with equal reliability ',
+             '✖Both codes quoted with equal reliability'),
+            ('✖Code used by operational research software ',
+             '✖Code as used by National Rail Enquiries and other public systems'),
+            ('✖Code as used by National Rail Enquiries and other public systems ',
+             '✖Code used by operational research software'),
+            ('✖Code assigned in error ', '✖Corrected code'),
+            ('✖Original code ', '✖Later code after becoming part of national network'),
+            ('✖Later code after becoming part of national network ', '✖Original code'),
+            ('✖Code used after station reopened ', '✖Code used until station reopened'),
+            ('✖Code used until station reopened ', '✖Code used after station reopened'),
+            ('✖Code used after nearby station reopened ', '✖Code used until nearby station reopened'),
+            ('✖Code used until nearby station reopened ', '✖Code used after nearby station reopened'),
+            ('✖Original code; see also CRS explanation ', '✖Later code; see also CRS explanation'),
+            ('✖Later code; see also CRS explanation ', '✖Original code; see also CRS explanation'),
+            ('✖Most sources state LOUNOC, some have LOUNGOC ',
+             '✖Most sources state LOUNOC, some have LOUNGOC'),
+            ("✖Code may start with 'R' ", "✖Code may start with 'B'"),
+            ("✖Code may start with 'B' ", "✖Code may start with 'R'"),
+            ('✖Older designation when station open ', '✖Newer designation once station closed'),
+            ('✖Newer designation once station closed ', '✖Older designation when station open'),
+            ('✖Original code when named Butlins Penychain ', '✖Later code after renaming Penychain'),
+            ('✖Later code after renaming Penychain ', '✖Original code when named Butlins Penychain'),
+            ('✖Earlier code ',
+             '✖Later code after East London Line operated as part of national network'),
+            ('✖Code should be ROODENDGD but some listings show this as RO0DENDGD (with zero digit) ',
+             '✖Code should be ROODENDGD but some listings show this as RO0DENDGD (with zero digit)'),
+            ('✖Earlier code? ', '✖Later code'),
+            ('✖See CRS explanation ', '✖Code believed listed in error'),
+            ('✖Code is 56582 but some sources have 56782 ',
+             '✖Code is 56582 but some sources have 56782'),
+            ('✖Code should be 79251 but one source has 79521 ',
+             '✖Code should be 79251 but one source has 79521'),
+            ('✖Code is 56540 but some sources have 56450 ',
+             '✖Code is 56540 but some sources have 56450'),
+            ('✖Earlier code ', '✖Later code; also see CRS explanation'),
+            ('✖Later code ', '✖Possibly earlier code'),
+            ('✖Code is 142505 but is also reported as 145505 ',
+             '✖Code is 142505 but is also reported as 145505'),
+            ('✖Earlier code ', '✖Later code after station closed'),
+        ]
+
+        return extra_annotations
+
+    @staticmethod
     def _count_sep(x):
         if '\r\n' in x:
             r_n_counts = x.count('\r\n')
         elif '\r' in x:
             r_n_counts = x.count('\r')
-        else:
-            if '~LO\n' in x:  # Ad hoc
+        else:  # Ad hoc
+            if '~LO\n' in x:
                 x = x.replace('~LO\n', '')
+            # elif any(all(a_ in x for a_ in a) for a in self._extra_annotations()):
+            #     temp = [
+            #         x.replace(a[0], f'{a[0][:-1]}\n') for a in self._extra_annotations()
+            #         if a[0] in x and x.endswith(a[1])]
+            #     x = temp[0]
             r_n_counts = x.count('\n')
         return r_n_counts
 
@@ -593,42 +656,54 @@ class LocationIdentifiers:
         """
 
         data_ = data.copy()
-
         data_ = self._fix_special_cases(data_)
 
         code_col_names = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
 
         r_n_counts = data_[code_col_names].applymap(self._count_sep)
-        # r_n_counts_ = r_n_counts.add(r_n_counts.max(axis=1), axis='index')
+        # # Debugging:
+        # for col in code_col_names:
+        #     for i, x in enumerate(data_[col]):
+        #         try:
+        #             lid._count_sep(x)
+        #         except Exception:
+        #             print(col, i, x)
+        #             break
+
         r_n_counts_ = r_n_counts.mul(-1).add(r_n_counts.max(axis=1), axis='index')
 
         for col in code_col_names:
             for i in data_.index:
                 d = r_n_counts_.loc[i, col]
+                x = data_.loc[i, col]
                 if d > 0:
-                    dat = data_.loc[i, col]
-                    if '\r\n' in dat:
+                    if '\r\n' in x:
                         if col == 'Location':
-                            data_.loc[i, col] = dat + ''.join(['\r\n' + dat.split('\r\n')[-1]] * d)
+                            data_.loc[i, col] = x + ''.join(['\r\n' + x.split('\r\n')[-1]] * d)
                         else:
-                            data_.loc[i, col] = dat + ''.join(['\r\n'] * d)
-                    elif '\r' in dat:
+                            data_.loc[i, col] = x + ''.join(['\r\n'] * d)
+                    elif '\r' in x:
                         if col == 'Location':
-                            data_.loc[i, col] = dat + ''.join(['\r' + dat.split('\r')[-1]] * d)
+                            data_.loc[i, col] = x + ''.join(['\r' + x.split('\r')[-1]] * d)
                         else:
-                            data_.loc[i, col] = dat + ''.join(['\r'] * d)
+                            data_.loc[i, col] = x + ''.join(['\r'] * d)
                     else:  # e.g. '\n' in dat:
                         if col == 'Location':
-                            data_.loc[i, col] = '\n'.join([dat] * (d + 1))
+                            data_.loc[i, col] = '\n'.join([x] * (d + 1))
                         else:
-                            data_.loc[i, col] = dat + ''.join(['\n'] * d)
+                            data_.loc[i, col] = x + ''.join(['\n'] * d)
+                # elif any(all(a_ in x for a_ in a) for a in self._extra_annotations()):
+                #     temp = [
+                #         x.replace(a[0], f'{a[0][:-1]}\n') for a in self._extra_annotations()
+                #         if a[0] in x and x.endswith(a[1])]
+                #     data_.loc[i, col] = temp[0]
 
         data_[code_col_names] = data_[code_col_names].applymap(self._split_dat_and_note)
 
         data_ = data_.explode(code_col_names, ignore_index=True)
 
         temp = data_.select_dtypes(['object'])
-        data_[temp.columns] = temp.apply(lambda x: x.str.strip())
+        data_[temp.columns] = temp.apply(lambda x_: x_.str.strip())
 
         return data_
 
@@ -684,24 +759,19 @@ class LocationIdentifiers:
         :type data: pandas.DataFrame
         """
 
-        # drop_pat = re.compile(r'[Ff]ormerly|[Ss]ee[ also]|Also .[\w ,]+')
-        # idx = [data[data['CRS'] == x].index[0] for x in data['CRS'] if re.match(drop_pat, x)]
-        # data.drop(labels=idx, axis=0, inplace=True)
-
         codes_col_names = ['CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
-        # notes_col_names = [x + '_Note' for x in codes_col_names]
-        # data[notes_col_names] = data[codes_col_names].applymap(self._get_code_note)
+
         for col in codes_col_names:
             data[[col, col + '_Note']] = pd.DataFrame(
                 data[col].map(self._get_code_note).to_list(), index=data.index)
-
         # # Debugging:
-        # for i, x in enumerate(data[col]):
-        #     try:
-        #         _get_code_note(x)
-        #     except Exception:
-        #         print(i)
-        #         break
+        # for col in codes_col_names:
+        #     for i, x in enumerate(data[col]):
+        #         try:
+        #             lid._get_code_note(x)
+        #         except Exception:
+        #             print(col, i, x)
+        #             break
 
     @staticmethod
     def _parse_stanox_note(x):  # Parse STANOX note
@@ -814,11 +884,11 @@ class LocationIdentifiers:
             pandas.core.frame.DataFrame
             >>> loc_a_codes_dat.head()
                                           Location CRS  ... STANME_Note STANOX_Note
-            0                                   A1      ...
-            1                       A463 Traded In      ...
-            2  A483 Road Scheme Supervisors Closed      ...
-            3                               Aachen      ...
-            4                     AA Holidays S524      ...
+            0                 1999 Reorganisations      ...
+            1                                   A1      ...
+            2                       A463 Traded In      ...
+            3  A483 Road Scheme Supervisors Closed      ...
+            4                               Aachen      ...
             [5 rows x 12 columns]
         """
 
@@ -839,10 +909,10 @@ class LocationIdentifiers:
                 self.KEY_TO_LAST_UPDATED_DATE: None,
             }
 
-            try:
-                url = self.catalogue[beginning_with]
-                source = requests.get(url=url, headers=fake_requests_headers())
+            url = self.catalogue[beginning_with]
 
+            try:
+                source = requests.get(url=url, headers=fake_requests_headers())
             except Exception as e:
                 if verbose == 2:
                     print("Failed. ", end="")
@@ -854,27 +924,12 @@ class LocationIdentifiers:
                     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
                     thead, tbody = soup.find('thead'), soup.find('tbody')
-                    ths = [th.text.strip() for th in thead.find_all(name='th')]
-                    trs = tbody.find_all(name='tr')
-
-                    # column_names = [th.text for th in thead.find_all('th')]
-                    # len_of_cols = len(column_names)
-                    # list_of_rows = [[td for td in tr.find_all('td')] for tr in tbody.find_all('tr')]
-                    #
-                    # list_of_row_data = []
-                    # for row in list_of_rows:
-                    #     dat = [x.text for x in row]
-                    #     list_of_row_data.append(dat[:len_of_cols] if len(row) > len_of_cols else dat)
-                    #
-                    # rep = {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}
-                    # pat = re.compile("|".join(rep.keys()))
-                    # tbl = [
-                    #     [pat.sub(lambda x: rep[x.group(0)], z) for z in y] for y in list_of_row_data]
-                    # data = pd.DataFrame(data=tbl, columns=column_names)
-                    # data.replace({'\xa0': ''}, regex=True, inplace=True)
+                    ths = [th.text.strip() for th in thead.find_all('th')]
+                    trs = tbody.find_all('tr')
 
                     dat = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
                     dat = dat.replace({'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
+
                     data = dat.replace({'\xa0': ''}, regex=True)
 
                     # Parse location names and their corresponding notes
@@ -892,8 +947,6 @@ class LocationIdentifiers:
                     additional_notes = self._get_additional_notes(
                         data=data, beginning_with=beginning_with, soup=soup)
 
-                    # data.index = range(len(data))  # Rearrange index
-
                     location_codes_initial = {
                         beginning_with: data,
                         self.KEY_TO_ADDITIONAL_NOTES: additional_notes,
@@ -906,7 +959,7 @@ class LocationIdentifiers:
                     save_data(location_codes_initial, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {e}")
+                    print(f"Failed. {_format_err_msg(e)}")
 
         return location_codes_initial
 
@@ -1041,7 +1094,7 @@ class LocationIdentifiers:
                         ext=".pkl", verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {e}")
+                    print(f"Failed. {_format_err_msg(e)}")
 
             return other_systems_codes
 
@@ -1340,7 +1393,7 @@ class LocationIdentifiers:
                     dump_dir=dump_dir_, verbose=verbose)
 
         except Exception as e:
-            print(f"Failed. {e}")
+            print(f"Failed. {_format_err_msg(e)}")
             location_codes_dictionary = None
 
         return location_codes_dictionary
