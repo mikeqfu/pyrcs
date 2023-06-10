@@ -3,51 +3,46 @@
 import pandas as pd
 import pytest
 
+from pyrcs.collector import LineData, OtherAssets
 
-class TestCollector:
 
-    @staticmethod
-    def test_LineData():
-        from pyrcs import LineData
+def test_LineData():
+    ld = LineData()
 
-        ld = LineData()
+    location_codes = ld.LocationIdentifiers.fetch_codes()
+    assert isinstance(location_codes, dict)
+    assert list(location_codes.keys()) == [
+        'LocationID', 'Other systems', 'Additional notes', 'Last updated date']
 
-        location_codes = ld.LocationIdentifiers.fetch_codes()
-        assert isinstance(location_codes, dict)
-        assert list(location_codes.keys()) == [
-            'LocationID', 'Other systems', 'Additional notes', 'Last updated date']
+    location_codes_dat = location_codes[ld.LocationIdentifiers.KEY]
+    assert isinstance(location_codes_dat, pd.DataFrame)
 
-        location_codes_dat = location_codes[ld.LocationIdentifiers.KEY]
-        assert isinstance(location_codes_dat, pd.DataFrame)
+    line_names_codes = ld.LineNames.fetch_codes()
+    assert isinstance(line_names_codes, dict)
+    assert list(line_names_codes.keys()) == ['Line names', 'Last updated date']
 
-        line_names_codes = ld.LineNames.fetch_codes()
-        assert isinstance(line_names_codes, dict)
-        assert list(line_names_codes.keys()) == ['Line names', 'Last updated date']
+    line_names_codes_dat = line_names_codes[ld.LineNames.KEY]
+    assert isinstance(line_names_codes_dat, pd.DataFrame)
 
-        line_names_codes_dat = line_names_codes[ld.LineNames.KEY]
-        assert isinstance(line_names_codes_dat, pd.DataFrame)
 
-    @staticmethod
-    def test_OtherAssets():
-        from pyrcs import OtherAssets
+def test_OtherAssets():
+    oa = OtherAssets()
 
-        oa = OtherAssets()
+    rail_stn_locations = oa.Stations.fetch_locations()
 
-        rail_stn_locations = oa.Stations.fetch_locations()
+    assert isinstance(rail_stn_locations, dict)
+    assert list(rail_stn_locations.keys()) == [
+        'Mileages, operators and grid coordinates', 'Last updated date']
 
-        assert isinstance(rail_stn_locations, dict)
-        assert list(rail_stn_locations.keys()) == [
-            'Mileages, operators and grid coordinates', 'Last updated date']
+    rail_stn_locations_dat = rail_stn_locations[oa.Stations.KEY_TO_STN]
+    assert isinstance(rail_stn_locations_dat, pd.DataFrame)
 
-        rail_stn_locations_dat = rail_stn_locations[oa.Stations.KEY_TO_STN]
-        assert isinstance(rail_stn_locations_dat, pd.DataFrame)
+    signal_boxes_codes = oa.SignalBoxes.fetch_prefix_codes()
+    assert isinstance(signal_boxes_codes, dict)
+    assert list(signal_boxes_codes.keys()) == ['Signal boxes', 'Last updated date']
 
-        signal_boxes_codes = oa.SignalBoxes.fetch_prefix_codes()
-        assert isinstance(signal_boxes_codes, dict)
-        assert list(signal_boxes_codes.keys()) == ['Signal boxes', 'Last updated date']
-
-        signal_boxes_codes_dat = signal_boxes_codes[oa.SignalBoxes.KEY]
-        assert isinstance(signal_boxes_codes_dat, pd.DataFrame)
+    signal_boxes_codes_dat = signal_boxes_codes[oa.SignalBoxes.KEY]
+    assert isinstance(signal_boxes_codes_dat, pd.DataFrame)
 
 
 if __name__ == '__main__':

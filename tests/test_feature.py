@@ -5,34 +5,28 @@ import pytest
 
 from pyrcs.other_assets import Features
 
-feats = Features()
-
 
 class TestFeatures:
+    feats = Features()
 
-    @staticmethod
-    def test_fetch_codes():
-        feats_codes = feats.fetch_codes(update=True, verbose=True)
-
+    def _assert_test_fetch_codes(self, feats_codes):
         assert isinstance(feats_codes, dict)
         assert list(feats_codes.keys()) == ['Features', 'Last updated date']
 
-        feats_codes_dat = feats_codes[feats.KEY]
+        feats_codes_dat = feats_codes[self.feats.KEY]
         assert isinstance(feats_codes_dat, dict)
 
-        water_troughs_locations = feats_codes_dat[feats.KEY_TO_TROUGH]
+        water_troughs_locations = feats_codes_dat[self.feats.KEY_TO_TROUGH]
         assert isinstance(water_troughs_locations, pd.DataFrame)
 
-        feats_codes = feats.fetch_codes()
+    @pytest.mark.parametrize('update', [True, False])
+    @pytest.mark.parametrize('verbose', [True, False])
+    def test_fetch_codes(self, update, verbose):
+        feats_codes = self.feats.fetch_codes(update=update, verbose=verbose)
+        self._assert_test_fetch_codes(feats_codes)
 
-        assert isinstance(feats_codes, dict)
-        assert list(feats_codes.keys()) == ['Features', 'Last updated date']
-
-        feats_codes_dat = feats_codes[feats.KEY]
-        assert isinstance(feats_codes_dat, dict)
-
-        water_troughs_locations = feats_codes_dat[feats.KEY_TO_TROUGH]
-        assert isinstance(water_troughs_locations, pd.DataFrame)
+        feats_codes = self.feats.fetch_codes()
+        self._assert_test_fetch_codes(feats_codes)
 
 
 if __name__ == '__main__':

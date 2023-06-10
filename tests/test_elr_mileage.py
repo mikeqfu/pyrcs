@@ -1,96 +1,71 @@
 """Test the module :py:mod:`pyrcs.line_data.elr_mileage`."""
 
+import functools
+
 import pandas as pd
 import pytest
 
 from pyrcs.line_data import ELRMileages
 
-em = ELRMileages()
-
 
 class TestELRMileages:
+    em = ELRMileages()
 
-    @staticmethod
-    def test_collect_elr_by_initial():
-        elrs_a_codes = em.collect_elr_by_initial(initial='a', update=True, verbose=True)
+    def test_collect_elr_by_initial(self):
+        test_initials = ['a', 'q']
+        for test_initial in test_initials:
+            elr_codes = self.em.collect_elr_by_initial(initial=test_initial, update=True, verbose=True)
 
-        assert isinstance(elrs_a_codes, dict)
-        assert list(elrs_a_codes.keys()) == ['A', 'Last updated date']
+            test_initial_ = test_initial.upper()
 
-        elrs_a_codes_dat = elrs_a_codes['A']
-        assert isinstance(elrs_a_codes_dat, pd.DataFrame)
+            assert isinstance(elr_codes, dict)
+            assert list(elr_codes.keys()) == [test_initial_, 'Last updated date']
 
-        elrs_q_codes = em.collect_elr_by_initial(initial='Q')
-        elrs_q_codes_dat = elrs_q_codes['Q']
-        assert isinstance(elrs_q_codes_dat, pd.DataFrame)
+            elrs_codes_dat = elr_codes[test_initial_]
+            assert isinstance(elrs_codes_dat, pd.DataFrame)
 
-    @staticmethod
-    def test_fetch_elr():
-        elrs_codes = em.fetch_elr()
+    def test_fetch_elr(self):
+        elrs_codes = self.em.fetch_elr()
 
         assert isinstance(elrs_codes, dict)
         assert list(elrs_codes.keys()) == ['ELRs and mileages', 'Last updated date']
 
-        elrs_codes_dat = elrs_codes[em.KEY]
+        elrs_codes_dat = elrs_codes[self.em.KEY]
         assert isinstance(elrs_codes_dat, pd.DataFrame)
 
-    @staticmethod
-    def test_collect_mileage_file():
-        cjd_mileage_file = em.collect_mileage_file(elr='CJD', confirmation_required=False, verbose=True)
+    def test_collect_mileage_file(self):
+        test_elrs = ['CJD', 'GAM', 'SLD', 'ELR']
+        for test_elr in test_elrs:
+            test_mileage_file = self.em.collect_mileage_file(
+                elr=test_elr, confirmation_required=False, verbose=True)
 
-        assert isinstance(cjd_mileage_file, dict)
-        assert list(cjd_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-        assert isinstance(cjd_mileage_file['Mileage'], pd.DataFrame)
+            assert isinstance(test_mileage_file, dict)
+            assert list(test_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
+            assert isinstance(test_mileage_file['Mileage'], pd.DataFrame)
 
-        gam_mileage_file = em.collect_mileage_file(elr='GAM', confirmation_required=False, verbose=True)
-        assert isinstance(gam_mileage_file['Mileage'], pd.DataFrame)
+    def test_fetch_mileage_file(self):
+        test_elrs = ['AAL', 'MLA']
+        for test_elr in test_elrs:
+            test_mileage_file = self.em.fetch_mileage_file(elr=test_elr)
+            assert isinstance(test_mileage_file, dict)
+            assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
-        sld_mileage_file = em.collect_mileage_file(elr='SLD', confirmation_required=False, verbose=True)
-        assert isinstance(sld_mileage_file['Mileage'], pd.DataFrame)
+    def test_search_conn(self):
+        elr_1, elr_2 = 'AAM', 'ANZ'
 
-        elr_mileage_file = em.collect_mileage_file(elr='ELR', confirmation_required=False, verbose=True)
-        assert isinstance(elr_mileage_file['Mileage'], pd.DataFrame)
+        mileage_file_1, mileage_file_2 = map(
+            functools.partial(self.em.collect_mileage_file, confirmation_required=False),
+            [elr_1, elr_2])
+        mf_1_mileages, mf_2_mileages = mileage_file_1['Mileage'], mileage_file_2['Mileage']
 
-    @staticmethod
-    def test_fetch_mileage_file():
-        aal_mileage_file = em.fetch_mileage_file(elr='AAL')
-        assert isinstance(aal_mileage_file, dict)
+        elr_1_dest, elr_2_orig = self.em.search_conn(elr_1, mf_1_mileages, elr_2, mf_2_mileages)
+        assert (elr_1_dest, elr_2_orig) == ('0.0396', '84.1364')
 
-        # assert aal_mileage_file['ELR'] == 'NAJ3'
-        # assert aal_mileage_file['Formerly'] == 'AAL'
-        assert isinstance(aal_mileage_file['Mileage'], pd.DataFrame)
+    def test_get_conn_mileages(self):
+        conn = self.em.get_conn_mileages(start_elr='NAY', end_elr='LTN2')
+        assert conn == ('5.1606', 'NOL', '5.1606', '0.0638', '123.1320')
 
-        mla_mileage_file = em.fetch_mileage_file(elr='MLA')
-        assert isinstance(mla_mileage_file, dict)
-
-    @staticmethod
-    def test_search_conn():
-        elr_1 = 'AAM'
-        mileage_file_1 = em.collect_mileage_file(elr_1, confirmation_required=False)
-        mf_1_mileages = mileage_file_1['Mileage']
-        assert isinstance(mf_1_mileages, pd.DataFrame)
-
-        elr_2 = 'ANZ'
-        mileage_file_2 = em.collect_mileage_file(elr_2, confirmation_required=False)
-        mf_2_mileages = mileage_file_2['Mileage']
-        assert isinstance(mf_2_mileages, pd.DataFrame)
-
-        elr_1_dest, elr_2_orig = em.search_conn(elr_1, mf_1_mileages, elr_2, mf_2_mileages)
-        assert elr_1_dest == '0.0396'
-        assert elr_2_orig == '84.1364'
-
-    @staticmethod
-    def test_get_conn_mileages():
-        conn = em.get_conn_mileages(start_elr='NAY', end_elr='LTN2')
-        (s_dest_mlg, c_elr, c_orig_mlg, c_dest_mlg, e_orig_mlg) = conn
-
-        assert s_dest_mlg == '5.1606'
-        assert c_elr == 'NOL'
-        assert c_orig_mlg == '5.1606'
-        assert c_dest_mlg == '0.0638'
-        assert e_orig_mlg == '123.1320'
-
-        conn = em.get_conn_mileages(start_elr='MAC3', end_elr='DBP1')
+        conn = self.em.get_conn_mileages(start_elr='MAC3', end_elr='DBP1')
         assert conn == ('', '', '', '', '')
 
 

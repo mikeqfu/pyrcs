@@ -7,84 +7,63 @@ import pytest
 
 from pyrcs.line_data import LocationIdentifiers
 
-lid = LocationIdentifiers()
-
 
 class TestLocationIdentifiers:
+    lid = LocationIdentifiers()
 
-    @staticmethod
-    def test_fetch_explanatory_note():
-        exp_note = lid.fetch_explanatory_note(update=True, verbose=True)
-
-        assert isinstance(exp_note, dict)
-        assert list(exp_note.keys()) == [
-            'Multiple station codes explanatory note', 'Notes', 'Last updated date']
-        exp_note_dat = exp_note[lid.KEY_TO_MSCEN]
-        assert isinstance(exp_note_dat, pd.DataFrame)
-
-        exp_note = lid.fetch_explanatory_note()
+    @pytest.mark.parametrize('update', [True, False])
+    @pytest.mark.parametrize('verbose', [True, False])
+    def test_fetch_explanatory_note(self, update, verbose):
+        exp_note = self.lid.fetch_explanatory_note(update=update, verbose=verbose)
 
         assert isinstance(exp_note, dict)
         assert list(exp_note.keys()) == [
             'Multiple station codes explanatory note', 'Notes', 'Last updated date']
-        exp_note_dat = exp_note[lid.KEY_TO_MSCEN]
+        exp_note_dat = exp_note[self.lid.KEY_TO_MSCEN]
         assert isinstance(exp_note_dat, pd.DataFrame)
 
-    @staticmethod
-    def test__parse_location_name():
-        dat = lid._parse_location_name('Abbey Wood')
+    def test__parse_location_name(self):
+        dat = self.lid._parse_location_name('Abbey Wood')
         assert dat == ('Abbey Wood', '')
 
-        dat = lid._parse_location_name(None)
+        dat = self.lid._parse_location_name(None)
         assert dat == ('', '')
 
-        dat = lid._parse_location_name('Abercynon (formerly Abercynon South)')
+        dat = self.lid._parse_location_name('Abercynon (formerly Abercynon South)')
         assert dat == ('Abercynon', 'formerly Abercynon South')
 
-        dat = lid._parse_location_name('Allerton (reopened as Liverpool South Parkway)')
+        dat = self.lid._parse_location_name('Allerton (reopened as Liverpool South Parkway)')
         assert dat == ('Allerton', 'reopened as Liverpool South Parkway')
 
-        dat = lid._parse_location_name('Ashford International [domestic portion]')
+        dat = self.lid._parse_location_name('Ashford International [domestic portion]')
         assert dat == ('Ashford International', 'domestic portion')
 
-        dat = lid._parse_location_name('Ayr [unknown feature]')
+        dat = self.lid._parse_location_name('Ayr [unknown feature]')
         assert dat == ('Ayr', 'unknown feature')
 
-    @staticmethod
-    def test_collect_codes_by_initial():
-        loc_a = lid.collect_codes_by_initial(initial='a', update=True, verbose=True)
+    @pytest.mark.parametrize('update', [True, False])
+    @pytest.mark.parametrize('verbose', [True, False])
+    def test_collect_codes_by_initial(self, update, verbose):
+        loc_a = self.lid.collect_codes_by_initial(initial='a', update=update, verbose=verbose)
+
         assert isinstance(loc_a, dict)
         assert list(loc_a.keys()) == ['A', 'Additional notes', 'Last updated date']
 
         loc_a_codes = loc_a['A']
         assert isinstance(loc_a_codes, pd.DataFrame)
 
-        loc_a = lid.collect_codes_by_initial(initial='a')
-        assert isinstance(loc_a, dict)
-        assert list(loc_a.keys()) == ['A', 'Additional notes', 'Last updated date']
-
-        loc_a_codes = loc_a['A']
-        assert isinstance(loc_a_codes, pd.DataFrame)
-
-    @staticmethod
-    def test_fetch_other_systems_codes():
-        os_codes = lid.fetch_other_systems_codes(update=True, verbose=True)
+    @pytest.mark.parametrize('update', [True, False])
+    @pytest.mark.parametrize('verbose', [True, False])
+    def test_fetch_other_systems_codes(self, update, verbose):
+        os_codes = self.lid.fetch_other_systems_codes(update=update, verbose=verbose)
 
         assert isinstance(os_codes, dict)
         assert list(os_codes.keys()) == ['Other systems', 'Last updated date']
-        os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
+        os_codes_dat = os_codes[self.lid.KEY_TO_OTHER_SYSTEMS]
         assert isinstance(os_codes_dat, collections.defaultdict)
 
-        os_codes = lid.fetch_other_systems_codes()
-
-        assert isinstance(os_codes, dict)
-        assert list(os_codes.keys()) == ['Other systems', 'Last updated date']
-        os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
-        assert isinstance(os_codes_dat, collections.defaultdict)
-
-    @staticmethod
-    def test_fetch_codes():
-        loc_codes = lid.fetch_codes()
+    def test_fetch_codes(self):
+        loc_codes = self.lid.fetch_codes()
 
         assert isinstance(loc_codes, dict)
         assert list(loc_codes.keys()) == [
@@ -93,18 +72,15 @@ class TestLocationIdentifiers:
         loc_codes_dat = loc_codes['LocationID']
         assert isinstance(loc_codes_dat, pd.DataFrame)
 
-    @staticmethod
-    def test_make_xref_dict():
-        stanox_dictionary = lid.make_xref_dict(keys='STANOX')
+    def test_make_xref_dict(self):
+        stanox_dictionary = self.lid.make_xref_dict(keys='STANOX')
         assert isinstance(stanox_dictionary, pd.DataFrame)
 
-        s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
+        s_t_dictionary = self.lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
         assert isinstance(s_t_dictionary, pd.DataFrame)
 
-        ks = ['STANOX', 'TIPLOC']
-        ini = 'b'
-        main_k = 'Data'
-        s_t_dictionary = lid.make_xref_dict(ks, ini, main_k, as_dict=True)
+        s_t_dictionary = self.lid.make_xref_dict(
+            keys=['STANOX', 'TIPLOC'], initials='b', main_key='Data', as_dict=True)
         assert isinstance(s_t_dictionary, dict)
         assert list(s_t_dictionary.keys()) == ['Data']
 

@@ -5,22 +5,14 @@ import pytest
 
 from pyrcs.other_assets import Tunnels
 
-tunl = Tunnels()
-
 
 class TestTunnels:
+    tunl = Tunnels()
 
-    @staticmethod
-    def test_collect_codes_by_page():
-        tunl_len_1 = tunl.collect_codes_by_page(page_no=1, update=True, verbose=True)
-
-        assert isinstance(tunl_len_1, dict)
-        assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
-
-        tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
-        assert isinstance(tunl_len_1_codes, pd.DataFrame)
-
-        tunl_len_1 = tunl.collect_codes_by_page(page_no=1)
+    @pytest.mark.parametrize('update', [True, False])
+    @pytest.mark.parametrize('verbose', [True, False])
+    def test_collect_codes_by_page(self, update, verbose):
+        tunl_len_1 = self.tunl.collect_codes_by_page(page_no=1, update=update, verbose=verbose)
 
         assert isinstance(tunl_len_1, dict)
         assert list(tunl_len_1.keys()) == ['Page 1 (A-F)', 'Last updated date']
@@ -28,14 +20,13 @@ class TestTunnels:
         tunl_len_1_codes = tunl_len_1['Page 1 (A-F)']
         assert isinstance(tunl_len_1_codes, pd.DataFrame)
 
-    @staticmethod
-    def test_fetch_codes():
-        tunl_len_codes = tunl.fetch_codes()
+    def test_fetch_codes(self):
+        tunl_len_codes = self.tunl.fetch_codes()
 
         assert isinstance(tunl_len_codes, dict)
         assert list(tunl_len_codes.keys()) == ['Tunnels', 'Last updated date']
 
-        tunl_len_codes_dat = tunl_len_codes[tunl.KEY]
+        tunl_len_codes_dat = tunl_len_codes[self.tunl.KEY]
 
         assert isinstance(tunl_len_codes_dat, dict)
 
