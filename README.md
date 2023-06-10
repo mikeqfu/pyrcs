@@ -13,7 +13,6 @@ During [installation](https://pyrcs.readthedocs.io/en/latest/installation.html),
 
 With PyRCS, users can leverage Python's power to streamline workflows and enhance productivity when working with railway codes in the UK rail industry.
 
-
 ## Installation
 
 To install the latest release of pyrcs from [PyPI](https://pypi.org/project/pyrcs/) via [pip](https://pip.pypa.io/en/stable/cli/pip/):
