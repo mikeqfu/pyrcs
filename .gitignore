@@ -28,5 +28,6 @@ pyrcs/data/*
 !pyrcs/data/metadata.json
 tests/*
 !tests/*.py
+tutorials/*
 .pypirc
 cmd.txt
