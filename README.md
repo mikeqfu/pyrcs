@@ -21,11 +21,29 @@ To install the latest release of pyrcs from [PyPI](https://pypi.org/project/pyrc
 pip install --upgrade pyrcs
 ```
 
-For more information, please also refer to [Installation](https://pyrcs.readthedocs.io/en/latest/installation.html).
+Please also refer to [Installation](https://pyrcs.readthedocs.io/en/latest/installation.html) for more information. 
+
+## Quick start
+
+For a concise guide on how to utilise PyRCS, we recommend checking out the [quick-start tutorial](https://pyrcs.readthedocs.io/en/latest/quick-start.html), which features multiple illustrative examples for three frequently used code categories in the UK railway system: 
+
+- [Location identifiers](http://www.railwaycodes.org.uk/crs/CRS0.shtm) (CRS, NLC, TIPLOC and STANOX codes)
+- [Engineer’s Line References](http://www.railwaycodes.org.uk/elrs/elr0.shtm) (ELRs) and their associated mileage files
+- [Railway station data](http://www.railwaycodes.org.uk/stations/station1.shtm) (mileages, operators and grid coordinates)
 
 ## Documentation
 
-The full PyRCS documentation (including detailed examples and a quick-start tutorial) is hosted on [ReadTheDocs](https://readthedocs.org/projects/pyrcs/): [[PDF](https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/)\] \[[HTML](https://pyrcs.readthedocs.io/en/latest/)].
+The complete PyRCS documentation: [[PDF](https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/)\] \[[HTML](https://pyrcs.readthedocs.io/en/latest/)].
+
+It is hosted on [ReadTheDocs](https://readthedocs.org/projects/pyrcs/) and provides a wealth of detailed examples.
+
+## License
+
+PyRCS is licensed under [GNU General Public License v3](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE) or later (GPLv3+).
+
+## Acknowledgement
+
+PyRCS uses data available from the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website. The time and effort that the website's editor and [all contributors](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) put in making the site and data available are fully credited.
 
 ## Cite as
 
@@ -45,10 +63,22 @@ Fu, Q. (2020). PyRCS: an open-source tool for collecting railway codes used in d
 
 (Please also refer to the export options from [Zenodo](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224026744%22&sort=-version&all_versions=True) to reference the specific version of PyRCS as appropriate.)
 
-## License
+## Contributors
 
-PyRCS is licensed under [GNU General Public License v3](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE) or later (GPLv3+).
-
-## Acknowledgement
-
-PyRCS uses data available from the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website. The time and effort that the website's editor and [all contributors](http://www.railwaycodes.org.uk/misc/acknowledgements.shtm) put in making the site and data available are fully credited.
+<!--suppress HtmlDeprecatedAttribute -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center">
+        <a href="https://github.com/mikeqfu" target="_blank"><img src="https://avatars.githubusercontent.com/u/1729711?v=4?s=100" width="100px;" alt="Qian Fu"/><br><sub><b>Qian Fu</b></sub></a><br>
+        <a href="https://github.com/mikeqfu/pyrcs" target="_blank" title="Seeding">🌱</a>
+        <a href="https://github.com/mikeqfu/pyrcs/commits?author=mikeqfu" target="_blank" title="Code">💻</a>
+        <a href="https://github.com/mikeqfu/pyrcs/tree/master/tests" target="_blank" title="Tests">🧪</a>
+        <a href="https://pyrcs.readthedocs.io/en/latest/" target="_blank" title="Documentation">📖</a>
+      </td>
+      <td align="center">
+        <a href="https://github.com/Firtun" target="_blank"><img src="https://avatars.githubusercontent.com/u/75030535?v=4?s=100" width="100px;" alt="Firtun"/><br><sub><b>Firtun</b></sub></a><br>
+        <a href="https://github.com/mikeqfu/pyrcs/commits?author=Firtun" target="_blank" title="Documentation">📖</a>
+      </td>
+  </tbody>
+</table>
