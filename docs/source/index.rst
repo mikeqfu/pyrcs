@@ -46,6 +46,7 @@ With PyRCS, users can leverage Python's power to streamline workflows and enhanc
     license
     use-of-data
     acknowledgement
+    contributors
 
 .. toctree::
     :maxdepth: 1

@@ -2,16 +2,13 @@
 Quick start
 ===========
 
-To demonstrate how PyRCS works, this brief tutorial provides a quick guide with examples of getting the following three categories of codes, which are frequently used in the railway system in the UK:
+To showcase the functionality of PyRCS, this concise tutorial offers a quick guide with examples on how to work with three frequently-used code categories in the UK railway system:
 
-- `Location identifiers`_ (CRS, NLC, TIPLOC and STANOX codes);
-- `Engineer's Line References (ELRs)`_ and their associated mileage files;
-- `Railway station data`_ (mileages, operators and grid coordinates).
+- `Location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ (CRS, NLC, TIPLOC and STANOX codes);
+- `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and their associated mileage files;
+- `Railway station data <http://www.railwaycodes.org.uk/stations/station1.shtm>`_ (mileages, operators and grid coordinates).
 
-.. _`Location identifiers`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
-.. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
-.. _`Railway station data`: http://www.railwaycodes.org.uk/stations/station1.shtm
-
+The tutorial aims to demonstrate how PyRCS operates by providing practical illustrations and guidance.
 
 .. _quickstart-location-identifiers:
 

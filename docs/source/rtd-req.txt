@@ -1,5 +1,5 @@
 beautifulsoup4
-pyhelpers>=1.5.0
+pyhelpers>=1.5.1
 Sphinx==6.2.1
 sphinx-copybutton==0.5.2
 sphinx-rtd-theme==1.2.2
