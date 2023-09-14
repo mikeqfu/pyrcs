@@ -62,6 +62,72 @@ def _move_element_to_end(text_, char='\t\t'):
             # break
 
 
+def _prep_records(trs, ths, sep=' / '):
+    ths_len = len(ths)
+
+    records = []
+    row_spanned = []
+
+    for no, tr in enumerate(trs):
+        data = []
+        tds = tr.find_all(name='td')
+
+        if len(tds) != ths_len:
+            tds = tds[:ths_len]
+
+        for td_no, td in enumerate(tds):
+            if td.find('td'):
+                text_ = td.find('a').contents + ["\t\t / "]
+            else:
+                text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
+            # _move_element_to_end(text_, char='\t\t')
+            text = ' '.join(sorted([x for x in text_ if x.strip(' ')], key=lambda x: '\t\t' in x))
+
+            if sep:
+                old_sep = re.compile(r'/?\r?\n')
+                if len(re.findall(old_sep, text)) > 0:
+                    text = re.sub(r'/?\r?\n', sep, text)
+
+            if td.has_attr('rowspan'):
+                row_spanned.append((no, int(td['rowspan']), td_no, text))
+
+            data.append(text)
+
+        records.append(data)
+
+    return records, row_spanned
+
+
+def _check_row_spanned(records, row_spanned):
+    if row_spanned:
+        records_ = records.copy()
+
+        row_spanned_dict = collections.defaultdict(list)
+        for i, *to_repeat in row_spanned:
+            row_spanned_dict[i].append(to_repeat)
+
+        for i, to_repeat in row_spanned_dict.items():
+            for no_spans, idx, dat in to_repeat:
+                for j in range(1, no_spans):
+                    k = i + j
+                    # if (dat in records[i]) and (dat != '\xa0'):  # and (idx < len(records[i]) - 1):
+                    #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
+                    k_len = len(records_[k])
+                    if k_len < len(records_[i]):
+                        if k_len == idx:
+                            records_[k].insert(idx, dat)
+                        elif k_len > idx:
+                            if records_[k][idx] != '':
+                                records_[k].insert(idx, dat)
+                            else:  # records[k][idx] == '':
+                                records_[k][idx] = dat
+
+    else:
+        records_ = records
+
+    return records_
+
+
 def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     """
     Parse a list of parsed HTML <tr> elements.
@@ -105,70 +171,9 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
          'Now NAJ3']
     """
 
-    ths_len = len(ths)
-    records = []
-    row_spanned = []
+    records, row_spanned = _prep_records(trs=trs, ths=ths, sep=sep)
 
-    for no, tr in enumerate(trs):
-        data = []
-        tds = tr.find_all(name='td')
-
-        if len(tds) != ths_len:
-            tds = tds[:ths_len]
-
-        for td_no, td in enumerate(tds):
-            if td.find('td'):
-                text_ = td.find('a').contents + ["\t\t / "]
-            else:
-                text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
-            # _move_element_to_end(text_, char='\t\t')
-            text = ' '.join(sorted([x for x in text_ if x.strip(' ')], key=lambda x: '\t\t' in x))
-
-            if sep:
-                old_sep = re.compile(r'/?\r?\n')
-                if len(re.findall(old_sep, text)) > 0:
-                    text = re.sub(r'/?\r?\n', sep, text)
-
-            if td.has_attr('rowspan'):
-                row_spanned.append((no, int(td['rowspan']), td_no, text))
-
-            data.append(text)
-
-        records.append(data)
-
-    if row_spanned:
-        row_spanned_dict = collections.defaultdict(list)
-        for i, *to_repeat in row_spanned:
-            row_spanned_dict[i].append(to_repeat)
-
-        for i, to_repeat in row_spanned_dict.items():
-            for no_spans, idx, dat in to_repeat:
-                for j in range(1, no_spans):
-                    k = i + j
-                    # if (dat in records[i]) and (dat != '\xa0'):  # and (idx < len(records[i]) - 1):
-                    #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
-                    k_len = len(records[k])
-                    if k_len < len(records[i]):
-                        if k_len == idx:
-                            records[k].insert(idx, dat)
-                        elif k_len > idx:
-                            if records[k][idx] != '':
-                                records[k].insert(idx, dat)
-                            else:  # records[k][idx] == '':
-                                records[k][idx] = dat
-
-    # if row_spanned:
-    #     for x in row_spanned:
-    #         for j in range(1, x[2]):
-    #             # Add value in next tr
-    #             idx = x[0] + j
-    #             # assert isinstance(idx, int)
-    #             if x[1] >= len(tbl_lst[idx]):
-    #                 tbl_lst[idx].insert(x[1], x[3])
-    #             elif x[3] in tbl_lst[x[0]]:
-    #                 tbl_lst[idx].insert(tbl_lst[x[0]].index(x[3]), x[3])
-    #             else:
-    #                 tbl_lst[idx].insert(x[1] + 1, x[3])
+    records = _check_row_spanned(records, row_spanned)
 
     if isinstance(ths, bs4.Tag):
         column_names = [th.text.strip() for th in ths.find_all('th')]
@@ -401,7 +406,8 @@ def _get_site_map(source):
     for h3 in h3s:
         h3_title = h3.get_text(strip=True)
 
-        h3_dl = h3.find_next_sibling(name='dl')
+        # h3_dl = h3.find_next_sibling(name='dl')
+        h3_dl = h3.find_next(name='dl')
 
         h3_dl_dts = h3_dl.find_all(name='dt')
 
