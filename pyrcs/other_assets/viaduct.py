@@ -17,9 +17,8 @@ from ..utils import home_page_url, init_data_dir, is_home_connectable, print_con
 
 class Viaducts:
     """
-    A class for collecting codes of `railway viaducts`_.
-
-    .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
+    A class for collecting codes of
+    `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
     """
 
     #: Name of the data

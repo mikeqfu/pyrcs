@@ -1,4 +1,6 @@
-"""Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes."""
+"""
+Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+"""
 
 import itertools
 import os
@@ -19,9 +21,8 @@ from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_da
 
 class LOR:
     """
-    A class for collecting data of `Line of Route (LOR/PRIDE)`_.
-
-    .. _`Line of Route (LOR/PRIDE)`: http://www.railwaycodes.org.uk/pride/pride0.shtm
+    A class for collecting data of
+    `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_.
 
     .. note::
 

@@ -1,4 +1,6 @@
-"""Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_."""
+"""
+Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
+"""
 
 import os
 import re
@@ -16,9 +18,8 @@ from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_da
 
 class Bridges:
     """
-    A class for collecting data of `railway bridges`_.
-
-    .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
+    A class for collecting data of
+    `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
     """
 
     #: Name of the data

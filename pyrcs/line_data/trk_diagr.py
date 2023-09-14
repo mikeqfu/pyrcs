@@ -1,4 +1,6 @@
-"""Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_."""
+"""
+Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+"""
 
 import os
 import urllib.parse
@@ -17,9 +19,8 @@ from ..utils import cd_data, fetch_data_from_file, format_err_msg, home_page_url
 
 class TrackDiagrams:
     """
-    A class for collecting data of British `railway track diagrams`_.
-
-    .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
+    A class for collecting data of British
+    `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
     """
 
     #: Name of the data

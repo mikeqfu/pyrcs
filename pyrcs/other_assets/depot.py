@@ -1,4 +1,6 @@
-"""Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_."""
+"""
+Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+"""
 
 import re
 import urllib.parse
@@ -16,9 +18,8 @@ from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page
 
 class Depots:
     """
-    A class for collecting data of `depot codes`_.
-
-    .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
+    A class for collecting data of
+    `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
     """
 
     #: Name of the data

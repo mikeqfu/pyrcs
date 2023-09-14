@@ -22,9 +22,8 @@ from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page
 
 class SignalBoxes:
     """
-    A class for collecting data of `signal box prefix codes`_.
-
-    .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
+    A class for collecting data of
+    `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
     """
 
     #: Name of the data
