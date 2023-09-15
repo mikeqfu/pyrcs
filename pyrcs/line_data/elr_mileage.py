@@ -185,7 +185,8 @@ class ELRMileages:
 
                 elif 'Measure sometimes used' in test_temp_node:
                     sep_rows_idx = test_temp.index.tolist() + [dat.index[-1]]
-                    dat_ = {dat.loc[j, 'Node']: dat.loc[j + 1:k] for j, k in loop_in_pairs(sep_rows_idx)}
+                    dat_ = {
+                        dat.loc[j, 'Node']: dat.loc[j + 1:k] for j, k in loop_in_pairs(sep_rows_idx)}
 
                 else:
                     alt_sep_rows_idx = [x in test_temp_node for x in self.measure_headers]
@@ -864,10 +865,12 @@ class ELRMileages:
                                     mileage_file_former = copy.copy(mileage_file_alt)
 
                                     mileage_file_alt.update({'Formerly': elr_})
-                                    self._dump_mileage_file(elr_alt, mileage_file_alt, dump_it, verbose)
+                                    self._dump_mileage_file(
+                                        elr_alt, mileage_file_alt, dump_it=dump_it, verbose=verbose)
 
                                     mileage_file_former.update(({'Now': elr_alt}))
-                                    self._dump_mileage_file(elr_, mileage_file_former, dump_it, verbose)
+                                    self._dump_mileage_file(
+                                        elr_, mileage_file_former, dump_it=dump_it, verbose=verbose)
 
                                 return mileage_file_alt
 
@@ -903,7 +906,7 @@ class ELRMileages:
                         # measure_headers = []
                         measure_headers_indices = []
 
-                        for i, x in enumerate(content):
+                        for _, x in enumerate(content):
                             if len(x) == 1:
                                 if x[0].endswith(tuple(string.ascii_letters)):
                                     x_ = x[0] + '.'
