@@ -27,9 +27,9 @@ Please also refer to [Installation](https://pyrcs.readthedocs.io/en/latest/insta
 
 For a concise guide on how to utilise PyRCS, we recommend checking out the [quick-start tutorial](https://pyrcs.readthedocs.io/en/latest/quick-start.html), which features multiple illustrative examples for three frequently used code categories in the UK railway system: 
 
-- [Location identifiers](http://www.railwaycodes.org.uk/crs/CRS0.shtm) (CRS, NLC, TIPLOC and STANOX codes) 
-- [Engineer’s Line References](http://www.railwaycodes.org.uk/elrs/elr0.shtm) (ELRs) and their associated mileage files 
-- [Railway station data](http://www.railwaycodes.org.uk/stations/station1.shtm) (mileages, operators and grid coordinates) 
+* [Location identifiers](http://www.railwaycodes.org.uk/crs/CRS0.shtm) (CRS, NLC, TIPLOC and STANOX codes)
+* [Engineer’s Line References](http://www.railwaycodes.org.uk/elrs/elr0.shtm) (ELRs) and their associated mileage files
+* [Railway station data](http://www.railwaycodes.org.uk/stations/station1.shtm) (mileages, operators and grid coordinates) 
 
 ## Documentation
 
