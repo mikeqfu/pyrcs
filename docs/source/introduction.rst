@@ -1,8 +1,8 @@
-.. only:: latex
+:orphan:
 
-    ===========
-    About PyRCS
-    ===========
+===========
+About PyRCS
+===========
 
 PyRCS is an open-source Python package designed to simplify the collection and management of diverse codes used in different systems within the UK rail industry. It serves as a practical toolkit for researchers, practitioners, and individuals who frequently interact with the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website and work extensively with railway codes in the UK. Leveraging the capabilities of the Python programming language, PyRCS enables efficient access to and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
 

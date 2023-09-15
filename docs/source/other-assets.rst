@@ -9,22 +9,13 @@ other_assets
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Sub-modules
 .. autosummary::
+    :toctree: _generated/
+    :template: class.rst
 
-    sig_box
-    tunnel
-    viaduct
-    station
-    depot
-    feature
-
-.. toctree::
-    :hidden:
-
-    sig-box
-    tunnel
-    viaduct
-    station
-    depot
-    feature
+    SignalBoxes
+    Tunnels
+    Viaducts
+    Stations
+    Depots
+    Features

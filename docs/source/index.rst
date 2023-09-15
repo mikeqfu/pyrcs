@@ -2,28 +2,26 @@
 PyRCS
 #####
 
-.. only:: html
+|PyPI| |Python| |Documentation| |License| |Codacy grade| |DOI|
 
-    |PyPI| |Python| |Documentation| |License| |Codacy grade| |DOI|
-
-    .. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
-        :alt: PyPI - Release
-        :target: https://pypi.org/project/pyrcs/
-    .. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
-        :alt: Python version
-        :target: https://www.python.org/downloads/
-    .. |Documentation| image:: https://readthedocs.org/projects/pyrcs/badge/?version=latest
-        :alt: Documentation status
-        :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
-    .. |License| image:: https://img.shields.io/pypi/l/pyrcs
-        :alt: License
-        :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
-    .. |Codacy grade| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
-        :alt: Codacy grade (Code quality)
-        :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
-    .. |DOI| image:: https://zenodo.org/badge/92501006.svg
-        :alt: Zenodo - DOI
-        :target: https://zenodo.org/badge/latestdoi/92501006
+.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
+    :alt: PyPI - Release
+    :target: https://pypi.org/project/pyrcs/
+.. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
+    :alt: Python version
+    :target: https://www.python.org/downloads/
+.. |Documentation| image:: https://readthedocs.org/projects/pyrcs/badge/?version=latest
+    :alt: Documentation status
+    :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
+.. |License| image:: https://img.shields.io/pypi/l/pyrcs
+    :alt: License
+    :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
+.. |Codacy grade| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
+    :alt: Codacy grade (Code quality)
+    :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
+.. |DOI| image:: https://zenodo.org/badge/92501006.svg
+    :alt: Zenodo - DOI
+    :target: https://zenodo.org/badge/latestdoi/92501006
 
 | **Author**: Qian Fu
 | **Email**: q.fu@bham.ac.uk
@@ -40,7 +38,6 @@ With PyRCS, users can leverage Python's power to streamline workflows and enhanc
     :includehidden:
     :caption: Documentation
 
-    introduction
     installation
     sub-pkg-and-mod
     license

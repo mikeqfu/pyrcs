@@ -15,7 +15,7 @@ The tutorial aims to demonstrate how PyRCS operates by providing practical illus
 Location identifiers
 ====================
 
-The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can use the class :class:`~loc_id.LocationIdentifiers`, which is contained in the sub-package :mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
+The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can use the class :class:`~pyrcs.line_data.LocationIdentifiers`, which is contained in the sub-package :mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
 
 .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 .. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
@@ -55,7 +55,7 @@ The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categ
 Location identifiers given a specific initial letter
 ----------------------------------------------------
 
-Now we can get the codes (in a `pandas.DataFrame`_ type) for all locations beginning with a given letter, by using the method :meth:`LocationIdentifiers.collect_codes_by_initial()<loc_id.LocationIdentifiers.collect_codes_by_initial>`. For example, to get the codes for locations whose names begin with ``'A'`` (or ``'a'``):
+Now we can get the codes (in a `pandas.DataFrame`_ type) for all locations beginning with a given letter, by using the method :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>`. For example, to get the codes for locations whose names begin with ``'A'`` (or ``'a'``):
 
 .. _`pandas.DataFrame`: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html
 
@@ -107,7 +107,7 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
 All available location identifiers
 ----------------------------------
 
-In addition to the ``'A'`` group of locations, we can use the method :meth:`LocationIdentifiers.fetch_codes()<loc_id.LocationIdentifiers.fetch_codes>` to get the codes of all locations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category:
+In addition to the ``'A'`` group of locations, we can use the method :meth:`LocationIdentifiers.fetch_codes()<pyrcs.line_data.LocationIdentifiers.fetch_codes>` to get the codes of all locations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category:
 
 .. code-block:: python
 
@@ -186,7 +186,7 @@ A snapshot of the data contained in ``loc_codes`` is demonstrated below:
 ELRs and mileages
 =================
 
-`Engineer's Line References (ELRs)`_ are also frequently seen among various data in Britain's railway system. To get the codes of ELRs (and their associated mileage files), we can use the class :class:`~elr_mileage.ELRMileages`:
+`Engineer's Line References (ELRs)`_ are also frequently seen among various data in Britain's railway system. To get the codes of ELRs (and their associated mileage files), we can use the class :class:`~pyrcs.line_data.ELRMileages`:
 
 .. code-block:: python
 
@@ -204,7 +204,7 @@ ELRs and mileages
 Engineer's Line References (ELRs)
 ---------------------------------
 
-Similar to the location identifiers, the codes of ELRs on the `Railway Codes`_ website are also alphabetically arranged given their initial letters. We can use the method :meth:`ELRMileages.collect_elr_by_initial()<elr_mileage.ELRMileages.collect_elr_by_initial>` to get the data of ELRs which begin with a specific initial letter. Let's take ``'A'`` as an example:
+Similar to the location identifiers, the codes of ELRs on the `Railway Codes`_ website are also alphabetically arranged given their initial letters. We can use the method :meth:`ELRMileages.collect_elr_by_initial()<pyrcs.line_data.ELRMileages.collect_elr_by_initial>` to get the data of ELRs which begin with a specific initial letter. Let's take ``'A'`` as an example:
 
 .. code-block:: python
 
@@ -245,7 +245,7 @@ A snapshot of the data contained in ``elrs_a_codes`` is demonstrated below:
     >>> print("Last updated date: {}".format(elrs_a_codes['Last updated date']))
 
 
-To get the data of all ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`ELRMileages.fetch_elr()<elr_mileage.ELRMileages.fetch_elr>`:
+To get the data of all ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`ELRMileages.fetch_elr()<pyrcs.line_data.ELRMileages.fetch_elr>`:
 
 .. code-block:: python
 
@@ -286,7 +286,7 @@ A snapshot of the data contained in ``elrs_codes`` is demonstrated below:
 Mileage file of a given ELR
 ---------------------------
 
-Further to the codes of ELRs, each ELR is associated with a mileage file, which specifies the major mileages for the ELR. To get the mileage data, we can use the method :meth:`ELRMileages.fetch_mileage_file()<elr_mileage.ELRMileages.fetch_mileage_file>`.
+Further to the codes of ELRs, each ELR is associated with a mileage file, which specifies the major mileages for the ELR. To get the mileage data, we can use the method :meth:`ELRMileages.fetch_mileage_file()<pyrcs.line_data.ELRMileages.fetch_mileage_file>`.
 
 For example, let's try to get the `mileage file for 'AAM'`_:
 
@@ -338,7 +338,7 @@ A snapshot of the data contained in ``amm_mileage_file`` is demonstrated below:
 Railway station data
 ====================
 
-The `railway station data`_ (including the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised as one of the `other assets`_ on the `Railway Codes`_ website. To deal with data in this category, PyRCS offers a sub-package :mod:`~pyrcs.other_assets`, from which we can use the contained class :class:`~station.Stations` to get the `railway station data`_:
+The `railway station data`_ (including the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised as one of the `other assets`_ on the `Railway Codes`_ website. To deal with data in this category, PyRCS offers a sub-package :mod:`~pyrcs.other_assets`, from which we can use the contained class :class:`~pyrcs.other_assets.Stations` to get the `railway station data`_:
 
 .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 
@@ -371,14 +371,14 @@ Now let's import the class and create an instance of it:
 
 .. note::
 
-    - The instances ``stn_`` and ``stn`` are of the same class :class:`~station.Stations`.
+    - The instances ``stn_`` and ``stn`` are of the same class :class:`~pyrcs.other_assets.Stations`.
 
 .. _quickstart-railway-station-locations-given-initial:
 
 Railway station locations given a specific initial letter
 ---------------------------------------------------------
 
-To get the location data of railway stations whose names start with a given letter, say ``'A'``, we can use the method :meth:`Stations.collect_locations_by_initial()<station.Stations.collect_locations_by_initial>`:
+To get the location data of railway stations whose names start with a given letter, say ``'A'``, we can use the method :meth:`Stations.collect_locations_by_initial()<pyrcs.other_assets.Stations.collect_locations_by_initial>`:
 
 .. code-block:: python
 
@@ -447,7 +447,7 @@ A snapshot of the data contained in ``stn_loc_a`` is demonstrated below:
 All available railway station locations
 ---------------------------------------
 
-To get the location data of all railway stations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`Stations.fetch_locations()<station.Stations.fetch_locations>`:
+To get the location data of all railway stations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`Stations.fetch_locations()<pyrcs.other_assets.Stations.fetch_locations>`:
 
 .. code-block:: python
 
@@ -518,8 +518,8 @@ A snapshot of the data contained in ``stn_loc_codes`` is demonstrated below:
 
 -----------------------------------------------------------
 
-Any issues regarding the use of the package are all welcome and should be logged/reported onto the `Bug Tracker`_.
+Any issues regarding the use of the package are all welcome and should be logged/reported onto the `Issue Tracker`_.
 
-.. _`Bug Tracker`: https://github.com/mikeqfu/pyrcs/issues
+.. _`Issue Tracker`: https://github.com/mikeqfu/pyrcs/issues
 
 For more details and examples, check :doc:`sub-pkg-and-mod`.

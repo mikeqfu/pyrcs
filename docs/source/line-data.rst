@@ -9,24 +9,14 @@ line_data
     :no-undoc-members:
     :no-inherited-members:
 
-.. rubric:: Sub-modules
 .. autosummary::
+    :toctree: _generated/
+    :template: class.rst
 
-    elr_mileage
-    elec
-    loc_id
-    lor_code
-    line_name
-    trk_diagr
-    bridge
-
-.. toctree::
-    :hidden:
-
-    elr-mileage
-    elec
-    loc-id
-    lor-code
-    line-name
-    trk-diagr
-    bridge
+    ELRMileages
+    Electrification
+    LocationIdentifiers
+    LOR
+    LineNames
+    TrackDiagrams
+    Bridges

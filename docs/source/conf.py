@@ -183,7 +183,7 @@ latex_theme = 'manual'
 
 # Grouping the document tree into LaTeX files:
 latex_documents = [
-    ('index',  # source start file
+    ('latexindex',  # source start file
      __pkgname__ + '.tex',  # target name
      __project__ + ' Documentation',  # title
      __author__,  # author
@@ -328,28 +328,3 @@ latex_elements = {
 
     'passoptionstopackages': r'\PassOptionsToPackage{svgnames}{xcolor}',
 }
-
-# == Options for manual page output ================================================================
-
-man_pages = [  # How to group the document tree into manual pages
-    ('index',  # startdocname
-     __pkgname__,  # name
-     __project__ + ' Documentation',  # description
-     [__author__],  # authors
-     1  # section
-     )
-]
-
-# == Options for Texinfo output ====================================================================
-
-texinfo_documents = [  # Grouping the document tree into Texinfo files
-    (master_doc,  # source start file
-     __pkgname__,  # target name
-     __project__ + ' Documentation',  # title
-     __author__,  # author
-     __project__,  # dir menu entry
-     __description__,  # description
-     'Web-scraping tool',  # category
-     1  # toctree only
-     ),
-]
