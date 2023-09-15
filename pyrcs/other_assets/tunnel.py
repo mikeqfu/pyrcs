@@ -20,9 +20,8 @@ from ..utils import home_page_url, init_data_dir, is_home_connectable, print_con
 
 class Tunnels:
     """
-    A class for collecting data of `railway tunnel lengths`_.
-
-    .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
+    A class for collecting data of
+    `railway tunnel lengths <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
     """
 
     #: Name of the data
@@ -91,7 +90,7 @@ class Tunnels:
         return path
 
     @staticmethod
-    def parse_length(x):
+    def _parse_length(x):
         """
         Parse data in ``'Length'`` column, i.e. convert miles/yards to metres.
 
@@ -106,19 +105,19 @@ class Tunnels:
 
             >>> tunl = Tunnels()
 
-            >>> tunl.parse_length('')
+            >>> tunl._parse_length('')
             (nan, 'Unavailable')
 
-            >>> tunl.parse_length('1m 182y')
+            >>> tunl._parse_length('1m 182y')
             (1775.7648, None)
 
-            >>> tunl.parse_length('formerly 0m236y')
+            >>> tunl._parse_length('formerly 0m236y')
             (215.7984, 'Formerly')
 
-            >>> tunl.parse_length('0.325km (0m 356y)')
+            >>> tunl._parse_length('0.325km (0m 356y)')
             (325.5264, '0.325km')
 
-            >>> tunl.parse_length("0m 48yd- (['0m 58yd'])")
+            >>> tunl._parse_length("0m 48yd- (['0m 58yd'])")
             (48.4632, '43.89-53.04 metres')
         """
 
@@ -303,7 +302,8 @@ class Tunnels:
 
                     len_cols = ['Length (metres)', 'Length (note)']
                     for i, dat in enumerate(codes_dat):
-                        codes_dat[i][len_cols] = dat['Length'].map(self.parse_length).apply(pd.Series)
+                        temp = dat['Length'].map(self._parse_length)
+                        codes_dat[i][len_cols] = pd.DataFrame(zip(*temp)).T
 
                     if len(codes_dat) == 1:
                         codes_ = codes_dat[0]

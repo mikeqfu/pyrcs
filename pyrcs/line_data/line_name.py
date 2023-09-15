@@ -1,4 +1,6 @@
-"""Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_."""
+"""
+Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+"""
 
 import re
 import urllib.parse
@@ -15,9 +17,8 @@ from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_da
 
 class LineNames:
     """
-    A class for collecting data of `railway line names`_.
-
-    .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
+    A class for collecting data of
+    `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
     """
 
     #: Name of the data
@@ -180,7 +181,8 @@ class LineNames:
                         columns=columns)
 
                     rte_col = ['Route', 'Route_note']
-                    line_names[rte_col] = line_names.Route.map(self._parse_route).apply(pd.Series)
+                    temp = line_names['Route'].map(self._parse_route)
+                    line_names[rte_col] = pd.DataFrame(zip(*temp)).T
 
                     last_updated_date = get_last_updated_date(self.URL)
 

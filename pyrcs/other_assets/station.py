@@ -20,23 +20,22 @@ from pyrcs.utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_
 
 
 class Stations:
-    """A class for collecting `railway station data`_.
-
-    .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
+    """A class for collecting
+    `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
     """
 
-    #: Name of the data
+    #: str: Name of the data.
     NAME = 'Railway station data'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
+    #: str: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data.
     KEY = 'Stations'
 
-    #: Key of the dict-type data of '*Mileages, operators and grid coordinates*'
+    #: str: Key of the dict-type data of '*Mileages, operators and grid coordinates*'.
     KEY_TO_STN = 'Mileages, operators and grid coordinates'
 
-    #: URL of the main web page of the data
+    #: str: URL of the main web page of the data.
     URL = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
 
-    #: Key of the data of the last updated date
+    #: str: Key of the data of the last updated date.
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
@@ -190,7 +189,7 @@ class Stations:
         return path
 
     @staticmethod
-    def split_elr_mileage_column(dat):
+    def _split_elr_mileage_column(dat):
         if 'ELRMileage' in dat.columns:
             temp = dat['ELRMileage'].str.split(r'\t\t / | / \[', n=1, regex=True, expand=True)
             temp.columns = ['ELR', 'Mileage']
@@ -222,7 +221,7 @@ class Stations:
         return dat
 
     @staticmethod
-    def check_row_spans(dat):
+    def _check_row_spans(dat):
         """
         Check data where there are row spans.
 
@@ -255,7 +254,7 @@ class Stations:
 
         dat0 = pd.concat([dat.drop(index=temp1.index), temp_data], axis=0, ignore_index=True)
 
-        dat0[['ELR', 'Mileage']] = dat0[['ELR', 'Mileage']].applymap(lambda x: x.split(' &&& '))
+        dat0[['ELR', 'Mileage']] = dat0[['ELR', 'Mileage']].map(lambda x: x.split(' &&& '))
         dat0 = dat0.explode(['ELR', 'Mileage'], ignore_index=True)
 
         dat0.sort_values(['Station'], ignore_index=True, inplace=True)
@@ -263,7 +262,7 @@ class Stations:
         return dat0
 
     @staticmethod
-    def parse_coordinates_columns(dat):
+    def _parse_coordinates_columns(dat):
         """
         Parse ``'Degrees Longitude'`` and ``'Degrees Latitude'`` of the station locations data.
 
@@ -275,13 +274,13 @@ class Stations:
 
         ll_col_names = ['Degrees Longitude', 'Degrees Latitude']
 
-        dat[ll_col_names] = dat[ll_col_names].applymap(
+        dat[ll_col_names] = dat[ll_col_names].map(
             lambda x: None if x.strip() == '' else float(re.sub(r'(c\.)|≈', '', x)))
 
         return dat
 
     @staticmethod
-    def parse_station_column(dat):
+    def _parse_station_column(dat):
         """
         Parse ``'Station'`` of the station locations data.
 
@@ -362,7 +361,7 @@ class Stations:
 
         return y, y_
 
-    def parse_owner_and_operator_columns(self, dat):
+    def _parse_owner_and_operator_columns(self, dat):
         """
         Parse ``'Owner'`` and ``'Operator'`` of the station locations data.
 
@@ -490,11 +489,11 @@ class Stations:
                         dat = dat_.copy()
 
                         parser_funcs = [
-                            self.split_elr_mileage_column,
-                            self.check_row_spans,
-                            self.parse_coordinates_columns,
-                            self.parse_station_column,
-                            self.parse_owner_and_operator_columns,
+                            self._split_elr_mileage_column,
+                            self._check_row_spans,
+                            self._parse_coordinates_columns,
+                            self._parse_station_column,
+                            self._parse_owner_and_operator_columns,
                         ]
                         for parser_func in parser_funcs:
                             dat = parser_func(dat)

@@ -1,4 +1,6 @@
-"""Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_."""
+"""
+Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_.
+"""
 
 import collections
 import os
@@ -19,125 +21,6 @@ from pyrcs.parser import get_catalogue, get_hypertext, get_last_updated_date, ge
 from pyrcs.utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, home_page_url, \
     init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
     print_void_msg, save_data_to_file, validate_initial
-
-
-def _collect_list(p, list_head_tag):
-    notes = p.text.strip('thus:', '.')
-
-    elements = [get_hypertext(x) for x in list_head_tag.findChildren('li')]
-
-    list_data = {
-        'Notes': notes,
-        'BulletPoints': elements,
-    }
-
-    return list_data
-
-
-def _amendment_to_location_names():
-    """Create a replacement dictionary for location name amendments.
-
-    :return: dictionary of regular-expression amendments to location names
-    :rtype: dict
-
-    **Examples**::
-
-        >>> from pyrcs.line_data.loc_id import _amendment_to_location_names
-
-        >>> loc_name_amendment_dict = _amendment_to_location_names()
-
-        >>> list(loc_name_amendment_dict.keys())
-        ['Location']
-    """
-
-    location_name_amendment_dict = {
-        'Location': {re.compile(r' And | \+ '): ' & ',
-                     re.compile(r'-By-'): '-by-',
-                     re.compile(r'-In-'): '-in-',
-                     re.compile(r'-En-Le-'): '-en-le-',
-                     re.compile(r'-La-'): '-la-',
-                     re.compile(r'-Le-'): '-le-',
-                     re.compile(r'-On-'): '-on-',
-                     re.compile(r'-The-'): '-the-',
-                     re.compile(r' Of '): ' of ',
-                     re.compile(r'-Super-'): '-super-',
-                     re.compile(r'-Upon-'): '-upon-',
-                     re.compile(r'-Under-'): '-under-',
-                     re.compile(r'-Y-'): '-y-'}}
-
-    return location_name_amendment_dict
-
-
-def _parse_note_page(note_url, parser='html.parser', verbose=False):
-    """
-    Parse addition note page.
-
-    :param note_url: URL link of the target web page
-    :type note_url: str
-    :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_, defaults to ``'html.parser'``
-    :type parser: str
-    :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool or int
-    :return: parsed texts
-    :rtype: list
-
-    .. _`parser`:
-        https://www.crummy.com/software/BeautifulSoup/bs4/doc/
-        index.html#specifying-the-parser-to-use
-    .. _`bs4.BeautifulSoup`:
-        https://www.crummy.com/software/BeautifulSoup/bs4/doc/index.html
-
-    **Examples**::
-
-        >>> from pyrcs.line_data.loc_id import _parse_note_page
-
-        >>> url = 'http://www.railwaycodes.org.uk/crs/crs2.shtm'
-
-        >>> parsed_note_dat = _parse_note_page(note_url=url)
-        >>> parsed_note_dat[3]
-                           Location  CRS CRS_alt1 CRS_alt2
-        0           Glasgow Central  GLC      GCL
-        1      Glasgow Queen Street  GLQ      GQL
-        2                   Heworth  HEW      HEZ
-        3      Highbury & Islington  HHY      HII      XHZ
-        4    Lichfield Trent Valley  LTV      LIF
-        5     Liverpool Lime Street  LIV      LVL
-        6   Liverpool South Parkway  LPY      ALE
-        7         London St Pancras  STP      SPL      SPX
-        8                   Retford  RET      XRO
-        9   Smethwick Galton Bridge  SGB      GTI
-        10                 Tamworth  TAM      TAH
-        11       Willesden Junction  WIJ      WJH      WJL
-        12   Worcestershire Parkway  WOP      WPH
-    """
-
-    try:
-        source = requests.get(note_url, headers=fake_requests_headers())
-
-    except Exception as e:
-        print_inst_conn_err(verbose=verbose, e=e)
-        return None
-
-    web_page_text = bs4.BeautifulSoup(markup=source.text, features=parser).find_all(['p', 'pre'])
-    parsed_text = [x.text for x in web_page_text if isinstance(x.next_element, str)]
-
-    parsed_note = []
-    for x in parsed_text:
-        if '\n' in x:
-            text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
-        else:
-            text = x.replace('\t', ' ').replace('\xa0', '')
-
-        if isinstance(text, list):
-            text = [[x.strip() for x in t.split(',')] for t in text if t != '']
-            temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2']).fillna('')
-            parsed_note.append(temp)
-        else:
-            to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
-            if text != '' and not any(t in text for t in to_remove):
-                parsed_note.append(text)
-
-    return parsed_note
 
 
 class LocationIdentifiers:
@@ -272,6 +155,94 @@ class LocationIdentifiers:
 
         return introduction
 
+    @staticmethod
+    def _collect_list(p, list_head_tag):
+        notes = p.text.strip('thus:', '.')
+
+        elements = [get_hypertext(x) for x in list_head_tag.findChildren('li')]
+
+        list_data = {
+            'Notes': notes,
+            'BulletPoints': elements,
+        }
+
+        return list_data
+
+    @staticmethod
+    def _parse_note_page(note_url, parser='html.parser', verbose=False):
+        """
+        Parse addition note page.
+
+        :param note_url: URL link of the target web page
+        :type note_url: str
+        :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_, defaults to ``'html.parser'``
+        :type parser: str
+        :param verbose: whether to print relevant information in console, defaults to ``False``
+        :type verbose: bool or int
+        :return: parsed texts
+        :rtype: list
+
+        .. _`parser`:
+            https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+            index.html#specifying-the-parser-to-use
+        .. _`bs4.BeautifulSoup`:
+            https://www.crummy.com/software/BeautifulSoup/bs4/doc/index.html
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LocationIdentifiers
+            >>> # from pyrcs import LocationIdentifiers
+
+            >>> lid = LocationIdentifiers()
+
+            >>> url = 'http://www.railwaycodes.org.uk/crs/crs2.shtm'
+
+            >>> parsed_note_dat = lid._parse_note_page(note_url=url)
+            >>> parsed_note_dat[3]
+                               Location  CRS CRS_alt1 CRS_alt2
+            0           Glasgow Central  GLC      GCL
+            1      Glasgow Queen Street  GLQ      GQL
+            2                   Heworth  HEW      HEZ
+            3      Highbury & Islington  HHY      HII      XHZ
+            4    Lichfield Trent Valley  LTV      LIF
+            5     Liverpool Lime Street  LIV      LVL
+            6   Liverpool South Parkway  LPY      ALE
+            7         London St Pancras  STP      SPL      SPX
+            8                   Retford  RET      XRO
+            9   Smethwick Galton Bridge  SGB      GTI
+            10                 Tamworth  TAM      TAH
+            11       Willesden Junction  WIJ      WJH      WJL
+            12   Worcestershire Parkway  WOP      WPH
+        """
+
+        try:
+            source = requests.get(note_url, headers=fake_requests_headers())
+
+        except Exception as e:
+            print_inst_conn_err(verbose=verbose, e=e)
+            return None
+
+        web_page_text = bs4.BeautifulSoup(markup=source.text, features=parser).find_all(['p', 'pre'])
+        parsed_text = [x.text for x in web_page_text if isinstance(x.next_element, str)]
+
+        parsed_note = []
+        for x in parsed_text:
+            if '\n' in x:
+                text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
+            else:
+                text = x.replace('\t', ' ').replace('\xa0', '')
+
+            if isinstance(text, list):
+                text = [[x.strip() for x in t.split(',')] for t in text if t != '']
+                temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2'])
+                parsed_note.append(temp.fillna(''))
+            else:
+                to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
+                if text != '' and not any(t in text for t in to_remove):
+                    parsed_note.append(text)
+
+        return parsed_note
+
     def collect_explanatory_note(self, confirmation_required=True, verbose=False):
         """
         Collect note about CRS code from source web page.
@@ -320,7 +291,7 @@ class LocationIdentifiers:
                 self.KEY_TO_MSCEN, verbose=verbose, confirmation_required=confirmation_required)
 
             note_url = self.catalogue[self.KEY_TO_MSCEN]
-            explanatory_note_ = _parse_note_page(note_url=note_url, verbose=False)
+            explanatory_note_ = self._parse_note_page(note_url=note_url, verbose=False)
 
             if explanatory_note_ is None:
                 if verbose == 2:
@@ -415,7 +386,7 @@ class LocationIdentifiers:
     # -- CRS, NLC, TIPLOC and STANOX ---------------------------------------------------------------
 
     @staticmethod
-    def _parse_location_name(x):
+    def _location_name(x):
         """
         Parse location name (and its associated note).
 
@@ -431,31 +402,31 @@ class LocationIdentifiers:
 
             >>> lid = LocationIdentifiers()
 
-            >>> dat = lid._parse_location_name(None)
+            >>> dat = lid._location_name(None)
             >>> dat
             ('', '')
 
-            >>> dat = lid._parse_location_name('Abbey Wood')
+            >>> dat = lid._location_name('Abbey Wood')
             >>> dat
             ('Abbey Wood', '')
 
-            >>> dat = lid._parse_location_name('Abercynon (formerly Abercynon South)')
+            >>> dat = lid._location_name('Abercynon (formerly Abercynon South)')
             >>> dat
             ('Abercynon', 'formerly Abercynon South')
 
-            >>> dat = lid._parse_location_name('Allerton (reopened as Liverpool South Parkway)')
+            >>> dat = lid._location_name('Allerton (reopened as Liverpool South Parkway)')
             >>> dat
             ('Allerton', 'reopened as Liverpool South Parkway')
 
-            >>> dat = lid._parse_location_name('Ashford International [domestic portion]')
+            >>> dat = lid._location_name('Ashford International [domestic portion]')
             >>> dat
             ('Ashford International', 'domestic portion')
 
-            >>> dat = lid._parse_location_name('Ayr [unknown feature]')
+            >>> dat = lid._location_name('Ayr [unknown feature]')
             >>> dat
             ('Ayr', 'unknown feature')
 
-            >>> dat = lid._parse_location_name('Birkenhead Hamilton Square [see Hamilton Square]')
+            >>> dat = lid._location_name('Birkenhead Hamilton Square [see Hamilton Square]')
             >>> dat
             ('Birkenhead Hamilton Square', 'see Hamilton Square')
         """
@@ -522,7 +493,44 @@ class LocationIdentifiers:
 
         return x_, note
 
-    def parse_location_name(self, data):
+    @staticmethod
+    def _amendment_to_location_names():
+        """Create a replacement dictionary for location name amendments.
+
+        :return: dictionary of regular-expression amendments to location names
+        :rtype: dict
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LocationIdentifiers
+            >>> # from pyrcs import LocationIdentifiers
+
+            >>> lid = LocationIdentifiers()
+
+            >>> loc_name_amendment_dict = lid._amendment_to_location_names()
+
+            >>> list(loc_name_amendment_dict.keys())
+            ['Location']
+        """
+
+        location_name_amendment_dict = {
+            'Location': {re.compile(r' And | \+ '): ' & ',
+                         re.compile(r'-By-'): '-by-',
+                         re.compile(r'-In-'): '-in-',
+                         re.compile(r'-En-Le-'): '-en-le-',
+                         re.compile(r'-La-'): '-la-',
+                         re.compile(r'-Le-'): '-le-',
+                         re.compile(r'-On-'): '-on-',
+                         re.compile(r'-The-'): '-the-',
+                         re.compile(r' Of '): ' of ',
+                         re.compile(r'-Super-'): '-super-',
+                         re.compile(r'-Upon-'): '-upon-',
+                         re.compile(r'-Under-'): '-under-',
+                         re.compile(r'-Y-'): '-y-'}}
+
+        return location_name_amendment_dict
+
+    def _parse_location_name(self, data):
         """
         Parse the location names of the preprocessed data.
 
@@ -532,7 +540,7 @@ class LocationIdentifiers:
 
         # Collect additional information as note
         data[['Location', 'Location_Note']] = pd.DataFrame(
-            data['Location'].map(self._parse_location_name).to_list())
+            data['Location'].map(self._location_name).to_list())
 
         # # Debugging
         # for i, x in enumerate(data['Location']):
@@ -543,7 +551,7 @@ class LocationIdentifiers:
         #         break
 
         # Regulate location names
-        data.replace(_amendment_to_location_names(), regex=True, inplace=True)
+        data.replace(self._amendment_to_location_names(), regex=True, inplace=True)
 
     @staticmethod
     def _extra_annotations():
@@ -645,7 +653,7 @@ class LocationIdentifiers:
 
         return data
 
-    def cleanse_mult_alt_codes(self, data):
+    def _cleanse_mult_alt_codes(self, data):
         """
         Cleanse multiple alternatives for every code column.
 
@@ -660,7 +668,7 @@ class LocationIdentifiers:
 
         code_col_names = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
 
-        r_n_counts = data_[code_col_names].applymap(self._count_sep)
+        r_n_counts = data_[code_col_names].map(self._count_sep)
         # # Debugging:
         # for col in code_col_names:
         #     for i, x in enumerate(data_[col]):
@@ -698,7 +706,7 @@ class LocationIdentifiers:
                 #         if a[0] in x and x.endswith(a[1])]
                 #     data_.loc[i, col] = temp[0]
 
-        data_[code_col_names] = data_[code_col_names].applymap(self._split_dat_and_note)
+        data_[code_col_names] = data_[code_col_names].map(self._split_dat_and_note)
 
         data_ = data_.explode(code_col_names, ignore_index=True)
 
@@ -751,7 +759,7 @@ class LocationIdentifiers:
 
         return x_, note
 
-    def get_code_notes(self, data):
+    def _get_code_notes(self, data):
         """
         Get notes for every code column.
 
@@ -774,7 +782,7 @@ class LocationIdentifiers:
         #             break
 
     @staticmethod
-    def _parse_stanox_note(x):  # Parse STANOX note
+    def _stanox_note(x):  # Parse STANOX note
         """
         Parse STANOX note.
 
@@ -814,7 +822,7 @@ class LocationIdentifiers:
 
         return stanox, note
 
-    def parse_stanox_note(self, data):
+    def _parse_stanox_note(self, data):
         """
         Parse the note for STANOX.
 
@@ -826,7 +834,7 @@ class LocationIdentifiers:
         note_col_name = col_name + '_Note'
 
         if not data.empty:
-            parsed_dat = data[col_name].map(self._parse_stanox_note).to_list()
+            parsed_dat = data[col_name].map(self._stanox_note).to_list()
             data[[col_name, note_col_name]] = pd.DataFrame(parsed_dat, index=data.index)
         else:
             # No data is available on the web page for the given 'key_word'
@@ -843,7 +851,7 @@ class LocationIdentifiers:
             note_urls = [
                 urllib.parse.urljoin(self.catalogue[beginning_with], x['href'])
                 for x in soup.find_all('a', href=True, string='note')]
-            add_notes = [_parse_note_page(note_url) for note_url in note_urls]
+            add_notes = [self._parse_note_page(note_url, verbose=False) for note_url in note_urls]
 
             additional_notes = dict(zip(data['CRS'].iloc[loc_idx], add_notes))
         else:
@@ -933,16 +941,16 @@ class LocationIdentifiers:
                     data = dat.replace({'\xa0': ''}, regex=True)
 
                     # Parse location names and their corresponding notes
-                    self.parse_location_name(data=data)
+                    self._parse_location_name(data=data)
 
                     # Cleanse multiple alternatives for every code column
-                    data = self.cleanse_mult_alt_codes(data=data)
+                    data = self._cleanse_mult_alt_codes(data=data)
 
                     # Get note for every code column
-                    self.get_code_notes(data=data)
+                    self._get_code_notes(data=data)
 
                     # Further parse STANOX note
-                    self.parse_stanox_note(data=data)
+                    self._parse_stanox_note(data=data)
 
                     additional_notes = self._get_additional_notes(
                         data=data, beginning_with=beginning_with, soup=soup)
@@ -964,21 +972,20 @@ class LocationIdentifiers:
         return location_codes_initial
 
     @staticmethod
-    def _parse_tbl_dat(h3_or_h4):
+    def _parse_code(x):
+        protocol = 'https://'
 
-        def _parse_code(x):
-            protocol = 'https://'
+        if '; ' in x and protocol in x:
+            temp = x.split('; ')
+            x0, x1 = temp[0], [y.split(protocol) for y in temp if protocol in y][0]
+            x1 = ' ('.join([x1[0], protocol + x1[1]]) + ')'
+            x_ = [x0, x1]
+        else:
+            x_ = [x, '']
 
-            if '; ' in x and protocol in x:
-                temp = x.split('; ')
-                x0, x1 = temp[0], [y.split(protocol) for y in temp if protocol in y][0]
-                x1 = ' ('.join([x1[0], protocol + x1[1]]) + ')'
-                x_ = [x0, x1]
-            else:
-                x_ = [x, '']
+        return x_
 
-            return x_
-
+    def _parse_tbl_dat(self, h3_or_h4):
         tbl_dat = h3_or_h4.find_next('thead'), h3_or_h4.find_next('tbody')
         thead, tbody = tbl_dat
         ths = [x.text for x in thead.find_all('th')]
@@ -987,7 +994,8 @@ class LocationIdentifiers:
 
         if 'Code' in tbl.columns:
             if tbl.Code.str.contains('https://').sum() > 0:
-                tbl_ext = tbl.Code.map(_parse_code).apply(pd.Series)
+                temp = tbl['Code'].map(self._parse_code)
+                tbl_ext = pd.DataFrame(zip(*temp)).T
                 tbl_ext.columns = ['Code', 'Code_extra']
                 del tbl['Code']
                 tbl = pd.concat([tbl, tbl_ext], axis=1, sort=False)
