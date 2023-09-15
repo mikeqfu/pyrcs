@@ -23,22 +23,22 @@ class TestLocationIdentifiers:
         assert isinstance(exp_note_dat, pd.DataFrame)
 
     def test__parse_location_name(self):
-        dat = self.lid._parse_location_name('Abbey Wood')
+        dat = self.lid._location_name('Abbey Wood')
         assert dat == ('Abbey Wood', '')
 
-        dat = self.lid._parse_location_name(None)
+        dat = self.lid._location_name(None)
         assert dat == ('', '')
 
-        dat = self.lid._parse_location_name('Abercynon (formerly Abercynon South)')
+        dat = self.lid._location_name('Abercynon (formerly Abercynon South)')
         assert dat == ('Abercynon', 'formerly Abercynon South')
 
-        dat = self.lid._parse_location_name('Allerton (reopened as Liverpool South Parkway)')
+        dat = self.lid._location_name('Allerton (reopened as Liverpool South Parkway)')
         assert dat == ('Allerton', 'reopened as Liverpool South Parkway')
 
-        dat = self.lid._parse_location_name('Ashford International [domestic portion]')
+        dat = self.lid._location_name('Ashford International [domestic portion]')
         assert dat == ('Ashford International', 'domestic portion')
 
-        dat = self.lid._parse_location_name('Ayr [unknown feature]')
+        dat = self.lid._location_name('Ayr [unknown feature]')
         assert dat == ('Ayr', 'unknown feature')
 
     @pytest.mark.parametrize('update', [True, False])
