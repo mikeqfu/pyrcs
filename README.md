@@ -1,11 +1,11 @@
 # PyRCS
 
-[![PyPI - Release](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
-[![Python version](https://img.shields.io/pypi/pyversions/pyrcs)](https://www.python.org/downloads/)
-[![Documentation status](https://readthedocs.org/projects/pyrcs/badge/?version=latest)](https://pyrcs.readthedocs.io/en/latest/?badge=latest)
+[![PyPI](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
+[![Python Version](https://img.shields.io/pypi/pyversions/pyrcs)](https://www.python.org/downloads/)
+[![Documentation Status](https://readthedocs.org/projects/pyrcs/badge/?version=latest)](https://pyrcs.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/pypi/l/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-[![Codacy grade (Code quality)](https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5)](https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade)
-[![Zenodo - DOI](https://zenodo.org/badge/92501006.svg)](https://zenodo.org/badge/latestdoi/92501006)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5)](https://app.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Zenodo](https://zenodo.org/badge/92501006.svg)](https://zenodo.org/badge/latestdoi/92501006)
 
 PyRCS is an open-source Python package designed to simplify the collection and management of diverse codes used in different systems within the UK rail industry. It serves as a practical toolkit for researchers, practitioners, and individuals who frequently interact with the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website and work extensively with railway codes in the UK. Leveraging the capabilities of the Python programming language, PyRCS enables efficient access to and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
 
@@ -27,13 +27,13 @@ Please also refer to [Installation](https://pyrcs.readthedocs.io/en/latest/insta
 
 For a concise guide on how to utilise PyRCS, we recommend checking out the [quick-start tutorial](https://pyrcs.readthedocs.io/en/latest/quick-start.html), which features multiple illustrative examples for three frequently used code categories in the UK railway system: 
 
-- [Location identifiers](http://www.railwaycodes.org.uk/crs/CRS0.shtm) (CRS, NLC, TIPLOC and STANOX codes)
-- [Engineer’s Line References](http://www.railwaycodes.org.uk/elrs/elr0.shtm) (ELRs) and their associated mileage files
-- [Railway station data](http://www.railwaycodes.org.uk/stations/station1.shtm) (mileages, operators and grid coordinates)
+  - [Location identifiers](http://www.railwaycodes.org.uk/crs/CRS0.shtm) (CRS, NLC, TIPLOC and STANOX codes)
+  - [Engineer’s Line References](http://www.railwaycodes.org.uk/elrs/elr0.shtm) (ELRs) and their associated mileage files
+  - [Railway station data](http://www.railwaycodes.org.uk/stations/station1.shtm) (mileages, operators and grid coordinates)
 
 ## Documentation
 
-The complete PyRCS documentation: [[PDF](https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/)\] \[[HTML](https://pyrcs.readthedocs.io/en/latest/)].
+The complete PyRCS documentation: [[HTML](https://pyrcs.readthedocs.io/en/latest/)\] \[[PDF](https://pyrcs.readthedocs.io/_/downloads/en/latest/pdf/)].
 
 It is hosted on [ReadTheDocs](https://readthedocs.org/projects/pyrcs/) and provides a wealth of detailed examples.
 
