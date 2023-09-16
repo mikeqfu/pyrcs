@@ -5,7 +5,7 @@
     "Affiliation": "Birmingham Centre for Railway Research and Education, School of Engineering, University of Birmingham",
     "Email": "q.fu@bham.ac.uk",
     "Description": "An open-source tool for collecting railway codes used in different UK rail industry systems.",
-    "Version": "0.3.7rc1",
+    "Version": "0.3.7",
     "License": "GPLv3+",
     "First release": "August 2019"
 }
