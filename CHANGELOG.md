@@ -2,6 +2,19 @@
 
 <br/>
 
+#### **[0.3.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.7)**
+
+(*16 September 2023*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.6...0.3.7) since [0.3.6](https://pypi.org/project/pyrcs/0.3.6/):**
+
+- Enhanced the functions [get_site_map()](https://github.com/mikeqfu/pyrcs/commit/c306b102bb681e4148c56fd595b784ae8da813c5#diff-9f446a48cdb82259e3132abf65a2d39122ee7d123d7968ec2b6780123c5d6819L404-R410) and [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/c306b102bb681e4148c56fd595b784ae8da813c5#diff-9f446a48cdb82259e3132abf65a2d39122ee7d123d7968ec2b6780123c5d6819L65-R176) in the [parser](https://github.com/mikeqfu/pyrcs/blob/e2f6576a5d74cd6ab7070c0bfaf1dffffca78150/pyrcs/parser.py) module.
+- Fixed potential bugs and made improvements to [various classes](https://github.com/mikeqfu/pyrcs/commit/df087f2a52ffe0b287ecd04e59ac08ece7b310c9).
+
+**For more information and detailed specifications, check out [PyRCS 0.3.7 documentation](https://pyrcs.readthedocs.io/en/0.3.7/).**
+
+<br/>
+
 #### **[0.3.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.6)**
 
 (*10 June 2023*)
