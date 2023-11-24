@@ -1,6 +1,6 @@
 name: Pylint
 
-on: [push]
+on: [push,pull_request]
 
 jobs:
   build:
@@ -19,5 +19,6 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        find . -name '*.py' -exec pylint {} \;
+        pylint . --recursive=y --enable=W
+
 
