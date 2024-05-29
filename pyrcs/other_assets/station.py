@@ -1,4 +1,6 @@
-"""Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_."""
+"""
+Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+"""
 
 import os
 import re
@@ -13,54 +15,49 @@ from pyhelpers.ops import fake_requests_headers
 from pyhelpers.store import load_data
 from pyhelpers.text import remove_punctuation
 
-from pyrcs.parser import get_catalogue, get_last_updated_date, parse_tr
-from pyrcs.utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, \
+from ..parser import get_catalogue, get_last_updated_date, parse_tr
+from ..utils import cd_data, collect_in_fetch_verbose, format_err_msg, home_page_url, \
     init_data_dir, is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, \
     save_data_to_file, validate_initial
 
 
 class Stations:
-    """A class for collecting
+    """
+    A class for collecting
     `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
     """
 
-    #: str: Name of the data.
-    NAME = 'Railway station data'
-    #: str: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data.
-    KEY = 'Stations'
-
-    #: str: Key of the dict-type data of '*Mileages, operators and grid coordinates*'.
-    KEY_TO_STN = 'Mileages, operators and grid coordinates'
-
-    #: str: URL of the main web page of the data.
-    URL = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
-
-    #: str: Key of the data of the last updated date.
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: Name of the data.
+    NAME: str = 'Railway station data'
+    #: Main key of the dict-type station data.
+    KEY: str = 'Stations'
+    #: URL of the main web page of the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
+    #: Key of the dict-type data of '*Mileages, operators and grid coordinates*'.
+    KEY_TO_STN: str = 'Mileages, operators and grid coordinates'
+    #: Key of the data of the last updated date.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: Name of the data directory; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information in console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: Catalogue of the data.
+        :ivar str last_updated_date: Last updated date.
+        :ivar str data_dir: Path to the data directory.
+        :ivar str current_data_dir: Path to the current data directory.
 
         **Examples**::
 
-            >>> from pyrcs.other_assets import Stations
-
+            >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
             >>> stn = Stations()
-
             >>> stn.NAME
             'Railway station data'
-
             >>> stn.URL
             'http://www.railwaycodes.org.uk/stations/station0.shtm'
         """
@@ -69,27 +66,27 @@ class Stations:
 
         self.catalogue = self.get_catalogue(update=update, verbose=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(
+            url=self.URL, parsed=True, as_date_type=False)
 
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
+        self.data_dir, self.current_data_dir = init_data_dir(
+            self, data_dir, category="other-assets")
 
     def get_catalogue(self, update=False, verbose=False):
         """
         Get catalogue of railway station data.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: catalogue of railway station data
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Catalogue of railway station data.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
-
             >>> stn = Stations()
-
             >>> stn_data_cat = stn.get_catalogue()
             >>> type(stn_data_cat)
             dict
@@ -106,7 +103,8 @@ class Stations:
              'Railnet']
         """
 
-        data_name = urllib.parse.urlparse(self.URL).path.lstrip('/').rstrip('.shtm').replace('/', '-')
+        data_name = urllib.parse.urlparse(
+            self.URL).path.lstrip('/').rstrip('.shtm').replace('/', '-')
         ext = ".json"
         path_to_cat = cd_data("catalogue", data_name + ext)
 
@@ -173,15 +171,15 @@ class Stations:
 
         The directory for this module: ``"data\\other-assets\\stations"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: Subdirectory or subdirectories (and/or a file)
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.other_assets.station.Stations`
+        :param kwargs: [Optional] parameters of the function `pyhelpers.dirs.cd`_
+        :return: Path to the backup data directory for the class
+            :py:class:`~pyrcs.other_assets.station.Stations`.
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
+        .. _`pyhelpers.dirs.cd`:
+            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dirs.cd.html
         """
 
         path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
@@ -225,9 +223,9 @@ class Stations:
         """
         Check data where there are row spans.
 
-        :param dat: preprocessed data of the station locations
+        :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
-        :return: data with row spans (if any)
+        :return: Data with row spans (if there is any).
         :rtype: pandas.DataFrame
         """
 
@@ -266,9 +264,9 @@ class Stations:
         """
         Parse ``'Degrees Longitude'`` and ``'Degrees Latitude'`` of the station locations data.
 
-        :param dat: preprocessed data of the station locations
+        :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
-        :return: data with parsed coordinates
+        :return: Data with parsed coordinates.
         :rtype: pandas.DataFrame
         """
 
@@ -284,9 +282,9 @@ class Stations:
         """
         Parse ``'Station'`` of the station locations data.
 
-        :param dat: preprocessed data of the station locations
+        :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
-        :return: data with parsed station names and their corresponding CRS
+        :return: Data with parsed station names and their corresponding CRS.
         :rtype: pandas.DataFrame
 
         **Tests**::
@@ -317,7 +315,8 @@ class Stations:
 
         if temp2.shape[1] == 1:
             temp2.columns = ['CRS']
-            temp2 = pd.concat([temp2, pd.DataFrame('', index=temp2.index, columns=['CRS Note'])], axis=1)
+            temp2 = pd.concat(
+                [temp2, pd.DataFrame('', index=temp2.index, columns=['CRS Note'])], axis=1)
         else:
             temp2.columns = ['CRS', 'CRS Note']
             temp2['CRS Note'] = temp2['CRS Note'].str.strip('[]')
@@ -365,17 +364,17 @@ class Stations:
         """
         Parse ``'Owner'`` and ``'Operator'`` of the station locations data.
 
-        :param dat: preprocessed data of the station locations
+        :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
-        :return: data with parsed information of owners and operators
+        :return: Data with parsed information of owners and operators.
         :rtype: pandas.DataFrame
         """
 
         owner_operator = []
         for col in ['Owner', 'Operator']:
             temp = pd.DataFrame(
-                dat[col].map(self._parse_owner_and_operator).to_list(), columns=[col, 'Former ' + col],
-                index=dat.index)
+                dat[col].map(self._parse_owner_and_operator).to_list(),
+                columns=[col, 'Former ' + col], index=dat.index)
             del dat[col]
             owner_operator.append(temp)
 
@@ -385,32 +384,29 @@ class Stations:
 
     def collect_locations_by_initial(self, initial, update=False, verbose=False):
         """
-        Collect `data of railway station locations
+        Collect data of `railway station locations
         <http://www.railwaycodes.org.uk/stations/station0.shtm>`_
         (mileages, operators and grid coordinates) for a given initial letter.
 
-        :param initial: initial letter of locations of the railway station data
+        :param initial: Initial letter of locations of the railway station data.
         :type initial: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of railway station locations beginning with the given initial letter and
-            date of when the data was last updated
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Data of railway station locations beginning with the given ``initial`` letter and
+            date of when the data was last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
-
             >>> stn = Stations()
-
             >>> stn_loc_a_codes = stn.collect_locations_by_initial(initial='a')
             >>> type(stn_loc_a_codes)
             dict
             >>> list(stn_loc_a_codes.keys())
             ['A', 'Last updated date']
-
             >>> stn_loc_a_codes_dat = stn_loc_a_codes['A']
             >>> type(stn_loc_a_codes_dat)
             pandas.core.frame.DataFrame
@@ -483,7 +479,8 @@ class Stations:
                     else:
                         # Create a DataFrame of the requested table
                         trs = tbody.find_all(name='tr')
-                        ths = [re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
+                        ths = [
+                            re.sub(r'\n?\r+\n?', ' ', h.text).strip() for h in thead.find_all('th')]
                         dat_ = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
                         dat = dat_.copy()
@@ -523,19 +520,20 @@ class Stations:
                             "-Under-": "-under-",
                             "-Y-": "-y-",
                         }
-                        dat['Station'].replace(errata_, regex=True, inplace=True)
+                        # dat['Station'].replace(errata_, regex=True, inplace=True)
+                        dat['Station'] = dat['Station'].replace(errata_, regex=True)
 
                         data = {
                             beginning_with: dat.sort_values('Station', ignore_index=True),
-                            self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url=url, parsed=True)
+                            self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url, parsed=True)
                         }
 
                         if verbose == 2:
                             print("Done.")
 
                     save_data_to_file(
-                        self, data=data, data_name=beginning_with, ext=ext, dump_dir=self._cdd("a-z"),
-                        verbose=verbose)
+                        self, data=data, data_name=beginning_with, ext=ext,
+                        dump_dir=self._cdd("a-z"), verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -544,34 +542,32 @@ class Stations:
 
     def fetch_locations(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch `data of railway station locations`_ (mileages, operators and grid coordinates).
+        Fetch data of `railway station locations`_ (mileages, operators and grid coordinates).
 
-        .. _`data of railway station locations`: http://www.railwaycodes.org.uk/stations/station0.shtm
+        .. _`railway station locations`:
+            http://www.railwaycodes.org.uk/stations/station0.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of a folder where the pickle file is to be saved, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of railway station locations and date of when the data was last updated
+        :param dump_dir: Name of a directory where pickle files of the data is saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Data of railway station locations and date of when the data was last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
-
             >>> stn = Stations()
-
             >>> stn_loc_codes = stn.fetch_locations()
             >>> type(stn_loc_codes)
             dict
             >>> list(stn_loc_codes.keys())
             ['Mileages, operators and grid coordinates', 'Last updated date']
-
             >>> stn.KEY_TO_STN
             'Mileages, operators and grid coordinates'
-
             >>> stn_loc_codes_dat = stn_loc_codes[stn.KEY_TO_STN]
             >>> type(stn_loc_codes_dat)
             pandas.core.frame.DataFrame
