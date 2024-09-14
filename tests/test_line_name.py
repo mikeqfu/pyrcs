@@ -9,7 +9,7 @@ from pyrcs.line_data import LineNames
 
 
 class TestLineNames:
-    
+
     @pytest.fixture(scope='class')
     def ln(self):
         return LineNames()

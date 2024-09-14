@@ -22,7 +22,7 @@ from pyrcs.other_assets import SignalBoxes
 
 @pytest.mark.parametrize('update', [True, False])
 class TestSignalBoxes:
-    
+
     @pytest.fixture(scope='class')
     def sb(self):
         return SignalBoxes()

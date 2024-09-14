@@ -8,7 +8,7 @@ from pyrcs.line_data import TrackDiagrams
 
 
 class TestTrackDiagrams:
-    
+
     @pytest.fixture(scope='class')
     def td(self):
         return TrackDiagrams()

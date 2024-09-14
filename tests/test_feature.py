@@ -9,7 +9,7 @@ from pyrcs.other_assets import Features
 
 
 class TestFeatures:
-    
+
     @pytest.fixture(scope='class')
     def feats(self):
         return Features()

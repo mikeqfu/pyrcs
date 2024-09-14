@@ -11,7 +11,7 @@ from pyrcs.line_data import ELRMileages
 
 
 class TestELRMileages:
-    
+
     @pytest.fixture(scope='class')
     def em(self):
         return ELRMileages()
