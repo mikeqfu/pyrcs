@@ -2,11 +2,11 @@ import json
 
 import setuptools
 
-with open(file="pyrcs/data/metadata.json", mode='r') as metadata_file:
+with open(file="pyrcs/data/metadata", mode='r') as metadata_file:
     metadata = json.load(metadata_file)
 
-__pkgname__, __version__ = metadata['Package'], metadata['Version']
-
+__pkgname__ = metadata['Package']
+__version__ = metadata['Version']
 __home_page__ = 'https://github.com/mikeqfu/' + f'{__pkgname__}'
 
 setuptools.setup(
@@ -22,9 +22,4 @@ setuptools.setup(
         'Source': __home_page__,
         'Bug Tracker': __home_page__ + '/issues',
     },
-    keywords=[
-        'Python', 'Railway Codes', 'Railway', 'Bridges', 'CRS', 'NLC', 'TIPLOC',
-        'STANOX', 'Electrification', 'ELR', 'Mileage', 'LOR', 'Stations',
-        'Signal boxes', 'Tunnels', 'Viaducts', 'Depots', 'Tracks',
-    ],
 )
