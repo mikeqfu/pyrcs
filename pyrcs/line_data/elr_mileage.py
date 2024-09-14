@@ -2,28 +2,16 @@
 Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
 """
 
-import copy
 import functools
 import itertools
-import os
-import re
-import string
-import urllib.parse
 
-import bs4
-import numpy as np
-import pandas as pd
-import requests
 from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers, loop_in_pairs
-from pyhelpers.store import load_data, save_data
+from pyhelpers.ops import loop_in_pairs
 from pyhelpers.text import remove_punctuation
 
-from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, yard_to_mileage
-from ..parser import get_catalogue, get_last_updated_date, parse_table
-from ..utils import collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
-    is_home_connectable, is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, \
-    save_data_to_file, validate_initial
+from pyrcs.converter import *
+from pyrcs.parser import *
+from pyrcs.utils import *
 
 
 class ELRMileages:
@@ -32,14 +20,16 @@ class ELRMileages:
     `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
     """
 
-    #: str: Name of the data.
-    NAME = "Engineer's Line References (ELRs)"
-    #: str: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data.
-    KEY = 'ELRs and mileages'
-    #: str: URL of the main web page of the data.
-    URL = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
-    #: str: Key of the data of the last updated date.
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: Name of the data.
+    NAME: str = "Engineer's Line References (ELRs)"
+    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data.
+    KEY: str = 'ELRs and mileages'
+
+    #: URL of the main web page of the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
+
+    #: Key of the data of the last updated date.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
@@ -59,12 +49,9 @@ class ELRMileages:
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> em.NAME
             "Engineer's Line References (ELRs)"
-
             >>> em.URL
             'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
         """
@@ -73,7 +60,7 @@ class ELRMileages:
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
         self.data_dir, self.current_data_dir = init_data_dir(
             self, data_dir=data_dir, category="line-data")
@@ -165,6 +152,7 @@ class ELRMileages:
                 if 'One measure' in test_temp_node:
                     sep_rows_idx = dat[dat['Node'].str.contains('Alternative measure')].index[0]
                     m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
+                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
                     dat_ = {
                         'One measure':
                             m_dat_1[~m_dat_1['Node'].str.contains('One measure')],
@@ -175,9 +163,12 @@ class ELRMileages:
                 elif 'Later measure' in test_temp_node:
                     sep_rows_idx = dat[dat['Node'].str.contains('Later measure')].index[0]
                     m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
+                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
                     dat_ = {
-                        'Original measure': m_dat_1[~m_dat_1['Node'].str.contains('Original measure')],
-                        'Later measure': m_dat_2[~m_dat_2['Node'].str.contains('Later measure')],
+                        'Original measure':
+                            m_dat_1[~m_dat_1['Node'].str.contains('Original measure')],
+                        'Later measure':
+                            m_dat_2[~m_dat_2['Node'].str.contains('Later measure')],
                     }
 
                 elif "This line has two 'legs':" in test_temp_node:
@@ -186,7 +177,8 @@ class ELRMileages:
                 elif 'Measure sometimes used' in test_temp_node:
                     sep_rows_idx = test_temp.index.tolist() + [dat.index[-1]]
                     dat_ = {
-                        dat.loc[j, 'Node']: dat.loc[j + 1:k] for j, k in loop_in_pairs(sep_rows_idx)}
+                        dat.loc[j, 'Node']: dat.loc[j + 1:k]
+                        for j, k in loop_in_pairs(sep_rows_idx)}
 
                 else:
                     alt_sep_rows_idx = [x in test_temp_node for x in self.measure_headers]
@@ -195,7 +187,10 @@ class ELRMileages:
                     if num_of_measures == 1:  #
                         m_name = self.measure_headers[alt_sep_rows_idx.index(True)]  # measure name
                         sep_rows_idx = dat[dat['Node'].str.contains(m_name)].index[0]
+
                         m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
+                        assert isinstance(m_dat_1, pd.DataFrame)
+                        assert isinstance(m_dat_2, pd.DataFrame)
 
                         x = [x_ for x_ in test_temp_node if 'measure' in x_ or 'route' in x_][0]
                         if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', x):
@@ -418,7 +413,8 @@ class ELRMileages:
         link_nodes = conn_nodes[link_cols].map(self._uncouple_elr_mileage)
 
         dat = [
-            pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
+            pd.DataFrame(
+                link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
             for col in link_cols]
         link_elr_mileage = pd.concat(dat, axis=1, sort=False)
 
@@ -503,7 +499,8 @@ class ELRMileages:
 
         else:
             if verbose == 2:
-                print(f"Collecting data of {self.KEY} beginning with '{beginning_with}'", end=" ... ")
+                print(
+                    f"Collecting data of {self.KEY} beginning with '{beginning_with}'", end=" ... ")
 
             elrs = {beginning_with: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
@@ -885,7 +882,8 @@ class ELRMileages:
                                 x.strip().split('\t', 1) for x in soup.find('pre').text.splitlines()
                                 if x != '']
                             content = [
-                                [y.replace('  ', ' ').replace('\t', ' ') for y in x] for x in content]
+                                [y.replace('  ', ' ').replace('\t', ' ') for y in x]
+                                for x in content]
                             content = [
                                 [''] + x if (len(x) == 1) & ('Note that' not in x[0]) else x
                                 for x in content]
@@ -893,7 +891,10 @@ class ELRMileages:
                         # assert sub_headers[0] == elr
                         if sub_line_name and (sub_line_name not in err404):
                             sub_ln_temp = sub_line_name.split('\t')
-                            sub_headers = sub_ln_temp[0] if len(sub_ln_temp) == 1 else sub_ln_temp[1]
+                            if len(sub_ln_temp) == 1:
+                                sub_headers = sub_ln_temp[0]
+                            else:
+                                sub_headers = sub_ln_temp[1]
                         else:
                             sub_headers = ''
 
@@ -955,7 +956,8 @@ class ELRMileages:
                         # If there are multiple measures in 'mileage_data',
                         # e.g. current/former measures
                         mileage_data = self._split_measures(
-                            mileage_data=mileage_data, measure_headers_indices=measure_headers_indices)
+                            mileage_data=mileage_data,
+                            measure_headers_indices=measure_headers_indices)
 
                         if parsed:
                             if isinstance(mileage_data, dict) and len(mileage_data) > 1:
@@ -1070,7 +1072,8 @@ class ELRMileages:
             else:
                 verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
                 mileage_file = self.collect_mileage_file(
-                    elr=elr_, parsed=True, confirmation_required=False, dump_it=True, verbose=verbose_)
+                    elr=elr_, parsed=True, confirmation_required=False, dump_it=True,
+                    verbose=verbose_)
 
             if dump_dir is not None:
                 save_data_to_file(
@@ -1150,7 +1153,8 @@ class ELRMileages:
                 end_orig_mileage = mile_chain_to_mileage(end_orig_mile_chain)
 
             else:  # end_conn_mile_chain == '':
-                end_mask = end_em.apply(lambda x: x.str.contains(start_elr, case=False).any(), axis=1)
+                end_mask = end_em.apply(
+                    lambda x: x.str.contains(start_elr, case=False).any(), axis=1)
                 end_temp = end_em[end_mask]
 
                 if not end_temp.empty:
@@ -1258,7 +1262,8 @@ class ELRMileages:
                 i = 0
                 while i < len(link_cols):
                     link_col = link_cols[i]
-                    conn_temp = conn_elrs[conn_elrs.astype(bool)].dropna(how='all')[link_col].dropna()
+                    conn_temp = conn_elrs[
+                        conn_elrs.astype(bool)].dropna(how='all')[link_col].dropna()
 
                     j = 0
                     while j < len(conn_temp):

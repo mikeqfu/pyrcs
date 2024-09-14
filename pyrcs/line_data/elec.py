@@ -4,21 +4,11 @@ Collect `section codes for overhead line electrification (OLE) installations
 """
 
 import itertools
-import os
-import re
-import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
 from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_data
 
-from ..parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
-    get_page_catalogue, parse_tr
-from ..utils import cd_data, fetch_all_verbose, fetch_data_from_file, format_err_msg, home_page_url, \
-    init_data_dir, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from pyrcs.parser import *
+from pyrcs.utils import *
 
 
 class Electrification:
@@ -28,24 +18,24 @@ class Electrification:
     """
 
     #: Name of the data
-    NAME = 'Section codes for overhead line electrification (OLE) installations'
+    NAME: str = 'Section codes for overhead line electrification (OLE) installations'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Electrification'
+    KEY: str = 'Electrification'
 
     #: Key of the dict-type data of the '*national network*'
-    KEY_TO_NATIONAL_NETWORK = 'National network'
+    KEY_TO_NATIONAL_NETWORK: str = 'National network'
     #: Key of the dict-type data of the '*independent lines*'
-    KEY_TO_INDEPENDENT_LINES = 'Independent lines'
+    KEY_TO_INDEPENDENT_LINES: str = 'Independent lines'
     #: Key of the dict-type data of the '*overhead line electrification neutral sections (OHNS)*'
-    KEY_TO_OHNS = 'National network neutral sections'
+    KEY_TO_OHNS: str = 'National network neutral sections'
     #: Key of the dict-type data of the '*UK railway electrification tariff zones*'
-    KEY_TO_ENERGY_TARIFF_ZONES = 'National network energy tariff zones'
+    KEY_TO_ENERGY_TARIFF_ZONES: str = 'National network energy tariff zones'
 
     #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/electrification/mast_prefix0.shtm')
+    URL: str = urllib.parse.urljoin(home_page_url(), '/electrification/mast_prefix0.shtm')
 
     #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
@@ -64,12 +54,9 @@ class Electrification:
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> elec.NAME
             'Section codes for overhead line electrification (OLE) installations'
-
             >>> elec.URL
             'http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm'
         """
@@ -431,8 +418,9 @@ class Electrification:
         """
 
         national_network_ole = fetch_data_from_file(
-            cls=self, method='collect_national_network_codes', data_name=self.KEY_TO_NATIONAL_NETWORK,
-            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
+            cls=self, method='collect_national_network_codes',
+            data_name=self.KEY_TO_NATIONAL_NETWORK, ext=".pkl", update=update, dump_dir=dump_dir,
+            verbose=verbose)
 
         return national_network_ole
 
@@ -484,8 +472,8 @@ class Electrification:
             # if bool(indep_line_names):
             #     save_data(indep_line_names, path_to_file, verbose=verbose)
             save_data_to_file(
-                self, data=indep_line_names, data_name=data_name, ext=ext, dump_dir=cd_data("catalogue"),
-                verbose=verbose)
+                self, data=indep_line_names, data_name=data_name, ext=ext,
+                dump_dir=cd_data("catalogue"), verbose=verbose)
 
         return indep_line_names
 
@@ -771,7 +759,8 @@ class Electrification:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=ohns_codes, data_name=self.KEY_TO_OHNS, ext=".pkl", verbose=verbose)
+                        self, data=ohns_codes, data_name=self.KEY_TO_OHNS, ext=".pkl",
+                        verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
