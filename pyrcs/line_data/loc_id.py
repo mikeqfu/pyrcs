@@ -2,25 +2,13 @@
 Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_.
 """
 
-import collections
-import os
-import re
-import string
 import urllib.parse
 
-import bs4
-import pandas as pd
-import requests
-from pyhelpers._cache import _format_err_msg
-from pyhelpers.dirs import cd, validate_dir
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_data, save_data
+from pyhelpers._cache import _print_failure_msg
+from pyhelpers.dirs import cd
 
-from pyrcs.parser import get_catalogue, get_hypertext, get_last_updated_date, get_page_catalogue, \
-    parse_date, parse_tr
-from pyrcs.utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, home_page_url, \
-    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
-    print_void_msg, save_data_to_file, validate_initial
+from pyrcs.parser import *
+from pyrcs.utils import *
 
 
 class LocationIdentifiers:
@@ -28,86 +16,95 @@ class LocationIdentifiers:
     A class for collecting data of
     `location identifiers <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_
     (including `other systems' station codes <http://www.railwaycodes.org.uk/crs/crs1.shtm>`_).
+
+    The class helps retrieve and organise identifiers including CRS, NLC, TIPLOC and STANOX codes
+    for various railway stations and other related systems.
     """
 
-    #: Name of the data
-    NAME = 'CRS, NLC, TIPLOC and STANOX codes'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'LocationID'
+    #: Name of the data.
+    NAME: str = 'CRS, NLC, TIPLOC and STANOX codes'
+    #: Main key of the data.
+    KEY: str = 'LocationID'
 
-    #: Key of the dict-type data of the '*other systems*'
-    KEY_TO_OTHER_SYSTEMS = 'Other systems'
-    #: Key of the dict-type data of the '*multiple station codes explanatory note*'
-    KEY_TO_MSCEN = 'Multiple station codes explanatory note'
-    #: Key of the dict-type data of *additional notes*
-    KEY_TO_ADDITIONAL_NOTES = 'Additional notes'
+    #: URL of the main web page of the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/crs/crs0.shtm')
 
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/crs/crs0.shtm')
+    #: Key of the dict-type data of the '*other systems*'.
+    KEY_TO_OTHER_SYSTEMS: str = 'Other systems'
+    #: Key of the dict-type data of the '*multiple station codes explanatory note*'.
+    KEY_TO_MSCEN: str = 'Multiple station codes explanatory note'
+    #: Key of the dict-type data of *additional notes*.
+    KEY_TO_ADDITIONAL_NOTES: str = 'Additional notes'
 
-    #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: Key of the data of the last updated date.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: Name of data directory; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information in console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: A dictionary containing the catalogue of location data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The directory path where the data is stored.
+        :ivar str current_data_dir: The current directory path for the data.
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> lid.NAME
             'CRS, NLC, TIPLOC and STANOX codes'
-
             >>> lid.URL
             'http://www.railwaycodes.org.uk/crs/crs0.shtm'
         """
 
         print_conn_err(verbose=verbose)
 
+        # Get the introductory text for the location identifiers
         self.introduction = self._get_introduction(verbose=False)
 
+        # Retrieve the catalogue of location identifiers from the specified URL
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
+        # Adds the multiple station codes explanatory note (MSCEN) to the catalogue
         mscen_url = urllib.parse.urljoin(home_page_url(), '/crs/crs2.shtm')
         self.catalogue.update({self.KEY_TO_MSCEN: mscen_url})
 
-        self.other_systems_catalogue = get_page_catalogue(url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS])
+        # Retrieve the catalogue for other systems' station codes
+        self.other_systems_catalogue = get_page_catalogue(
+            url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS])
 
+        # Initialise the data directory for storing or retrieving location data
         self.data_dir, self.current_data_dir = init_data_dir(
             self, data_dir=data_dir, category="line-data", cluster="crs-nlc-tiploc-stanox")
         # cluster = re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-")
 
     def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Change the working directory to the package's data directory or
+        a specified subdirectory (and/or file).
 
-        The directory for this module: ``"data\\line-data\\crs-nlc-tiploc-stanox"``.
+        The base directory for this module is: ``"data/line-data/crs-nlc-tiploc-stanox"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories (and/or a file) within the base directory.
         :type sub_dir: str
-        :param mkdir: whether to create the specified directory, defaults to ``True``
+        :param mkdir: If ``True``, the specified directory will be created if it does not exist;
+            defaults to ``True``.
         :type mkdir: bool
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.loc_id.LocationIdentifiers`
+        :param kwargs: [Optional] Additional parameters passed to `pyhelpers.dirs.cd`_ function.
+        :type kwargs: dict
+        :return: The path to the directory (or file) within the backup data directory for the class
+            :py:class:`~pyrcs.line_data.loc_id.LocationIdentifiers`.
         :rtype: str
 
-        .. _pyhelpers.dir.cd:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
+        .. _pyhelpers.dirs.cd:
+            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dirs.cd.html
         """
 
         kwargs.update({'mkdir': mkdir})
@@ -117,11 +114,15 @@ class LocationIdentifiers:
 
     def _get_introduction(self, verbose=False):
         """
-        Get introductory text on the main web page of the data. (Incomplete.)
+        Get the introductory text from the main web page of the location data.
+        (Incomplete.)
 
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
-        :return: introductory text for the data of this cluster
+        This method fetches an incomplete introductory text describing the data for the current
+        cluster (e.g., CRS, NLC, TIPLOC, and STANOX codes).
+
+        :param verbose: Whether to print relevant information in console; defaults to ``True``.
+        :type verbose: bool | int
+        :return: The introductory text from the main web page related to this data cluster.
         :rtype: str
         """
 
@@ -171,15 +172,16 @@ class LocationIdentifiers:
     @staticmethod
     def _parse_note_page(note_url, parser='html.parser', verbose=False):
         """
-        Parse addition note page.
+        Parse the additional note page at the specified URL and extract its contents.
 
-        :param note_url: URL link of the target web page
+        :param note_url: The URL of the target web page to be parsed.
         :type note_url: str
-        :param parser: the `parser`_ to use for `bs4.BeautifulSoup`_, defaults to ``'html.parser'``
+        :param parser: The `parser`_ to use with `bs4.BeautifulSoup`_
+            (e.g. ``'html.parser'``, ``'lxml'``).; defaults to ``'html.parser'``.
         :type parser: str
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: parsed texts
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A list of parsed text elements from the web page.
         :rtype: list
 
         .. _`parser`:
@@ -192,11 +194,8 @@ class LocationIdentifiers:
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> url = 'http://www.railwaycodes.org.uk/crs/crs2.shtm'
-
             >>> parsed_note_dat = lid._parse_note_page(note_url=url)
             >>> parsed_note_dat[3]
                                Location  CRS CRS_alt1 CRS_alt2
@@ -217,50 +216,51 @@ class LocationIdentifiers:
 
         try:
             source = requests.get(note_url, headers=fake_requests_headers())
-
         except Exception as e:
             print_inst_conn_err(verbose=verbose, e=e)
             return None
 
-        web_page_text = bs4.BeautifulSoup(markup=source.text, features=parser).find_all(['p', 'pre'])
+        web_page_text = bs4.BeautifulSoup(
+            markup=source.text, features=parser).find_all(['p', 'pre'])
         parsed_text = [x.text for x in web_page_text if isinstance(x.next_element, str)]
 
         parsed_note = []
         for x in parsed_text:
-            if '\n' in x:
+            if '\n' in x and '\t' in x:
                 text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
             else:
                 text = x.replace('\t', ' ').replace('\xa0', '')
 
             if isinstance(text, list):
                 text = [[x.strip() for x in t.split(',')] for t in text if t != '']
+                text = [x + [''] if len(x) < 4 else x for x in text]
                 temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2'])
                 parsed_note.append(temp.fillna(''))
             else:
                 to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
-                if text != '' and not any(t in text for t in to_remove):
+                if text.strip() != '' and not any(t in text for t in to_remove):
                     parsed_note.append(text)
 
         return parsed_note
 
     def collect_explanatory_note(self, confirmation_required=True, verbose=False):
         """
-        Collect note about CRS code from source web page.
+        Collect the explanatory note related to multiple station codes (CRS codes)
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether to confirm before proceeding; defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of multiple station codes explanatory note
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of the multiple station codes explanatory note,
+            or ``None`` if the note is not found or the collection is not performed.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> exp_note = lid.collect_explanatory_note()
             To collect data of Multiple station codes explanatory note
             ? [No]|Yes: yes
@@ -268,10 +268,8 @@ class LocationIdentifiers:
             dict
             >>> list(exp_note.keys())
             ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
-
             >>> lid.KEY_TO_MSCEN
             'Multiple station codes explanatory note'
-
             >>> exp_note_dat = exp_note[lid.KEY_TO_MSCEN]
             >>> type(exp_note_dat)
             pandas.core.frame.DataFrame
@@ -308,7 +306,8 @@ class LocationIdentifiers:
                     for x in explanatory_note_:
                         if isinstance(x, str):
                             if 'Last update' in x:
-                                lud = {self.KEY_TO_LAST_UPDATED_DATE: parse_date(x, as_date_type=False)}
+                                lud_val = parse_date(x, as_date_type=False)
+                                lud = {self.KEY_TO_LAST_UPDATED_DATE: lud_val}
                                 explanatory_note.update(lud)
                             else:
                                 notes.append(x)
@@ -331,22 +330,23 @@ class LocationIdentifiers:
                         verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {_format_err_msg(e)}")
+                    _print_failure_msg(e)
                     explanatory_note = None
 
             return explanatory_note
 
     def fetch_explanatory_note(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch multiple station codes explanatory note.
+        Fetch the explanatory note for multiple station codes (CRS codes) from the package data.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of multiple station codes explanatory note
+        :param dump_dir: The path to the directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of the multiple station codes explanatory note.
         :rtype: dict
 
         **Examples**::
@@ -386,12 +386,12 @@ class LocationIdentifiers:
     # -- CRS, NLC, TIPLOC and STANOX ---------------------------------------------------------------
 
     @staticmethod
-    def _location_name(x):
+    def _parse_raw_location_name(x):
         """
-        Parse location name (and its associated note).
+        Parse the location name and extract any associated note from the raw data.
 
         :param x: location name (in raw data)
-        :type x: str or None
+        :type x: str | None
         :return: location name and note (if any)
         :rtype: tuple
 
@@ -399,35 +399,20 @@ class LocationIdentifiers:
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
-            >>> dat = lid._location_name(None)
-            >>> dat
+            >>> lid._parse_raw_location_name(None)
             ('', '')
-
-            >>> dat = lid._location_name('Abbey Wood')
-            >>> dat
+            >>> lid._parse_raw_location_name('Abbey Wood')
             ('Abbey Wood', '')
-
-            >>> dat = lid._location_name('Abercynon (formerly Abercynon South)')
-            >>> dat
+            >>> lid._parse_raw_location_name('Abercynon (formerly Abercynon South)')
             ('Abercynon', 'formerly Abercynon South')
-
-            >>> dat = lid._location_name('Allerton (reopened as Liverpool South Parkway)')
-            >>> dat
+            >>> lid._parse_raw_location_name('Allerton (reopened as Liverpool South Parkway)')
             ('Allerton', 'reopened as Liverpool South Parkway')
-
-            >>> dat = lid._location_name('Ashford International [domestic portion]')
-            >>> dat
+            >>> lid._parse_raw_location_name('Ashford International [domestic portion]')
             ('Ashford International', 'domestic portion')
-
-            >>> dat = lid._location_name('Ayr [unknown feature]')
-            >>> dat
+            >>> lid._parse_raw_location_name('Ayr [unknown feature]')
             ('Ayr', 'unknown feature')
-
-            >>> dat = lid._location_name('Birkenhead Hamilton Square [see Hamilton Square]')
-            >>> dat
+            >>> lid._parse_raw_location_name('Birkenhead Hamilton Square [see Hamilton Square]')
             ('Birkenhead Hamilton Square', 'see Hamilton Square')
         """
 
@@ -479,7 +464,8 @@ class LocationIdentifiers:
                 note_ = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', y_)
                 if note_ is None:
                     note_ = re.search(
-                        r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*(?=(\)[\'\"]])|(][\'\"]\))|])', y_)
+                        r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*(?=(\)[\'\"]])|(][\'\"]\))|])',
+                        y_)
                 elif '"now deleted"' in y_ and y_.startswith('(') and y_.endswith(')'):
                     note_ = re.search(r'(?<=\().*(?=\))', y_)
 
@@ -495,20 +481,22 @@ class LocationIdentifiers:
 
     @staticmethod
     def _amendment_to_location_names():
-        """Create a replacement dictionary for location name amendments.
+        """
+        Create a dictionary of amendments to adjust location names using regular expressions.
 
-        :return: dictionary of regular-expression amendments to location names
+        This method generates a dictionary where the keys are regular expression patterns, and the
+        values are the corresponding amendments to be applied to location names.
+
+        :return: A dictionary where each key is a regular expression pattern and each value is the
+            corresponding replacement string to amend the location names.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> loc_name_amendment_dict = lid._amendment_to_location_names()
-
             >>> list(loc_name_amendment_dict.keys())
             ['Location']
         """
@@ -532,15 +520,15 @@ class LocationIdentifiers:
 
     def _parse_location_name(self, data):
         """
-        Parse the location names of the preprocessed data.
+        Parse location names from the preprocessed data of location codes.
 
-        :param data: preprocessed data of the location codes
+        :param data: A dataframe containing preprocessed data with location codes.
         :type data: pandas.DataFrame
         """
 
         # Collect additional information as note
         data[['Location', 'Location_Note']] = pd.DataFrame(
-            data['Location'].map(self._location_name).to_list())
+            data['Location'].map(self._parse_raw_location_name).to_list())
 
         # # Debugging
         # for i, x in enumerate(data['Location']):
@@ -657,9 +645,9 @@ class LocationIdentifiers:
         """
         Cleanse multiple alternatives for every code column.
 
-        :param data: preprocessed data of the location codes
+        :param data: The preprocessed data of the location codes.
         :type data: pandas.DataFrame
-        :return: cleansed data of the location codes where multiple alternatives are replicated
+        :return: The cleansed data of the location codes where multiple alternatives are replicated.
         :rtype: pandas.DataFrame
         """
 
@@ -720,18 +708,16 @@ class LocationIdentifiers:
         """
         Get note for every code column.
 
-        :param x: raw data of a given code
-        :type x: str or None
-        :return: extra information (if any) about the given code
+        :param x: The raw data of a given code.
+        :type x: str | None
+        :return: The extra information (if any) about the given code.
         :rtype: str
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> lid._get_code_note('860260✖Earlier code')
             ('860260', 'Earlier code')
         """
@@ -763,7 +749,7 @@ class LocationIdentifiers:
         """
         Get notes for every code column.
 
-        :param data: preprocessed data of the location codes
+        :param data: The preprocessed data of the location codes.
         :type data: pandas.DataFrame
         """
 
@@ -786,9 +772,9 @@ class LocationIdentifiers:
         """
         Parse STANOX note.
 
-        :param x: STANOX note
-        :type x: str or None
-        :return: stanox and its corresponding note
+        :param x: STANOX note.
+        :type x: str | None
+        :return: STANOX and its corresponding note.
         :rtype: tuple
         """
 
@@ -826,7 +812,7 @@ class LocationIdentifiers:
         """
         Parse the note for STANOX.
 
-        :param data: preprocessed data of the location codes
+        :param data: The preprocessed data of the location codes.
         :type data: pandas.DataFrame
         """
 
@@ -864,29 +850,27 @@ class LocationIdentifiers:
         Collect `CRS, NLC, TIPLOC, STANME and STANOX codes
         <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_ for a given initial letter.
 
-        :param initial: initial letter of station/junction name or certain word for specifying URL
+        :param initial: An initial letter of station/junction name or certain word
+            for specifying URL.
         :type initial: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of locations beginning with the given initial letter and
-            date of when the data was last updated
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Data of locations beginning with the given initial letter and
+            date of when the data was last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> loc_a_codes = lid.collect_codes_by_initial(initial='a')
             >>> type(loc_a_codes)
             dict
             >>> list(loc_a_codes.keys())
             ['A', 'Additional notes', 'Last updated date']
-
             >>> loc_a_codes_dat = loc_a_codes['A']
             >>> type(loc_a_codes_dat)
             pandas.core.frame.DataFrame
@@ -909,7 +893,8 @@ class LocationIdentifiers:
 
         else:
             if verbose == 2:
-                print(f"Collecting data of locations beginning with '{beginning_with}'", end=" ... ")
+                print(
+                    f"Collecting data of locations beginning with '{beginning_with}'", end=" ... ")
 
             location_codes_initial = {
                 beginning_with: None,
@@ -936,7 +921,8 @@ class LocationIdentifiers:
                     trs = tbody.find_all('tr')
 
                     dat = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
-                    dat = dat.replace({'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
+                    dat = dat.replace(
+                        {'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
 
                     data = dat.replace({'\xa0': ''}, regex=True)
 
@@ -967,7 +953,7 @@ class LocationIdentifiers:
                     save_data(location_codes_initial, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {_format_err_msg(e)}")
+                    _print_failure_msg(e)
 
         return location_codes_initial
 
@@ -1010,20 +996,18 @@ class LocationIdentifiers:
 
         .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether to confirm before proceeding; defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: codes of other systems
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Codes of other systems.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> os_codes = lid.collect_other_systems_codes()
             To collect data of Other systems
             ? [No]|Yes: yes
@@ -1031,10 +1015,8 @@ class LocationIdentifiers:
             dict
             >>> list(os_codes.keys())
             ['Other systems', 'Last updated date']
-
             >>> lid.KEY_TO_OTHER_SYSTEMS
             'Other systems'
-
             >>> os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
             >>> type(os_codes_dat)
             collections.defaultdict
@@ -1052,7 +1034,8 @@ class LocationIdentifiers:
         if confirmed(prompt=cfm_msg, confirmation_required=confirmation_required):
 
             print_collect_msg(
-                self.KEY_TO_OTHER_SYSTEMS, verbose=verbose, confirmation_required=confirmation_required)
+                self.KEY_TO_OTHER_SYSTEMS, verbose=verbose,
+                confirmation_required=confirmation_required)
 
             other_systems_codes = None
 
@@ -1102,7 +1085,7 @@ class LocationIdentifiers:
                         ext=".pkl", verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {_format_err_msg(e)}")
+                    _print_failure_msg(e)
 
             return other_systems_codes
 
@@ -1112,31 +1095,28 @@ class LocationIdentifiers:
 
         .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: codes of other systems
+        :param dump_dir: pathname of a directory where the data file is dumped;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Codes of other systems.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> os_codes = lid.fetch_other_systems_codes()
             >>> type(os_codes)
             dict
             >>> list(os_codes.keys())
             ['Other systems', 'Last updated date']
-
             >>> lid.KEY_TO_OTHER_SYSTEMS
             'Other systems'
-
             >>> os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
             >>> type(os_codes_dat)
             collections.defaultdict
@@ -1160,34 +1140,33 @@ class LocationIdentifiers:
         """
         Fetch `CRS, NLC, TIPLOC, STANME and STANOX codes`_ and `other systems' station codes`_.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to do an update check (for the package data); defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of location codes and date of when the data was last updated
+        :param dump_dir: pathname of a directory where the data file is dumped;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: Data of location codes and date of when the data was last updated.
         :rtype: dict
 
-        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`: http://www.railwaycodes.org.uk/crs/crs0.shtm
-        .. _`other systems' station codes`: http://www.railwaycodes.org.uk/crs/crs1.shtm
+        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`:
+            http://www.railwaycodes.org.uk/crs/crs0.shtm
+        .. _`other systems' station codes`:
+            http://www.railwaycodes.org.uk/crs/crs1.shtm
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> loc_codes = lid.fetch_codes()
             >>> type(loc_codes)
             dict
             >>> list(loc_codes.keys())
             ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
-
             >>> lid.KEY
             'LocationID'
-
             >>> loc_codes_dat = loc_codes[lid.KEY]
             >>> type(loc_codes_dat)
             pandas.core.frame.DataFrame
@@ -1227,7 +1206,8 @@ class LocationIdentifiers:
         # Likely errors in 'STANME' and 'STANOX' (spotted occasionally)
         err_cols = ['STANME', 'STANOX']
 
-        row_idx = loc_codes_data_tbl[loc_codes_data_tbl.Location == 'Selby Melmerby Estates'].index[0]
+        row_idx = loc_codes_data_tbl[
+            loc_codes_data_tbl.Location == 'Selby Melmerby Estates'].index[0]
         loc_codes_data_tbl.loc[row_idx, err_cols] = ['', '']
 
         row_idx = loc_codes_data_tbl[loc_codes_data_tbl.Location == 'Selby Potter Group'].index[0]
@@ -1260,37 +1240,38 @@ class LocationIdentifiers:
 
         return location_codes
 
-    def make_xref_dict(self, keys, initials=None, main_key=None, as_dict=False, drop_duplicates=False,
-                       dump_it=False, dump_dir=None, verbose=False):
+    def make_xref_dict(self, keys, initials=None, main_key=None, as_dict=False,
+                       drop_duplicates=False, dump_it=False, dump_dir=None, verbose=False):
         """
         Make a dict/dataframe for location code data for the given ``keys``.
 
-        :param keys: one or a sublist of ['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']
-        :type keys: str or list
-        :param initials: one or a sequence of initials for which the codes are used, defaults to ``None``
-        :type initials: str or list or None
-        :param main_key: key of the returned dictionary (when ``as_dict=True``), defaults to ``None``
-        :type main_key: str or None
-        :param as_dict: whether to return a dictionary, defaults to ``False``
+        :param keys: One or a sublist of ``['CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME']``.
+        :type keys: str | list
+        :param initials: One or multiple initials for which the codes are used;
+            defaults to ``None``.
+        :type initials: str | list | None
+        :param main_key: Key of the returned dictionary (when ``as_dict=True``);
+            defaults to ``None``.
+        :type main_key: str | None
+        :param as_dict: Whether to return a dictionary; defaults to ``False``.
         :type as_dict: bool
-        :param drop_duplicates: whether to drop duplicates, defaults to ``False``
+        :param drop_duplicates: Whether to drop duplicates; defaults to ``False``.
         :type drop_duplicates: bool
-        :param dump_it: whether to save the location codes dictionary, defaults to ``False``
+        :param dump_it: Whether to save the location codes dictionary; defaults to ``False``.
         :type dump_it: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: dictionary or a data frame for location code data for the given ``keys``
-        :rtype: dict or pandas.DataFrame or None
+        :param dump_dir: Pathname of a directory where the data file is dumped;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary or a dataframe for location code data for the given ``keys``.
+        :rtype: dict | pandas.DataFrame | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
-
             >>> lid = LocationIdentifiers()
-
             >>> stanox_dictionary = lid.make_xref_dict(keys='STANOX')
             >>> type(stanox_dictionary)
             pandas.core.frame.DataFrame
@@ -1302,7 +1283,6 @@ class LocationIdentifiers:
             04311        Abbeyhill Signal E811
             04308   Abbeyhill Turnback Sidings
             88601                   Abbey Wood
-
             >>> s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
             >>> type(s_t_dictionary)
             pandas.core.frame.DataFrame
@@ -1314,7 +1294,6 @@ class LocationIdentifiers:
             04311  ABHL811       Abbeyhill Signal E811
             04308  ABHLTB   Abbeyhill Turnback Sidings
             88601  ABWD                     Abbey Wood
-
             >>> ks = ['STANOX', 'TIPLOC']
             >>> ini = 'b'
             >>> main_k = 'Data'
@@ -1373,7 +1352,8 @@ class LocationIdentifiers:
                 duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
                 duplicated = pd.concat([duplicated_1, duplicated_2], axis=0, sort=False)
                 locid_dupe = duplicated.groupby(keys).agg(tuple)
-                locid_dupe.Location = locid_dupe.Location.map(lambda x: x[0] if len(set(x)) == 1 else x)
+                locid_dupe.Location = locid_dupe.Location.map(
+                    lambda x: x[0] if len(set(x)) == 1 else x)
 
             locid_subset.set_index(keys, inplace=True)
             location_codes_ref = pd.concat([locid_subset, locid_dupe], axis=0, sort=False)
@@ -1401,7 +1381,7 @@ class LocationIdentifiers:
                     dump_dir=dump_dir_, verbose=verbose)
 
         except Exception as e:
-            print(f"Failed. {_format_err_msg(e)}")
+            _print_failure_msg(e)
             location_codes_dictionary = None
 
         return location_codes_dictionary
