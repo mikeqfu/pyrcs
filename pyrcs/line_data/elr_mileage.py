@@ -2,16 +2,29 @@
 Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
 """
 
+import copy
 import functools
 import itertools
+import os
+import re
+import string
+import urllib.parse
 
+import bs4
+import numpy as np
+import pandas as pd
+import requests
 from pyhelpers.dirs import cd
-from pyhelpers.ops import loop_in_pairs
+from pyhelpers.ops import confirmed, fake_requests_headers, loop_in_pairs
+from pyhelpers.store import load_data, save_data
 from pyhelpers.text import remove_punctuation
 
-from pyrcs.converter import *
-from pyrcs.parser import *
-from pyrcs.utils import *
+from pyrcs.converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
+    yard_to_mileage
+from pyrcs.parser import get_catalogue, get_last_updated_date, parse_table
+from pyrcs.utils import collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
+    is_home_connectable, is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, \
+    save_data_to_file, validate_initial
 
 
 class ELRMileages:

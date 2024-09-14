@@ -2,13 +2,18 @@
 Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
 """
 
+import os
+import re
 import urllib.parse
 
+import bs4
+import requests
 from pyhelpers.dirs import cd
-from pyhelpers.ops import split_list_by_size
+from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
-from pyrcs.parser import *
-from pyrcs.utils import *
+from pyrcs.parser import get_introduction, get_last_updated_date
+from pyrcs.utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
 class Bridges:

@@ -4,11 +4,22 @@ Collect `section codes for overhead line electrification (OLE) installations
 """
 
 import itertools
+import os
+import re
+import urllib.parse
 
+import bs4
+import pandas as pd
+import requests
 from pyhelpers.dirs import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data
 
-from pyrcs.parser import *
-from pyrcs.utils import *
+from pyrcs.parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
+    get_page_catalogue, parse_tr
+from pyrcs.utils import cd_data, fetch_all_verbose, fetch_data_from_file, format_err_msg, \
+    home_page_url, init_data_dir, print_collect_msg, print_conn_err, print_inst_conn_err, \
+    save_data_to_file
 
 
 class Electrification:
