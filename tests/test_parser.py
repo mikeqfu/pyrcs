@@ -1,4 +1,6 @@
-"""Test parser.py"""
+"""
+Test parser.py
+"""
 
 import collections
 import datetime
