@@ -1,4 +1,6 @@
-"""Test the module :py:mod:`pyrcs.line_data.bridge`."""
+"""
+Test the module :py:mod:`pyrcs.line_data.bridge`.
+"""
 
 import pytest
 
@@ -6,15 +8,31 @@ from pyrcs.line_data import Bridges
 
 
 class TestBridges:
-    bdg = Bridges()
 
-    def test_collect_codes(self):
-        bdg_codes = self.bdg.collect_codes(confirmation_required=False, verbose=True)
+    @pytest.fixture(scope='class')
+    def bdg(self):
+        return Bridges()
+
+    def test_collect_codes(self, bdg):
+        bdg_codes = bdg.collect_codes(confirmation_required=False, verbose=True)
         assert isinstance(bdg_codes, dict)
 
-    def test_fetch_codes(self):
-        bdg_codes = self.bdg.fetch_codes()
+    def test_fetch_codes(self, bdg):
+        bdg_codes = bdg.fetch_codes()
         assert isinstance(bdg_codes, dict)
+
+        keys = [
+            'East Coast Main Line',
+            'Midland Main Line',
+            'West Coast Main Line',
+            'Scotland',
+            'Elizabeth Line',
+            'London Overground',
+            'Anglia',
+            'London Underground',
+            'Key to text presentation conventions',
+        ]
+        assert all(k in keys for k in bdg_codes)
 
 
 if __name__ == '__main__':

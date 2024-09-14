@@ -2,13 +2,25 @@
 Collect `CRS, NLC, TIPLOC and STANOX codes <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_.
 """
 
+import collections
+import os
+import re
+import string
 import urllib.parse
 
+import bs4
+import pandas as pd
+import requests
 from pyhelpers._cache import _print_failure_msg
 from pyhelpers.dirs import cd
+from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.store import load_data, save_data
 
-from pyrcs.parser import *
-from pyrcs.utils import *
+from pyrcs.parser import get_catalogue, get_hypertext, get_last_updated_date, get_page_catalogue, \
+    parse_date, parse_tr
+from pyrcs.utils import collect_in_fetch_verbose, confirm_msg, fetch_data_from_file, \
+    home_page_url, init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, \
+    print_inst_conn_err, print_void_msg, save_data_to_file, validate_dir, validate_initial
 
 
 class LocationIdentifiers:

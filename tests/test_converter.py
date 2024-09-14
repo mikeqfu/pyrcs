@@ -1,4 +1,6 @@
-"""Test the module :py:mod:`pyrcs.converter`."""
+"""
+Test the module :py:mod:`pyrcs.converter`.
+"""
 
 import pytest
 

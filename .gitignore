@@ -1,33 +1,29 @@
+# Environment
+venv/
+.idea/
+*/vscode/
+**/__pycache__/
+
+# Sphinx documentation
+*/build/
+**/_generated/
+
+# Jupyter Notebook
+**/.ipynb_checkpoints/
+
+# Tests and code coverage
+.coverage
+.pytest_cache/
+cov_reports/
+
 # Distribution / packaging
 dist/
 *.egg-info/
 
-# Sphinx documentation
-docs/build/
-docs/source/_generated
-
-# Environments
-venv/
-
-# Jupyter Notebooks
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# Pytest / coverage reports
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-.pytest_cache/
-
-# pyrcs
-.idea/
+# Project-specific directories / files
+*[!_]_.py
 pyrcs/data/*
-!pyrcs/data/location-names-repl.json
-!pyrcs/data/location-names-repl-regex.json
-!pyrcs/data/metadata.json
-tests/*
-!tests/*.py
+!metadata
 tutorials/*
 .pypirc
-cmd.txt
+cmd.md

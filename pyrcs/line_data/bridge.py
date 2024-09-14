@@ -11,8 +11,8 @@ import requests
 from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
-from ..parser import get_introduction, get_last_updated_date
-from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+from pyrcs.parser import get_introduction, get_last_updated_date
+from pyrcs.utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
     print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
@@ -23,13 +23,15 @@ class Bridges:
     """
 
     #: Name of the data
-    NAME = 'Railway bridges'
+    NAME: str = 'Railway bridges'
     #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Bridges'
+    KEY: str = 'Bridges'
+
     #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
+    URL: str = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
+
     #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, verbose=True):
         """
@@ -46,12 +48,9 @@ class Bridges:
         **Examples**::
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
-
             >>> bdg = Bridges()
-
             >>> bdg.NAME
             'Railway bridges'
-
             >>> bdg.URL
             'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
         """
@@ -60,7 +59,7 @@ class Bridges:
 
         self.introduction = get_introduction(url=self.URL, verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 

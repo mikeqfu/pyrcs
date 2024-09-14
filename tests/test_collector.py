@@ -1,4 +1,6 @@
-"""Test the module :py:mod:`pyrcs.collector`."""
+"""
+Test the module :py:mod:`pyrcs.collector`.
+"""
 
 import pandas as pd
 import pytest
