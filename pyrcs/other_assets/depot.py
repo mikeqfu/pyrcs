@@ -1,5 +1,5 @@
 """
-Collect data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
+Collects data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
 import re
@@ -12,8 +12,9 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, \
+    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
+    save_data_to_file
 
 
 class Depots:
@@ -22,49 +23,46 @@ class Depots:
     `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
     """
 
-    #: Name of the data
-    NAME = 'Depot codes'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Depots'
+    #: The name of the data.
+    NAME: str = 'Depot codes'
+    #: The key for accessing the data.
+    KEY: str = 'Depots'
 
-    #: Key of the dict-type data of two character TOPS codes
-    KEY_TO_TOPS = 'Two character TOPS codes'
-    #: Key of the dict-type data of four digit pre-TOPS codes
-    KEY_TO_PRE_TOPS = 'Four digit pre-TOPS codes'
-    #: Key of the dict-type data of 1950 system (pre-TOPS) codes
-    KEY_TO_1950_SYSTEM = '1950 system (pre-TOPS) codes'
-    #: Key of the dict-type data of GWR codes
-    KEY_TO_GWR = 'GWR codes'
+    #: The key for accessing the data of two character TOPS codes
+    KEY_TO_TOPS: str = 'Two character TOPS codes'
+    #: The key for accessing the data of four digit pre-TOPS codes
+    KEY_TO_PRE_TOPS: str = 'Four digit pre-TOPS codes'
+    #: The key for accessing the data of 1950 system (pre-TOPS) codes
+    KEY_TO_1950_SYSTEM: str = '1950 system (pre-TOPS) codes'
+    #: The key for accessing the data of GWR codes
+    KEY_TO_GWR: str = 'GWR codes'
 
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
 
-    #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: The key used to reference the last updated date in the data.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the catagloue data), defaults to ``False``
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> depots.NAME
             'Depot codes'
-
             >>> depots.URL
             'http://www.railwaycodes.org.uk/depots/depots0.shtm'
         """
@@ -73,49 +71,54 @@ class Depots:
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, "other-assets")
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\other-assets\\depots"``.
+        The default data directory for this class is: ``"data\\other-assets\\depots"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.other_assets.depot.Depots`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
     def collect_tops_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
-        from source web page.
+        Collects `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of two-character TOPS codes and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the two-character TOPS codes and
+            the date they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> tct_codes = depots.collect_tops_codes()
             To collect data of two character TOPS codes
             ? [No]|Yes: yes
@@ -123,10 +126,8 @@ class Depots:
             dict
             >>> list(tct_codes.keys())
             ['Two character TOPS codes', 'Last updated date']
-
             >>> depots.KEY_TO_TOPS
             'Two character TOPS codes'
-
             >>> tct_codes_dat = tct_codes[depots.KEY_TO_TOPS]
             >>> type(tct_codes_dat)
             pandas.core.frame.DataFrame
@@ -143,9 +144,7 @@ class Depots:
         cfm_msg = confirm_msg(self.KEY_TO_TOPS)
 
         if confirmed(cfm_msg, confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                self.KEY_TO_TOPS, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(self.KEY_TO_TOPS, verbose, confirmation_required)
 
             two_char_tops_codes_data = None
 
@@ -186,34 +185,32 @@ class Depots:
 
     def fetch_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `two-character TOPS codes`_.
+        Fetches the data of `two-character TOPS codes`_.
 
         .. _`two-character TOPS codes`: http://www.railwaycodes.org.uk/depots/depots1.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of two-character TOPS codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of two-character TOPS codes and
+            the date they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> tct_codes = depots.fetch_tops_codes()
             >>> type(tct_codes)
             dict
             >>> list(tct_codes.keys())
             ['Two character TOPS codes', 'Last updated date']
-
             >>> depots.KEY_TO_TOPS
             'Two character TOPS codes'
-
             >>> tct_codes_dat = tct_codes[depots.KEY_TO_TOPS]
             >>> type(tct_codes_dat)
             pandas.core.frame.DataFrame
@@ -228,29 +225,29 @@ class Depots:
         """
 
         two_char_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pkl",
+            self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return two_char_tops_codes_data
 
     def collect_pre_tops_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
-        from source web page.
+        Collects `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of four-digit pre-TOPS codes and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the four-digit pre-TOPS codes and
+            the date they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> fdpt_codes = depots.collect_pre_tops_codes()
             To collect data of four digit pre-TOPS codes
             ? [No]|Yes: yes
@@ -258,10 +255,8 @@ class Depots:
             dict
             >>> list(fdpt_codes.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
-
             >>> depots.KEY_TO_PRE_TOPS
             'Four digit pre-TOPS codes'
-
             >>> fdpt_codes_dat = fdpt_codes[depots.KEY_TO_PRE_TOPS]
             >>> type(fdpt_codes_dat)
             pandas.core.frame.DataFrame
@@ -277,8 +272,7 @@ class Depots:
         data_name = self.KEY_TO_PRE_TOPS[:1].lower() + self.KEY_TO_PRE_TOPS[1:]
         cfm_msg = confirm_msg(data_name)
         if confirmed(cfm_msg, confirmation_required=confirmation_required):
-
-            print_collect_msg(data_name, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(data_name, verbose, confirmation_required)
 
             four_digit_pre_tops_codes_data = None
 
@@ -346,34 +340,32 @@ class Depots:
 
     def fetch_pre_tops_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `four-digit pre-TOPS codes`_.
+        Fetches the data of `four-digit pre-TOPS codes`_.
 
         .. _`four-digit pre-TOPS codes`: http://www.railwaycodes.org.uk/depots/depots2.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of four-digit pre-TOPS codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the four-digit pre-TOPS codes and
+            the date they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> fdpt_codes = depots.fetch_pre_tops_codes()
             >>> type(fdpt_codes)
             dict
             >>> list(fdpt_codes.keys())
             ['Four digit pre-TOPS codes', 'Last updated date']
-
             >>> depots.KEY_TO_PRE_TOPS
             'Four digit pre-TOPS codes'
-
             >>> fdpt_codes_dat = fdpt_codes[depots.KEY_TO_PRE_TOPS]
             >>> type(fdpt_codes_dat)
             pandas.core.frame.DataFrame
@@ -389,29 +381,30 @@ class Depots:
         data_name = re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS)
 
         four_digit_pre_tops_codes_data = fetch_data_from_file(
-            cls=self, method='collect_pre_tops_codes', data_name=data_name, ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+            self, method='collect_pre_tops_codes', data_name=data_name, ext=".pkl", update=update,
+            dump_dir=dump_dir, verbose=verbose)
 
         return four_digit_pre_tops_codes_data
 
     def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
-        from source web page.
+        Collects
+        `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the 1950 system (pre-TOPS) codes and
+            the date they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> s1950_codes = depots.collect_1950_system_codes()
             To collect data of 1950 system (pre-TOPS) codes
             ? [No]|Yes: yes
@@ -419,12 +412,9 @@ class Depots:
             dict
             >>> list(s1950_codes.keys())
             ['1950 system (pre-TOPS) codes', 'Last updated date']
-
             >>> depots.KEY_TO_1950_SYSTEM
             '1950 system (pre-TOPS) codes'
-
             >>> s1950_codes_dat = s1950_codes[depots.KEY_TO_1950_SYSTEM]
-
             >>> type(s1950_codes_dat)
             pandas.core.frame.DataFrame
             >>> s1950_codes_dat.head()
@@ -436,10 +426,8 @@ class Depots:
             4   1D        Marylebone  Previously 14F to 31 August 1963.  Became ME f...
         """
 
-        if confirmed(confirm_msg(self.KEY_TO_1950_SYSTEM), confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                self.KEY_TO_1950_SYSTEM, verbose=verbose, confirmation_required=confirmation_required)
+        if confirmed(confirm_msg(self.KEY_TO_1950_SYSTEM), confirmation_required):
+            print_collect_msg(self.KEY_TO_1950_SYSTEM, verbose, confirmation_required)
 
             system_1950_codes_data = None
 
@@ -485,34 +473,32 @@ class Depots:
 
     def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `1950 system (pre-TOPS) codes`_.
+        Fetches the data of `1950 system (pre-TOPS) codes`_.
 
         .. _`1950 system (pre-TOPS) codes`: http://www.railwaycodes.org.uk/depots/depots3.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of 1950 system (pre-TOPS) codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the 1950 system (pre-TOPS) codes and
+            the date they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> s1950_codes = depots.fetch_1950_system_codes()
             >>> type(s1950_codes)
             dict
             >>> list(s1950_codes.keys())
             ['1950 system (pre-TOPS) codes', 'Last updated date']
-
             >>> depots.KEY_TO_1950_SYSTEM
             '1950 system (pre-TOPS) codes'
-
             >>> s1950_codes_dat = s1950_codes[depots.KEY_TO_1950_SYSTEM]
             >>> type(s1950_codes_dat)
             pandas.core.frame.DataFrame
@@ -526,7 +512,7 @@ class Depots:
         """
 
         system_1950_data = fetch_data_from_file(
-            cls=self, method='collect_1950_system_codes',
+            self, method='collect_1950_system_codes',
             data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(), ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
@@ -534,23 +520,23 @@ class Depots:
 
     def collect_gwr_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect `Great Western Railway (GWR) depot codes
+        Collects `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_
-        from source web page.
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of GWR depot codes and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the GWR depot codes and
+            the date they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> gwr_codes = depots.collect_gwr_codes()
             To collect data of GWR codes
             ? [No]|Yes: yes
@@ -558,16 +544,13 @@ class Depots:
             dict
             >>> list(gwr_codes.keys())
             ['GWR codes', 'Last updated date']
-
             >>> depots.KEY_TO_GWR
             'GWR codes'
-
             >>> gwr_codes_dat = gwr_codes[depots.KEY_TO_GWR]
             >>> type(gwr_codes_dat)
             dict
             >>> list(gwr_codes_dat.keys())
             ['Alphabetical codes', 'Numerical codes']
-
             >>> gwr_alpha_codes = gwr_codes_dat['Alphabetical codes']
             >>> type(gwr_alpha_codes)
             pandas.core.frame.DataFrame
@@ -581,9 +564,7 @@ class Depots:
         """
 
         if confirmed(confirm_msg(self.KEY_TO_GWR), confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                data_name=self.KEY_TO_GWR, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(self.KEY_TO_GWR, verbose, confirmation_required)
 
             gwr_depot_codes = None
 
@@ -619,7 +600,7 @@ class Depots:
 
                     span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
                     num_codes_dict = dict([
-                        (int(span_tag.text), span_tag.next_sibling.replace(' = ', '').strip())
+                        (int(span_tag.text), str(span_tag.next_sibling).replace(' = ', '').strip())
                         for span_tag in span_tags])
 
                     numerical_codes.rename(columns={'sort by division': 'Division'}, inplace=True)
@@ -650,41 +631,38 @@ class Depots:
 
     def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `Great Western Railway (GWR) depot codes`_.
+        Fetches the data of `Great Western Railway (GWR) depot codes`_.
 
         .. _`Great Western Railway (GWR) depot codes`:
             http://www.railwaycodes.org.uk/depots/depots4.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of GWR depot codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the GWR depot codes and
+            the date they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> gwr_codes = depots.fetch_gwr_codes()
             >>> type(gwr_codes)
             dict
             >>> list(gwr_codes.keys())
             ['GWR codes', 'Last updated date']
-
             >>> depots.KEY_TO_GWR
             'GWR codes'
-
             >>> gwr_codes_dat = gwr_codes[depots.KEY_TO_GWR]
             >>> type(gwr_codes_dat)
             dict
             >>> list(gwr_codes_dat.keys())
             ['Alphabetical codes', 'Numerical codes']
-
             >>> gwr_alpha_codes = gwr_codes_dat['Alphabetical codes']
             >>> type(gwr_alpha_codes)
             pandas.core.frame.DataFrame
@@ -698,42 +676,38 @@ class Depots:
         """
 
         gwr_depot_codes = fetch_data_from_file(
-            cls=self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+            self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pkl", update=update,
+            dump_dir=dump_dir, verbose=verbose)
 
         return gwr_depot_codes
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `depot codes`_.
+        Fetches the data of `depot codes`_.
 
         .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of depot codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the depot codes and the date they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import Depots  # from pyrcs import Depots
-
             >>> depots = Depots()
-
             >>> depots_codes = depots.fetch_codes()
-
             >>> type(depots_codes)
             dict
             >>> list(depots_codes.keys())
             ['Depots', 'Last updated date']
-
             >>> depots.KEY
             'Depots'
-
             >>> depots_codes_dat = depots_codes[depots.KEY]
             >>> type(depots_codes_dat)
             dict
@@ -742,7 +716,6 @@ class Depots:
              'Four digit pre-TOPS codes',
              'GWR codes',
              'Two character TOPS codes']
-
             >>> depots.KEY_TO_PRE_TOPS
             'Four digit pre-TOPS codes'
             >>> depots_codes_dat[depots.KEY_TO_PRE_TOPS].head()
@@ -752,7 +725,6 @@ class Depots:
             2  2003              Blackburn  London Midland            False
             3  2004  Bolton Trinity Street  London Midland            False
             4  2006                Burnley  London Midland            False
-
             >>> depots.KEY_TO_TOPS
             'Two character TOPS codes'
             >>> depots_codes_dat[depots.KEY_TO_TOPS].head()
