@@ -1,5 +1,5 @@
 """
-Collect British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
+Collects British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
 import os
@@ -23,90 +23,92 @@ class TrackDiagrams:
     `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
     """
 
-    #: Name of the data
-    NAME = 'Railway track diagrams'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Track diagrams'
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/line/diagrams0.shtm')
-    #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: The name of the data.
+    NAME: str = 'Railway track diagrams'
+    #: The key for accessing the data.
+    KEY: str = 'Track diagrams'
+
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/line/diagrams0.shtm')
+
+    #: The key used to reference the last updated date in the data.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the data catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
-
             >>> td = TrackDiagrams()
-
             >>> td.NAME
             'Railway track diagrams'
-
             >>> td.URL
             'http://www.railwaycodes.org.uk/line/diagrams0.shtm'
         """
 
         print_conn_err(verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
+
+        self.catalogue = self.fetch_catalogue(
+            update=update, verbose=True if verbose == 2 else False)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-        self.catalogue = self.fetch_catalogue(update=update, verbose=True if verbose == 2 else False)
-
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\track-diagrams"``.
+        The default data directory for this class is: ``"data\\line-data\\track-diagrams"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.trk_diagr.TrackDiagrams`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _pyhelpers.dir.cd:
+        .. _pyhelpers.dir.cd():
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
     def _get_items(self, update=False, verbose=False):
         """
-        Get catalogue of track diagrams.
+        Gets the catalogue of track diagrams.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
-        :return: catalogue of railway station data
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: The catalogue of railway station data.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
-
             >>> td = TrackDiagrams()
-
             >>> trk_diagr_items = td._get_items()
-
             >>> trk_diagr_items
             {'Track diagrams': {'London Underground',
               'Main line diagrams',
@@ -212,21 +214,21 @@ class TrackDiagrams:
 
     def collect_catalogue(self, confirmation_required=True, verbose=False):
         """
-        Collect catalogue of sample railway track diagrams from source web page.
+        Collects the catalogue of sample railway track diagrams from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: catalogue of railway track diagrams and date of when the catalogue was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the railway track diagram catalogue and
+            the date it was last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
-
             >>> td = TrackDiagrams()
-
             >>> track_diagrams_catalog = td.collect_catalogue()
             To collect the catalogue of track diagrams
             ? [No]|Yes: yes
@@ -234,13 +236,11 @@ class TrackDiagrams:
             dict
             >>> list(track_diagrams_catalog.keys())
             ['Track diagrams', 'Last updated date']
-
             >>> td_dat = track_diagrams_catalog['Track diagrams']
             >>> type(td_dat)
             dict
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
-
             >>> main_line_diagrams = td_dat['Main line diagrams']
             >>> type(main_line_diagrams)
             tuple
@@ -254,8 +254,8 @@ class TrackDiagrams:
 
         data_name = self.KEY.lower()
 
-        if confirmed("To collect the catalogue of {}\n?".format(data_name), confirmation_required):
-            print_collect_msg(data_name, verbose=verbose, confirmation_required=confirmation_required)
+        if confirmed(f"To collect the catalogue of {data_name}\n?", confirmation_required):
+            print_collect_msg(data_name, verbose, confirmation_required)
 
             try:
                 source = requests.get(url=self.URL, headers=fake_requests_headers())
@@ -272,36 +272,33 @@ class TrackDiagrams:
 
     def fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch the catalogue of railway track diagrams.
+        Fetches the catalogue of railway track diagrams.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: catalogue of sample railway track diagrams and
-            date of when the catalogue was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the catalogue of railway track diagrams and
+            the date it was last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
-
             >>> td = TrackDiagrams()
-
             >>> trk_diagr_cat = td.fetch_catalogue()
             >>> type(trk_diagr_cat)
             dict
             >>> list(trk_diagr_cat.keys())
             ['Track diagrams', 'Last updated date']
-
             >>> td_dat = trk_diagr_cat['Track diagrams']
             >>> type(td_dat)
             dict
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
-
             >>> main_line_diagrams = td_dat['Main line diagrams']
             >>> type(main_line_diagrams)
             tuple
@@ -314,7 +311,7 @@ class TrackDiagrams:
         """
 
         track_diagrams_catalogue = fetch_data_from_file(
-            cls=self, method='collect_catalogue', data_name=self.KEY, ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
+            self, method='collect_catalogue', data_name=self.KEY, ext=".pkl", update=update,
+            dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
 
         return track_diagrams_catalogue

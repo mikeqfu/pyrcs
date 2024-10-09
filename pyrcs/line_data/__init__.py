@@ -1,7 +1,7 @@
 """
-A sub-package for collecting codes of `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
+A subpackage for collecting codes of `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_.
 
-(See also :py:class:`~pyrcs.collector.LineData`.)
+(See also the :py:class:`~pyrcs.collector.LineData` class.)
 """
 
 from .bridge import Bridges

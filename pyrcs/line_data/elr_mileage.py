@@ -1,5 +1,6 @@
 """
-Collect `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
+Collects data of
+`Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
 """
 
 import copy
@@ -19,10 +20,10 @@ from pyhelpers.ops import confirmed, fake_requests_headers, loop_in_pairs
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import remove_punctuation
 
-from pyrcs.converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
+from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
-from pyrcs.parser import get_catalogue, get_last_updated_date, parse_table
-from pyrcs.utils import collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
+from ..parser import get_catalogue, get_last_updated_date, parse_table
+from ..utils import collect_in_fetch_verbose, format_err_msg, home_page_url, init_data_dir, \
     is_home_connectable, is_str_float, print_conn_err, print_inst_conn_err, print_void_msg, \
     save_data_to_file, validate_initial
 
@@ -31,33 +32,36 @@ class ELRMileages:
     """
     A class for collecting data of
     `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
+
+    This class provides methods to access and manage ELR data, including their mileages
+    and last updated information.
     """
 
-    #: Name of the data.
+    #: The name of the data.
     NAME: str = "Engineer's Line References (ELRs)"
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data.
+    #: The key for accessing the data.
     KEY: str = 'ELRs and mileages'
 
-    #: URL of the main web page of the data.
+    #: The URL of the main web page for the data.
     URL: str = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
 
-    #: Key of the data of the last updated date.
+    #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: The name of a folder for the data directory, defaults to ``None``.
-        :type data_dir: str or None
-        :param update: Whether to do an update check (for the package data), defaults to ``False``.
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the data catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: Whether to print relevant information in console, defaults to ``True``.
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
         :ivar dict catalogue: The catalogue of the data.
-        :ivar str last_updated_date: The last updated date.
-        :ivar str data_dir: An absolute path to the data directory.
-        :ivar str current_data_dir: An absolute path to the current data directory.
-        :ivar list measure_headers: A list of possible headers for different measures.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
+        :ivar list measure_headers: A list of potential headers for various measures in the data.
 
         **Examples**::
 
@@ -85,20 +89,22 @@ class ELRMileages:
 
     def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\elrs-and-mileages"``.
+        The default data directory for this class is: ``"data\\line-data\\elrs-and-mileages"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param mkdir: whether to create the specified directory, defaults to ``True``
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
         :type mkdir: bool
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.elr_mileage.ELRMileages`
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
@@ -456,30 +462,28 @@ class ELRMileages:
 
     def collect_elr_by_initial(self, initial, update=False, verbose=False):
         """
-        Collect Engineer's Line References (ELRs) for a given initial letter from source web page.
+        Collects Engineer's Line References (ELRs) that begin with a specified initial letter
+        from the source web page.
 
-        :param initial: initial letter of an ELR, e.g. ``'a'``, ``'z'``
+        :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR.
         :type initial: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
-        :return: data of ELRs whose names start with the given initial letter and
-            date of when the data was last updated
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
+        :return: A dictionary containing ELR data whose names start with the given initial letter,
+            along with the date of the last update.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> elrs_a_codes = em.collect_elr_by_initial(initial='a')
             >>> type(elrs_a_codes)
             dict
             >>> list(elrs_a_codes.keys())
             ['A', 'Last updated date']
-
             >>> elrs_a_codes_dat = elrs_a_codes['A']
             >>> type(elrs_a_codes_dat)
             pandas.core.frame.DataFrame
@@ -491,7 +495,6 @@ class ELRMileages:
             3  ABB  ...       Now AHB
             4  ABB  ...
             [5 rows x 5 columns]
-
             >>> elrs_q_codes = em.collect_elr_by_initial(initial='Q')
             >>> elrs_q_codes_dat = elrs_q_codes['Q']
             >>> elrs_q_codes_dat.head()
@@ -558,30 +561,28 @@ class ELRMileages:
         """
         Fetch data of ELRs and their associated mileages.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of all available ELRs and date of when the data was last updated
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing data for all available ELRs,
+            along with the date of the last update.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> elrs_codes = em.fetch_elr()
             >>> type(elrs_codes)
             dict
             >>> list(elrs_codes.keys())
             ['ELRs and mileages', 'Last updated date']
-
             >>> em.KEY
             'ELRs and mileages'
-
             >>> elrs_codes_dat = elrs_codes[em.KEY]
             >>> type(elrs_codes_dat)
             pandas.core.frame.DataFrame
@@ -704,35 +705,35 @@ class ELRMileages:
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
                              verbose=False):
         """
-        Collect mileage file for the given ELR from source web page.
+        Collects the mileage file for the specified ELR from the source web page.
 
-        :param elr: ELR, e.g. ``'CJD'``, ``'MLA'``, ``'FED'``
+        :param elr: The ELR for which the mileage file is requested
+            (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
         :type elr: str
-        :param parsed: whether to parse the scraped mileage data
+        :param parsed: Whether to parse the scraped mileage data; defaults to ``True``.
         :type parsed: bool
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param dump_it: whether to save the collected data as a pickle file, defaults to ``False``
+        :param dump_it: Whether to save the collected data as a pickle file; defaults to ``False``.
         :type dump_it: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: mileage file for the given ``elr``
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the mileage file for the specified ELR.
         :rtype: dict
 
         .. note::
 
-            - In some cases, mileages are unknown hence left blank,
-              e.g. ANI2, Orton Junction with ROB (~3.05)
-            - Mileages in parentheses are not on that ELR, but are included for reference,
-              e.g. ANL, (8.67) NORTHOLT [London Underground]
+            - In some cases, mileages may be unknown and thus left blank
+              (e.g. ``'ANI2, Orton Junction with ROB (~3.05)'``).
+            - Mileages in parentheses are not on that ELR but are included for reference
+              (e.g., ``'ANL, (8.67) NORTHOLT [London Underground]'``).
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> gam_mileage_file = em.collect_mileage_file(elr='GAM')
             To collect mileage file of "GAM"
             ? [No]|Yes: yes
@@ -745,7 +746,6 @@ class ELRMileages:
             0   8.1518                      8.69  ...   None
             1  10.0264                     10.12  ...   None
             [2 rows x 8 columns]
-
             >>> xrc2_mileage_file = em.collect_mileage_file(elr='XRC2')
             To collect mileage file of "XRC2"
             ? [No]|Yes: yes
@@ -755,7 +755,6 @@ class ELRMileages:
             1  9.0447     14.893km  ...
             2  9.0557     14.994km  ...
             [3 rows x 8 columns]
-
             >>> xre_mileage_file = em.collect_mileage_file(elr='XRE')
             To collect mileage file of "XRE"
             ? [No]|Yes: yes
@@ -769,7 +768,6 @@ class ELRMileages:
             5  9.0439   (14.886)km  ...
             6  9.0540   (14.978)km  ...
             [7 rows x 11 columns]
-
             >>> mor_mileage_file = em.collect_mileage_file(elr='MOR')
             To collect mileage file of "MOR"
             ? [No]|Yes: yes
@@ -800,7 +798,6 @@ class ELRMileages:
             7                                    ...          None
             8  3.0638                      3.29  ...   SDI2 (2.79)       SDI2              2.79
             [9 rows x 8 columns]
-
             >>> fed_mileage_file = em.collect_mileage_file(elr='FED')
             To collect mileage file of "FED"
             ? [No]|Yes: yes
@@ -997,25 +994,26 @@ class ELRMileages:
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False):
         """
-        Fetch the mileage file for a given ELR.
+        Fetches the mileage file for the specified ELR.
 
-        :param elr: elr: ELR, e.g. ``'CJD'``, ``'MLA'``, ``'FED'``
+        :param elr: The ELR for which the mileage file is requested
+            (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
         :type elr: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: mileage file (codes), line name and, if any, additional information/notes
+        :param dump_dir: Path to the directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the mileage file (codes), line name and
+            any additional information or notes.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> # Get the mileage file of 'AAL' (Now 'NAJ3')
             >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL')
             >>> type(aal_mileage_file)
@@ -1042,7 +1040,6 @@ class ELRMileages:
             11  18.0572               ...        DCL             81.10
             12  18.0638               ...        DCL             81.12
             [13 rows x 8 columns]
-
             >>> # Get the mileage file of 'MLA'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA')
             >>> type(mla_mileage_file)
@@ -1067,10 +1064,8 @@ class ELRMileages:
             2  0.1540                      0.70  ...         None
             3  0.1606                      0.73  ...         None
             [4 rows x 8 columns]
-
             >>> # Get the mileage file of 'LCG'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='LCG')
-
         """
 
         try:
@@ -1090,7 +1085,7 @@ class ELRMileages:
 
             if dump_dir is not None:
                 save_data_to_file(
-                    cls=self, data=mileage_file, data_name=data_name, ext=ext, dump_dir=dump_dir,
+                    self, data=mileage_file, data_name=data_name, ext=ext, dump_dir=dump_dir,
                     verbose=verbose)
 
         except Exception as e:
@@ -1103,25 +1098,24 @@ class ELRMileages:
     @staticmethod
     def search_conn(start_elr, start_em, end_elr, end_em):
         """
-        Search for connection between two ELR-and-mileage pairs.
+        Searches for connections between two pairs of ELRs and their associated mileages.
 
-        :param start_elr: start ELR
+        :param start_elr: The starting ELR.
         :type start_elr: str
-        :param start_em: mileage file of the start ELR
+        :param start_em: The mileage file associated with the starting ELR.
         :type start_em: pandas.DataFrame
-        :param end_elr: end ELR
+        :param end_elr: The ending ELR.
         :type end_elr: str
-        :param end_em: mileage file of the end ELR
+        :param end_em: The mileage file associated with the ending ELR.
         :type end_em: pandas.DataFrame
-        :return: connection (<end mileage of the start ELR>, <start mileage of the end ELR>)
+        :return: A tuple containing the end mileage of the starting ELR and
+            the start mileage of the ending ELR.
         :rtype: tuple
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> elr_1 = 'AAM'
             >>> mileage_file_1 = em.collect_mileage_file(elr_1, confirmation_required=False)
             >>> mf_1_mileages = mileage_file_1['Mileage']
@@ -1133,7 +1127,6 @@ class ELRMileages:
             3  1.1012               ...
             4  1.1408               ...
             [5 rows x 11 columns]
-
             >>> elr_2 = 'ANZ'
             >>> mileage_file_2 = em.collect_mileage_file(elr_2, confirmation_required=False)
             >>> mf_2_mileages = mileage_file_2['Mileage']
@@ -1142,7 +1135,6 @@ class ELRMileages:
             0  84.0924                     84.42  ...         BEA        BEA
             1  84.1364                     84.62  ...  AAM (0.18)        AAM              0.18
             [2 rows x 8 columns]
-
             >>> elr_1_dest, elr_2_orig = em.search_conn(elr_1, mf_1_mileages, elr_2, mf_2_mileages)
             >>> elr_1_dest
             '0.0396'
@@ -1196,36 +1188,34 @@ class ELRMileages:
 
     def get_conn_mileages(self, start_elr, end_elr, update=False, **kwargs):
         """
-        Get a connection point between two ELR-and-mileage pairs.
+        Retrieves the connection point between two pairs of ELRs and their associated mileages.
 
-        Namely, find the end and start mileages for the start and end ELRs, respectively.
+        Specifically, it finds the end mileage for the starting ELR and
+        the start mileage for the ending ELR.
 
         .. note::
 
-            This function may not be able to find the connection for every pair of ELRs.
-            See :ref:`Example 2<get_conn_mileages-example-2>` below.
+            This function may not be able to find a connection for every pair of ELRs.
+            Please refer to :ref:`Example 2<get_conn_mileages-example-2>` for more information.
 
-        :param start_elr: start ELR
+        :param start_elr: The starting ELR.
         :type start_elr: str
-        :param end_elr: end ELR
+        :param end_elr: The ending ELR.
         :type end_elr: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param kwargs: [optional] parameters of the method
-            :py:meth:`ELRMileages.fetch_mileage_file()
-            <pyrcs.line_data.elr_mileage.ELRMileages.fetch_mileage_file>`
-        :return: connection ELR and mileages between the given ``start_elr`` and ``end_elr``
+        :param kwargs: [Optional] Additional parameters for the method
+            :py:meth:`~pyrcs.line_data.elr_mileage.ELRMileages.fetch_mileage_file`.
+        :return: A tuple containing the connection ELR(s) and mileage(s) between the specified 
+            ``start_elr`` and ``end_elr``.
         :rtype: tuple
 
         **Example 1**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> conn = em.get_conn_mileages(start_elr='NAY', end_elr='LTN2')
             >>> (s_dest_mlg, c_elr, c_orig_mlg, c_dest_mlg, e_orig_mlg) = conn
-
             >>> s_dest_mlg
             '5.1606'
             >>> c_elr
@@ -1242,9 +1232,7 @@ class ELRMileages:
         **Example 2**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
             >>> em = ELRMileages()
-
             >>> conn = em.get_conn_mileages(start_elr='MAC3', end_elr='DBP1', dump_dir="tests")
             >>> conn
             ('', '', '', '', '')

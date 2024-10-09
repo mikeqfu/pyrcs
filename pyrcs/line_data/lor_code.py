@@ -1,5 +1,5 @@
 """
-Collect `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
+Collects `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ codes.
 """
 
 import itertools
@@ -30,47 +30,44 @@ class LOR:
         respectively.
     """
 
-    #: Name of the data
-    NAME = 'Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes'
-    #: Short name of the data
-    SHORT_NAME = 'Line of Route (LOR/PRIDE) codes'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'LOR'
-    #: Key of the dict-type data of prefixes
-    KEY_P = 'Key to prefixes'
-    #: Key of the dict-type data of *ELR/LOR converter*
-    KEY_ELC = 'ELR/LOR converter'
+    #: The name of the data.
+    NAME: str = 'Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes'
+    #: A short name of the data
+    SHORT_NAME: str = 'Line of Route (LOR/PRIDE) codes'
+    #: The key for accessing the data.
+    KEY: str = 'LOR'
+    #: The key for accessing the data of *prefixes*.
+    KEY_P: str = 'Key to prefixes'
+    #: The key for accessing the data of *ELR/LOR converter*.
+    KEY_ELC: str = 'ELR/LOR converter'
 
-    #: URL of the main web page of the data
+    #: The URL of the main web page for the data.
     URL = urllib.parse.urljoin(home_page_url(), '/pride/pride0.shtm')
 
-    #: Key of the data of the last updated date
+    #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the data catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
-        :ivar list valid_prefixes: valid prefixes
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
+        :ivar list valid_prefixes: A list of valid prefixes.
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> lor.NAME
             'Possession Resource Information Database (PRIDE)/Line Of Route (LOR) codes'
-
             >>> lor.URL
             'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         """
@@ -79,62 +76,66 @@ class LOR:
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
         self.valid_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\lor"``.
+        The default data directory for this class is: ``"data\\line-data\\lor"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.lor_code.LOR`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _pyhelpers.dir.cd:
+        .. _pyhelpers.dir.cd():
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
     def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
         """
-        Get the keys to PRIDE/LOR code prefixes.
+        Gets the keys to PRIDE/LOR code prefixes.
 
-        :param prefixes_only: whether to get only prefixes, defaults to ``True``
+        :param prefixes_only: If ``True`` (default), returns only the prefixes;
+            otherwise, additional information, including the last updated date.
         :type prefixes_only: bool
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
-        :return: keys to LOR code prefixes
-        :rtype: list or dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A list of the keys to LOR code prefixes if ``prefixes_only=True``,
+            otherwise a dictionary containing code prefixes and the last updated date,
+            or ``None`` if no data is available.
+        :rtype: list | dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> keys_to_pfx = lor.get_keys_to_prefixes()
             >>> keys_to_pfx
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
-
             >>> keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=False)
             >>> type(keys_to_pfx)
             dict
             >>> list(keys_to_pfx.keys())
             ['Key to prefixes', 'Last updated date']
-
             >>> keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
             >>> type(keys_to_pfx_codes)
             pandas.core.frame.DataFrame
@@ -149,10 +150,10 @@ class LOR:
 
         data_name = "{}prefixes".format("" if prefixes_only else "keys-to-")
         ext = ".pkl"
-        path_to_pickle = self._cdd(data_name + ext)
+        path_to_pkl = self._cdd(data_name + ext)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            keys_to_prefixes = load_data(path_to_pickle)
+        if os.path.isfile(path_to_pkl) and not update:
+            keys_to_prefixes = load_data(path_to_pkl)
 
         else:
             keys_to_prefixes = None
@@ -163,12 +164,13 @@ class LOR:
                 soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
                 span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
 
-                data = [(x.text, x.next_sibling.strip().replace('=  ', '')) for x in span_tags]
+                data = [(x.text, str(x.next_sibling).strip().replace('=  ', '')) for x in span_tags]
 
                 lor_pref = pd.DataFrame(data=data, columns=['Prefixes', 'Name'])
 
             except Exception as e:
-                verbose_ = True if (update and verbose != 2) else (False if verbose == 2 else verbose)
+                verbose_ = True if (update and verbose != 2) \
+                    else (False if verbose == 2 else verbose)
                 if verbose_:
                     print("Failed. ", end="")
                 print_inst_conn_err(update=update, verbose=verbose_, e=e)
@@ -200,23 +202,21 @@ class LOR:
 
     def get_page_urls(self, update=False, verbose=False):
         """
-        Get URLs to `PRIDE/LOR codes`_ with different prefixes.
+        Gets URLs to `PRIDE/LOR codes`_ with different prefixes.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
-        :return: a list of URLs of web pages hosting LOR codes for each prefix
-        :rtype: list or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A list of URLs of the web pages hosting LOR codes for each prefix.
+        :rtype: list | None
 
         .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> lor_urls = lor.get_page_urls()
             >>> type(lor_urls)
             list
@@ -267,19 +267,18 @@ class LOR:
 
     def _update_catalogue(self, confirmation_required=True, verbose=False):
         """
-        Update catalogue data including keys to prefixes and LOR page URLs.
+        Updates catalogue data including keys to prefixes and LOR page URLs.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> lor._update_catalogue()
             To update catalogue
             ? [No]|Yes: yes
@@ -295,9 +294,9 @@ class LOR:
     @staticmethod
     def _parse_line_name(x):
         """
-        Parse the column of 'Line Name'.
+        Parses the column of 'Line Name'.
 
-        :return: line name and its corresponding note
+        :return: The line name and its corresponding note.
         :rtype: tuple
         """
         # re.search('\w+.*(?= \(\[\')', x).group()
@@ -408,23 +407,23 @@ class LOR:
 
     def collect_codes_by_prefix(self, prefix, update=False, verbose=False):
         """
-        Collect `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ by a given prefix.
+        Collects the data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        based on the given prefix.
 
-        :param prefix: prefix of LOR codes
+        :param prefix: The prefix of LOR codes to collect.
         :type prefix: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: LOR codes for the given ``prefix``
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the LOR codes for the given ``prefix``,
+            or ``None`` if no data is available.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> lor_codes_cy = lor.collect_codes_by_prefix(prefix='CY')
             >>> type(lor_codes_cy)
             dict
@@ -438,7 +437,6 @@ class LOR:
             0   CY240  ...           Caerwent branch RA4
             1  CY1540  ...  Pembroke - Pembroke Dock RA6
             [2 rows x 5 columns]
-
             >>> lor_codes_nw = lor.collect_codes_by_prefix(prefix='NW')
             >>> type(lor_codes_nw)
             dict
@@ -453,7 +451,6 @@ class LOR:
             3  NW1004  ...
             4  NW1005  ...
             [5 rows x 5 columns]
-
             >>> lor_codes_xr = lor.collect_codes_by_prefix(prefix='XR')
             >>> type(lor_codes_xr)
             dict
@@ -494,25 +491,24 @@ class LOR:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `PRIDE/LOR codes`_.
+        Fetches the data of `PRIDE/LOR codes`_.
 
         .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: LOR codes
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the LOR codes.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> lor_codes_dat = lor.fetch_codes()
             >>> type(lor_codes_dat)
             dict
@@ -523,7 +519,6 @@ class LOR:
             dict
             >>> list(l_codes.keys())
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW/NZ', 'SC', 'SO', 'SW', 'XR']
-
             >>> cy_codes = l_codes['CY']
             >>> type(cy_codes)
             dict
@@ -534,7 +529,6 @@ class LOR:
             0   CY240  ...           Caerwent branch RA4
             1  CY1540  ...  Pembroke - Pembroke Dock RA6
             [2 rows x 5 columns]
-
             >>> xr_codes = l_codes['XR']
             >>> type(xr_codes)
             dict
@@ -594,22 +588,23 @@ class LOR:
 
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
         """
-        Collect `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
-        from source web page.
+        Collects the data of
+        `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of ELR/LOR converter
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of ELR/LOR converter,
+            or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> elr_lor_conv = lor.collect_elr_lor_converter()
             To collect data of ELR/LOR converter
             ? [No]|Yes: yes
@@ -617,7 +612,6 @@ class LOR:
             dict
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
-
             >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
             >>> type(elr_loc_conv_data)
             pandas.core.frame.DataFrame
@@ -701,31 +695,29 @@ class LOR:
 
     def fetch_elr_lor_converter(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `ELR/LOR converter`_.
+        Fetches the data of `ELR/LOR converter`_.
 
         .. _`ELR/LOR converter`: http://www.railwaycodes.org.uk/pride/elrmapping.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of ELR/LOR converter
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of ELR/LOR converter.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-
             >>> lor = LOR()
-
             >>> elr_lor_conv = lor.fetch_elr_lor_converter()
             >>> type(elr_lor_conv)
             dict
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
-
             >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
             >>> type(elr_loc_conv_data)
             pandas.core.frame.DataFrame
@@ -740,7 +732,7 @@ class LOR:
         """
 
         elr_lor_converter = fetch_data_from_file(
-            cls=self, method='collect_elr_lor_converter', data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
+            self, method='collect_elr_lor_converter', data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
             ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return elr_lor_converter
