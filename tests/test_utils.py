@@ -130,7 +130,8 @@ def test_fetch_data_from_file(capfd):
     from pyrcs.utils import fetch_data_from_file
 
     data = fetch_data_from_file(
-        cls=None, method=None, data_name=None, ext=None, update=None, dump_dir=None, verbose=True)
+        cls_instance=None, method=None, data_name=None, ext=None, update=None, dump_dir=None,
+        verbose=True)
     out, _ = capfd.readouterr()
     assert out == "Some errors occurred when fetching the data. " \
                   "'NoneType' object has no attribute 'lower'.\n"

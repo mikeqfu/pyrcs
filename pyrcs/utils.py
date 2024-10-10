@@ -1,4 +1,6 @@
-"""Provide a number of helper functions."""
+"""
+Provides a number of helper functions.
+"""
 
 import copy
 import importlib.resources
@@ -17,15 +19,14 @@ from pyhelpers.store import load_data, save_data
 
 def home_page_url():
     """
-    Specify the homepage URL of the data source.
+    Returns the homepage URL of the data source.
 
-    :return: URL of the data source homepage
+    :return: The homepage URL of the data source.
     :rtype: str
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import home_page_url
-
         >>> home_page_url()
         'http://www.railwaycodes.org.uk/'
     """
@@ -38,15 +39,14 @@ def home_page_url():
 
 def is_home_connectable():
     """
-    Check whether the Railway Codes website is connectable.
+    Checks and returns whether the Railway Codes website is reacheable.
 
-    :return: whether the Railway Codes website is connectable
+    :return: Whether the Railway Codes website is reacheable.
     :rtype: bool
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import is_home_connectable
-
         >>> is_home_connectable()
         True
     """
@@ -60,26 +60,22 @@ def is_home_connectable():
 
 def is_str_float(x):
     """
-    Check if a string-type variable can express a float-type value.
+    Checks and returns whether a string represents a float value.
 
-    :param x: a string-type variable
+    :param x: String-type data.
     :type x: str
-    :return: whether ``str_val`` can express a float value
+    :return: Whether the string-type data represents a float value.
     :rtype: bool
 
     **Examples**::
 
         >>> from pyrcs.utils import is_str_float
-
         >>> is_str_float('')
         False
-
         >>> is_str_float('a')
         False
-
         >>> is_str_float('1')
         True
-
         >>> is_str_float('1.1')
         True
     """
@@ -96,25 +92,24 @@ def is_str_float(x):
 
 def validate_initial(x, as_is=False):
     """
-    Get a valid initial letter as an input.
+    Validates if a string is a single letter, returning it in upper case or as is.
 
-    :param x: any string variable (which is supposed to be an initial letter)
+    :param x: The input value to validate,
+        which is expected to be a string representing a single letter.
     :type x: str
-    :param as_is: whether to return the validated letter as is the input
+    :param as_is: If set to ``True``, the function returns the letter in its original case;
+        if set to ``False`` (default), the letter is returned in uppercase.
     :type as_is: bool
-    :return: validated initial letter
+    :return: The validated initial letter, either in uppercase or as-is.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.utils import validate_initial
-
         >>> validate_initial('x')
         'X'
-
         >>> validate_initial('x', as_is=True)
         'x'
-
         >>> validate_initial('xyz')
         AssertionError: `x` must be a single letter.
     """
@@ -126,52 +121,62 @@ def validate_initial(x, as_is=False):
     return valid_initial
 
 
-def validate_page_name(cls, page_no, valid_page_no):
+def validate_page_name(cls_instance, page_no, valid_page_no):
     """
-    Get a valid page name.
+    Retrieves the valid page name corresponding to a given page number.
 
-    :param cls: instance of a class
-    :type cls: any
-    :param page_no: page number
+    This method checks if the provided ``page_no`` is within the set of
+    valid page numbers. If valid, it returns the name of the page
+    associated with the specified ``page_no`` from the catalogue of the given ``cls_instance``.
+
+    :param cls_instance: An instance of the class that contains the page catalogue.
+    :type cls_instance: object
+    :param page_no: The page number to validate,
+        which can be an integer or a string representation of a number.
     :type page_no: int | str
-    :param valid_page_no: all valid page numbers
+    :param valid_page_no: A collection of valid page numbers,
+        which can be a set, list, or tuple containing the allowable page numbers.
     :type valid_page_no: set | list | tuple
-    :return: validated page name of the given ``cls``
+    :return: The validated page name associated with the given ``page_no`` in the class's catalogue.
     :rtype: str
 
     .. seealso::
 
-        - Examples for the methods
-          :meth:`Tunnels.collect_codes_by_page()
+        Examples for the methods:
+
+        - :meth:`Tunnels.collect_codes_by_page()
           <pyrcs.other_assets.tunnel.Tunnels.collect_codes_by_page>`
-          and
-          :meth:`Tunnels.collect_codes_by_page()
-          <pyrcs.other_assets.viaduct.Viaducts.collect_codes_by_page>`.
+        - :meth:`Tunnels.collect_codes_by_page()
+          <pyrcs.other_assets.viaduct.Viaducts.collect_codes_by_page>`
     """
 
     assert page_no in valid_page_no, f"Valid `page_no` must be one of {valid_page_no}."
 
-    page_name = [k for k in cls.catalogue.keys() if str(page_no) in k][0]
+    assert hasattr(cls_instance, 'catalogue'), \
+        "The input `cls_instance` must have an attribute named `catalogue`."
+    # noinspection PyUnresolvedReferences
+    page_name = [k for k in cls_instance.catalogue.keys() if str(page_no) in k][0]
 
     return page_name
 
 
 def collect_in_fetch_verbose(data_dir, verbose):
     """
-    Create a new parameter that indicates whether to print relevant information in console
-    (used only if it is necessary to re-collect data when trying to fetch the data).
+    Creates a new parameter that indicates whether to print relevant information to the console.
 
-    :param data_dir: name of a folder where the pickle file is to be saved
+    This function is used only if it is necessary to re-collect data when trying to fetch the data.
+
+    :param data_dir: The name of the folder where the pickle file is to be saved.
     :type data_dir: str | None
-    :param verbose: whether to print relevant information in console
+    :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
-    :return: whether to print relevant information in console when collecting data
+    :return: A boolean indicating whether to print relevant information to the console when
+        collecting data.
     :rtype: bool | int
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import collect_in_fetch_verbose
-
         >>> collect_in_fetch_verbose(data_dir="data", verbose=True)
         False
     """
@@ -183,20 +188,21 @@ def collect_in_fetch_verbose(data_dir, verbose):
 
 def fetch_all_verbose(data_dir, verbose):
     """
-    Create a new parameter that indicates whether to print relevant information in console
-    (used only when trying to fetch all data of a cluster).
+    Creates a new parameter that indicates whether to print relevant information to the console.
 
-    :param data_dir: name of a folder where the pickle file is to be saved
+    This function is used only when fetching all data of a cluster.
+
+    :param data_dir: Name of the folder where the pickle file is to be saved.
     :type data_dir: str | None
-    :param verbose: whether to print relevant information in console
+    :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
-    :return: whether to print relevant information in console when collecting data
+    :return: A boolean indicating whether to print relevant information to the console when
+        fetching all data of a cluster.
     :rtype: bool | int
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import fetch_all_verbose
-
         >>> fetch_all_verbose(data_dir="data", verbose=True)
         False
     """
@@ -214,17 +220,16 @@ def fetch_all_verbose(data_dir, verbose):
 
 def confirm_msg(data_name):
     """
-    Create a confirmation message (for data collection).
+    Returns a message for comfirming whether to proceed to collect a certain cluster of data.
 
-    :param data_name: name of data, e.g. "Railway Codes"
+    :param data_name: The name of data, e.g. "Railway Codes".
     :type data_name: str
-    :return: a confirmation message
+    :return: A confirmation message.
     :rtype: str
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import confirm_msg
-
         >>> msg = confirm_msg(data_name="Railway Codes")
         >>> print(msg)
         To collect data of Railway Codes
@@ -238,21 +243,20 @@ def confirm_msg(data_name):
 
 def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
     """
-    Print a message about the status of collecting data.
+    Prints a message indicating the status of data collection.
 
-    :param data_name: name of the data being collected
+    :param data_name: The name of the data being collected.
     :type data_name: str
-    :param verbose: whether to print relevant information in console
+    :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
-    :param confirmation_required: whether to confirm before proceeding
+    :param confirmation_required: Whether user confirmation is required before proceeding.
     :type confirmation_required: bool
-    :param end: string appended after the last value, defaults to ``" ... "``.
+    :param end: String appended at the end of the message; defaults to ``" ... "``.
     :type end: str
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import print_collect_msg
-
         >>> print_collect_msg("Railway Codes", verbose=2, confirmation_required=False)
         Collecting the data of "Railway Codes" ...
     """
@@ -266,15 +270,14 @@ def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
 
 def print_conn_err(verbose=False):
     """
-    Print a message about unsuccessful attempts to establish a connection to the Internet.
+    Prints a message if an Internet connection attempt is unsuccessful.
 
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``
     :type verbose: bool | int
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import print_conn_err
-
         >>> # If Internet connection is ready, nothing would be printed
         >>> print_conn_err(verbose=True)
 
@@ -288,11 +291,11 @@ def print_conn_err(verbose=False):
 
 def format_err_msg(e):
     """
-    Format an error message.
+    Formats an error message from an exception.
 
-    :param e: Subclass of Exception.
+    :param e: An instance of an exception or ``None``.
     :type e: Exception | None
-    :return: An error message.
+    :return: A formatted error message.
     :rtype: str
     """
 
@@ -307,21 +310,19 @@ def format_err_msg(e):
 
 def print_inst_conn_err(update=False, verbose=False, e=None):
     """
-    Print a message about unsuccessful attempts to establish a connection to the Internet
-    (for an instance of a class).
+    Print a message when an instance fails to establish an Internet connection.
 
-    :param update: mostly complies with ``update`` in a parent function that uses this function,
+    :param update: Reflects the ``update`` parameter from the parent function;
         defaults to ``False``
     :type update: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :param e: error message
+    :param e: An optional exception message to display.
     :type e: Exception | None
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import print_inst_conn_err
-
         >>> print_inst_conn_err(verbose=True)
         The Internet connection is not available.
     """
@@ -339,18 +340,16 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
 
 def print_void_msg(data_name, verbose):
     """
-    Print a message about the status of collecting data
-    (only when the data collection process fails).
+    Print a message when the data collection process fails.
 
-    :param data_name: name of the data being collected
+    :param data_name: The name of the data being collected.
     :type data_name: str
-    :param verbose: whether to print relevant information in console
+    :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import print_void_msg
-
         >>> print_void_msg(data_name="Railway Codes", verbose=True)
         No data of "Railway Codes" has been freshly collected.
     """
@@ -364,25 +363,25 @@ def print_void_msg(data_name, verbose):
 
 def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
     """
-    Specify (or change to) a directory (or any subdirectories) for backup data of the package.
+    Specifies or changes to a directory (or subdirectories) for storing backup data for the package.
 
-    :param sub_dir: [optional] name of a directory; names of directories (and/or a filename)
+    :param sub_dir: Name(s) of directories and/or a filename to navigate to or create.
     :type sub_dir: str
-    :param data_dir: name of a directory to store data, defaults to ``"data"``
+    :param data_dir: The base directory for storing data; defaults to ``"data"``.
     :type data_dir: str
-    :param mkdir: whether to create a directory, defaults to ``False``
+    :param mkdir: Whether to create the specified directory if it does not exist;
+        defaults to ``False``.
     :type mkdir: bool
-    :param kwargs: [optional] parameters (e.g. ``mode=0o777``) of `os.makedirs`_
-    :return: a full pathname of a directory or a file under the specified data directory ``data_dir``
+    :param kwargs: [Optional] Additional parameters for `os.makedirs()`_, such as ``mode=0o777``.
+    :return: The full path of the specified directory or file within ``data_dir``.
     :rtype: str
 
-    .. _`os.makedirs`: https://docs.python.org/3/library/os.html#os.makedirs
+    .. _`os.makedirs()`: https://docs.python.org/3/library/os.html#os.makedirs
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import cd_data
         >>> import os
-
         >>> path_to_dat_dir = cd_data(data_dir="data")
         >>> os.path.relpath(path_to_dat_dir)
         'pyrcs\\data'
@@ -404,28 +403,26 @@ def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
 
 def init_data_dir(cls_instance, data_dir, category, cluster=None, **kwargs):
     """
-    Specify an initial data directory for (an instance of) a class for a data cluster.
+    Specifies the initial data directory for a class instance to manage a specific data cluster.
 
-    :param cls_instance: An instance of a class for a certain data cluster.
+    :param cls_instance: An instance of a class managing the data cluster.
     :type cls_instance: object
-    :param data_dir: The name of a folder where the pickle file is to be saved.
+    :param data_dir: The directory where the data (e.g. pickle file) will be saved.
     :type data_dir: str | None
-    :param category: The name of a data category, e.g. ``"line-data"``.
+    :param category: The name of the data category, e.g. ``"line-data"``.
     :type category: str
-    :param cluster: A replacement for ``cls.KEY``.
+    :param cluster: An optional replacement for ``cls_instance.KEY``.
     :type cluster: str | None
-    :param kwargs: [optional] parameters of the function :func:`~pyrcs.utils.cd_data`.
-    :return: Pathnames of a default data directory and a current data directory.
-    :rtype: tuple[str, os.PathLike[str]]
+    :param kwargs: [Optional] Additional parameters passed to :func:`~pyrcs.utils.cd_data`.
+    :return: A tuple containing the default data directory and the current data directory path.
+    :rtype: tuple[str, str]
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import init_data_dir
         >>> from pyrcs.line_data import Bridges
         >>> import os
-
         >>> bridges = Bridges()
-
         >>> dat_dir, current_dat_dir = init_data_dir(bridges, data_dir="data", category="line-data")
         >>> os.path.relpath(dat_dir)
         'data'
@@ -445,29 +442,27 @@ def init_data_dir(cls_instance, data_dir, category, cluster=None, **kwargs):
     return cls_instance.data_dir, cls_instance.current_data_dir
 
 
-def make_file_pathname(cls, data_name, ext=".pkl", data_dir=None):
+def make_file_pathname(cls_instance, data_name, ext=".pkl", data_dir=None):
     """
-    Make a pathname for saving data as a file of a certain format.
+    Generates a file pathname for saving data in a specified format.
 
-    :param cls: (An instance of) a class for a certain data cluster.
-    :type cls: object
-    :param data_name: The key to the dict-type data of a certain code cluster.
+    :param cls_instance: An instance of a class managing a specific data cluster.
+    :type cls_instance: object
+    :param data_name: The key identifying the data within a specific code cluster.
     :type data_name: str
-    :param ext: A file extension, defaults to ``".pkl"``.
+    :param ext: The file extension for the saved data; defaults to ``".pkl"``.
     :type ext: str
-    :param data_dir: The name of a folder where the data is saved, defaults to ``None``.
+    :param data_dir: The directory where the file will be saved; defaults to ``None``.
     :type data_dir: str | None
-    :return: A pathname for saving the data.
+    :return: The pathname for saving the data file.
     :rtype: str
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.utils import make_file_pathname
         >>> from pyrcs.line_data import Bridges
         >>> import os
-
         >>> bridges = Bridges()
-
         >>> example_pathname = make_file_pathname(bridges, data_name="example-data", ext=".pkl")
         >>> os.path.relpath(example_pathname)
         'pyrcs\\data\\line-data\\bridges\\example-data.pkl'
@@ -476,39 +471,37 @@ def make_file_pathname(cls, data_name, ext=".pkl", data_dir=None):
     filename = data_name.lower().replace(" ", "-") + ext
 
     if data_dir is not None:
-        cls.current_data_dir = validate_dir(path_to_dir=data_dir)
-        file_pathname = os.path.join(cls.current_data_dir, filename)
+        cls_instance.current_data_dir = validate_dir(path_to_dir=data_dir)
+        file_pathname = os.path.join(cls_instance.current_data_dir, filename)
 
     else:  # data_dir is None or data_dir == ""
-        # func = [x for x in dir(cls) if x.startswith('_cdd')][0]
-        file_pathname = getattr(cls, '_cdd')(filename)
+        # func = [x for x in dir(cls_instance) if x.startswith('_cdd')][0]
+        file_pathname = getattr(cls_instance, '_cdd')(filename)
 
     return file_pathname
 
 
 def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_name=None):
     """
-    Create a dictionary for rectifying location names.
+    Fetches a dictionary or dataframe to rectify location names.
 
-    :param k: key of the created dictionary, defaults to ``None``
+    :param k: The key for the errata dictionary; defaults to ``None``.
     :type k: str | int | float | bool | None
-    :param regex: whether to create a dictionary for replacement based on regular expressions,
-        defaults to ``False``
+    :param regex: Whether to create the dictionary for replacements based on regular expressions;
+        defaults to ``False``.
     :type regex: bool
-    :param as_dataframe: whether to return the created dictionary as a pandas.DataFrame,
-        defaults to ``False``
+    :param as_dataframe: Whether to return the dictionary as a dataframe; defaults to ``False``.
     :type as_dataframe: bool
-    :param column_name: (if ``as_dataframe=True``) column name of the errata data as a dataframe
+    :param column_name: If ``as_dataframe=True``, the column name for the dataframe;
+        defaults to ``None``.
     :type column_name: str | list | None
-    :return: dictionary for rectifying location names
+    :return: A dictionary for rectifying location names, or a dataframe if requested.
     :rtype: dict | pandas.DataFrame
 
     **Examples**::
 
         >>> from pyrcs.utils import fetch_location_names_errata
-
         >>> repl_dict = fetch_location_names_errata()
-
         >>> type(repl_dict)
         dict
         >>> list(repl_dict.keys())[:5]
@@ -517,9 +510,7 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_
          'ATLBRJN',
          'Aberdeen Craiginches',
          'Aberdeen Craiginches T.C.']
-
         >>> repl_dict = fetch_location_names_errata(regex=True, as_dataframe=True)
-
         >>> type(repl_dict)
         pandas.core.frame.DataFrame
         >>> repl_dict.head()
@@ -551,13 +542,13 @@ def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_
 
 def _update_location_names_errata(new_items, regex, verbose=False):
     """
-    Update the location-names replacement dictionary in the package data.
+    Updates the location name replacement dictionary in the package data.
 
-    :param new_items: new items to replace
+    :param new_items: The new items to add or replace in the dictionary.
     :type new_items: dict
-    :param regex: whether this update is for regular-expression dictionary
+    :param regex: Whether this update applies to the regular expression dictionary.
     :type regex: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print detailed information to the console; defaults to ``False``.
     :type verbose: bool | int
     """
 
@@ -577,23 +568,23 @@ def _update_location_names_errata(new_items, regex, verbose=False):
         save_data(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-def save_data_to_file(cls, data, data_name, ext, dump_dir=None, verbose=False, **kwargs):
+def save_data_to_file(cls_instance, data, data_name, ext, dump_dir=None, verbose=False, **kwargs):
     """
-    Save the collected data as a file, depending on the given parameters.
+    Saves collected data to a file based on the specified parameters.
 
-    :param cls: (an instance of) a class for a certain data cluster
-    :type cls: object
-    :param data: data collected for a certain cluster
+    :param cls_instance: An instance of a class managing a specific data cluster.
+    :type cls_instance: object
+    :param data: The data to be saved.
     :type data: pandas.DataFrame | list | dict
-    :param data_name: key to the dict-type data of a certain cluster
+    :param data_name: The key identifying the data within a specific cluster.
     :type data_name: str
-    :param ext: whether to save the data as a file, or file extension
-    :type ext: bool | str
-    :param dump_dir: pathname of a directory where the data file is to be dumped, defaults to ``None``
+    :param ext: The file extension or a boolean indicating whether to save the data.
+    :type ext: str | bool
+    :param dump_dir: The directory where the file should be saved; defaults to ``None``.
     :type dump_dir: str | None
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print detailed information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :param kwargs: [optional] parameters of the function `pyhelpers.store.save_data()`_
+    :param kwargs: [Optional] Additional parameters passed to `pyhelpers.store.save_data()`_.
 
     .. _`pyhelpers.store.save_data()`:
         https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.store.save_data.html
@@ -607,7 +598,8 @@ def save_data_to_file(cls, data, data_name, ext, dump_dir=None, verbose=False, *
         else:
             file_ext = ".pkl"
 
-        path_to_file = make_file_pathname(cls=cls, data_name=data_name, ext=file_ext, data_dir=dump_dir)
+        path_to_file = make_file_pathname(
+            cls_instance=cls_instance, data_name=data_name, ext=file_ext, data_dir=dump_dir)
 
         kwargs.update({'data': data, 'path_to_file': path_to_file, 'verbose': verbose})
         save_data(**kwargs)
@@ -616,38 +608,38 @@ def save_data_to_file(cls, data, data_name, ext, dump_dir=None, verbose=False, *
         print_void_msg(data_name=data_name, verbose=verbose)
 
 
-def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose, data_dir=None,
-                         save_data_kwargs=None, **kwargs):
+def fetch_data_from_file(cls_instance, method, data_name, ext, update, dump_dir, verbose,
+                         data_dir=None, save_data_kwargs=None, **kwargs):
     """
-    Fetch/load desired data from a backup file, depending on the given parameters.
+    Fetches or loads data from a backup file based on the specified parameters.
 
-    :param cls: (an instance of) a class for a certain data cluster
-    :type cls: object
-    :param method: name of a method of the ``cls``, which is used for collecting the data
+    :param cls_instance: An instance of a class managing a specific data cluster.
+    :type cls_instance: object
+    :param method: The name of the method in ``cls_instance`` used to collect the data.
     :type method: str
-    :param data_name: key to the dict-type data of a certain cluster
+    :param data_name: The key identifying the data within a specific cluster.
     :type data_name: str
-    :param ext: whether to save the data as a file, or file extension
+    :param ext: The file extension or a boolean indicating whether to save the data.
     :type ext: bool | str
-    :param update: whether to do an update check (for the package data), defaults to ``False``
+    :param update: Whether to perform an update check on the package data; defaults to ``False``.
     :type update: bool
-    :param dump_dir: pathname of a directory where the data file is to be dumped, defaults to ``None``
-    :type dump_dir: str | os.PathLike[str] | None
-    :param verbose: whether to print relevant information in console
+    :param dump_dir: The directory where the file is stored; defaults to ``None``.
+    :type dump_dir: str | pathlib.Path | None
+    :param verbose: Whether to print detailed information to the console.
     :type verbose: bool | int
-    :param data_dir: pathname of a directory where the data is fetched, defaults to ``None``
+    :param data_dir: The directory where the data is fetched from; defaults to ``None``.
     :type data_dir: str | os.PathLike[str] | None
-    :param save_data_kwargs: equivalent of ``kwargs`` used by the function
-        :func:`pyrcs.utils.save_data_to_file`, defaults to ``None``
+    :param save_data_kwargs: Additional parameters for :func:`pyrcs.utils.save_data_to_file`;
+        defaults to ``None``.
     :type save_data_kwargs: dict | None
-    :param kwargs: [optional] parameters of the ``cls``.``method`` being called
-    :type kwargs: typing.Any
-    :return: data fetched for the desired cluster
+    :param kwargs: [Optional] Additional parameters for the ``cls_instance.method`` being called.
+    :return: The fetched data for the specified cluster.
     :rtype: dict | None
     """
 
     try:
-        path_to_file = make_file_pathname(cls=cls, data_name=data_name, ext=ext, data_dir=data_dir)
+        path_to_file = make_file_pathname(
+            cls_instance=cls_instance, data_name=data_name, ext=ext, data_dir=data_dir)
         if os.path.isfile(path_to_file) and not update:
             data = load_data(path_to_file)
 
@@ -655,15 +647,15 @@ def fetch_data_from_file(cls, method, data_name, ext, update, dump_dir, verbose,
             verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
 
             kwargs.update({'confirmation_required': False, 'verbose': verbose_})
-            data = getattr(cls, method)(**kwargs)
+            data = getattr(cls_instance, method)(**kwargs)
 
         if dump_dir is not None:
             if save_data_kwargs is None:
                 save_data_kwargs = {}
 
             save_data_to_file(
-                cls=cls, data=data, data_name=data_name, ext=ext, dump_dir=dump_dir, verbose=verbose,
-                **save_data_kwargs)
+                cls_instance=cls_instance, data=data, data_name=data_name, ext=ext,
+                dump_dir=dump_dir, verbose=verbose, **save_data_kwargs)
 
     except Exception as e:
         if verbose:
