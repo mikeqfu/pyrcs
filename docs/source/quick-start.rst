@@ -522,4 +522,4 @@ Any issues regarding the use of the package are all welcome and should be logged
 
 .. _`Issue Tracker`: https://github.com/mikeqfu/pyrcs/issues
 
-For more details and examples, check :doc:`sub-pkg-and-mod`.
+For more details and examples, check :doc:`subpackages` and :doc:`modules`.
