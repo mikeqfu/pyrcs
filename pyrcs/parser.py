@@ -1,4 +1,6 @@
-"""Parse web-page contents."""
+"""
+Parses web-page contents.
+"""
 
 import calendar
 import collections
@@ -11,11 +13,12 @@ import bs4
 import dateutil.parser
 import pandas as pd
 import requests
+from pyhelpers._cache import _print_failure_msg
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from pyrcs.utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
+from .utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
 
 
 # == Preprocess contents ===========================================================================
@@ -129,36 +132,40 @@ def _check_row_spanned(records, row_spanned):
 
 
 def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
+    # noinspection PyUnresolvedReferences
     """
-    Parse a list of parsed HTML <tr> elements.
+    Parses a list of HTML ``<tr>`` elements and extracts data from a table.
+
+    This function processes the rows from a table (``<tr>`` tags) and assigns them to corresponding
+    column headers (``<th>`` tags). It can return the data either as a list of lists or as a
+    dataframe.
 
     See also [`PT-1 <https://stackoverflow.com/questions/28763891/>`_].
 
-    :param trs: contents under ``<tr>`` tags of a web page.
+    :param trs: The content of ``<tr>`` tags from a web page table.
     :type trs: bs4.ResultSet | list
-    :param ths: list of column names (usually under a ``<th>`` tag) of a requested table.
+    :param ths: A list of column names (typically from ``<th>`` tags) for the table.
     :type ths: list | bs4.element.Tag
-    :param sep: separator that replaces the one in the raw data.
+    :param sep: The separator to replace any separators found in the raw data;
+        defaults to ``' / '``.
     :type sep: str | None
-    :param as_dataframe: whether to return the parsed data in tabular form
+    :param as_dataframe: If ``True``, returns the data as a Pandas DataFrame; defaults to ``False``.
     :type as_dataframe: bool
-    :return: a list of lists that each comprises a row of the requested table
-    :rtype: pandas.DataFrame | typing.List[list]
+    :return: A list of lists representing rows of the table,
+        or a dataframe if ``as_dataframe`` is ``True``.
+    :rtype: pandas.DataFrame | list[list]
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.parser import parse_tr
         >>> import requests
         >>> import bs4
-
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
         >>> source = requests.get(example_url)
-        >>> parsed_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        >>> parsed_text = bs4.BeautifulSoup(source.content, 'html.parser')
         >>> ths_dat = [th.text for th in parsed_text.find_all('th')]
         >>> trs_dat = parsed_text.find_all(name='tr')
-
         >>> tables_list = parse_tr(trs=trs_dat, ths=ths_dat)  # returns a list of lists
-
         >>> type(tables_list)
         list
         >>> len(tables_list) // 100
@@ -206,27 +213,29 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
 
 def parse_table(source, parser='html.parser', as_dataframe=False):
     """
-    Parse HTML <tr> elements for creating a data frame.
+    Parses HTML ``<tr>`` elements to create a table from the given source.
 
-    :param source: response object to connecting a URL to request a table
+    This function extracts data from the ``<thead>`` and ``<tbody>`` elements of an HTML table
+    and processes it into a list of lists (rows of the table) or a dataframe.
+
+    :param source: The response object containing the HTML table from a requested URL.
     :type source: requests.Response
-    :param parser: ``'html.parser'`` (default), ``'html5lib'`` or ``'lxml'``
+    :param parser: The parser to use for processing the HTML;
+        options are ``'html.parser'`` (default), ``'html5lib'`` or ``'lxml'``.
     :type parser: str
-    :param as_dataframe: whether to return the parsed data in tabular form
+    :param as_dataframe: If ``True``, the parsed data is returned as a dataframe.
+        If ``False``, it returns a list of lists and column names; defaults to ``False``.
     :type as_dataframe: bool
-    :return: a list of lists each comprising a row of the requested table
-        (see also :func:`pyrcs.utils.parse_tr`) and a list of column names of the requested table
+    :return: A tuple containing a list of column names and a list of lists representing
+        rows of the table; if ``as_dataframe=True``, returns a dataframe.
     :rtype: tuple[list, list] | pandas.DataFrame | list
 
     **Examples**::
 
         >>> from pyrcs.parser import parse_table
         >>> import requests
-
         >>> source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
-
         >>> columns_dat, records_dat = parse_table(source_dat)
-
         >>> columns_dat
         ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
         >>> type(records_dat)
@@ -265,29 +274,32 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
 def parse_date(str_date, as_date_type=False):
     """
-    Parse a date.
+    Parses a string representation of a date into a formatted date.
 
-    :param str_date: string-type date
-    :type str_date: str
-    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
-    :type as_date_type: bool
-    :return: parsed date as a string or `datetime.date`_
-    :rtype: str | datetime.date
+    This function attempts to parse a string date (even with slight errors or non-standard formats)
+    into either a string in the "YYYY-MM-DD" format or a `datetime.date`_ object.
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
+
+    :param str_date: The date as a string, whose format can vary and may include month names
+        or other elements.
+    :type str_date: str
+    :param as_date_type: If ``True``, returns the result as a `datetime.date` object;
+        if ``False`` (default), returns the result as a formatted string.
+    :type as_date_type: bool
+    :return: The parsed date either as a string in "YYYY-MM-DD" format or as a date object.
+    :rtype: str | datetime.date
 
     **Examples**::
 
         >>> from pyrcs.parser import parse_date
-
         >>> str_date_dat = '2020-01-01'
-
-        >>> parsed_date_dat = parse_date(str_date_dat)
-        >>> parsed_date_dat
+        >>> parse_date(str_date_dat)
         '2020-01-01'
-
-        >>> parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
-        >>> parsed_date_dat
+        >>> str_date_dat = '2020-jan-01'
+        >>> parse_date(str_date_dat)
+        '2020-01-01'
+        >>> parse_date(str_date_dat, as_date_type=True)
         datetime.date(2020, 1, 1)
     """
 
@@ -435,23 +447,22 @@ def _get_site_map(source):
 
 def get_site_map(update=False, confirmation_required=True, verbose=False):
     """
-    Fetch the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_ from the package data.
+    Gets the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_.
 
-    :param update: whether to do an update check (for the package data), defaults to ``False``
+    :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
-    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+    :param confirmation_required: Whether user confirmation is required before proceeding;
+        defaults to ``True``.
     :type confirmation_required: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :return: dictionary of site map data
+    :return: An ordered dictionary containing the data of site map.
     :rtype: collections.OrderedDict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_site_map
-
         >>> site_map_dat = get_site_map()
-
         >>> type(site_map_dat)
         collections.OrderedDict
         >>> list(site_map_dat.keys())
@@ -474,7 +485,6 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
         site_map = None
 
         if confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
-
             if verbose == 2:
                 print("Updating the package data", end=" ... ")
 
@@ -507,17 +517,23 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
 
 def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     """
-    Get last update date.
+    Gets the last update date of a specified web page.
 
-    :param url: URL link of a requested web page
+    This function extracts the date when the given web page was last updated.
+    The date can be returned as a string or a date object.
+
+    :param url: The URL of the web page for which the last update date is requested.
     :type url: str
-    :param parsed: whether to reformat the date, defaults to ``True``
+    :param parsed: Whether to reformat the date into a standardized format (``YYYY-MM-DD``);
+        defaults to ``True``.
     :type parsed: bool
-    :param as_date_type: whether to return the date as `datetime.date`_, defaults to ``False``
+    :param as_date_type: If ``True``, the date is returned as a `datetime.date`_ object;
+        if ``False`` (default), it's returned as a string.
     :type as_date_type: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool | int
-    :return: date of when the specified web page was last updated
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+    :return: The last update date of the specified web page,
+        or ``None`` if this information is not available on the web page.
     :rtype: str | datetime.date | None
 
     .. _`datetime.date`: https://docs.python.org/3/library/datetime.html#datetime.date
@@ -525,16 +541,13 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     **Examples**::
 
         >>> from pyrcs.parser import get_last_updated_date
-
         >>> url_a = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
         >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=False)
         >>> type(last_upd_date)
         str
-
         >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=True)
         >>> type(last_upd_date)
         datetime.date
-
         >>> ldm_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
         >>> last_upd_date = get_last_updated_date(url=ldm_url)
         >>> print(last_upd_date)
@@ -571,18 +584,20 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
 
 def get_financial_year(date):
     """
-    Convert calendar year of a given date to Network Rail financial year.
+    Convert the calendar year of a given date to the corresponding financial year.
 
-    :param date: date
+    The financial year runs from 1st April to 31st March of the following year.
+    This function takes a date and determines the financial year it falls into.
+
+    :param date: The date for which the financial year is to be determined.
     :type date: datetime.datetime
-    :return: Network Rail financial year of the given ``date``
+    :return: The financial year of the given ``date``.
     :rtype: int
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.parser import get_financial_year
         >>> import datetime
-
         >>> financial_year = get_financial_year(date=datetime.datetime(2021, 3, 31))
         >>> financial_year
         2020
@@ -610,23 +625,25 @@ def _parse_h3_paras(h3):
 
 def get_introduction(url, delimiter='\n', verbose=True):
     """
-    Get contents of the Introduction page.
+    Gets the introduction section of a specified web page.
 
-    :param url: URL of a web page (usually the main page of a data cluster)
+    This function scrapes the introduction text from the given URL, typically used to
+    summarise data clusters.
+
+    :param url: The URL of the web page (usually the main page of a data cluster).
     :type url: str
-    :param delimiter: delimiter used for separating paragraphs, defaults to ``'\\n'``
+    :param delimiter: The delimiter used to separate paragraphs in the returned content;
+        defaults to ``'\\n'`` (newline).
     :type delimiter: str
-    :param verbose: whether to print relevant information in console, defaults to ``True``
+    :param verbose: Whether to print relevant information to the console; defaults to ``True``.
     :type verbose: bool | int
-    :return: introductory texts on the given web page
+    :return: The introductory text from the web page, formatted with the specified delimiter.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.parser import get_introduction
-
         >>> bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
-
         >>> intro_text = get_introduction(url=bridges_url)
         >>> intro_text
         "There are thousands of bridges over and under the railway system. These pages attempt to...
@@ -653,25 +670,29 @@ def get_introduction(url, delimiter='\n', verbose=True):
 
 def get_catalogue(url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
-    Get the catalogue for a class.
+    Gets the catalogue of items from the main page of a data cluster.
 
-    :param url: URL of the main page of a data cluster
+    This function scrapes a catalogue of entries (typically hyperlinks) from a specified URL.
+    It offers the option to save the catalogue as a JSON file.
+
+    :param url: The URL of the main page of a data cluster.
     :type url: str
-    :param update: whether to do an update check (for the package data), defaults to ``False``
+    :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
-    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+    :param confirmation_required: Whether user confirmation is required before proceeding;
+        defaults to ``True``.
     :type confirmation_required: bool
-    :param json_it: whether to save the catalogue as a JSON file, defaults to ``True``
+    :param json_it: Whether to save the catalogue as a JSON file; defaults to ``True``.
     :type json_it: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :return: catalogue in the form {'<title>': '<URL>'}
+    :return: The catalogue in the form of a dictionary, where keys are entry titles and
+        values are URLs, or ``None`` if the operation is unsuccessful.
     :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_catalogue
-
         >>> elr_cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
         >>> type(elr_cat)
         dict
@@ -683,7 +704,6 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
          'LUL system',
          'DLR system',
          'Canals']
-
         >>> line_data_cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
         >>> type(line_data_cat)
         dict
@@ -721,20 +741,25 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                         cold_soup = soup.find(name='div', attrs={'class': 'fixed'})
 
                         catalogue = {
-                            a.text.replace('\xa0', ' ').strip(): urllib.parse.urljoin(url, a.get('href'))
-                            for a in cold_soup.find_all('a')}
+                            a.text.replace('\xa0', ' ').strip():
+                                urllib.parse.urljoin(url, a.get('href'))
+                            for a in cold_soup.find_all('a')
+                        }
 
                     except AttributeError:
                         cold_soup = soup.find(name='h1').find_all_next(name='a')
+                        # assert all(isinstance(a, bs4.Tag) for a in cold_soup)
+                        # noinspection PyUnresolvedReferences
                         catalogue = {
-                            a.text.replace('\xa0', ' ').strip(): urllib.parse.urljoin(url, a.get('href'))
-                            for a in cold_soup}
+                            a.text.replace('\xa0', ' ').strip():
+                                urllib.parse.urljoin(url, a.get('href')) for a in cold_soup
+                        }
 
                     if json_it and catalogue is not None:
                         save_data(catalogue, path_to_cat_json, verbose=verbose, indent=4)
 
                 except Exception as e:
-                    print("Failed to get the catalogue. {}".format(e))
+                    _print_failure_msg(e, msg="Failed to get the catalogue.")
 
         else:
             print("The catalogue for the requested data has not been acquired.")
@@ -744,27 +769,31 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
 
 def get_category_menu(url, update=False, confirmation_required=True, json_it=True, verbose=False):
     """
-    Get a menu of the available classes.
+    Gets a menu of the available classes from the specified URL.
 
-    :param url: URL of the menu page
+    This function scrapes a web page for available classes (typically categorised hyperlinks) and
+    returns them as a dictionary. It also provides options to update the catalogue and
+    save it as a JSON file.
+
+    :param url: The URL of the menu page.
     :type url: str
-    :param update: whether to do an update check (for the package data), defaults to ``False``
+    :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
-    :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+    :param confirmation_required: Whether user confirmation is required before proceeding;
+        defaults to ``True``.
     :type confirmation_required: bool
-    :param json_it: whether to save the catalogue as a .json file, defaults to ``True``
+    :param json_it: Whether to save the catalogue as a JSON file; defaults to ``True``.
     :type json_it: bool
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :return: a category menu
+    :return: A category menu in dictionary form,
+        where keys are data cluster names and values are URLs.
     :rtype: dict | None
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.parser import get_category_menu
-
         >>> menu = get_category_menu('http://www.railwaycodes.org.uk/linedatamenu.shtm')
-
         >>> type(menu)
         dict
         >>> list(menu.keys())
@@ -781,8 +810,7 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     else:
         cls_menu = None
 
-        if confirmed("To collect/update category menu?",
-                     confirmation_required=confirmation_required):
+        if confirmed("To collect/update category menu?", confirmation_required):
 
             try:
                 source = requests.get(url=url, headers=fake_requests_headers())
@@ -797,16 +825,19 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
                     cls_name = h1.text.replace(' menu', '')
 
                     if len(h2s) == 0:
+                        # noinspection PyUnresolvedReferences
                         cls_elem = dict(
                             (x.text, urllib.parse.urljoin(url, x.get('href')))
                             for x in h1.find_all_next('a'))
 
                     else:
+                        # noinspection PyUnresolvedReferences
                         all_next = [
                             x.replace(':', '') for x in h1.find_all_next(string=True)
                             if x != '\n' and x != '\xa0']
                         all_next = all_next[2:]
                         h2s_list = [x.text.replace(':', '') for x in h2s]
+                        # noinspection PyUnresolvedReferences
                         all_next_a = [
                             (x.text, urllib.parse.urljoin(url, x.get('href')))
                             for x in h1.find_all_next('a', href=True)]
@@ -834,7 +865,7 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
                         save_data(cls_menu, path_to_menu_json, verbose=verbose)
 
                 except Exception as e:
-                    print("Failed to get the category menu. {}".format(e))
+                    _print_failure_msg(e, msg="Failed to get the category menu.")
 
         else:
             print("The category menu has not been acquired.")
@@ -844,28 +875,24 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
 
 def get_heading_text(heading_tag, elem_tag_name='em'):
     """
-    Get the text of a given heading tag.
+    Gets the text from a given HTML heading tag.
 
-    :param heading_tag: tag of a heading
+    :param heading_tag: The HTML tag of a heading element.
     :type heading_tag: bs4.element.Tag
-    :param elem_tag_name: tag name of an element in the ``heading_tag``, defaults to ``'em'``
+    :param elem_tag_name: The tag name of an inner element within the heading; defaults to ``'em'``.
     :type elem_tag_name: str
-    :return: cleansed text of the given ``heading_tag``
+    :return: Cleaned text of the heading tag.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.parser import get_heading_text
         >>> from pyrcs.line_data import Electrification
-
         >>> elec = Electrification()
-
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
         >>> source = requests.get(url=url, headers=fake_requests_headers())
         >>> soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
         >>> h3 = soup.find('h3')
-
         >>> h3_text = get_heading_text(heading_tag=h3, elem_tag_name='em')
         >>> h3_text
         'Beamish Tramway'
@@ -874,6 +901,7 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
     heading_x = []
 
     for elem in heading_tag.contents:
+        # noinspection PyUnresolvedReferences
         if elem.name == elem_tag_name:
             heading_x.append('[' + elem.text + ']')
         else:
@@ -887,30 +915,32 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', feature_tag_name='h3',
                        verbose=False):
     """
-    Get the catalogue of the main page of a data cluster.
+    Gets the catalogue of features from the main page of a data cluster.
 
-    :param url: URL of the main page of a data cluster
+    This function extracts structured data (features) from a web page by parsing specific tags,
+    typically used for features like headings and links in railway-related databases.
+
+    :param url: The URL of the main page of a data cluster.
     :type url: str
-    :param head_tag_name: tag name of the feature list at the top of the page, defaults to ``'nav'``
+    :param head_tag_name: The tag name of the feature list at the top of the page;
+        defaults to ``'nav'``.
     :type head_tag_name: str
-    :param head_tag_txt: text that is contained in the head_tag, defaults to ``'Jump to: '``
+    :param head_tag_txt: Text contained in the head tag; defaults to ``'Jump to: '``.
     :type head_tag_txt: str
-    :param feature_tag_name: tag name of the headings of each feature, defaults to ``'h3'``
+    :param feature_tag_name: The tag name of the headings of each feature; defaults to ``'h3'``.
     :type feature_tag_name: str
-    :param verbose: whether to print relevant information in console, defaults to ``False``
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
-    :return: catalogue of the main page of a data cluster
+    :return: A dataframe containing the page's feature catalogue with columns for feature, URL and
+        heading.
     :rtype: pandas.DataFrame
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.parser import get_page_catalogue
         >>> from pyhelpers.settings import pd_preferences
-
         >>> pd_preferences(max_columns=1)
-
         >>> elec_url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
-
         >>> elec_catalogue = get_page_catalogue(elec_url)
         >>> elec_catalogue
                                                       Feature  ...
@@ -925,9 +955,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
         19                          Snaefell Mountain Railway  ...
         20  Summerlee, Museum of Scottish Industrial Life ...  ...
         21                                  Tyne & Wear Metro  ...
-
         [22 rows x 3 columns]
-
         >>> elec_catalogue.columns.to_list()
         ['Feature', 'URL', 'Heading']
     """
@@ -971,15 +999,19 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
 
 def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
     """
-    Get text that is with a hyperlink.
+    Gets hyperlinked text from a specified HTML tag.
 
-    :param hypertext_tag: tag of hypertext (i.e. text that is with a hyperlink)
+    This function scrapes hypertext content, optionally returning it in Markdown format if
+    requested.
+
+    :param hypertext_tag: The tag containing hyperlinked text.
     :type hypertext_tag: bs4.element.Tag | bs4.element.PageElement
-    :param hyperlink_tag_name:
+    :param hyperlink_tag_name: The tag name of the hyperlink within the hypertext;
+        defaults to ``'a'``.
     :type hyperlink_tag_name: str
-    :param md_style: whether to return the obtained hypertext in markdown style, defaults to ``True``
+    :param md_style: Whether to return the hypertext in Markdown style, defaults to ``True``.
     :type md_style: bool
-    :return: hypertext
+    :return: The hypertext.
     :rtype: str
 
     **Examples**::
@@ -988,19 +1020,14 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
         >>> from pyrcs.line_data import Electrification
         >>> import bs4
         >>> import requests
-
         >>> elec = Electrification()
-
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
         >>> source = requests.get(url)
         >>> soup = bs4.BeautifulSoup(source.content, 'html.parser')
-
         >>> h3 = soup.find('h3')
-
         >>> p = h3.find_all_next('p')[8]
         >>> p
         <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-traml...
-
         >>> hyper_txt = get_hypertext(hypertext_tag=p, md_style=True)
         >>> hyper_txt
         'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site](...
@@ -1009,6 +1036,7 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
     hypertext_x = []
 
     for x in hypertext_tag.contents:
+        # noinspection PyUnresolvedReferences
         if x.name == hyperlink_tag_name:
             # noinspection PyUnresolvedReferences
             href = x.get('href')
