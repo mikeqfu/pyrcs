@@ -1,73 +1,68 @@
 ===========
-Quick start
+Quick Start
 ===========
 
-To showcase the functionality of PyRCS, this concise tutorial offers a quick guide with examples on how to work with three frequently-used code categories in the UK railway system:
+This brief tutorial provides a step-by-step guide to using PyRCS, highlighting its key functionalities. It demonstrates how to retrieve three key categories of codes used in the UK railway system, which are commonly applied in both practical and research contexts:
 
-- `Location identifiers <http://www.railwaycodes.org.uk/crs/CRS0.shtm>`_ (CRS, NLC, TIPLOC and STANOX codes);
-- `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_ and their associated mileage files;
-- `Railway station data <http://www.railwaycodes.org.uk/stations/station1.shtm>`_ (mileages, operators and grid coordinates).
+- `Location identifiers`_ (CRS, NLC, TIPLOC and STANOX codes);
+- `Engineer's Line References (ELRs)`_ and their associated mileage files;
+- `Railway station data`_ (mileages, operators and grid coordinates).
 
-The tutorial aims to demonstrate how PyRCS operates by providing practical illustrations and guidance.
+Through practical examples, this tutorial will guide you in understanding how PyRCS works and how to use it effectively.
 
 .. _quickstart-location-identifiers:
 
-Location identifiers
+Location Identifiers
 ====================
 
-The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are categorised as `line data`_ on the `Railway Codes`_ website. To get these codes via PyRCS, we can use the class :class:`~pyrcs.line_data.LocationIdentifiers`, which is contained in the sub-package :mod:`~pyrcs.line_data`. Let's firstly import the class and create an instance:
+:doc:`< Back to Top <quick-start>` | :ref:`Next > <quickstart-elrs-and-mileages>`
 
-.. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
-.. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
+The location identifiers, including CRS, NLC, TIPLOC and STANOX codes, are classified as `line data`_ on the `Railway Codes`_ website. To retrieve these codes using PyRCS, we can use the :class:`~pyrcs.line_data.LocationIdentifiers` class, contained in the :mod:`~pyrcs.line_data` subpackage.
+
+First, let's import the class and create an instance:
 
 .. code-block:: python
 
-    >>> from pyrcs.line_data import LocationIdentifiers  # from pyrcs import LocationIdentifiers
-
+    >>> from pyrcs.line_data import LocationIdentifiers
+    >>> # Alternatively, from pyrcs import LocationIdentifiers
     >>> lid = LocationIdentifiers()
-
     >>> lid.NAME
     'CRS, NLC, TIPLOC and STANOX codes'
     >>> lid.URL
     'http://www.railwaycodes.org.uk/crs/crs0.shtm'
 
-.. note::
-
-    An alternative way of creating the instance is through the class :class:`~pyrcs.collector.LineData` (see below).
+Alternatively, we can create the instance using the :class:`~pyrcs.collector.LineData` class:
 
 .. code-block:: python
 
-    >>> from pyrcs.collector import LineData  # from pyrcs import LineData
-
+    >>> from pyrcs.collector import LineData
+    >>> # Alternatively, from pyrcs import LineData
     >>> ld = LineData()
     >>> lid_ = ld.LocationIdentifiers
-
     >>> lid.NAME == lid_.NAME
     True
 
 .. note::
 
-    - The instance ``ld`` refers to all classes under the category of `line data`_.
-    - Here ``lid_`` is equivalent to ``lid``.
+    - The instance ``ld`` encompasses all classes within the `line data`_ category.
+    - ``lid_`` is equivalent to ``lid``.
 
 .. _quickstart-location-identifiers-given-initial:
 
-Location identifiers given a specific initial letter
-----------------------------------------------------
+Location identifiers for a specific initial letter
+--------------------------------------------------
 
-Now we can get the codes (in a `pandas.DataFrame`_ type) for all locations beginning with a given letter, by using the method :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>`. For example, to get the codes for locations whose names begin with ``'A'`` (or ``'a'``):
-
-.. _`pandas.DataFrame`: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html
+We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting with a specific letter using the :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>` method. This method is case-insensitive. For example, to get the codes for locations whose names begin with the letter ``'A'`` (or ``'a'``):
 
 .. code-block:: python
 
-    >>> loc_a_codes = lid.collect_codes_by_initial(initial='a')  # The input is case-insensitive
+    >>> loc_a_codes = lid.collect_codes_by_initial(initial='a')
     >>> type(loc_a_codes)
     dict
     >>> list(loc_a_codes.keys())
     ['A', 'Additional notes', 'Last updated date']
 
-As demonstrated above, ``loc_a_codes`` is a `dictionary`_ (in `dict`_ type), which has the following *keys*:
+As shown above, ``loc_a_codes`` is a `dictionary`_ (i.e. in `dict`_ format) with the following *keys*:
 
 -  ``'A'``
 -  ``'Additional notes'``
@@ -75,13 +70,9 @@ As demonstrated above, ``loc_a_codes`` is a `dictionary`_ (in `dict`_ type), whi
 
 The corresponding *values* are:
 
--  ``loc_a_codes['A']`` - CRS, NLC, TIPLOC and STANOX codes for the locations whose names begin with ``'A'`` (referring to the table presented on the web page `Locations beginning A`_);
--  ``loc_a_codes['Additional notes']`` - Additional information on the web page (if available);
--  ``loc_a_codes['Last updated date']`` - The date when the web page `Locations beginning A`_ was last updated.
-
-.. _`dictionary`: https://docs.python.org/3/tutorial/datastructures.html#dictionaries
-.. _`dict`: https://docs.python.org/3/library/stdtypes.html#dict
-.. _`Locations beginning A`: http://www.railwaycodes.org.uk/crs/CRSa.shtm
+-  ``loc_a_codes['A']`` - CRS, NLC, TIPLOC and STANOX codes for the locations whose names begin with ``'A'``, referring to the table on the `Locations beginning A`_ web page.
+-  ``loc_a_codes['Additional notes']`` - Any additional information provided on the web page (if available).
+-  ``loc_a_codes['Last updated date']`` - The date when the `Locations beginning A`_ web page was last updated.
 
 A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
 
@@ -98,16 +89,15 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
     3  A483 Road Scheme Supervisors Closed      ...
     4                               Aachen      ...
     [5 rows x 12 columns]
-
     >>> print("Last updated date: {}".format(loc_a_codes['Last updated date']))
-
+    Last updated date: 2024-08-24
 
 .. _quickstart-all-location-identifiers:
 
 All available location identifiers
 ----------------------------------
 
-In addition to the ``'A'`` group of locations, we can use the method :meth:`LocationIdentifiers.fetch_codes()<pyrcs.line_data.LocationIdentifiers.fetch_codes>` to get the codes of all locations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category:
+Beyond retrieving location codes for a specific letter, we can use the :meth:`LocationIdentifiers.fetch_codes()<pyrcs.line_data.LocationIdentifiers.fetch_codes>` method to obtain codes for all locations with names starting from ``'A'`` to ``'Z'``:
 
 .. code-block:: python
 
@@ -117,7 +107,7 @@ In addition to the ``'A'`` group of locations, we can use the method :meth:`Loca
     >>> list(loc_codes.keys())
     ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
 
-``loc_codes`` is also in a `dictionary`_, of which the *keys* are as follows:
+The ``loc_codes`` object is a dictionary with the following *keys*:
 
 -  ``'LocationID'``
 -  ``'Other systems'``
@@ -126,33 +116,40 @@ In addition to the ``'A'`` group of locations, we can use the method :meth:`Loca
 
 The corresponding *values* are:
 
--  ``loc_codes['LocationID']`` - CRS, NLC, TIPLOC and STANOX codes for all locations available on the relevant web pages ranging from ``'A'`` to ``'Z'``;
--  ``loc_codes['Other systems']`` - Relevant codes of the `Other systems`_;
--  ``loc_codes['Additional notes']`` - Additional notes and information (if available);
--  ``loc_codes['Latest update date']`` - The latest ``'Last updated date'`` among all initial-specific codes.
+-  ``loc_codes['LocationID']`` - CRS, NLC, TIPLOC, and STANOX codes for all locations listed across the relevant web pages.
+-  ``loc_codes['Other systems']`` - Codes related to the `other systems`_.
+-  ``loc_codes['Additional notes']`` - Any additional notes and information (if available).
+-  ``loc_codes['Latest update date']`` - The latest ``'Last updated date'`` across all initial-specific data.
 
-.. _`Other systems`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
-
-A snapshot of the data contained in ``loc_codes`` is demonstrated below:
+Here is a snapshot of the data contained in ``loc_codes``:
 
 .. code-block:: python
 
     >>> lid.KEY
     'LocationID'
-
     >>> loc_codes_dat = loc_codes[lid.KEY]  # loc_codes['LocationID']
     >>> type(loc_codes_dat)
     pandas.core.frame.DataFrame
-    >>> loc_codes_dat.head()
-                                  Location CRS  ... STANME_Note STANOX_Note
-    0                 1999 Reorganisations      ...
-    1                                   A1      ...
-    2                       A463 Traded In      ...
-    3  A483 Road Scheme Supervisors Closed      ...
-    4                               Aachen      ...
+    >>> loc_codes_dat.tail()
+                    Location CRS     NLC  ... TIPLOC_Note STANME_Note STANOX_Note
+    59783  Zone U3456 London      083900  ...
+    59784     Zone U4 London      084100  ...
+    59785    Zone U56 London      084700  ...
+    59786            ZNGHTYK              ...
+    59787            ZZWMNST              ...
     [5 rows x 12 columns]
+    >>> loc_codes_dat[['Location', 'Location_Note']].tail()
+                    Location    Location_Note
+    59783  Zone U3456 London
+    59784     Zone U4 London
+    59785    Zone U56 London
+    59786            ZNGHTYK  see Naughty Kid
+    59787            ZZWMNST  see Westminster
 
-    >>> # Relevant codes of the 'Other systems'
+To access codes from other systems, such as Crossrail or the Tyne & Wear Metro:
+
+.. code-block:: python
+
     >>> lid.KEY_TO_OTHER_SYSTEMS
     'Other systems'
     >>> os_codes_dat = loc_codes[lid.KEY_TO_OTHER_SYSTEMS]
@@ -167,7 +164,10 @@ A snapshot of the data contained in ``loc_codes`` is demonstrated below:
      'Translink (Northern Ireland)',
      'Tyne & Wear Metro']
 
-    >>> # Take 'Crossrail' as an example
+For example, to view the data for Crossrail:
+
+.. code-block:: python
+
     >>> crossrail_codes_dat = os_codes_dat['Crossrail']
     >>> type(crossrail_codes_dat)
     pandas.core.frame.DataFrame
@@ -186,14 +186,15 @@ A snapshot of the data contained in ``loc_codes`` is demonstrated below:
 ELRs and mileages
 =================
 
-`Engineer's Line References (ELRs)`_ are also frequently seen among various data in Britain's railway system. To get the codes of ELRs (and their associated mileage files), we can use the class :class:`~pyrcs.line_data.ELRMileages`:
+:ref:`< Previous <quickstart-location-identifiers>` | :doc:`Back to Top <quick-start>` | :ref:`Next > <quickstart-railway-station-data>`
+
+`Engineer's Line References (ELRs)`_ are also commonly encountered in various data sets within the UK's railway system. To retrieve the codes for ELRs along with their associated mileage files, we can use the :class:`~pyrcs.line_data.ELRMileages` class:
 
 .. code-block:: python
 
-    >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
+    >>> from pyrcs.line_data import ELRMileages
+    >>> # Alternatively, from pyrcs import ELRMileages
     >>> em = ELRMileages()
-
     >>> em.NAME
     "Engineer's Line References (ELRs)"
     >>> em.URL
@@ -204,29 +205,27 @@ ELRs and mileages
 Engineer's Line References (ELRs)
 ---------------------------------
 
-Similar to the location identifiers, the codes of ELRs on the `Railway Codes`_ website are also alphabetically arranged given their initial letters. We can use the method :meth:`ELRMileages.collect_elr_by_initial()<pyrcs.line_data.ELRMileages.collect_elr_by_initial>` to get the data of ELRs which begin with a specific initial letter. Let's take ``'A'`` as an example:
+Similar to location identifiers, the ELR codes on the `Railway Codes`_ website are arranged alphabetically based on their initial letters. We can use the :meth:`ELRMileages.collect_elr_by_initial()<pyrcs.line_data.ELRMileages.collect_elr_by_initial>` method to obtain ELRs starting with a specific letter. For example, to get the data for ELRs beginning with the letter ``'A'``:
 
 .. code-block:: python
 
-    >>> elrs_a_codes = em.collect_elr_by_initial(initial='a')  # Data of ELRs beginning with 'A'
+    >>> elrs_a_codes = em.collect_elr_by_initial(initial='a')
     >>> type(elrs_a_codes)
     dict
     >>> list(elrs_a_codes.keys())
     ['A', 'Last updated date']
 
-``elrs_a_codes`` is a `dictionary`_ and has the following *keys*:
+The ``elrs_a_codes`` object is a dictionary with the following *keys*:
 
 -  ``'A'``
 -  ``'Last updated date'``
 
 The corresponding *values* are:
 
--  ``elrs_a_codes['A']`` - Data of ELRs that begin with ``'A'`` (referring to the table presented on the web page `ELRs beginning with A`_);
--  ``elrs_a_codes['Last updated date']`` - The date when the web page `ELRs beginning with A`_ was last updated.
+-  ``elrs_a_codes['A']`` - Data for ELRs that begin with ``'A'`` (referring to the table presented on the web page `ELRs beginning with A`_).
+-  ``elrs_a_codes['Last updated date']`` - The date when the `ELRs beginning with A`_ web page was last updated.
 
-.. _`ELRs beginning with A`: http://www.railwaycodes.org.uk/elrs/elra.shtm
-
-A snapshot of the data contained in ``elrs_a_codes`` is demonstrated below:
+Here is a snapshot of the data contained in ``elrs_a_codes``:
 
 .. code-block:: python
 
@@ -241,11 +240,10 @@ A snapshot of the data contained in ``elrs_a_codes`` is demonstrated below:
     3  ABB  ...       Now AHB
     4  ABB  ...
     [5 rows x 5 columns]
-
     >>> print("Last updated date: {}".format(elrs_a_codes['Last updated date']))
+    Last updated date: 2024-08-04
 
-
-To get the data of all ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`ELRMileages.fetch_elr()<pyrcs.line_data.ELRMileages.fetch_elr>`:
+To retrieve data for all ELRs (from ``'A'`` to ``'Z'``), we can use the :meth:`ELRMileages.fetch_elr()<pyrcs.line_data.ELRMileages.fetch_elr>` method:
 
 .. code-block:: python
 
@@ -255,30 +253,30 @@ To get the data of all ELRs (with the initial letters ranging from ``'A'`` to ``
     >>> list(elrs_codes.keys())
     ['ELRs and mileages', 'Last updated date']
 
-In like manner, ``elrs_codes`` is also a `dictionary`_, of which the *keys* are:
+Similarly, ``elrs_codes`` is a dictionary with the following *keys*:
 
 -  ``'ELRs and mileages'``
 -  ``'Latest update date'``
 
 The corresponding *values* are:
 
--  ``elrs_codes['ELRs and mileages']`` - Codes of all available ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``);
--  ``elrs_codes['Latest update date']`` - The latest ``'Last updated date'`` among all the initial-specific codes.
+-  ``elrs_codes['ELRs and mileages']`` - Codes for all available ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``);
+-  ``elrs_codes['Latest update date']`` - The most recent update date among all the ELR data.
 
-A snapshot of the data contained in ``elrs_codes`` is demonstrated below:
+Here is a snapshot of the data contained in ``elrs_codes``:
 
 .. code-block:: python
 
     >>> elrs_codes_dat = elrs_codes[em.KEY]
     >>> type(elrs_codes_dat)
     pandas.core.frame.DataFrame
-    >>> elrs_codes_dat.head()
-       ELR  ...         Notes
-    0  AAL  ...      Now NAJ3
-    1  AAM  ...  Formerly AML
-    2  AAV  ...
-    3  ABB  ...       Now AHB
-    4  ABB  ...
+    >>> elrs_codes_dat.tail()
+           ELR                                 Line name  ... Datum Notes
+    4575  ZGW1                     Records to be deleted  ...   n/a
+    4576  ZGW2        Records for comparison if required  ...   n/a
+    4577   ZZY                            Deleted record  ...   n/a
+    4578   ZZZ                      Record to be deleted  ...   n/a
+    4579  ZZZ9  Dummy ELR for demonstrations and testing  ...   n/a
     [5 rows x 5 columns]
 
 .. _quickstart-mileage-files-given-elr:
@@ -286,11 +284,9 @@ A snapshot of the data contained in ``elrs_codes`` is demonstrated below:
 Mileage file of a given ELR
 ---------------------------
 
-Further to the codes of ELRs, each ELR is associated with a mileage file, which specifies the major mileages for the ELR. To get the mileage data, we can use the method :meth:`ELRMileages.fetch_mileage_file()<pyrcs.line_data.ELRMileages.fetch_mileage_file>`.
+In addition to the codes of ELRs, each ELR is associated with a mileage file that specifies the major mileages along the line. To retrieve this data, we can use the :meth:`ELRMileages.fetch_mileage_file()<pyrcs.line_data.ELRMileages.fetch_mileage_file>` method.
 
-For example, let's try to get the `mileage file for 'AAM'`_:
-
-.. _`mileage file for 'AAM'`: http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm
+For example, to get the `mileage file for 'AAM'`_:
 
 .. code-block:: python
 
@@ -300,7 +296,7 @@ For example, let's try to get the `mileage file for 'AAM'`_:
     >>> list(amm_mileage_file.keys())
     ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
 
-As demonstrated above, ``amm_mileage_file`` is a `dictionary`_ and has the following *keys*:
+The ``amm_mileage_file`` is also a dictionary and has the following *keys*:
 
 -  ``'ELR'``
 -  ``'Line'``
@@ -310,19 +306,18 @@ As demonstrated above, ``amm_mileage_file`` is a `dictionary`_ and has the follo
 
 The corresponding *values* are:
 
--  ``amm_mileage_file['ELR']`` - The given ELR, which, in this example, is ``'AAM'``;
--  ``amm_mileage_file['Line']`` - Name of the line associated with the given ELR;
--  ``amm_mileage_file['Sub-Line']`` - Name of the sub line (if any) associated with the given ELR;
--  ``amm_mileage_file['Mileage']`` - Major mileages for the given ELR;
--  ``amm_mileage_file['Notes']`` - Additional information/notes (if any).
+-  ``amm_mileage_file['ELR']`` - The given ELR (in this example, ``'AAM'``).
+-  ``amm_mileage_file['Line']`` - The name of the line associated with the ELR.
+-  ``amm_mileage_file['Sub-Line']`` - The sub-line name (if applicable).
+-  ``amm_mileage_file['Mileage']`` - The major mileages along the line.
+-  ``amm_mileage_file['Notes']`` - Additional notes or information (if available).
 
-A snapshot of the data contained in ``amm_mileage_file`` is demonstrated below:
+Here is a snapshot of the data contained in ``amm_mileage_file``:
 
 .. code-block:: python
 
     >>> amm_mileage_file['Line']
     'Ashchurch and Malvern Line'
-
     >>> amm_mileage_file['Mileage'].head()
       Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
     0  0.0000               ...
@@ -338,47 +333,43 @@ A snapshot of the data contained in ``amm_mileage_file`` is demonstrated below:
 Railway station data
 ====================
 
-The `railway station data`_ (including the station name, ELR, mileage, status, owner, operator, degrees of longitude and latitude, and grid reference) is categorised as one of the `other assets`_ on the `Railway Codes`_ website. To deal with data in this category, PyRCS offers a sub-package :mod:`~pyrcs.other_assets`, from which we can use the contained class :class:`~pyrcs.other_assets.Stations` to get the `railway station data`_:
+:ref:`< Previous <quickstart-elrs-and-mileages>` | :doc:`Back to Top <quick-start>` | :ref:`Next > <quickstart-the-end>`
 
-.. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
+The `railway station data`_ includes information such as the station name, ELR, mileage, status, owner, operator, coordinates and grid reference. This data is available in the `other assets`_ section of the `Railway Codes`_ website and can be retrieved using the :class:`~pyrcs.other_assets.Stations` class contained in the :mod:`~pyrcs.other_assets` subpackage.
 
-Now let's import the class and create an instance of it:
+To get the data, let's import the :class:`~pyrcs.other_assets.Stations` class and create an instance:
 
 .. code-block:: python
 
-    >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
-
+    >>> from pyrcs.other_assets import Stations
+    >>> # Alternatively, from pyrcs import Stations
     >>> stn = Stations()
-
     >>> stn.NAME
     'Railway station data'
     >>> stn.URL
     'http://www.railwaycodes.org.uk/stations/station0.shtm'
 
-.. note::
-
-    - Alternatively, the instance ``stn`` can also be defined through the class :class:`~pyrcs.collector.OtherAssets`, which contains all classes under the category of `other assets`_ (see below).
+Alternatively, we can also create the instance by using the :class:`~pyrcs.collector.OtherAssets` class:.
 
 .. code-block:: python
 
     >>> from pyrcs.collector import OtherAssets  # from pyrcs import OtherAssets
-
     >>> oa = OtherAssets()
     >>> stn_ = oa.Stations
-
     >>> stn.NAME == stn_.NAME
     True
 
 .. note::
 
-    - The instances ``stn_`` and ``stn`` are of the same class :class:`~pyrcs.other_assets.Stations`.
+    - The instance ``stn`` encompasses all classes within the `other assets`_ category.
+    - ``stn_`` is equivalent to ``stn``.
 
 .. _quickstart-railway-station-locations-given-initial:
 
 Railway station locations given a specific initial letter
 ---------------------------------------------------------
 
-To get the location data of railway stations whose names start with a given letter, say ``'A'``, we can use the method :meth:`Stations.collect_locations_by_initial()<pyrcs.other_assets.Stations.collect_locations_by_initial>`:
+We can obtain railway station data based on the first letter (e.g. ``'A'`` or ``'Z'``) of the station's name using the :meth:`Stations.collect_locations_by_initial()<pyrcs.other_assets.Stations.collect_locations_by_initial>` method. For example, to get data for stations starting with ``'A'``:
 
 .. code-block:: python
 
@@ -388,19 +379,17 @@ To get the location data of railway stations whose names start with a given lett
     >>> list(stn_loc_a_codes.keys())
     ['A', 'Last updated date']
 
-As demonstrated above, the dictionary ``stn_loc_a_codes`` include the following *keys*:
+The dictionary ``stn_loc_a_codes`` includes the following *keys*:
 
 -  ``'A'``
 -  ``'Last updated date'``
 
 The corresponding *values* are:
 
--  ``stn_loc_a_codes['A']`` - Mileages, operators and grid coordinates of railway stations whose names begin with ``'A'`` (referring to the table presented on the web page of `Stations beginning with A`_);
--  ``stn_loc_a_codes['Last updated date']`` - The date when the web page `Stations beginning with A`_ was last updated.
+-  ``stn_loc_a_codes['A']`` - Data for railway stations whose names begin with ``'A'``, including mileages, operators and grid coordinates, referring to the table on the `Stations beginning with A`_ web page.
+-  ``stn_loc_a_codes['Last updated date']`` - The date when the `Stations beginning with A`_ web page was last updated.
 
-.. _`Stations beginning with A`: http://www.railwaycodes.org.uk/stations/stationa.shtm
-
-A snapshot of the data contained in ``stn_loc_a`` is demonstrated below:
+Here is a snapshot of the data contained in ``stn_loc_a``:
 
 .. code-block:: python
 
@@ -408,14 +397,13 @@ A snapshot of the data contained in ``stn_loc_a`` is demonstrated below:
     >>> type(stn_loc_a_codes_dat)
     pandas.core.frame.DataFrame
     >>> stn_loc_a_codes_dat.head()
-          Station  ...                                    Former Operator
-    0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-    1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-    2        Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+                                  Station  ...                              Former Operator
+    0  Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Railway from 1 Ap...
+    1  Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Railway from 1 Ap...
+    2                                Aber  ...  Keolis Amey Operations/Gweithrediadau Ke...
+    3                           Abercynon  ...  Keolis Amey Operations/Gweithrediadau Ke...
+    4                           Abercynon  ...  Keolis Amey Operations/Gweithrediadau Ke...
     [5 rows x 14 columns]
-
     >>> stn_loc_a_codes_dat.columns.to_list()
     ['Station',
      'Station Note',
@@ -432,22 +420,21 @@ A snapshot of the data contained in ``stn_loc_a`` is demonstrated below:
      'Operator',
      'Former Operator']
     >>> stn_loc_a_codes_dat[['Station', 'ELR', 'Mileage']].head()
-          Station  ELR   Mileage
-    0  Abbey Wood  NKL  11m 43ch
-    1  Abbey Wood  XRS  24.458km
-    2        Aber  CAR   8m 69ch
-    3   Abercynon  CAM  16m 28ch
-    4   Abercynon  ABD  16m 28ch
-
+                                  Station  ELR   Mileage
+    0  Abbey Wood Abbey Wood / ABBEY WOOD  NKL  11m 43ch
+    1  Abbey Wood Abbey Wood / ABBEY WOOD  XRS  24.458km
+    2                                Aber  CAR   8m 69ch
+    3                           Abercynon  CAM  16m 28ch
+    4                           Abercynon  ABD  16m 28ch
     >>> print("Last updated date: {}".format(stn_loc_a_codes['Last updated date']))
-
+    Last updated date: 2024-09-23
 
 .. _quickstart-all-railway-station-locations:
 
 All available railway station locations
 ---------------------------------------
 
-To get the location data of all railway stations (with the initial letters ranging from ``'A'`` to ``'Z'``) available in this category, we can use the method :meth:`Stations.fetch_locations()<pyrcs.other_assets.Stations.fetch_locations>`:
+To retrieve data for all railway stations available in the `other assets`_ category, we can use the :meth:`Stations.fetch_locations()<pyrcs.other_assets.Stations.fetch_locations>` method:
 
 .. code-block:: python
 
@@ -457,69 +444,69 @@ To get the location data of all railway stations (with the initial letters rangi
     >>> list(stn_loc_codes.keys())
     ['Mileages, operators and grid coordinates', 'Last updated date']
 
-The dictionary ``stn_loc_codes`` include the following *keys*:
+The dictionary ``stn_loc_codes`` includes the following *keys*:
 
 -  ``'Mileages, operators and grid coordinates'``
 -  ``'Latest update date'``
 
 The corresponding *values* are:
 
--  ``stn_loc_codes['Mileages, operators and grid coordinates']`` - Location data of all railway stations available on the relevant web pages ranging from ``'A'`` to ``'Z'``;
--  ``stn_loc_codes['Latest update date']`` - The latest ``'Last updated date'`` among all initial-specific codes.
+-  ``stn_loc_codes['Mileages, operators and grid coordinates']`` - Data for all railway stations, with the initial letters ranging from ``'A'`` to ``'Z'``;
+-  ``stn_loc_codes['Latest update date']`` - The most recent update date among all the station data.
 
-A snapshot of the data contained in ``stn_loc_codes`` is demonstrated below:
+Here is a snapshot of the data contained in ``stn_loc_codes``:
 
 .. code-block:: python
 
     >>> stn.KEY_TO_STN
     'Mileages, operators and grid coordinates'
-
     >>> stn_loc_codes_dat = stn_loc_codes[stn.KEY_TO_STN]
     >>> type(stn_loc_codes_dat)
     pandas.core.frame.DataFrame
-    >>> stn_loc_codes_dat.head()
-          Station  ...                                    Former Operator
-    0  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-    1  Abbey Wood  ...  London & South Eastern Railway from 1 April 20...
-    2        Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    3   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    4   Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+    >>> stn_loc_codes_dat.tail()
+                 Station  ...                                    Former Operator
+    2898            York  ...  East Coast Main Line Company 14 November 2009 ...
+    2899            York  ...  East Coast Main Line Company 14 November 2009 ...
+    2900          Yorton  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+    2901   Ystrad Mynach  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
+    2902  Ystrad Rhondda  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
     [5 rows x 14 columns]
-
     >>> stn_loc_codes_dat.columns.to_list()
-    ['Station',
-     'Station Note',
-     'ELR',
-     'Mileage',
-     'Status',
-     'Degrees Longitude',
-     'Degrees Latitude',
-     'Grid Reference',
-     'CRS',
-     'CRS Note',
-     'Owner',
-     'Former Owner',
-     'Operator',
-     'Former Operator']
-    >>> stn_loc_codes_dat[['Station', 'ELR', 'Mileage']].head()
-          Station  ELR   Mileage
-    0  Abbey Wood  NKL  11m 43ch
-    1  Abbey Wood  XRS  24.458km
-    2        Aber  CAR   8m 69ch
-    3   Abercynon  CAM  16m 28ch
-    4   Abercynon  ABD  16m 28ch
-
+    >>> sel_cols = ['Station', 'ELR', 'Mileage', 'Degrees Longitude', 'Degrees Latitude']
+    >>> stn_loc_codes_dat[sel_cols].tail()
+                 Station   ELR    Mileage  Degrees Longitude  Degrees Latitude
+    2898            York  ECM5    0m 00ch            -1.0920           53.9584
+    2899            York  ECM4  188m 40ch            -1.0920           53.9584
+    2900          Yorton   SYC   25m 14ch            -2.7360           52.8083
+    2901   Ystrad Mynach   CAR   13m 60ch            -3.2414           51.6414
+    2902  Ystrad Rhondda   THT   20m 05ch            -3.4666           51.6436
     >>> print("Last updated date: {}".format(stn_loc_codes['Last updated date']))
+    Last updated date: 2024-10-07
 
 
 .. _quickstart-the-end:
 
-**This is the end of the** :doc:`quick-start`.
+:ref:`< Previous <quickstart-railway-station-data>` | :doc:`Back to Top <quick-start>`
 
 -----------------------------------------------------------
 
-Any issues regarding the use of the package are all welcome and should be logged/reported onto the `Issue Tracker`_.
-
-.. _`Issue Tracker`: https://github.com/mikeqfu/pyrcs/issues
+Any issues regarding the use of pyrcs are welcome and can be logged/reported onto the `Issue Tracker`_.
 
 For more details and examples, check :doc:`subpackages` and :doc:`modules`.
+
+
+.. _`Location identifiers`: http://www.railwaycodes.org.uk/crs/CRS0.shtm
+.. _`Engineer's Line References (ELRs)`: http://www.railwaycodes.org.uk/elrs/elr0.shtm
+.. _`Railway station data`: http://www.railwaycodes.org.uk/stations/station1.shtm
+.. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
+.. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
+.. _`pandas.DataFrame`: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html
+.. _`dictionary`: https://docs.python.org/3/tutorial/datastructures.html#dictionaries
+.. _`dict`: https://docs.python.org/3/library/stdtypes.html#dict
+.. _`Locations beginning A`: http://www.railwaycodes.org.uk/crs/CRSa.shtm
+.. _`other systems`: http://www.railwaycodes.org.uk/crs/CRS1.shtm
+.. _`ELRs beginning with A`: http://www.railwaycodes.org.uk/elrs/elra.shtm
+.. _`mileage file for 'AAM'`: http://www.railwaycodes.org.uk/elrs/_mileages/a/aam.shtm
+.. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
+.. _`Stations beginning with A`: http://www.railwaycodes.org.uk/stations/stationa.shtm
+.. _`Issue Tracker`: https://github.com/mikeqfu/pyrcs/issues
