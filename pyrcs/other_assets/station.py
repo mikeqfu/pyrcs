@@ -1,5 +1,5 @@
 """
-Collect `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
+Collects `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
 """
 
 import os
@@ -27,30 +27,32 @@ class Stations:
     `railway station data <http://www.railwaycodes.org.uk/stations/station0.shtm>`_.
     """
 
-    #: Name of the data.
+    #: The name of the data.
     NAME: str = 'Railway station data'
-    #: Main key of the dict-type station data.
+    #: The key for accessing the data.
     KEY: str = 'Stations'
-    #: URL of the main web page of the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
-    #: Key of the dict-type data of '*Mileages, operators and grid coordinates*'.
+    #: The key for accessing the data of *Mileages, operators and grid coordinates*.
     KEY_TO_STN: str = 'Mileages, operators and grid coordinates'
-    #: Key of the data of the last updated date.
+
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
+
+    #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: Name of the data directory; defaults to ``None``.
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
         :type data_dir: str | None
-        :param update: Whether to do an update check (for the package data); defaults to ``False``.
+        :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: Whether to print relevant information in console; defaults to ``True``.
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
 
-        :ivar dict catalogue: Catalogue of the data.
-        :ivar str last_updated_date: Last updated date.
-        :ivar str data_dir: Path to the data directory.
-        :ivar str current_data_dir: Path to the current data directory.
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
@@ -66,22 +68,47 @@ class Stations:
 
         self.catalogue = self.get_catalogue(update=update, verbose=False)
 
-        self.last_updated_date = get_last_updated_date(
-            url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
-        self.data_dir, self.current_data_dir = init_data_dir(
-            self, data_dir, category="other-assets")
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, "other-assets")
+
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
+        """
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
+
+        The default data directory for this class is: ``"data\\other-assets\\stations"``.
+
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
+        :type sub_dir: str
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
+        :rtype: str
+
+        .. _`pyhelpers.dir.cd()`:
+            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
+        """
+
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
+
+        return path
 
     def get_catalogue(self, update=False, verbose=False):
         """
-        Get catalogue of railway station data.
+        Gets the catalogue of railway station data.
 
-        :param update: Whether to do an update check (for the package data); defaults to ``False``.
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :return: Catalogue of railway station data.
-        :rtype: dict
+        :return: A dictionary containing the catalogue of railway station data,
+            or ``None`` if no data catalogue is collected.
+        :rtype: dict | None
 
         **Examples**::
 
@@ -165,27 +192,6 @@ class Stations:
 
         return catalogue
 
-    def _cdd(self, *sub_dir, **kwargs):
-        """
-        Change directory to package data directory and subdirectories (and/or a file).
-
-        The directory for this module: ``"data\\other-assets\\stations"``.
-
-        :param sub_dir: Subdirectory or subdirectories (and/or a file)
-        :type sub_dir: str
-        :param kwargs: [Optional] parameters of the function `pyhelpers.dirs.cd`_
-        :return: Path to the backup data directory for the class
-            :py:class:`~pyrcs.other_assets.station.Stations`.
-        :rtype: str
-
-        .. _`pyhelpers.dirs.cd`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dirs.cd.html
-        """
-
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
-
-        return path
-
     @staticmethod
     def _split_elr_mileage_column(dat):
         if 'ELRMileage' in dat.columns:
@@ -221,7 +227,7 @@ class Stations:
     @staticmethod
     def _check_row_spans(dat):
         """
-        Check data where there are row spans.
+        Checks data in which there are row spans.
 
         :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
@@ -262,7 +268,7 @@ class Stations:
     @staticmethod
     def _parse_coordinates_columns(dat):
         """
-        Parse ``'Degrees Longitude'`` and ``'Degrees Latitude'`` of the station locations data.
+        Parses ``'Degrees Longitude'`` and ``'Degrees Latitude'`` of the station locations data.
 
         :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
@@ -280,7 +286,7 @@ class Stations:
     @staticmethod
     def _parse_station_column(dat):
         """
-        Parse ``'Station'`` of the station locations data.
+        Parses ``'Station'`` of the station locations data.
 
         :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
@@ -362,7 +368,7 @@ class Stations:
 
     def _parse_owner_and_operator_columns(self, dat):
         """
-        Parse ``'Owner'`` and ``'Operator'`` of the station locations data.
+        Parses ``'Owner'`` and ``'Operator'`` of the station locations data.
 
         :param dat: Preprocessed data of the station locations.
         :type dat: pandas.DataFrame
@@ -384,18 +390,18 @@ class Stations:
 
     def collect_locations_by_initial(self, initial, update=False, verbose=False):
         """
-        Collect data of `railway station locations
+        Collects data of `railway station locations
         <http://www.railwaycodes.org.uk/stations/station0.shtm>`_
         (mileages, operators and grid coordinates) for a given initial letter.
 
-        :param initial: Initial letter of locations of the railway station data.
+        :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of railway station names.
         :type initial: str
-        :param update: Whether to do an update check (for the package data); defaults to ``False``.
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
-        :return: Data of railway station locations beginning with the given ``initial`` letter and
-            date of when the data was last updated.
+        :return: A dictionary containing the data of railway station locations whose initial letters
+            are the given ``initial`` and date of when the data was last updated.
         :rtype: dict
 
         **Examples**::
@@ -542,19 +548,20 @@ class Stations:
 
     def fetch_locations(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `railway station locations`_ (mileages, operators and grid coordinates).
+        Fetches the data of `railway station locations`_ (mileages, operators and grid coordinates).
 
         .. _`railway station locations`:
             http://www.railwaycodes.org.uk/stations/station0.shtm
 
-        :param update: Whether to do an update check (for the package data); defaults to ``False``.
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: Name of a directory where pickle files of the data is saved;
+        :param dump_dir: The path to a directory where the data file will be saved;
             defaults to ``None``.
         :type dump_dir: str | None
-        :param verbose: Whether to print relevant information in console; defaults to ``False``.
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :return: Data of railway station locations and date of when the data was last updated.
+        :return: A dictionary containing the data of railway station locations and
+            the date of when the data was last updated.
         :rtype: dict
 
         **Examples**::

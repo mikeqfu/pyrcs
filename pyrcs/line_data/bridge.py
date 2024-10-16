@@ -1,5 +1,5 @@
 """
-Collect data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
+Collects data of British `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
 """
 
 import os
@@ -11,8 +11,8 @@ import requests
 from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
 
-from pyrcs.parser import get_introduction, get_last_updated_date
-from pyrcs.utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
+from ..parser import get_introduction, get_last_updated_date
+from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
     print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
 
 
@@ -22,32 +22,30 @@ class Bridges:
     `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
     """
 
-    #: Name of the data
+    #: The name of the data.
     NAME: str = 'Railway bridges'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
+    #: The key for accessing the data.
     KEY: str = 'Bridges'
-
-    #: URL of the main web page of the data
+    #: The URL of the main web page for the data.
     URL: str = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
-
-    #: Key of the data of the last updated date
+    #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param data_dir: Directory where the data is stored; defaults to ``None``.
+        :type data_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last update date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
-            >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
+            >>> from pyrcs.line_data import Bridges  # alternatively, from pyrcs import Bridges
             >>> bdg = Bridges()
             >>> bdg.NAME
             'Railway bridges'
@@ -63,26 +61,31 @@ class Bridges:
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\bridges"``.
+        The default data directory for this class is: ``"data\\line-data\\bridges"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: pathname of the backup data directory for the class
-            :py:class:`~pyrcs.line_data.bridges.Bridges`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        pathname = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
-        return pathname
+        return path
 
     def _parse_h4_ul_li(self, h4_ul_li):
         h4_ul_li_contents = h4_ul_li.contents
@@ -112,23 +115,23 @@ class Bridges:
 
     def collect_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect codes of `railway bridges`_ from source web page.
+        Collects the codes of `railway bridges`_ from the source webpage.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether to prompt for confirmation before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of railway bridges and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information in the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing railway bridge data and the date of the last update,
+            or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
-
             >>> bdg = Bridges()
-
             >>> bdg_codes = bdg.collect_codes()
             To collect data of railway bridges
             ? [No]|Yes: yes
@@ -144,7 +147,6 @@ class Bridges:
              'London Underground',
              'Addendum',
              'Key to text presentation conventions']
-
             >>> bdg_codes['Key to text presentation conventions']
             {'Bold': 'Existing bridges',
              'Bold italic': 'Existing locations',
@@ -235,27 +237,26 @@ class Bridges:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes of `railway bridges`_.
+        Fetches the codes of `railway bridges`_.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of railway bridges and date of when the data was last updated
-        :rtype: dict or None
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing railway bridge data and the date of the last update,
+            or ``None`` if no data is retrieved.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
-
             >>> bdg = Bridges()
-
             >>> bdg_codes = bdg.fetch_codes()
-
             >>> type(bdg_codes)
             dict
             >>> list(bdg_codes.keys())
@@ -268,7 +269,6 @@ class Bridges:
              'London Underground',
              'Addendum',
              'Key to text presentation conventions']
-
             >>> bdg_codes['Key to text presentation conventions']
             {'Bold': 'Existing bridges',
              'Bold italic': 'Existing locations',
@@ -284,7 +284,7 @@ class Bridges:
         """
 
         bridges_data = fetch_data_from_file(
-            cls=self, method='collect_codes', data_name=self.KEY, ext=".json",
+            self, method='collect_codes', data_name=self.KEY, ext=".json",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return bridges_data

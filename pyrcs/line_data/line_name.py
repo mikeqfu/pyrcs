@@ -1,5 +1,5 @@
 """
-Collect `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
+Collects data of `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
 """
 
 import re
@@ -21,39 +21,37 @@ class LineNames:
     `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
     """
 
-    #: Name of the data
-    NAME = 'Railway line names'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Line names'
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/line/line_names.shtm')
-    #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: The name of the data.
+    NAME: str = 'Railway line names'
+    #: The key for accessing the data.
+    KEY: str = 'Line names'
+
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/line/line_names.shtm')
+
+    #: The key used to reference the last updated date in the data.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
-
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the data catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last update date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
             >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
-
             >>> ln = LineNames()
-
             >>> ln.NAME
             'Railway line names'
-
             >>> ln.URL
             'http://www.railwaycodes.org.uk/misc/line_names.shtm'
         """
@@ -62,28 +60,33 @@ class LineNames:
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\line-names"``.
+        The default data directory for this class is: ``"data\\line-data\\line-names"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.line_name.LineNames`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _pyhelpers.dir.cd:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
@@ -115,23 +118,23 @@ class LineNames:
 
     def collect_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `railway line names`_ from source web page.
+        Collects data of `railway line names`_ and associated route data from the source web page.
 
         .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: railway line names and routes data and date of when the data was last updated
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing railway line names, route data and the last update date,
+            or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
-
             >>> ln = LineNames()
-
             >>> line_names_codes = ln.collect_codes()
             To collect British railway line names
             ? [No]|Yes: yes
@@ -139,10 +142,8 @@ class LineNames:
             dict
             >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
-
             >>> ln.KEY
             'Line names'
-
             >>> line_names_codes_dat = line_names_codes[ln.KEY]
             >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
@@ -158,7 +159,8 @@ class LineNames:
 
         data_name = self.NAME.lower()
 
-        if confirmed(f"To collect British {data_name}\n?", confirmation_required=confirmation_required):
+        if confirmed(
+                f"To collect British {data_name}\n?", confirmation_required=confirmation_required):
 
             print_collect_msg(
                 data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
@@ -184,11 +186,9 @@ class LineNames:
                     temp = line_names['Route'].map(self._parse_route)
                     line_names[rte_col] = pd.DataFrame(zip(*temp)).T
 
-                    last_updated_date = get_last_updated_date(self.URL)
-
                     line_names_data = {
                         self.KEY: line_names,
-                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
+                        self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(self.URL)
                     }
 
                     if verbose == 2:
@@ -204,34 +204,31 @@ class LineNames:
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `railway line names`_.
+        Fetches data of `railway line names`_ and associated route data.
 
         .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: railway line names and routes data and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing railway line names, route data and the last update date.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
-
             >>> ln = LineNames()
-
             >>> line_names_codes = ln.fetch_codes()
             >>> type(line_names_codes)
             dict
             >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
-
             >>> ln.KEY
             'Line names'
-
             >>> line_names_codes_dat = line_names_codes[ln.KEY]
             >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
@@ -246,7 +243,7 @@ class LineNames:
         """
 
         line_names_data = fetch_data_from_file(
-            cls=self, method='collect_codes', data_name=self.KEY, ext=".pkl",
+            self, method='collect_codes', data_name=self.KEY, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return line_names_data

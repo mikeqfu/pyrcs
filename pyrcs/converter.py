@@ -1,4 +1,6 @@
-"""Change data into a desired form."""
+"""
+Converts data to a certain format.
+"""
 
 import copy
 import numbers
@@ -12,25 +14,22 @@ import pandas as pd
 
 def fix_mileage(mileage):
     """
-    Fix mileage data (associated with an ELR).
+    Fixes mileage data (associated with an ELR).
 
-    :param mileage: Network Rail mileage
-    :type mileage: str or float or None
-    :return: fixed mileage data in the conventional format used by Network Rail
+    :param mileage: The mileage data.
+    :type mileage: str | float | None
+    :return: The fixed mileage data in the form of *<miles>.<yards>*.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.converter import fix_mileage
-
         >>> fixed_mileage = fix_mileage(mileage=29.011)
         >>> fixed_mileage
         '29.0110'
-
         >>> fixed_mileage = fix_mileage(mileage='.1100')
         >>> fixed_mileage
         '0.1100'
-
         >>> fixed_mileage = fix_mileage(mileage=29)
         >>> fixed_mileage
         '29.0000'
@@ -58,35 +57,30 @@ def fix_mileage(mileage):
 
 def yard_to_mileage(yard, as_str=True):
     """
-    Convert yards to Network Rail mileages.
+    Converts yards to mileages.
 
-    :param yard: yard data
-    :type yard: int or float or None
-    :param as_str: whether to return as a string value, defaults to ``True``
+    :param yard: The yard data.
+    :type yard: int | float | None
+    :param as_str: Whether to return as a string value; defaults to ``True``.
     :type as_str: bool
-    :return: Network Rail mileage in the form '<miles>.<yards>' or <miles>.<yards>
-    :rtype: str or float
+    :return: The mileage in the form of *<miles>.<yards>* or *<miles>.<yards>*.
+    :rtype: str | float
 
     **Examples**::
 
         >>> from pyrcs.converter import yard_to_mileage
-
         >>> mileage_dat = yard_to_mileage(yard=396)
         >>> mileage_dat
         '0.0396'
-
         >>> mileage_dat = yard_to_mileage(yard=396, as_str=False)
         >>> mileage_dat
         0.0396
-
         >>> mileage_dat = yard_to_mileage(yard=None)
         >>> mileage_dat
         ''
-
         >>> mileage_dat = yard_to_mileage(yard=1760)
         >>> mileage_dat
         '1.0000'
-
         >>> mileage_dat = yard_to_mileage(yard=12330)
         >>> mileage_dat
         '7.0010'
@@ -115,25 +109,22 @@ def yard_to_mileage(yard, as_str=True):
 
 def mileage_to_yard(mileage):
     """
-    Convert Network Rail mileages to yards.
+    Converts mileages to yards.
 
-    :param mileage: Network Rail mileage
-    :type mileage: float or int or str
-    :return: yards
+    :param mileage: The mileage (used by Network Rail).
+    :type mileage: float | int | str
+    :return: The corresponding yards.
     :rtype: int
 
     **Examples**::
 
         >>> from pyrcs.converter import mileage_to_yard
-
         >>> yards_dat = mileage_to_yard(mileage='0.0396')
         >>> yards_dat
         396
-
         >>> yards_dat = mileage_to_yard(mileage=0.0396)
         >>> yards_dat
         396
-
         >>> yards_dat = mileage_to_yard(mileage=1.0396)
         >>> yards_dat
         2156
@@ -151,22 +142,20 @@ def mileage_to_yard(mileage):
 
 def mile_chain_to_mileage(mile_chain):
     """
-    Convert mileage data in the form '<miles>.<chains>' to Network Rail mileage.
+    Converts *<miles>.<chains>* to *<miles>.<yards>*.
 
-    :param mile_chain: mileage data presented in the form '<miles>.<chains>'
-    :type mile_chain: str or numpy.nan or None
-    :return: Network Rail mileage in the form '<miles>.<yards>'
+    :param mile_chain: Mileage data presented in the form of *<miles>.<chains>*.
+    :type mile_chain: str | numpy.nan | None
+    :return: The corresponding mileage in the form of '<miles>.<yards>'.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.converter import mile_chain_to_mileage
-
         >>> # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
         >>> mileage_data = mile_chain_to_mileage(mile_chain='0.18')
         >>> mileage_data
         '0.0396'
-
         >>> # None, nan or ''
         >>> mileage_data = mile_chain_to_mileage(mile_chain=None)
         >>> mileage_data
@@ -185,25 +174,22 @@ def mile_chain_to_mileage(mile_chain):
 
 def mileage_to_mile_chain(mileage):
     """
-    Convert Network Rail mileage to the form '<miles>.<chains>'.
+    Converts *<miles>.<yards>* to *<miles>.<chains>*.
 
-    :param mileage: Network Rail mileage data presented in the form '<miles>.<yards>'
-    :type mileage: str or numpy.nan or None
-    :return: data presented in the form '<miles>.<chains>'
+    :param mileage: The mileage data presented in the form of *<miles>.<yards>*.
+    :type mileage: str | numpy.nan | None
+    :return: The corresponding mileage presented in the form of *<miles>.<chains>*.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.converter import mileage_to_mile_chain
-
         >>> mile_chain_data = mileage_to_mile_chain(mileage='0.0396')
         >>> mile_chain_data
         '0.18'
-
         >>> mile_chain_data = mileage_to_mile_chain(mileage=1.0396)
         >>> mile_chain_data
         '1.18'
-
         >>> # None, nan or ''
         >>> miles_chains_dat = mileage_to_mile_chain(mileage=None)
         >>> miles_chains_dat
@@ -222,33 +208,28 @@ def mileage_to_mile_chain(mileage):
 
 def mile_yard_to_mileage(mile, yard, as_numeric=True):
     """
-    Convert mile and yard to Network Rail mileage.
+    Converts mile and yard to mileage.
 
-    :param mile: mile
-    :type mile: float or int
-    :param yard: yard
-    :type yard: float or int
-    :param as_numeric: whether to return a numeric value, defaults to ``True``
+    :param mile: The mile data.
+    :type mile: float | int
+    :param yard: The yard data.
+    :type yard: float | int
+    :param as_numeric: Whether to return a numeric value; defaults to ``True``.
     :type as_numeric: bool
-    :return: Network Rail mileage
-    :rtype: str or float
+    :return: The corresponding mileage data in the form of *<miles>.<yards>*.
+    :rtype: str | float
 
     **Examples**::
 
         >>> from pyrcs.converter import mile_yard_to_mileage
-
         >>> m, y = 10, 1500
-
         >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y)
         >>> mileage_data
         10.15
-
         >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
         >>> mileage_data
         '10.1500'
-
         >>> m, y = 10, 500
-
         >>> mileage_data = mile_yard_to_mileage(mile=m, yard=y, as_numeric=False)
         >>> mileage_data
         '10.0500'
@@ -268,21 +249,19 @@ def mile_yard_to_mileage(mile, yard, as_numeric=True):
 
 def mileage_str_to_num(mileage):
     """
-    Convert string-type Network Rail mileage to numerical-type one.
+    Converts string-type mileage to its corresponding numerical value.
 
-    :param mileage: string-type Network Rail mileage in the form '<miles>.<yards>'
+    :param mileage: The string-type mileage data in the form of *<miles>.<yards>*.
     :type mileage: str
-    :return: numerical-type Network Rail mileage
+    :return: The corresponding numerical-type mileage.
     :rtype: float
 
     **Examples**::
 
         >>> from pyrcs.converter import mileage_str_to_num
-
         >>> mileage_num = mileage_str_to_num(mileage='0.0396')
         >>> mileage_num
         0.0396
-
         >>> mileage_num = mileage_str_to_num(mileage='')
         >>> mileage_num
         nan
@@ -295,21 +274,19 @@ def mileage_str_to_num(mileage):
 
 def mileage_num_to_str(mileage):
     """
-    Convert numerical-type Network Rail mileage to string-type one.
+    Converts numerical-type Network Rail mileage to string-type one.
 
-    :param mileage: numerical-type Network Rail mileage
-    :type mileage: float or None
-    :return: string-type Network Rail mileage in the form '<miles>.<yards>'
+    :param mileage: The numerical-type mileage data.
+    :type mileage: float | None
+    :return: The corresponding string-type mileage in the form of *<miles>.<yards>*.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.converter import mileage_num_to_str
-
         >>> mileage_str = mileage_num_to_str(mileage=0.0396)
         >>> mileage_str
         '0.0396'
-
         >>> mileage_str = mileage_num_to_str(mileage=None)
         >>> mileage_str
         ''
@@ -325,29 +302,26 @@ def mileage_num_to_str(mileage):
 
 def shift_mileage_by_yard(mileage, shift_yards, as_numeric=True):
     """
-    Shift Network Rail mileage by given yards.
+    Shifts the given mileage by a specified number of yards.
 
-    :param mileage: mileage (associated with an ELR) used by Network Rail
-    :type mileage: float or int or str
-    :param shift_yards: yards by which the given ``mileage`` is shifted
-    :type shift_yards: int or float
-    :param as_numeric: whether to return a numeric type result, defaults to ``True``
+    :param mileage: The initial mileage (associated with an ELR).
+    :type mileage: float | int | str
+    :param shift_yards: The number of yards by which to shift the given mileage.
+    :type shift_yards: int | float
+    :param as_numeric: If ``True``, returns the result as a numeric type; defaults to ``True``.
     :type as_numeric: bool
-    :return: shifted mileage
-    :rtype: float or str
+    :return: The mileage shifted by the specified number of yards.
+    :rtype: float | str
 
     **Examples**::
 
         >>> from pyrcs.converter import shift_mileage_by_yard
-
         >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220)
         >>> n_mileage
         0.0616
-
         >>> n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221)
         >>> n_mileage
         0.0617
-
         >>> n_mileage = shift_mileage_by_yard(mileage=10, shift_yards=220)
         >>> n_mileage
         10.022
@@ -367,26 +341,23 @@ def shift_mileage_by_yard(mileage, shift_yards, as_numeric=True):
 
 def fix_stanox(stanox):
     """
-    Fix the format of a given
-    `STANOX (station number) <https://wiki.openraildata.com/index.php?title=STANOX_Areas>`_ code.
+    Standardises the format of a given
+    `STANOX (station number) <https://wiki.openraildata.com/index.php?title=STANOX_Areas>`_.
 
-    :param stanox: STANOX code
-    :type stanox: str or int or None
-    :return: standard STANOX code
+    :param stanox: The STANOX code to be standardised.
+    :type stanox: str | int | None
+    :return: The standardised STANOX as a string.
     :rtype: str
 
     **Examples**::
 
         >>> from pyrcs.converter import fix_stanox
-
         >>> fixed_stanox = fix_stanox(stanox=65630)
         >>> fixed_stanox
         '65630'
-
         >>> fixed_stanox = fix_stanox(stanox='2071')
         >>> fixed_stanox
         '02071'
-
         >>> fixed_stanox = fix_stanox(stanox=2071)
         >>> fixed_stanox
         '02071'
@@ -405,17 +376,16 @@ def fix_stanox(stanox):
 
 def kilometer_to_yard(km):
     """
-    Make kilometer-to-yard conversion.
+    Converts a distance from kilometres to yards.
 
-    :param km: kilometer
-    :type km: int or float or None
-    :return: yard
+    :param km: The distance in kilometres to convert.
+    :type km: int | float | None
+    :return: The equivalent distance in yards.
     :rtype: float
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs.converter import kilometer_to_yard
-
         >>> kilometer_to_yard(1)
         1093.6132983377079
     """

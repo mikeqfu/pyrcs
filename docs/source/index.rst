@@ -36,21 +36,28 @@ With PyRCS, users can leverage Python's power to streamline workflows and enhanc
 .. toctree::
     :maxdepth: 1
     :includehidden:
-    :caption: Documentation
+    :caption: Getting Started
 
     installation
-    sub-pkg-and-mod
-    license
-    use-of-data
-    acknowledgement
-    contributors
+    quick-start
 
 .. toctree::
     :maxdepth: 1
     :includehidden:
-    :caption: Tutorial
+    :caption: Usage & Reference
 
-    quick-start
+    subpackages
+    modules
+
+.. toctree::
+    :maxdepth: 1
+    :includehidden:
+    :caption: Additional Info
+
+    license
+    use-of-data
+    acknowledgement
+    contributors
 
 
 Indices

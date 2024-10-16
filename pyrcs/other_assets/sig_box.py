@@ -26,49 +26,47 @@ class SignalBoxes:
     `signal box prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm>`_.
     """
 
-    #: Name of the data
-    NAME = 'Signal box prefix codes'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
-    KEY = 'Signal boxes'
+    #: The name of the data.
+    NAME: str = 'Signal box prefix codes'
+    #: The key for accessing the data.
+    KEY: str = 'Signal boxes'
 
-    #: Key of the dict-type data of '*non-national rail*'
-    KEY_TO_NON_NATIONAL_RAIL = 'Non-National Rail'
-    #: Key of the dict-type data of '*Ireland*'
-    KEY_TO_IRELAND = 'Ireland'
-    #: Key of the dict-type data of '*WR (Western region) MAS (multiple aspect signalling) dates*'
-    KEY_TO_WRMASD = 'WR MAS dates'
-    #: Key of the dict-type data of '*bell codes*'
-    KEY_TO_BELL_CODES = 'Bell codes'
+    #: The key for accessing the data of *non-national rail*.
+    KEY_TO_NON_NATIONAL_RAIL: str = 'Non-National Rail'
+    #: The key for accessing the data of *Ireland*.
+    KEY_TO_IRELAND: str = 'Ireland'
+    #: The key for accessing the data of
+    #: *WR (Western region) MAS (multiple aspect signalling) dates*.
+    KEY_TO_WRMASD: str = 'WR MAS dates'
+    #: The key for accessing the data of *bell codes*.
+    KEY_TO_BELL_CODES: str = 'Bell codes'
 
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '/signal/signal_boxes0.shtm')
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(home_page_url(), '/signal/signal_boxes0.shtm')
 
-    #: Key of the data of the last updated date
-    KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
+    #: The key used to reference the last updated date in the data.
+    KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: The name of the directory for storing the data; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last updated date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb.NAME
             'Signal box prefix codes'
-
             >>> sb.URL
             'http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm'
         """
@@ -77,57 +75,62 @@ class SignalBoxes:
 
         self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL, parsed=True, as_date_type=False)
+        self.last_updated_date = get_last_updated_date(url=self.URL)
 
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="other-assets")
+        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, "other-assets")
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\other-assets\\signal-boxes"``.
+        The default data directory for this class is: ``"data\\other-assets\\signal-boxes"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.other_assets.sig_box.SignalBoxes`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
     def collect_prefix_codes(self, initial, update=False, verbose=False):
         """
-        Collect signal box prefix codes beginning with a given initial letter from source web page.
+        Collects `signal box prefix codes`_ starting with a given initial letter
+        from the source web page.
 
-        :param initial: initial letter of signal box name (for specifying a target URL)
+        .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
+
+        :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of signal box prefix code.
         :type initial: str
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of signal box prefix codes beginning with the given initial letter and
-            date of when the data was last updated
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
+        :return: A dictionary containing data of signal box prefix codes whose initial letters are
+            the specified ``initial`` and the date of when the data was last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_a_codes = sb.collect_prefix_codes(initial='a')
             >>> type(sb_a_codes)
             dict
             >>> list(sb_a_codes.keys())
             ['A', 'Last updated date']
-
             >>> sb_a_codes_dat = sb_a_codes['A']
             >>> type(sb_a_codes_dat)
             pandas.core.frame.DataFrame
@@ -173,7 +176,8 @@ class SignalBoxes:
 
                     if any(x is None for x in {thead, tbody}):
                         if verbose == 2:
-                            print(f"No data is available for 'Boxes beginning with '{beginning_with}'.")
+                            print(f"No data is available for "
+                                  f"'prefix codes whose initial letters are '{beginning_with}'.")
 
                     else:
                         ths = [th.get_text(strip=True) for th in thead.find_all('th')]
@@ -202,32 +206,32 @@ class SignalBoxes:
 
     def fetch_prefix_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of signal box prefix codes.
+        Fetches the data of `signal box prefix codes`_.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
+
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of package data folder, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of location codes and date of when the data was last updated
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of signal box prefix codes and
+            the date whey they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_prefix_codes = sb.fetch_prefix_codes()
             >>> type(sb_prefix_codes)
             dict
             >>> list(sb_prefix_codes.keys())
             ['Signal boxes', 'Last updated date']
-
             >>> sb.KEY
             'Signal boxes'
-
             >>> sb_prefix_codes_dat = sb_prefix_codes[sb.KEY]
             >>> type(sb_prefix_codes_dat)
             pandas.core.frame.DataFrame
@@ -280,22 +284,22 @@ class SignalBoxes:
 
     def collect_non_national_rail_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect signal box prefix codes of `non-national rail
-        <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_ from source web page.
+        Collects the signal box prefix codes for `non-national rail
+        <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_ from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: signal box prefix codes of non-national rail
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the signal box prefix codes for non-national rail and
+            the date when they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> nnr_codes = sb.collect_non_national_rail_codes()
             To collect data of non-national rail signal box prefix codes
             ? [No]|Yes: yes
@@ -303,10 +307,8 @@ class SignalBoxes:
             dict
             >>> list(nnr_codes.keys())
             ['Non-National Rail', 'Last updated date']
-
             >>> sb.KEY_TO_NON_NATIONAL_RAIL
             'Non-National Rail'
-
             >>> nnr_codes_dat = nnr_codes[sb.KEY_TO_NON_NATIONAL_RAIL]
             >>> type(nnr_codes_dat)
             dict
@@ -323,7 +325,6 @@ class SignalBoxes:
              'Sheffield Supertram signals',
              'Tyne & Wear Metro signals',
              "Heritage, minor and miniature railways and other 'special' signals"]
-
             >>> lu_signals_codes = nnr_codes_dat['London Underground signals']
             >>> type(lu_signals_codes)
             dict
@@ -344,9 +345,7 @@ class SignalBoxes:
         data_name = self.KEY_TO_NON_NATIONAL_RAIL.lower() + " signal box prefix codes"
 
         if confirmed(prompt=confirm_msg(data_name), confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(data_name, verbose, confirmation_required)
 
             non_national_rail_codes_data = None
 
@@ -407,8 +406,8 @@ class SignalBoxes:
                         print("Done.")
 
                     save_data_to_file(
-                        self, data=non_national_rail_codes_data, data_name=self.KEY_TO_NON_NATIONAL_RAIL,
-                        ext=".pkl", verbose=verbose)
+                        self, data=non_national_rail_codes_data,
+                        data_name=self.KEY_TO_NON_NATIONAL_RAIL, ext=".pkl", verbose=verbose)
 
                 except Exception as e:
                     print(f"Failed. {format_err_msg(e)}")
@@ -417,34 +416,32 @@ class SignalBoxes:
 
     def fetch_non_national_rail_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch signal box prefix codes of `non-national rail`_.
+        Fetches the signal box prefix codes for `non-national rail`_.
 
         .. _`non-national rail`: http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of package data folder, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: signal box prefix codes of non-national rail
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the signal box prefix codes for non-national rail and
+            the date when they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> nnr_codes = sb.fetch_non_national_rail_codes()
             >>> type(nnr_codes)
             dict
             >>> list(nnr_codes.keys())
             ['Non-National Rail', 'Last updated date']
-
             >>> sb.KEY_TO_NON_NATIONAL_RAIL
             'Non-National Rail'
-
             >>> nnr_codes_dat = nnr_codes[sb.KEY_TO_NON_NATIONAL_RAIL]
             >>> type(nnr_codes_dat)
             dict
@@ -461,7 +458,6 @@ class SignalBoxes:
              'Sheffield Supertram signals',
              'Tyne & Wear Metro signals',
              "Heritage, minor and miniature railways and other 'special' signals"]
-
             >>> lu_signals_codes = nnr_codes_dat['London Underground signals']
             >>> type(lu_signals_codes)
             dict
@@ -480,30 +476,29 @@ class SignalBoxes:
         """
 
         non_national_rail_codes_data = fetch_data_from_file(
-            cls=self, method='collect_non_national_rail_codes', data_name=self.KEY_TO_NON_NATIONAL_RAIL,
+            self, method='collect_non_national_rail_codes', data_name=self.KEY_TO_NON_NATIONAL_RAIL,
             ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return non_national_rail_codes_data
 
     def collect_ireland_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of
-        `Irish signal cabin prefix codes <http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm>`_
-        from source web page.
+        Collects data of `Irish signal cabin prefix codes
+        <http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm>`_ from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: signal box prefix codes of Ireland
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of Irish signal cabin prefix codes and
+            the date when they were last updated, or ``None`` if no data is collectd.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> ireland_sb_codes = sb.collect_ireland_codes()
             To collect data of signal box prefix codes of Ireland
             ? [No]|Yes: yes
@@ -511,10 +506,8 @@ class SignalBoxes:
             dict
             >>> list(ireland_sb_codes.keys())
             ['Ireland', 'Notes', 'Last updated date']
-
             >>> sb.KEY_TO_IRELAND
             'Ireland'
-
             >>> ireland_sb_codes_dat = ireland_sb_codes[sb.KEY_TO_IRELAND]
             >>> type(ireland_sb_codes_dat)
             pandas.core.frame.DataFrame
@@ -530,9 +523,7 @@ class SignalBoxes:
         data_name = "signal box prefix codes of " + self.KEY_TO_IRELAND
 
         if confirmed(prompt=confirm_msg(data_name), confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(data_name, verbose, confirmation_required)
 
             ireland_codes_data = None
 
@@ -580,34 +571,33 @@ class SignalBoxes:
 
     def fetch_ireland_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `Irish signal cabin prefix codes`_.
+        Fetches the data of `Irish signal cabin prefix codes`_.
 
-        .. _`Irish signal cabin prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm
+        .. _`Irish signal cabin prefix codes`:
+            http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of package data folder, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: signal box prefix codes of Ireland
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of Irish signal cabin prefix codes and
+            the date when they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> ireland_sb_codes = sb.fetch_ireland_codes()
             >>> type(ireland_sb_codes)
             dict
             >>> list(ireland_sb_codes.keys())
             ['Ireland', 'Notes', 'Last updated date']
-
             >>> sb.KEY_TO_IRELAND
             'Ireland'
-
             >>> ireland_sb_codes_dat = ireland_sb_codes[sb.KEY_TO_IRELAND]
             >>> type(ireland_sb_codes_dat)
             pandas.core.frame.DataFrame
@@ -621,7 +611,7 @@ class SignalBoxes:
         """
 
         ireland_codes_data = fetch_data_from_file(
-            cls=self, method='collect_ireland_codes', data_name=self.KEY_TO_IRELAND,
+            self, method='collect_ireland_codes', data_name=self.KEY_TO_IRELAND,
             ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return ireland_codes_data
@@ -643,23 +633,23 @@ class SignalBoxes:
 
     def collect_wr_mas_dates(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `WR (western region) MAS (multiple aspect signalling) dates
+        Collects data of `WR (western region) MAS (multiple aspect signalling) dates
         <http://www.railwaycodes.org.uk/signal/dates.shtm>`_
-        from source web page.
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of WR (western region) MAS (multiple aspect signalling) dates
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of WR MAS dates and
+            the date when they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_wr_mas_dates = sb.collect_wr_mas_dates()
             To collect data of WR MAS dates
             ? [No]|Yes: yes
@@ -667,10 +657,8 @@ class SignalBoxes:
             dict
             >>> list(sb_wr_mas_dates.keys())
             ['WR MAS dates', 'Last updated date']
-
             >>> sb.KEY_TO_WRMASD
             'WR MAS dates'
-
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
             collections.defaultdict
@@ -707,7 +695,6 @@ class SignalBoxes:
              'Didcot/Swindon/Bristol reversible working',
              'Reading West extension',
              'Carmarthen-Whitland']
-
             >>> sb_wr_mas_dates_dat['Paddington-Hayes']
               Stage             Date                        Area
             0    1A    12 April 1953               Hayes-Hanwell
@@ -716,9 +703,7 @@ class SignalBoxes:
         """
 
         if confirmed(confirm_msg(self.KEY_TO_WRMASD), confirmation_required=confirmation_required):
-
-            print_collect_msg(
-                self.KEY_TO_WRMASD, verbose=verbose, confirmation_required=confirmation_required)
+            print_collect_msg(self.KEY_TO_WRMASD, verbose, confirmation_required)
 
             wr_mas_dates_data = None
 
@@ -747,7 +732,8 @@ class SignalBoxes:
                             while h4:
                                 prev_h3 = h4.find_previous('h3')
                                 if prev_h3.text == h3.text:
-                                    wr_mas_dates[h3.text].update({h4.text: self._parse_tbl_dat(h4, ths)})
+                                    wr_mas_dates[h3.text].update(
+                                        {h4.text: self._parse_tbl_dat(h4, ths)})
                                     h4 = h4.find_next('h4')
                                 elif h3.text not in wr_mas_dates.keys():
                                     wr_mas_dates.update({h3.text: self._parse_tbl_dat(h3, ths)})
@@ -779,35 +765,33 @@ class SignalBoxes:
 
     def fetch_wr_mas_dates(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `WR (western region) MAS (multiple aspect signalling) dates`_.
+        Fetches the data of `WR (western region) MAS (multiple aspect signalling) dates`_.
 
         .. _`WR (western region) MAS (multiple aspect signalling) dates`:
             http://www.railwaycodes.org.uk/signal/dates.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of package data folder, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of WR (western region) MAS (multiple aspect signalling) dates
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of WR MAS dates and
+            the date when they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_wr_mas_dates = sb.fetch_wr_mas_dates()
             >>> type(sb_wr_mas_dates)
             dict
             >>> list(sb_wr_mas_dates.keys())
             ['WR MAS dates', 'Last updated date']
-
             >>> sb.KEY_TO_WRMASD
             'WR MAS dates'
-
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
             collections.defaultdict
@@ -844,7 +828,6 @@ class SignalBoxes:
              'Didcot/Swindon/Bristol reversible working',
              'Reading West extension',
              'Carmarthen-Whitland']
-
             >>> sb_wr_mas_dates_dat['Paddington-Hayes']
               Stage             Date                        Area
             0    1A    12 April 1953               Hayes-Hanwell
@@ -853,29 +836,29 @@ class SignalBoxes:
         """
 
         wr_mas_dates_data = fetch_data_from_file(
-            cls=self, method='collect_wr_mas_dates', data_name=self.KEY_TO_WRMASD, ext=".pkl",
+            self, method='collect_wr_mas_dates', data_name=self.KEY_TO_WRMASD, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return wr_mas_dates_data
 
     def collect_bell_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect data of `bell codes <http://www.railwaycodes.org.uk/signal/bellcodes.shtm>`_
-        from source web page.
+        Collects data of `bell codes <http://www.railwaycodes.org.uk/signal/bellcodes.shtm>`_
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: bell codes for the signal box prefix codes
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of bell codes and
+            the date when they were last updated, or ``None`` if no data is collected.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_bell_codes = sb.collect_bell_codes()
             To collect data of Bell codes
             ? [No]|Yes: yes
@@ -883,10 +866,8 @@ class SignalBoxes:
             dict
             >>> list(sb_bell_codes.keys())
             ['Bell codes', 'Last updated date']
-
             >>> sb.KEY_TO_BELL_CODES
             'Bell codes'
-
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
             collections.OrderedDict
@@ -894,7 +875,6 @@ class SignalBoxes:
             ['Network Rail codes',
              'Southern Railway codes',
              'Lancashire & Yorkshire Railway codes']
-
             >>> sb_nr_bell_codes = sb_bell_codes_dat['Network Rail codes']
             >>> type(sb_nr_bell_codes)
             dict
@@ -912,9 +892,8 @@ class SignalBoxes:
             4  1-2-1                             Train approaching
         """
 
-        if confirmed(confirm_msg(self.KEY_TO_BELL_CODES), confirmation_required=confirmation_required):
-            print_collect_msg(
-                self.KEY_TO_BELL_CODES, verbose=verbose, confirmation_required=confirmation_required)
+        if confirmed(confirm_msg(self.KEY_TO_BELL_CODES), confirmation_required):
+            print_collect_msg(self.KEY_TO_BELL_CODES, verbose, confirmation_required)
 
             bell_codes_ = None
 
@@ -965,34 +944,32 @@ class SignalBoxes:
 
     def fetch_bell_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch data of `bell codes`_.
+        Fetches the data of `bell codes`_.
 
         .. _`bell codes`: http://www.railwaycodes.org.uk/signal/bellcodes.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: name of package data folder, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: data of bell codes
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the data of bell codes and
+            the date when they were last updated.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.other_assets import SignalBoxes  # from pyrcs import SignalBoxes
-
             >>> sb = SignalBoxes()
-
             >>> sb_bell_codes = sb.fetch_bell_codes()
             >>> type(sb_bell_codes)
             dict
             >>> list(sb_bell_codes.keys())
             ['Bell codes', 'Last updated date']
-
             >>> sb.KEY_TO_BELL_CODES
             'Bell codes'
-
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
             collections.OrderedDict
@@ -1000,7 +977,6 @@ class SignalBoxes:
             ['Network Rail codes',
              'Southern Railway codes',
              'Lancashire & Yorkshire Railway codes']
-
             >>> sb_nr_bell_codes = sb_bell_codes_dat['Network Rail codes']
             >>> type(sb_nr_bell_codes)
             dict
@@ -1019,7 +995,7 @@ class SignalBoxes:
         """
 
         bell_codes_ = fetch_data_from_file(
-            cls=self, method='collect_bell_codes', data_name=self.KEY_TO_BELL_CODES, ext=".pkl",
+            self, method='collect_bell_codes', data_name=self.KEY_TO_BELL_CODES, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return bell_codes_

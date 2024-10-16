@@ -1,5 +1,5 @@
 """
-Collect `section codes for overhead line electrification (OLE) installations
+Collects data of `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
@@ -15,9 +15,9 @@ from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 
-from pyrcs.parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
+from ..parser import get_catalogue, get_heading_text, get_hypertext, get_last_updated_date, \
     get_page_catalogue, parse_tr
-from pyrcs.utils import cd_data, fetch_all_verbose, fetch_data_from_file, format_err_msg, \
+from ..utils import cd_data, fetch_all_verbose, fetch_data_from_file, format_err_msg, \
     home_page_url, init_data_dir, print_collect_msg, print_conn_err, print_inst_conn_err, \
     save_data_to_file
 
@@ -28,39 +28,40 @@ class Electrification:
     <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
     """
 
-    #: Name of the data
+    #: The name of the data.
     NAME: str = 'Section codes for overhead line electrification (OLE) installations'
-    #: Key of the `dict <https://docs.python.org/3/library/stdtypes.html#dict>`_-type data
+    #: The key for accessing the data.
     KEY: str = 'Electrification'
 
-    #: Key of the dict-type data of the '*national network*'
+    #: The key used to reference the data of the '*national network*'.
     KEY_TO_NATIONAL_NETWORK: str = 'National network'
-    #: Key of the dict-type data of the '*independent lines*'
+    #: The key used to reference the data of the '*independent lines*'.
     KEY_TO_INDEPENDENT_LINES: str = 'Independent lines'
-    #: Key of the dict-type data of the '*overhead line electrification neutral sections (OHNS)*'
+    #: The key used to reference the data of the
+    #: '*overhead line electrification neutral sections (OHNS)*'.
     KEY_TO_OHNS: str = 'National network neutral sections'
-    #: Key of the dict-type data of the '*UK railway electrification tariff zones*'
+    #: The key used to reference the data of the '*UK railway electrification tariff zones*'.
     KEY_TO_ENERGY_TARIFF_ZONES: str = 'National network energy tariff zones'
 
-    #: URL of the main web page of the data
+    #: The URL of the main web page for the data.
     URL: str = urllib.parse.urljoin(home_page_url(), '/electrification/mast_prefix0.shtm')
 
-    #: Key of the data of the last updated date
+    #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
     def __init__(self, data_dir=None, update=False, verbose=True):
         """
-        :param data_dir: name of data directory, defaults to ``None``
-        :type data_dir: str or None
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param data_dir: Name of the data directory; defaults to ``None``.
+        :type data_dir: str | None
+        :param update: Whether to check for updates to the data catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar dict catalogue: catalogue of the data
-        :ivar str last_updated_date: last update date
-        :ivar str data_dir: path to the data directory
-        :ivar str current_data_dir: path to the current data directory
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar str last_updated_date: The date when the data was last updated.
+        :ivar str data_dir: The path to the directory containing the data.
+        :ivar str current_data_dir: The path to the current data directory.
 
         **Examples**::
 
@@ -80,30 +81,35 @@ class Electrification:
 
         self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
 
-    def _cdd(self, *sub_dir, **kwargs):
+    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
         """
-        Change directory to package data directory and subdirectories (and/or a file).
+        Changes the current directory to the package's data directory,
+        or its specified subdirectories (or file).
 
-        The directory for this module: ``"data\\line-data\\electrification"``.
+        The default data directory for this class is: ``"data\\line-data\\electrification"``.
 
-        :param sub_dir: subdirectory or subdirectories (and/or a file)
+        :param sub_dir: One or more subdirectories and/or a file to navigate to
+            within the data directory.
         :type sub_dir: str
-        :param kwargs: [optional] parameters of the function `pyhelpers.dir.cd`_
-        :return: path to the backup data directory for the class
-            :py:class:`~pyrcs.line_data.elec.Electrification`
+        :param mkdir: Whether to create the specified directory if it doesn't exist;
+            defaults to ``True``.
+        :type mkdir: bool
+        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
+        :return: The path to the backup data directory or its specified subdirectories (or file).
         :rtype: str
 
-        .. _`pyhelpers.dir.cd`:
+        .. _`pyhelpers.dir.cd()`:
             https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
         """
 
-        path = cd(self.data_dir, *sub_dir, mkdir=True, **kwargs)
+        kwargs.update({'mkdir': mkdir})
+        path = cd(self.data_dir, *sub_dir, **kwargs)
 
         return path
 
     @staticmethod
     def _cfm_msg(key):
-        cfm_msg = "To collect section codes for OLE installations: {}\n?".format(key.lower())
+        cfm_msg = f"To collect section codes for OLE installations: {key.lower()}\n?"
 
         return cfm_msg
 
@@ -271,23 +277,23 @@ class Electrification:
 
     def collect_national_network_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect OLE section codes for
+        Collects the section codes for Overhead Line Electrification (OLE) installations for the
         `national network <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
-        from source web page.
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for National network
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for the national network,
+            or ``None`` if not applicable.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> nn_codes = elec.collect_national_network_codes()
             To collect section codes for OLE installations: national network
             ? [No]|Yes: yes
@@ -295,10 +301,8 @@ class Electrification:
             dict
             >>> list(nn_codes.keys())
             ['National network', 'Last updated date']
-
             >>> elec.KEY_TO_NATIONAL_NETWORK
             'National network'
-
             >>> nn_codes_dat = nn_codes[elec.KEY_TO_NATIONAL_NETWORK]
             >>> type(nn_codes_dat)
             dict
@@ -310,7 +314,6 @@ class Electrification:
              'An odd one to complete the record',
              'LBSC/Southern Railway overhead system',
              'Codes not known']
-
             >>> tns_codes = nn_codes_dat['Traditional numbering system [distance and sequence]']
             >>> type(tns_codes)
             dict
@@ -372,34 +375,33 @@ class Electrification:
 
     def fetch_national_network_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `national network`_.
+        Fetches section codes for Overhead Line Electrification (OLE) installations on the
+        `national network`_.
 
         .. _`national network`: http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for National network
-        :rtype: dict or None
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for the national network,
+            or ``None`` if not applicable.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> nn_codes = elec.fetch_national_network_codes()
             >>> type(nn_codes)
             dict
             >>> list(nn_codes.keys())
             ['National network', 'Last updated date']
-
             >>> elec.KEY_TO_NATIONAL_NETWORK
             'National network'
-
             >>> nn_codes_dat = nn_codes[elec.KEY_TO_NATIONAL_NETWORK]
             >>> type(nn_codes_dat)
             dict
@@ -411,7 +413,6 @@ class Electrification:
              'An odd one to complete the record',
              'LBSC/Southern Railway overhead system',
              'Codes not known']
-
             >>> tns_codes = nn_codes_dat['Traditional numbering system [distance and sequence]']
             >>> type(tns_codes)
             dict
@@ -429,7 +430,7 @@ class Electrification:
         """
 
         national_network_ole = fetch_data_from_file(
-            cls=self, method='collect_national_network_codes',
+            self, method='collect_national_network_codes',
             data_name=self.KEY_TO_NATIONAL_NETWORK, ext=".pkl", update=update, dump_dir=dump_dir,
             verbose=verbose)
 
@@ -437,25 +438,22 @@ class Electrification:
 
     def get_indep_line_catalogue(self, update=False, verbose=False):
         """
-        Get a catalogue for
+        Gets a catalogue for the
         `independent lines <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: a list of independent line names
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A pandas DataFrame containing the names of independent lines.
         :rtype: pandas.DataFrame
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
             >>> from pyhelpers.settings import pd_preferences
-
             >>> pd_preferences(max_columns=1)
-
             >>> elec = Electrification()
-
             >>> indep_line_cat = elec.get_indep_line_catalogue()
             >>> indep_line_cat.head()
                                                          Feature  ...
@@ -490,23 +488,23 @@ class Electrification:
 
     def collect_indep_lines_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect OLE section codes for `independent lines`_ from source web page.
+        Collects OLE section codes for `independent lines`_ from the source web page.
 
         .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for independent lines
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for independent lines,
+            or ``None`` if not applicable.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> indep_lines_codes = elec.collect_indep_lines_codes()
             To collect section codes for OLE installations: independent lines
             ? [No]|Yes: yes
@@ -514,10 +512,8 @@ class Electrification:
             dict
             >>> list(indep_lines_codes.keys())
             ['Independent lines', 'Last updated date']
-
             >>> elec.KEY_TO_INDEPENDENT_LINES
             'Independent lines'
-
             >>> indep_lines_codes_dat = indep_lines_codes[elec.KEY_TO_INDEPENDENT_LINES]
             >>> type(indep_lines_codes_dat)
             dict
@@ -546,7 +542,6 @@ class Electrification:
              'Summerlee, Museum of Scottish Industrial Life Tramway',
              'Tyne & Wear Metro',
              'West Midlands Metro [West Midlands]']
-
             >>> indep_lines_codes_dat['Beamish Tramway']
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
         """
@@ -594,34 +589,31 @@ class Electrification:
 
     def fetch_indep_lines_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `independent lines`_.
+        Fetches OLE section codes for `independent lines`_.
 
         .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for independent lines
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for independent lines.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> indep_lines_codes = elec.fetch_indep_lines_codes()
             >>> type(indep_lines_codes)
             dict
             >>> list(indep_lines_codes.keys())
             ['Independent lines', 'Last updated date']
-
             >>> elec.KEY_TO_INDEPENDENT_LINES
             'Independent lines'
-
             >>> indep_lines_codes_dat = indep_lines_codes[elec.KEY_TO_INDEPENDENT_LINES]
             >>> type(indep_lines_codes_dat)
             dict
@@ -650,37 +642,35 @@ class Electrification:
              'Summerlee, Museum of Scottish Industrial Life Tramway',
              'Tyne & Wear Metro',
              'West Midlands Metro [West Midlands]']
-
             >>> indep_lines_codes_dat['Beamish Tramway']
             {'Codes': None, 'Notes': 'Masts do not appear labelled.'}
         """
 
         independent_lines_ole = fetch_data_from_file(
-            cls=self, method='collect_indep_lines_codes', data_name=self.KEY_TO_INDEPENDENT_LINES,
+            self, method='collect_indep_lines_codes', data_name=self.KEY_TO_INDEPENDENT_LINES,
             ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return independent_lines_ole
 
     def collect_ohns_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect codes for
+        Collects codes for
         `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
-        from source web page.
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OHNS codes
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OHNS codes, or ``None`` if not applicable.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> ohl_ns_codes = elec.collect_ohns_codes()
             To collect section codes for OLE installations: national network neutral sections
             ? [No]|Yes: yes
@@ -688,10 +678,8 @@ class Electrification:
             dict
             >>> list(ohl_ns_codes.keys())
             ['National network neutral sections', 'Last updated date']
-
             >>> elec.KEY_TO_OHNS
             'National network neutral sections'
-
             >>> ohl_ns_codes_dat = ohl_ns_codes[elec.KEY_TO_OHNS]
             >>> type(ohl_ns_codes_dat)
             dict
@@ -780,35 +768,32 @@ class Electrification:
 
     def fetch_ohns_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch codes for `overhead line electrification neutral sections`_ (OHNS).
+        Fetches the `overhead line electrification neutral sections`_ (OHNS) codes.
 
         .. _`overhead line electrification neutral sections`:
             http://www.railwaycodes.org.uk/electrification/neutral.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OHNS codes
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OHNS codes.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> ohl_ns_codes = elec.fetch_ohns_codes()
             >>> type(ohl_ns_codes)
             dict
             >>> list(ohl_ns_codes.keys())
             ['National network neutral sections', 'Last updated date']
-
             >>> elec.KEY_TO_OHNS
             'National network neutral sections'
-
             >>> ohl_ns_codes_dat = ohl_ns_codes[elec.KEY_TO_OHNS]
             >>> type(ohl_ns_codes_dat)
             dict
@@ -824,30 +809,29 @@ class Electrification:
         """
 
         ohns_codes = fetch_data_from_file(
-            cls=self, method='collect_ohns_codes', data_name=self.KEY_TO_OHNS, ext=".pkl",
+            self, method='collect_ohns_codes', data_name=self.KEY_TO_OHNS, ext=".pkl",
             update=update, dump_dir=dump_dir, verbose=verbose)
 
         return ohns_codes
 
     def collect_etz_codes(self, confirmation_required=True, verbose=False):
         """
-        Collect OLE section codes for `national network energy tariff zones
+        Collects OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
-        from source web page.
+        from the source web page.
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for national network energy tariff zones
-        :rtype: dict or None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for national network energy tariff zones.
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> rail_etz_codes = elec.collect_etz_codes()
             To collect section codes for OLE installations: national network energy tariff zones
             ? [No]|Yes: yes
@@ -855,16 +839,13 @@ class Electrification:
             dict
             >>> list(rail_etz_codes.keys())
             ['National network energy tariff zones', 'Last updated date']
-
             >>> elec.KEY_TO_ENERGY_TARIFF_ZONES
             'National network energy tariff zones'
-
             >>> rail_etz_codes_dat = rail_etz_codes[elec.KEY_TO_ENERGY_TARIFF_ZONES]
             >>> type(rail_etz_codes_dat)
             dict
             >>> list(rail_etz_codes_dat.keys())
             ['Railtrack', 'Network Rail']
-
             >>> rail_etz_codes_dat['Railtrack']['Codes']
                Code                   Energy tariff zone
             0    EA                          East Anglia
@@ -927,41 +908,37 @@ class Electrification:
 
     def fetch_etz_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes for `national network energy tariff zones`_.
+        Fetches OLE section codes for `national network energy tariff zones`_.
 
         .. _`national network energy tariff zones`:
             http://www.railwaycodes.org.uk/electrification/tariff.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: OLE section codes for national network energy tariff zones
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of OLE section codes for national network energy tariff zones.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> rail_etz_codes = elec.fetch_etz_codes()
             >>> type(rail_etz_codes)
             dict
             >>> list(rail_etz_codes.keys())
             ['National network energy tariff zones', 'Last updated date']
-
             >>> elec.KEY_TO_ENERGY_TARIFF_ZONES
             'National network energy tariff zones'
-
             >>> rail_etz_codes_dat = rail_etz_codes[elec.KEY_TO_ENERGY_TARIFF_ZONES]
             >>> type(rail_etz_codes_dat)
             dict
             >>> list(rail_etz_codes_dat.keys())
             ['Railtrack', 'Network Rail']
-
             >>> rail_etz_codes_dat['Railtrack']['Codes']
                Code                   Energy tariff zone
             0    EA                          East Anglia
@@ -981,41 +958,40 @@ class Electrification:
         """
 
         etz_ole = fetch_data_from_file(
-            cls=self, method='collect_etz_codes', data_name=self.KEY_TO_ENERGY_TARIFF_ZONES,
+            self, method='collect_etz_codes', data_name=self.KEY_TO_ENERGY_TARIFF_ZONES,
             ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
 
         return etz_ole
 
+    # -- All codes ---------------------------------------------------------------------------------
+
     def fetch_codes(self, update=False, dump_dir=None, verbose=False):
         """
-        Fetch OLE section codes listed in the `Electrification`_ catalogue.
+        Fetches OLE section codes listed in the `Electrification`_ catalogue.
 
         .. _`Electrification`: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
-        :param dump_dir: pathname of a directory where the data file is dumped, defaults to ``None``
-        :type dump_dir: str or None
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :return: section codes for overhead line electrification (OLE) installations
+        :param dump_dir: Path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary of the section codes for OLE installations.
         :rtype: dict
 
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
-
             >>> elec = Electrification()
-
             >>> elec_codes = elec.fetch_codes()
             >>> type(elec_codes)
             dict
             >>> list(elec_codes.keys())
             ['Electrification', 'Last updated date']
-
             >>> elec.KEY
             'Electrification'
-
             >>> elec_codes_dat = elec_codes[elec.KEY]
             >>> type(elec_codes_dat)
             dict

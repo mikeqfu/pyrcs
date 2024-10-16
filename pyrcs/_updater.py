@@ -13,15 +13,14 @@ def _update_prepacked_data(verbose=False, interval=5, **kwargs):
     """
     Update pre-packed data.
 
-    :param verbose: whether to print relevant information in console, defaults to ``False``
-    :type verbose: bool
-    :param interval: time gap (in seconds) between updating different classes, defaults to ``5``
+    :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+    :type verbose: bool | int
+    :param interval: A time gap (in seconds) between updating different classes; defaults to ``5``.
     :type interval: int or float
 
-    **Example**::
+    **Examples**::
 
         >>> from pyrcs._updater import _update_prepacked_data
-
         >>> _update_prepacked_data(verbose=True)
     """
 

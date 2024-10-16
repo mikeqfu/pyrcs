@@ -1,8 +1,11 @@
 """
-Collect data of railway codes.
+Collects data of railway codes.
 
-The current release only includes `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_ \
-and `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
+.. note::
+
+    The current release only includes
+    `line data <http://www.railwaycodes.org.uk/linedatamenu.shtm>`_ and
+    `other assets <http://www.railwaycodes.org.uk/otherassetsmenu.shtm>`_.
 """
 
 import time
@@ -10,54 +13,58 @@ import urllib.parse
 
 from pyhelpers.ops import confirmed
 
-from .line_data import *
-from .other_assets import *
+from .line_data import (Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers,
+                        TrackDiagrams)
+from .other_assets import Depots, Features, SignalBoxes, Stations, Tunnels, Viaducts
 from .parser import get_category_menu
 from .utils import home_page_url, is_home_connectable, print_conn_err, print_inst_conn_err
 
 
 class LineData:
-    """A class representation of all modules of the subpackage \
-    :mod:`~pyrcs.line_data` for collecting `line data`_.
+    """
+    A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
+    for collecting the codes of `line data`_.
 
     .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
     """
 
-    #: Name of data
-    NAME = 'Line data'
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
+    #: The name of the data.
+    NAME: str = 'Line data'
+
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(
+        home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
 
     def __init__(self, update=False, verbose=True):
         """
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar bool connected: whether the Internet / the website can be connected
-        :ivar dict catalogue: catalogue of the data
-        :ivar object ELRMileages: instance of the class :py:class:`~elr_mileage.ELRMileages`
-        :ivar object Electrification: instance of the class :py:class:`~elec.Electrification`
-        :ivar object LocationIdentifiers: instance of the class :py:class:`~loc_id.LocationIdentifiers`
-        :ivar object LOR: instance of the class :py:class:`~lor_code.LOR`
-        :ivar object LineNames: instance of the class :py:class:`~line_name.LineNames`
-        :ivar object TrackDiagrams: instance of the class :py:class:`~trk_diagr.TrackDiagrams`
-        :ivar object Bridges: instance of the class :py:class:`~bridge.Bridges`
+        :ivar bool connected: Whether the Internet / the Railway Codes website is connected.
+        :ivar dict catalogue: The catalogue of the line data.
+        :ivar ELRMileages ELRMileages: An instance of the :class:`~elr_mileage.ELRMileages` class.
+        :ivar Electrification Electrification:
+            An instance of the :class:`~elec.Electrification` class.
+        :ivar LocationIdentifiers LocationIdentifiers:
+            An instance of the :class:`~loc_id.LocationIdentifiers` class.
+        :ivar LOR LOR: An instance of the :class:`~lor_code.LOR` class.
+        :ivar LineNames LineNames: An instance of the :class:`~line_name.LineNames` class.
+        :ivar TrackDiagrams TrackDiagrams:
+            An instance of the :class:`~trk_diagr.TrackDiagrams` class.
+        :ivar Bridges Bridges: An instance of the :py:class:`~bridge.Bridges` class.
 
         **Examples**::
 
             >>> from pyrcs import LineData
-
             >>> ld = LineData()
-
             >>> # To get data of location codes
             >>> location_codes = ld.LocationIdentifiers.fetch_codes()
             >>> type(location_codes)
             dict
             >>> list(location_codes.keys())
             ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
-
             >>> location_codes_dat = location_codes[ld.LocationIdentifiers.KEY]
             >>> type(location_codes_dat)
             pandas.core.frame.DataFrame
@@ -68,16 +75,13 @@ class LineData:
             2                 Abbeyhill Signal E811      ...
             3            Abbeyhill Turnback Sidings      ...
             4  Abbey Level Crossing (Staffordshire)      ...
-
             [5 rows x 12 columns]
-
             >>> # To get data of line names
             >>> line_names_codes = ld.LineNames.fetch_codes()
             >>> type(line_names_codes)
             dict
             >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
-
             >>> line_names_codes_dat = line_names_codes[ld.LineNames.KEY]
             >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
@@ -88,7 +92,6 @@ class LineData:
             2          Argyle Line  ...       None
             3     Arun Valley Line  ...       None
             4  Atlantic Coast Line  ...       None
-
             [5 rows x 3 columns]
         """
 
@@ -101,37 +104,36 @@ class LineData:
         self.catalogue = get_category_menu(url=self.URL, update=update, confirmation_required=False)
 
         # Relevant classes
-        self.ELRMileages = elr_mileage.ELRMileages(update=update, verbose=False)
-        self.Electrification = elec.Electrification(update=update, verbose=False)
-        self.LocationIdentifiers = loc_id.LocationIdentifiers(update=update, verbose=False)
-        self.LOR = lor_code.LOR(update=update, verbose=False)
-        self.LineNames = line_name.LineNames(update=update, verbose=False)
-        self.TrackDiagrams = trk_diagr.TrackDiagrams(update=update, verbose=False)
-        self.Bridges = bridge.Bridges(verbose=False)
+        self.ELRMileages = ELRMileages(update=update, verbose=False)
+        self.Electrification = Electrification(update=update, verbose=False)
+        self.LocationIdentifiers = LocationIdentifiers(update=update, verbose=False)
+        self.LOR = LOR(update=update, verbose=False)
+        self.LineNames = LineNames(update=update, verbose=False)
+        self.TrackDiagrams = TrackDiagrams(update=update, verbose=False)
+        self.Bridges = Bridges(verbose=False)
 
     def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
         """
-        Update pre-packed of the `line data`_.
+        Updates the pre-packed `line data`_.
 
         .. _`line data`: http://www.railwaycodes.org.uk/linedatamenu.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :param interval: time gap (in seconds) between the updating of different classes,
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :param interval: A time gap (in seconds) between the updating of different classes,
             defaults to ``5``
         :type interval: int or float
-        :param init_update: whether to update the data for instantiation of each subclass,
+        :param init_update: Whether to update the data for each subclass when being instantiated,
             defaults to ``False``
         :type init_update: bool
 
-        **Example**::
+        **Examples**::
 
             >>> from pyrcs.collector import LineData
-
             >>> ld = LineData()
-
             >>> ld.update(verbose=True)
         """
 
@@ -193,47 +195,46 @@ class LineData:
 
 
 class OtherAssets:
-    """A class representation of all modules of the subpackage \
-    :py:mod:`~pyrcs.other_assets` for collecting `other assets`_.
+    """
+    A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
+    for collecting the codes of `other assets`_.
 
     .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
     """
 
-    #: Name of data
-    NAME = 'Other assets'
-    #: URL of the main web page of the data
-    URL = urllib.parse.urljoin(home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
+    #: The name of the data.
+    NAME: str = 'Other assets'
+
+    #: The URL of the main web page for the data.
+    URL: str = urllib.parse.urljoin(
+        home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
 
     def __init__(self, update=False, verbose=True):
         """
-        :param update: whether to do an update check (for the package data), defaults to ``False``
+        :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
-        :param verbose: whether to print relevant information in console, defaults to ``True``
-        :type verbose: bool or int
+        :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+        :type verbose: bool | int
 
-        :ivar bool connected: whether the Internet / the website can be connected
-        :ivar dict catalogue: catalogue of the data
-        :ivar object SignalBoxes: instance of the class :py:class:`~sig_box.SignalBoxes`
-        :ivar object Tunnels: instance of the class :py:class:`~tunnel.Tunnels`
-        :ivar object Viaducts: instance of the class :py:class:`~viaduct.Viaducts`
-        :ivar object Stations: instance of the class :py:class:`~station.Stations`
-        :ivar object Depots: instance of the class :py:class:`~depot.Depots`
-        :ivar object Features: instance of the class :py:class:`~feature.Features`
+        :ivar bool connected: Whether the Internet / the Railway Codes website is connected.
+        :ivar dict catalogue: The catalogue of the data.
+        :ivar SignalBoxes SignalBoxes: An instance of the :class:`~sig_box.SignalBoxes` class.
+        :ivar Tunnels Tunnels: An instance of the :class:`~tunnel.Tunnels` class.
+        :ivar Viaducts Viaducts: An instance of the :class:`~viaduct.Viaducts` class.
+        :ivar Stations Stations: An instance of the :class:`~station.Stations` class.
+        :ivar Depots Depots: An instance of the :class:`~depot.Depots` class.
+        :ivar Features Features: An instance of the :class:`~feature.Features` class.
 
         **Examples**::
 
             >>> from pyrcs import OtherAssets
-
             >>> oa = OtherAssets()
-
             >>> # To get data of railway stations
             >>> rail_stn_locations = oa.Stations.fetch_locations()
-
             >>> type(rail_stn_locations)
             dict
             >>> list(rail_stn_locations.keys())
             ['Mileages, operators and grid coordinates', 'Last updated date']
-
             >>> rail_stn_locations_dat = rail_stn_locations[oa.Stations.KEY_TO_STN]
             >>> type(rail_stn_locations_dat)
             pandas.core.frame.DataFrame
@@ -244,17 +245,13 @@ class OtherAssets:
             2             Aber  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             3        Abercynon  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
             4  Abercynon North  ...  [Cardiff Railway Company from 13 October 1996 ...
-
             [5 rows x 13 columns]
-
             >>> # To get data of signal boxes
             >>> signal_boxes_codes = oa.SignalBoxes.fetch_prefix_codes()
-
             >>> type(signal_boxes_codes)
             dict
             >>> list(signal_boxes_codes.keys())
             ['Signal boxes', 'Last updated date']
-
             >>> signal_boxes_codes_dat = signal_boxes_codes[oa.SignalBoxes.KEY]
             >>> type(signal_boxes_codes_dat)
             pandas.core.frame.DataFrame
@@ -265,7 +262,6 @@ class OtherAssets:
             2    R           Abbey Junction  ...  16 February 1992     Nuneaton (NN)
             3   AW               Abbey Wood  ...      13 July 1975      Dartford (D)
             4   AE         Abbey Works East  ...   1 November 1987  Port Talbot (PT)
-
             [5 rows x 8 columns]
         """
 
@@ -278,35 +274,35 @@ class OtherAssets:
         self.catalogue = get_category_menu(url=self.URL, update=update, confirmation_required=False)
 
         # Relevant classes
-        self.SignalBoxes = sig_box.SignalBoxes(update=update, verbose=False)
-        self.Tunnels = tunnel.Tunnels(update=update, verbose=False)
-        self.Viaducts = viaduct.Viaducts(update=update, verbose=False)
-        self.Stations = station.Stations(verbose=False)
-        self.Depots = depot.Depots(update=update, verbose=False)
-        self.Features = feature.Features(update=update, verbose=False)
+        self.SignalBoxes = SignalBoxes(update=update, verbose=False)
+        self.Tunnels = Tunnels(update=update, verbose=False)
+        self.Viaducts = Viaducts(update=update, verbose=False)
+        self.Stations = Stations(verbose=False)
+        self.Depots = Depots(update=update, verbose=False)
+        self.Features = Features(update=update, verbose=False)
 
     def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
-        """Update pre-packed data of the `other assets`_.
+        """
+        Updates the pre-packed data of the `other assets`_.
 
         .. _`other assets`: http://www.railwaycodes.org.uk/otherassetsmenu.shtm
 
-        :param confirmation_required: whether to confirm before proceeding, defaults to ``True``
+        :param confirmation_required: Whether user confirmation is required before proceeding;
+            defaults to ``True``.
         :type confirmation_required: bool
-        :param verbose: whether to print relevant information in console, defaults to ``False``
-        :type verbose: bool or int
-        :param interval: time gap (in seconds) between the updating of different classes,
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :param interval: A time gap (in seconds) between the updating of different classes,
             defaults to ``5``
-        :type interval: int
-        :param init_update: whether to update the data for instantiation of each subclass,
+        :type interval: int or float
+        :param init_update: Whether to update the data for each subclass when being instantiated,
             defaults to ``False``
         :type init_update: bool
 
-        **Example**::
+        **Examples**::
 
             >>> from pyrcs.collector import OtherAssets
-
             >>> oa = OtherAssets()
-
             >>> oa.update(verbose=True)
         """
 
