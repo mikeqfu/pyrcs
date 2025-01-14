@@ -9,15 +9,14 @@ Collects data of railway codes.
 """
 
 import time
-import urllib.parse
 
 from pyhelpers.ops import confirmed
 
-from .line_data import (Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers,
-                        TrackDiagrams)
+from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
+    TrackDiagrams
 from .other_assets import Depots, Features, SignalBoxes, Stations, Tunnels, Viaducts
 from .parser import get_category_menu
-from .utils import home_page_url, is_home_connectable, print_conn_err, print_inst_conn_err
+from .utils import is_home_connectable, print_conn_err, print_inst_conn_err
 
 
 class LineData:
@@ -30,10 +29,6 @@ class LineData:
 
     #: The name of the data.
     NAME: str = 'Line data'
-
-    #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(
-        home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
 
     def __init__(self, update=False, verbose=True):
         """
@@ -101,7 +96,7 @@ class LineData:
         else:
             self.connected = True
 
-        self.catalogue = get_category_menu(url=self.URL, update=update, confirmation_required=False)
+        self.catalogue = get_category_menu(self.NAME, update=update, confirmation_required=False)
 
         # Relevant classes
         self.ELRMileages = ELRMileages(update=update, verbose=False)
@@ -205,10 +200,6 @@ class OtherAssets:
     #: The name of the data.
     NAME: str = 'Other assets'
 
-    #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(
-        home_page_url(), '{}menu.shtm'.format(NAME.lower().replace(' ', '')))
-
     def __init__(self, update=False, verbose=True):
         """
         :param update: Whether to check for updates to the catalogue; defaults to ``False``.
@@ -271,7 +262,7 @@ class OtherAssets:
         else:
             self.connected = True
 
-        self.catalogue = get_category_menu(url=self.URL, update=update, confirmation_required=False)
+        self.catalogue = get_category_menu(self.NAME, update=update, confirmation_required=False)
 
         # Relevant classes
         self.SignalBoxes = SignalBoxes(update=update, verbose=False)

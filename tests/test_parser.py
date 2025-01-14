@@ -111,21 +111,19 @@ def test_get_catalogue():
         confirmation_required=False, verbose=True)
     assert isinstance(elr_cat, dict)
 
-    line_data_cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
-    assert isinstance(line_data_cat, dict)
+    location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
+    assert isinstance(location_code_cat, dict)
 
 
 def test_get_category_menu():
     from pyrcs.parser import get_category_menu
 
-    menu = get_category_menu(
-        url='http://www.railwaycodes.org.uk/linedatamenu.shtm', update=True,
-        confirmation_required=False, verbose=True)
+    menu = get_category_menu('Line data', update=True, confirmation_required=False, verbose=True)
 
     assert isinstance(menu, dict)
     assert list(menu.keys()) == ['Line data']
 
-    menu = get_category_menu(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
+    menu = get_category_menu(name='Line data')
 
     assert isinstance(menu, dict)
     assert list(menu.keys()) == ['Line data']
