@@ -2,29 +2,33 @@
 PyRCS
 #####
 
-|PyPI| |Python| |Documentation| |License| |Codacy grade| |DOI|
+|PyPI - Version| |PyPI - Python Version| |Read the Docs - Documentation| |License| |Codacy - Code Quality| |DOI|
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
-    :alt: PyPI - Release
+.. |PyPI - Version| image:: https://img.shields.io/pypi/v/pyrcs
+    :alt: PyPI - Version
     :target: https://pypi.org/project/pyrcs/
-.. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
-    :alt: Python version
+.. |PyPI - Python Version| image:: https://img.shields.io/pypi/pyversions/pyrcs
+    :alt: PyPI - Python Version
     :target: https://www.python.org/downloads/
-.. |Documentation| image:: https://readthedocs.org/projects/pyrcs/badge/?version=latest
-    :alt: Documentation status
+.. |Read the Docs - Documentation| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
+    :alt: Read the Docs - Documentation
     :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
-.. |License| image:: https://img.shields.io/pypi/l/pyrcs
+.. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
     :alt: License
     :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
-.. |Codacy grade| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
-    :alt: Codacy grade (Code quality)
+.. |Codacy - Code Quality| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
+    :alt: Codacy - Code Quality
     :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
-.. |DOI| image:: https://zenodo.org/badge/92501006.svg
-    :alt: Zenodo - DOI
-    :target: https://zenodo.org/badge/latestdoi/92501006
+.. |DOI| image:: https://img.shields.io/badge/10.5281%2Fzenodo.4026744-blue?label=doi
+    :alt: DOI
+    :target: https://doi.org/10.5281/zenodo.4026744
 
-| **Author**: Qian Fu
+| **Author**: Qian Fu |ORCID|
 | **Email**: q.fu@bham.ac.uk
+
+.. |ORCID| image:: https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png
+    :alt: ORCID
+    :target: https://orcid.org/0000-0002-6502-9934
 
 PyRCS is an open-source Python package designed to simplify the collection and management of diverse codes used in different systems within the UK rail industry. It serves as a practical toolkit for researchers, practitioners, and individuals who frequently interact with the `Railway Codes <http://www.railwaycodes.org.uk/index.shtml>`_ website and work extensively with railway codes in the UK. Leveraging the capabilities of the Python programming language, PyRCS enables efficient access to and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
 

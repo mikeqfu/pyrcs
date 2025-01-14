@@ -47,12 +47,12 @@ Alternatively, we can create the instance using the :class:`~pyrcs.collector.Lin
     - The instance ``ld`` encompasses all classes within the `line data`_ category.
     - ``lid_`` is equivalent to ``lid``.
 
-.. _quickstart-location-identifiers-given-initial:
+.. _quickstart-location-identifiers-by-initial-letter:
 
-Location identifiers for a specific initial letter
---------------------------------------------------
+Location identifiers by initial letter
+--------------------------------------
 
-We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting with a specific letter using the :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>` method. This method is case-insensitive. For example, to get the codes for locations whose names begin with the letter ``'A'`` (or ``'a'``):
+We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting with a specific letter using the :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>` method. This input value for the parameter is case-insensitive. For example, to get the codes for locations whose names begin with the letter ``'A'`` (or ``'a'``):
 
 .. code-block:: python
 
@@ -92,7 +92,7 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
     >>> print("Last updated date: {}".format(loc_a_codes['Last updated date']))
     Last updated date: 2024-08-24
 
-.. _quickstart-all-location-identifiers:
+.. _quickstart-all-available-location-identifiers:
 
 All available location identifiers
 ----------------------------------
@@ -222,7 +222,7 @@ The ``elrs_a_codes`` object is a dictionary with the following *keys*:
 
 The corresponding *values* are:
 
--  ``elrs_a_codes['A']`` - Data for ELRs that begin with ``'A'`` (referring to the table presented on the web page `ELRs beginning with A`_).
+-  ``elrs_a_codes['A']`` - Data for ELRs that begin with ``'A'``, referring to the table presented on the `ELRs beginning with A`_ web page.
 -  ``elrs_a_codes['Last updated date']`` - The date when the `ELRs beginning with A`_ web page was last updated.
 
 Here is a snapshot of the data contained in ``elrs_a_codes``:
@@ -260,7 +260,7 @@ Similarly, ``elrs_codes`` is a dictionary with the following *keys*:
 
 The corresponding *values* are:
 
--  ``elrs_codes['ELRs and mileages']`` - Codes for all available ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``);
+-  ``elrs_codes['ELRs and mileages']`` - Codes for all available ELRs (with the initial letters ranging from ``'A'`` to ``'Z'``).
 -  ``elrs_codes['Latest update date']`` - The most recent update date among all the ELR data.
 
 Here is a snapshot of the data contained in ``elrs_codes``:
@@ -279,7 +279,7 @@ Here is a snapshot of the data contained in ``elrs_codes``:
     4579  ZZZ9  Dummy ELR for demonstrations and testing  ...   n/a
     [5 rows x 5 columns]
 
-.. _quickstart-mileage-files-given-elr:
+.. _quickstart-mileage-file-of-a-given-elr:
 
 Mileage file of a given ELR
 ---------------------------
@@ -296,7 +296,7 @@ For example, to get the `mileage file for 'AAM'`_:
     >>> list(amm_mileage_file.keys())
     ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
 
-The ``amm_mileage_file`` is also a dictionary and has the following *keys*:
+The ``amm_mileage_file`` object is also a dictionary and has the following *keys*:
 
 -  ``'ELR'``
 -  ``'Line'``
@@ -364,10 +364,10 @@ Alternatively, we can also create the instance by using the :class:`~pyrcs.colle
     - The instance ``stn`` encompasses all classes within the `other assets`_ category.
     - ``stn_`` is equivalent to ``stn``.
 
-.. _quickstart-railway-station-locations-given-initial:
+.. _quickstart-railway-stations-by-initial-letter:
 
-Railway station locations given a specific initial letter
----------------------------------------------------------
+Railway stations by initial letter
+----------------------------------
 
 We can obtain railway station data based on the first letter (e.g. ``'A'`` or ``'Z'``) of the station's name using the :meth:`Stations.collect_locations_by_initial()<pyrcs.other_assets.Stations.collect_locations_by_initial>` method. For example, to get data for stations starting with ``'A'``:
 
@@ -429,10 +429,10 @@ Here is a snapshot of the data contained in ``stn_loc_a``:
     >>> print("Last updated date: {}".format(stn_loc_a_codes['Last updated date']))
     Last updated date: 2024-09-23
 
-.. _quickstart-all-railway-station-locations:
+.. _quickstart-all-available-railway-stations:
 
-All available railway station locations
----------------------------------------
+All available railway stations
+------------------------------
 
 To retrieve data for all railway stations available in the `other assets`_ category, we can use the :meth:`Stations.fetch_locations()<pyrcs.other_assets.Stations.fetch_locations>` method:
 
@@ -451,7 +451,7 @@ The dictionary ``stn_loc_codes`` includes the following *keys*:
 
 The corresponding *values* are:
 
--  ``stn_loc_codes['Mileages, operators and grid coordinates']`` - Data for all railway stations, with the initial letters ranging from ``'A'`` to ``'Z'``;
+-  ``stn_loc_codes['Mileages, operators and grid coordinates']`` - Data for all railway stations, with the initial letters ranging from ``'A'`` to ``'Z'``.
 -  ``stn_loc_codes['Latest update date']`` - The most recent update date among all the station data.
 
 Here is a snapshot of the data contained in ``stn_loc_codes``:

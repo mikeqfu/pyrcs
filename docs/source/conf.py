@@ -23,11 +23,6 @@ version = __version__  # The short X.Y version
 release = version  # The full version, including alpha/beta/rc tags
 
 # == General configuration =========================================================================
-import inspect
-import requests
-import warnings
-import pyrcs
-
 extensions = [  # Sphinx extension module names, which can be named 'sphinx.ext.*' or custom ones:
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -47,13 +42,6 @@ extensions = [  # Sphinx extension module names, which can be named 'sphinx.ext.
     # "IPython.sphinxext.ipython_directive",
 ]
 
-# Validate URL for 'linkcode'
-main_url_ = f'https://github.com/mikeqfu/{__pkgname__}/blob'
-main_url = f'{main_url_}/{pyrcs.__version__}/{__pkgname__}'
-response = requests.get(main_url)
-if response.status_code == 404:
-    main_url = f"{main_url_}/master"
-
 
 def linkcode_resolve(domain, info):
     """
@@ -61,6 +49,18 @@ def linkcode_resolve(domain, info):
 
     (Adapted from https://github.com/pandas-dev/pandas/blob/main/doc/source/conf.py)
     """
+
+    import inspect
+    import requests
+    import warnings
+    import pyrcs
+
+    # Validate URL for 'linkcode'
+    main_url_ = f'https://github.com/mikeqfu/{__pkgname__}/blob'
+    main_url = f'{main_url_}/{pyrcs.__version__}/{__pkgname__}'
+    response = requests.get(main_url)
+    if response.status_code == 404:
+        main_url = f"{main_url_}/master"
 
     if domain != 'py' or not info['module']:
         return None
@@ -144,6 +144,7 @@ autoclass_content = 'both'  # ['class', 'init']
 
 # Automatically documented members are sorted by source order ('bysource'):
 autodoc_member_order = 'bysource'
+
 
 # == Options for HTML and HTMLHelp output ==========================================================
 html_theme = 'furo'  # The theme to use for HTML & HTML Help pages  # 'sphinx_rtd_theme'
@@ -241,8 +242,8 @@ latex_engine = 'pdflatex'
 # Grouping the document tree into LaTeX files:
 latex_documents = [
     ('latexindex',  # source start file
-     __pkgname__ + '.tex',  # target name
-     __project__ + ' Documentation',  # title
+     f'{__pkgname__}.tex',  # target name
+     f'{__project__} Documentation',  # title
      __author__,  # author
      'manual',  # document class ['howto', 'manual', or own class]
      1  # toctree only

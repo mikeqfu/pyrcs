@@ -1,5 +1,3 @@
-.. _pyrcs-modules:
-
 =======
 Modules
 =======
