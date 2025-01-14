@@ -123,9 +123,9 @@ class Electrification:
             while h3_ == h3:
                 notes_2 = get_hypertext(hypertext_tag=next_p, hyperlink_tag_name='a')
                 if notes_2:
-                    notes_2 = notes_2. \
-                        replace(' Section codes known at present are:', ''). \
-                        replace('Known prefixes are:', ' ')
+                    notes_2 = notes_2.replace(
+                        ' Section codes known at present are:', '').replace(
+                        'Known prefixes are:', ' ')
                     notes_.append(notes_2)
 
                 next_p = next_p.find_next('p')
