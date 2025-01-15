@@ -6,7 +6,10 @@ import datetime
 import json
 import pkgutil
 
-from .collector import *
+from .collector import LineData, OtherAssets
+from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
+    TrackDiagrams
+from .other_assets import Depots, Features, SignalBoxes, Stations, Tunnels, Viaducts
 
 metadata = json.loads(pkgutil.get_data(__name__, "data/.metadata").decode())
 
