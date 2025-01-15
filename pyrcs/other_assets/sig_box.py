@@ -15,9 +15,9 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data
 
 from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, print_void_msg, \
-    save_data_to_file, validate_initial
+from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, \
+    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
+    print_void_msg, save_data_to_file, validate_initial
 
 
 class SignalBoxes:

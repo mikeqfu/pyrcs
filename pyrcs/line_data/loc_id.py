@@ -12,7 +12,7 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers._cache import _print_failure_msg
+from pyhelpers._cache import _print_failure_message
 from pyhelpers.dirs import cd
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
@@ -345,7 +345,7 @@ class LocationIdentifiers:
                         verbose=verbose)
 
                 except Exception as e:
-                    _print_failure_msg(e)
+                    _print_failure_message(e)
                     explanatory_note = None
 
             return explanatory_note
@@ -963,7 +963,7 @@ class LocationIdentifiers:
                     save_data(location_codes_initial, path_to_pickle, verbose=verbose)
 
                 except Exception as e:
-                    _print_failure_msg(e)
+                    _print_failure_message(e)
 
         return location_codes_initial
 
@@ -1097,7 +1097,7 @@ class LocationIdentifiers:
                         ext=".pkl", verbose=verbose)
 
                 except Exception as e:
-                    _print_failure_msg(e)
+                    _print_failure_message(e)
 
             return other_systems_codes
 
@@ -1400,7 +1400,7 @@ class LocationIdentifiers:
                     dump_dir=dump_dir_, verbose=verbose)
 
         except Exception as e:
-            _print_failure_msg(e)
+            _print_failure_message(e)
             location_codes_dictionary = None
 
         return location_codes_dictionary

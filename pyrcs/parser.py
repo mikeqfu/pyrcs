@@ -13,7 +13,7 @@ import bs4
 import dateutil.parser
 import pandas as pd
 import requests
-from pyhelpers._cache import _print_failure_msg
+from pyhelpers._cache import _print_failure_message
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
@@ -704,16 +704,13 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
          'LUL system',
          'DLR system',
          'Canals']
-        >>> line_data_cat = get_catalogue(url='http://www.railwaycodes.org.uk/linedatamenu.shtm')
-        >>> type(line_data_cat)
+        >>> location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
+        >>> type(location_code_cat)
         dict
-        >>> list(line_data_cat.keys())
-        ['ELRs and mileages',
-         'Electrification masts and related features',
-         'CRS, NLC, TIPLOC and STANOX Codes',
-         'Line of Route (LOR/PRIDE) codes',
-         'Line names',
-         'Track diagrams']
+        >>> list(location_code_cat.keys())[:5]
+        ['Introduction', 'A', 'B', 'C', 'D']
+        >>> list(location_code_cat.keys())[-5:]
+        ['W', 'X', 'Y', 'Z', 'Other systems']
     """
 
     cat_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
@@ -759,7 +756,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
                         save_data(catalogue, path_to_cat_json, verbose=verbose, indent=4)
 
                 except Exception as e:
-                    _print_failure_msg(e, msg="Failed to get the catalogue.")
+                    _print_failure_message(e, prefix="Failed to get the catalogue.")
 
         else:
             print("The catalogue for the requested data has not been acquired.")
@@ -767,7 +764,7 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
     return catalogue
 
 
-def get_category_menu(url, update=False, confirmation_required=True, json_it=True, verbose=False):
+def get_category_menu(name, update=False, confirmation_required=True, verbose=False):
     """
     Gets a menu of the available classes from the specified URL.
 
@@ -775,15 +772,13 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     returns them as a dictionary. It also provides options to update the catalogue and
     save it as a JSON file.
 
-    :param url: The URL of the menu page.
-    :type url: str
+    :param name: The name of the data category.
+    :type name: str
     :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
     :param confirmation_required: Whether user confirmation is required before proceeding;
         defaults to ``True``.
     :type confirmation_required: bool
-    :param json_it: Whether to save the catalogue as a JSON file; defaults to ``True``.
-    :type json_it: bool
     :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
     :return: A category menu in dictionary form,
@@ -793,16 +788,17 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
     **Examples**::
 
         >>> from pyrcs.parser import get_category_menu
-        >>> menu = get_category_menu('http://www.railwaycodes.org.uk/linedatamenu.shtm')
+        >>> menu = get_category_menu(name='Line data')
         >>> type(menu)
         dict
         >>> list(menu.keys())
         ['Line data']
+        >>> len(menu['Line data'])
+        7
     """
 
-    menu_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
-        '.shtm', '.json').split('/') if x)
-    path_to_menu_json = cd_data("catalogue", menu_json, mkdir=True)
+    path_to_menu_json = cd_data(
+        "catalogue", f"{name.lower().replace(' ', '-')}-menu.json", mkdir=True)
 
     if os.path.isfile(path_to_menu_json) and not update:
         cls_menu = load_data(path_to_menu_json)
@@ -813,59 +809,30 @@ def get_category_menu(url, update=False, confirmation_required=True, json_it=Tru
         if confirmed("To collect/update category menu?", confirmation_required):
 
             try:
-                source = requests.get(url=url, headers=fake_requests_headers())
+                source = requests.get(url=home_page_url(), headers=fake_requests_headers())
             except requests.exceptions.ConnectionError:
                 print_conn_err(verbose=verbose)
 
             else:
                 try:
-                    soup = bs4.BeautifulSoup(source.content, 'html.parser')
-                    h1, h2s = soup.find('h1'), soup.find_all('h2')
+                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-                    cls_name = h1.text.replace(' menu', '')
+                    drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
+                    drop_btn = drop_btn_[0]
 
-                    if len(h2s) == 0:
-                        # noinspection PyUnresolvedReferences
-                        cls_elem = dict(
-                            (x.text, urllib.parse.urljoin(url, x.get('href')))
-                            for x in h1.find_all_next('a'))
+                    a_href_list = drop_btn.find_next_sibling('div').findChildren('a')
 
-                    else:
-                        # noinspection PyUnresolvedReferences
-                        all_next = [
-                            x.replace(':', '') for x in h1.find_all_next(string=True)
-                            if x != '\n' and x != '\xa0']
-                        all_next = all_next[2:]
-                        h2s_list = [x.text.replace(':', '') for x in h2s]
-                        # noinspection PyUnresolvedReferences
-                        all_next_a = [
-                            (x.text, urllib.parse.urljoin(url, x.get('href')))
-                            for x in h1.find_all_next('a', href=True)]
+                    cls_menu_ = [
+                        (a.get_text(), urllib.parse.urljoin(home_page_url(), a['href']))
+                        for a in a_href_list]
 
-                        idx = [all_next.index(x) for x in h2s_list]
-                        for i in idx:
-                            all_next_a.insert(i, all_next[i])
+                    cls_menu = {name: dict(cls_menu_)}
 
-                        cls_elem, i = {}, 0
-                        while i <= len(idx):
-                            if i == 0:
-                                d = dict(all_next_a[i:idx[i]])
-                            elif i < len(idx):
-                                d = {h2s_list[i - 1]: dict(
-                                    all_next_a[idx[i - 1] + 1:idx[i]])}
-                            else:
-                                d = {h2s_list[i - 1]: dict(
-                                    all_next_a[idx[i - 1] + 1:])}
-                            i += 1
-                            cls_elem.update(d)
-
-                    cls_menu = {cls_name: cls_elem}
-
-                    if json_it and cls_menu is not None:
-                        save_data(cls_menu, path_to_menu_json, verbose=verbose)
+                    if cls_menu is not None:
+                        save_data(cls_menu, path_to_menu_json, indent=4, verbose=verbose)
 
                 except Exception as e:
-                    _print_failure_msg(e, msg="Failed to get the category menu.")
+                    _print_failure_message(e, prefix="Failed to get the category menu.")
 
         else:
             print("The category menu has not been acquired.")
