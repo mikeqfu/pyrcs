@@ -17,11 +17,12 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
 from .parser import get_catalogue, get_introduction, get_last_updated_date
-from .utils import cd_data, collect_in_fetch_verbose, confirm_msg, home_page_url, \
+from .utils import cd_data, collect_in_fetch_verbose, format_confirmation_prompt, home_page_url, \
     print_collect_msg, print_conn_err, print_inst_conn_err, print_void_msg
 
 
 class _Base:
+
     #: The name of the data.
     NAME: str = 'Railway Codes and other data'
     #: The key for accessing the data.
@@ -31,12 +32,15 @@ class _Base:
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
-    def __init__(self, data_dir=None, content_type=None, data_category="", update=False,
-                 verbose=True):
+    def __init__(self, data_dir=None, content_type=None, data_category="", data_cluster=None,
+                 update=False, verbose=True):
         """
+        Initialises the base class for handling railway codes and related data.
+
         :param data_dir: Path to the directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
-        :param content_type: Type of content to process, defaults to ``None``. Valid options are:
+        :param content_type: Type of content to process, defaults to ``None``.
+            Valid options (case-insensitive):
 
             - ``'catalogue'``, ``'catalog'``, or ``'cat'`` for catalogue-related content.
             - ``'introduction'`` or ``'intro'`` for introductory content.
@@ -44,15 +48,19 @@ class _Base:
         :type content_type: str | None
         :param data_category: Category to which the data belongs; defaults to ``''``.
         :type data_category: str
+        :param data_cluster: Optional override for ``KEY`` to specify a different subdirectory name.
+        :type data_cluster: str | None
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
 
-        :ivar dict catalogue: A dictionary containing the catalogue of the data.
+        :ivar dict | None catalogue: Dictionary containing catalogue data
+            (if ``content_type='catalogue'``).
+        :ivar str | None introduction: Introduction text (if ``content_type='introduction'``).
         :ivar str last_updated_date: The date when the data was last updated.
         :ivar str data_dir: The path to the directory containing the data.
-        :ivar str current_data_dir: The path to the current data directory being used.
+        :ivar str current_data_dir: The specific directory being used for the current operation.
 
         **Examples**::
 
@@ -69,30 +77,33 @@ class _Base:
         self.catalogue, self.introduction = None, None
 
         if isinstance(content_type, str):
-            if content_type.startswith('cat'):
+            content_type_ = content_type.lower()
+            verbose_ = True if verbose == 2 else False
+            if content_type_.startswith('cat'):
                 self.catalogue = get_catalogue(
-                    url=self.URL, update=update, confirmation_required=False)
-            elif content_type.startswith('intro'):
-                self.introduction = get_introduction(url=self.URL, verbose=verbose)
+                    url=self.URL, update=update, confirmation_required=False, verbose=verbose_)
+            elif content_type_.startswith('intro'):
+                self.introduction = get_introduction(url=self.URL, verbose=verbose_)
 
         self.last_updated_date = get_last_updated_date(url=self.URL)
 
-        self.data_dir, self.current_data_dir = self._init_data_dir(
-            data_dir=data_dir, category=data_category)
+        self.data_dir, self.current_data_dir = self._setup_data_dir(
+            data_dir=data_dir, category=data_category, cluster=data_cluster)
 
-    def _init_data_dir(self, data_dir, category, cluster=None, **kwargs):
+    def _setup_data_dir(self, data_dir, category, cluster=None, **kwargs):
         # noinspection PyShadowingNames
         """
         Specifies the initial data directory for a class instance to manage a specific data cluster.
 
-        :param data_dir: The directory where the data (e.g. pickle file) will be saved.
+        :param data_dir: The base directory where data files (e.g. pickle files) will be stored.
         :type data_dir: str | None
-        :param category: The name of the data category, e.g. ``"line-data"``.
+        :param category: The data category (e.g. ``"line-data"``).
         :type category: str
-        :param cluster: An optional replacement for ``self.KEY``.
+        :param cluster: Optional override for ``KEY`` to specify a different subdirectory name.
         :type cluster: str | None
         :param kwargs: [Optional] Additional parameters passed to :func:`~pyrcs.utils.cd_data`.
-        :return: A tuple containing the default data directory and the current data directory path.
+        :return: A tuple containing the default data directory path and
+            the current data directory path.
         :rtype: tuple[str, str]
 
         **Examples**::
@@ -100,7 +111,7 @@ class _Base:
             >>> from pyrcs._base import _Base
             >>> import os
             >>> _b = _Base()
-            >>> data_dir, current_data_dir = _b._init_data_dir(data_dir="data", category="line-data")
+            >>> data_dir, current_data_dir = _b._setup_data_dir("data", category="line-data")
             >>> assert data_dir == _b.data_dir
             >>> os.path.relpath(data_dir)
             'data'
@@ -154,7 +165,7 @@ class _Base:
         return path
 
     @staticmethod
-    def _confirm_prompt(confirmation_prompt, data_name):
+    def _format_confirmation_message(data_name, confirmation_prompt=None, initial=None, **kwargs):
         """
         Generates a confirmation prompt message.
 
@@ -172,10 +183,13 @@ class _Base:
             if isinstance(confirmation_prompt, str):
                 prompt = confirmation_prompt
             else:
-                # assert isinstance(confirmation_prompt, typing.Callable)
-                prompt = confirmation_prompt(data_name)
+                assert callable(confirmation_prompt)
+                if 'initial' in inspect.signature(confirmation_prompt).parameters:
+                    kwargs.update({'initial': initial})
+                prompt = confirmation_prompt(data_name, **kwargs)
+
         else:
-            prompt = confirm_msg(data_name)
+            prompt = format_confirmation_prompt(data_name=data_name, initial=initial)
 
         return prompt
 
@@ -210,10 +224,11 @@ class _Base:
             if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: The collected data.
-        :rtype: pandas.DataFrame | dict | collections.OrderedDict | None
+        :rtype: pandas.DataFrame | dict | None
         """
 
-        prompt = self._confirm_prompt(confirmation_prompt, data_name)
+        prompt = self._format_confirmation_message(
+            data_name=data_name, confirmation_prompt=confirmation_prompt, initial=initial)
 
         if confirmed(prompt=prompt, confirmation_required=confirmation_required):
             print_collect_msg(
@@ -236,18 +251,18 @@ class _Base:
 
                 method_params = set(inspect.signature(method).parameters)
                 if 'data_name' in method_params:
-                    kwargs['data_name'] = data_name
-                if 'url' in method_params:
-                    kwargs['url'] = url_
+                    kwargs.update({'data_name': data_name})
+                if 'initial' in method_params:
+                    kwargs.update({'initial': initial})
 
                 try:
-                    data = method(**kwargs)
-
-                    return data
+                    return method(**kwargs)
 
                 except Exception as e:
                     _print_failure_message(
                         e=e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
+
+                    return {initial: None, self.KEY_TO_LAST_UPDATED_DATE: None} if initial else None
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
         """
@@ -299,8 +314,8 @@ class _Base:
 
         return file_pathname
 
-    def _save_data_to_file(self, data, data_name, ext=".pkl", dump_dir=None, verbose=False,
-                           **kwargs):
+    def _save_data_to_file(self, data, data_name, ext=".pkl", dump_dir=None, sub_dir=None,
+                           verbose=False, **kwargs):
         # noinspection PyShadowingNames
         """
         Saves the provided ``data`` to a file using the specified format and location.
@@ -320,6 +335,8 @@ class _Base:
         :param dump_dir: The directory where the file should be saved;
             if ``None`` (default) a default directory within the class is used.
         :type dump_dir: str | None
+        :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
+        :type sub_dir: str | list | None
         :param verbose: Whether to print detailed information to the console; defaults to ``False``.
         :type verbose: bool | int
         :param kwargs: [Optional] Additional parameters passed to `pyhelpers.store.save_data()`_.
@@ -351,7 +368,7 @@ class _Base:
                 file_ext = ".pkl"
 
             path_to_file = self._make_file_pathname(
-                data_name=data_name, ext=file_ext, data_dir=dump_dir)
+                data_name=data_name, ext=file_ext, data_dir=dump_dir, sub_dir=sub_dir)
 
             verbose_ = True if verbose == 2 else False
             save_data(data=data, path_to_file=path_to_file, verbose=verbose_, **kwargs)
@@ -360,7 +377,7 @@ class _Base:
             print_void_msg(data_name=data_name, verbose=verbose)
 
     def _fetch_data_from_file(self, data_name, method, ext=".pkl", update=False, dump_dir=None,
-                              verbose=False, raise_error=False, data_dir=None,
+                              verbose=False, raise_error=False, data_dir=None, sub_dir=None,
                               save_data_kwargs=None, **kwargs):
         # noinspection PyShadowingNames
         """
@@ -390,6 +407,8 @@ class _Base:
         :param data_dir: The directory where the data should be fetched from;
             if ``None``, the default data directory is used.
         :type data_dir: str | os.PathLike | None
+        :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
+        :type sub_dir: str | list | None
         :param raise_error: Whether to raise the provided exception;
             if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
@@ -422,7 +441,8 @@ class _Base:
         """
 
         try:
-            path_to_file = self._make_file_pathname(data_name=data_name, ext=ext, data_dir=data_dir)
+            path_to_file = self._make_file_pathname(
+                data_name=data_name, ext=ext, data_dir=data_dir, sub_dir=sub_dir)
 
             if os.path.isfile(path_to_file) and not update:
                 data = load_data(path_to_file, verbose=True if verbose == 2 else False)
@@ -439,7 +459,7 @@ class _Base:
 
                 self._save_data_to_file(
                     data=data, data_name=data_name, ext=ext,
-                    dump_dir=dump_dir, verbose=verbose, **save_data_kwargs)
+                    dump_dir=dump_dir, sub_dir=sub_dir, verbose=verbose, **save_data_kwargs)
 
             return data
 
