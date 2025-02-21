@@ -13,7 +13,7 @@ import pandas as pd
 from pyhelpers.store import load_data
 
 from .._base import _Base
-from ..parser import get_heading_text, get_hypertext, get_last_updated_date, get_page_catalogue, \
+from ..parser import _get_last_updated_date, get_heading_text, get_hypertext, get_page_catalogue, \
     parse_tr
 from ..utils import cd_data, fetch_all_verbose, home_page_url
 
@@ -181,20 +181,18 @@ def _parse_codes_and_notes(h3):
     return codes_and_notes
 
 
-def _parse_source(source):
-    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
+def _parse_source(soup):
     data = {}
+
     for h3 in soup.find_all('h3'):
         if data_ := _parse_codes_and_notes(h3):
+            # If data_ is not None: data_ = _parse_codes_and_notes(h3)
             data.update(data_)
 
     return data
 
 
-def _parse_ohns_codes(source):
-    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
+def _parse_ohns_codes(soup):
     thead, tbody = soup.find('thead'), soup.find('tbody')
     # if not thead or not tbody:
     #     return {'Codes': None, 'Notes': None}
@@ -231,7 +229,7 @@ def _parse_ohns_codes(source):
 
     ohns_data = {'Codes': neutral_sections_codes, 'Notes': notes}
 
-    return ohns_data
+    return ohns_data, soup
 
 
 class Electrification(_Base):
@@ -290,18 +288,20 @@ class Electrification(_Base):
             verbose=verbose)
 
     @staticmethod
-    def _confirm_to_collect(key):
-        return f"To collect section codes for OLE installations: {key}\n?"
+    def _confirm_to_collect(data_name):
+        return f"To collect section codes for OLE installations: {data_name}\n?"
 
-    def _collect_elec_codes(self, url, source, data_name, parser_func=None, verbose=False):
+    def _collect_elec_codes(self, source, data_name, parser_func=None, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
         # Get data of the specific category
         if parser_func is None:
-            dat = _parse_source(source=source)
+            dat = _parse_source(soup)
         else:
-            dat = parser_func(source=source)
+            dat = parser_func(soup)
 
         # Get last updated date
-        last_updated_date = get_last_updated_date(url=url)
+        last_updated_date = _get_last_updated_date(soup=soup)
 
         # Put everything in a dictionary
         data = {data_name: dat, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
@@ -439,9 +439,8 @@ class Electrification(_Base):
         """
 
         args = {
-            'cls_instance': self,
-            'method': self.collect_national_network_codes,
             'data_name': self.KEY_TO_NATIONAL_NETWORK,
+            'method': self.collect_national_network_codes,
         }
         kwargs.update(args)
 
@@ -614,9 +613,8 @@ class Electrification(_Base):
         """
 
         args = {
-            'cls_instance': self,
-            'method': self.collect_independent_lines_codes,
             'data_name': self.KEY_TO_INDEPENDENT_LINES,
+            'method': self.collect_independent_lines_codes,
         }
         kwargs.update(args)
 
@@ -719,11 +717,7 @@ class Electrification(_Base):
             4  AYR1  Shields Junction  0m 69ch  Down Ayr
         """
 
-        args = {
-            'cls_instance': self,
-            'method': self.collect_ohns_codes,
-            'data_name': self.KEY_TO_OHNS,
-        }
+        args = {'data_name': self.KEY_TO_OHNS, 'method': self.collect_ohns_codes}
         kwargs.update(args)
 
         ohns_codes = self._fetch_data_from_file(
@@ -843,11 +837,7 @@ class Electrification(_Base):
             13   WC                West Coast/North West
         """
 
-        args = {
-            'cls_instance': self,
-            'method': self.collect_etz_codes,
-            'data_name': self.KEY_TO_ETZ,
-        }
+        args = {'data_name': self.KEY_TO_ETZ, 'method': self.collect_etz_codes}
         kwargs.update(args)
 
         etz_ole = self._fetch_data_from_file(
