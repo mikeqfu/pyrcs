@@ -32,7 +32,7 @@ class TestBridges:
             'London Underground',
             'Key to text presentation conventions',
         ]
-        assert all(k in bdg_codes for k in keys)
+        assert all(k in bdg_codes[bdg.KEY] for k in keys)
 
 
 if __name__ == '__main__':
