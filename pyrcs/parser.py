@@ -18,7 +18,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, format_err_msg, home_page_url, print_conn_err, print_inst_conn_err
+from .utils import cd_data, home_page_url, print_conn_err, print_inst_conn_err
 
 
 # == Preprocess contents ===========================================================================
@@ -38,7 +38,7 @@ def _parse_other_tags_in_td_contents(x):
             td_text = f'"{td_text}"'
 
         elif tag_name in {'span', 'a'}:
-            td_class, td_class_child = x.get('class'), x.findChild('span')
+            td_class, td_class_child = x.get('class'), x.find('span')
 
             if td_class == ['r']:
                 if td_text == 'no CRS?':
@@ -269,7 +269,7 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
     if len(tables) == 1:
         tables = tables[0]
 
-    return tables
+    return tables, soup
 
 
 def parse_date(str_date, as_date_type=False):
@@ -356,7 +356,7 @@ def _get_site_map_sub_dl(h3_dl_dts):
         else:
             next_dd = h3_dl_dt.find_next('dd')
             prev_dt = next_dd.find_previous(name='dt')
-            next_dd_sub_dl = next_dd.findChild(name='dl')
+            next_dd_sub_dl = next_dd.find(name='dl')
 
             if next_dd_sub_dl is not None:
                 next_dd_sub_dl_dts = next_dd_sub_dl.find_all(name='dt')
@@ -365,7 +365,7 @@ def _get_site_map_sub_dl(h3_dl_dts):
             else:
                 h3_dl_dt_dds = {}
                 while prev_dt == h3_dl_dt:
-                    next_dd_sub_dl_ = next_dd.findChild('dl')
+                    next_dd_sub_dl_ = next_dd.find('dl')
 
                     if next_dd_sub_dl_ is None:
                         next_dd_contents = [x for x in next_dd.contents if x != '\n']
@@ -409,24 +409,25 @@ def _get_site_map_sub_dl(h3_dl_dts):
 
 
 def _get_site_map(source):
+    """
+    Parses the site map from the given HTML source and returns a structured dictionary.
+    """
+
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+    site_map = {}
 
     h3s = soup.find_all(name='h3', attrs={"class": "site"})
-
-    site_map = collections.OrderedDict()
 
     for h3 in h3s:
         h3_title = h3.get_text(strip=True)
 
-        # h3_dl = h3.find_next_sibling(name='dl')
-        h3_dl = h3.find_next(name='dl')
+        dl_tag = h3.find_next(name='dl')
+        dt_tags = dl_tag.find_all(name='dt')  # h3 > dl > dt
 
-        h3_dl_dts = h3_dl.find_all(name='dt')
+        if len(dt_tags) == 1:
+            dd_dict = {}  # h3 > dl > dt > dd
 
-        if len(h3_dl_dts) == 1:
-            h3_dl_dt_dd_dict = {}
-
-            h3_dl_dt = h3_dl_dts[0]
+            h3_dl_dt = dt_tags[0]
             h3_dl_dt_text = h3_dl_dt.get_text(strip=True)
 
             if h3_dl_dt_text == '':
@@ -435,17 +436,19 @@ def _get_site_map(source):
                 for h3_dl_dt_dd in h3_dl_dt_dds:
                     text, href = _parse_dd_or_dt_contents(h3_dl_dt_dd.contents)
                     link = urllib.parse.urljoin(home_page_url(), href)
-                    h3_dl_dt_dd_dict.update({text: link})
+
+                    dd_dict.update({text: link})
 
         else:
-            h3_dl_dt_dd_dict = _get_site_map_sub_dl(h3_dl_dts)
+            dd_dict = _get_site_map_sub_dl(dt_tags)
 
-        site_map.update({h3_title: h3_dl_dt_dd_dict})
+        site_map.update({h3_title: dd_dict})
 
     return site_map
 
 
-def get_site_map(update=False, confirmation_required=True, verbose=False):
+def get_site_map(update=False, confirmation_required=True, verbose=False, raise_error=True):
+    # noinspection PyShadowingNames
     """
     Gets the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_.
 
@@ -456,22 +459,25 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     :type confirmation_required: bool
     :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False``, the error will be suppressed; defaults to ``True``.
+    :type raise_error: bool
     :return: An ordered dictionary containing the data of site map.
     :rtype: collections.OrderedDict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_site_map
-        >>> site_map_dat = get_site_map()
-        >>> type(site_map_dat)
+        >>> site_map = get_site_map()
+        >>> type(site_map)
         collections.OrderedDict
-        >>> list(site_map_dat.keys())
+        >>> list(site_map.keys())
         ['Home',
          'Line data',
          'Other assets',
          '"Legal/financial" lists',
          'Miscellaneous']
-        >>> site_map_dat['Home']
+        >>> site_map['Home']
         {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
     """
 
@@ -479,7 +485,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
 
     if os.path.isfile(path_to_file) and not update:
         # site_map = load_data(path_to_file)
-        site_map = load_data(path_to_file, object_pairs_hook=collections.OrderedDict)
+        site_map = load_data(path_to_file, object_pairs_hook=dict)
 
     else:
         site_map = None
@@ -491,6 +497,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
             try:
                 url = urllib.parse.urljoin(home_page_url(), '/misc/sitemap.shtm')
                 source = requests.get(url=url, headers=fake_requests_headers())
+
             except requests.exceptions.ConnectionError:
                 print_inst_conn_err(update=update, verbose=True if update else verbose)
 
@@ -505,7 +512,8 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
                         save_data(site_map, path_to_file, indent=4, verbose=verbose)
 
                 except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
+                    _print_failure_message(
+                        e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
 
         else:
             if verbose == 2:
@@ -515,7 +523,25 @@ def get_site_map(update=False, confirmation_required=True, verbose=False):
     return site_map
 
 
+def _get_last_updated_date(soup, parsed=True, as_date_type=False):
+    # Find 'Last update date'
+    update_tag = soup.find(name='p', attrs={'class': 'update'})
+
+    if update_tag is not None:
+        last_updated_date = update_tag.get_text(strip=True)
+        # Decide whether to convert the date's format
+        if parsed:
+            # Convert the date to "yyyy-mm-dd" format
+            last_updated_date = parse_date(str_date=last_updated_date, as_date_type=as_date_type)
+
+    else:
+        last_updated_date = None
+
+    return last_updated_date
+
+
 def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
+    # noinspection PyShadowingNames
     """
     Gets the last update date of a specified web page.
 
@@ -541,45 +567,35 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     **Examples**::
 
         >>> from pyrcs.parser import get_last_updated_date
-        >>> url_a = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
-        >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=False)
+        >>> url = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+        >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=False)
         >>> type(last_upd_date)
         str
-        >>> last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=True)
+        >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=True)
         >>> type(last_upd_date)
         datetime.date
-        >>> ldm_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-        >>> last_upd_date = get_last_updated_date(url=ldm_url)
-        >>> print(last_upd_date)
-        None
+        >>> url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+        >>> last_upd_date = get_last_updated_date(url=url, verbose=True)
+        Information of the last update date not available.
     """
 
-    last_update_date = None
-
-    # Request to get connected to the given url
-    try:
+    try:  # Request to get connected to the given url
         source = requests.get(url=url, headers=fake_requests_headers())
+
     except requests.exceptions.ConnectionError:
         print_conn_err(verbose=verbose)
 
     else:
         # Parse the text scraped from the requested web page
-        parsed_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-        # Find 'Last update date'
-        update_tag = parsed_text.find(name='p', attrs={'class': 'update'})
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        if update_tag is not None:
-            last_update_date = update_tag.text
+        last_updated_date = _get_last_updated_date(
+            soup=soup, parsed=parsed, as_date_type=as_date_type)
 
-            # Decide whether to convert the date's format
-            if parsed:
-                # Convert the date to "yyyy-mm-dd" format
-                last_update_date = parse_date(str_date=last_update_date, as_date_type=as_date_type)
+        if last_updated_date is None and verbose:
+            print('Information of the last update date not available.')
 
-        # else:
-        #     last_update_date = None  # print('Information not available.')
-
-    return last_update_date
+        return last_updated_date
 
 
 def get_financial_year(date):
@@ -659,7 +675,8 @@ def get_introduction(url, delimiter='\n', verbose=True):
     else:
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        intro_h3 = [h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
+        intro_h3 = [
+            h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
 
         intro_paras = _parse_h3_paras(intro_h3)
 
