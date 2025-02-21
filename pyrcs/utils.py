@@ -9,6 +9,7 @@ import re
 import string
 
 import pandas as pd
+from pyhelpers._cache import _format_error_message, _print_failure_message
 from pyhelpers.dirs import validate_dir
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
@@ -218,35 +219,48 @@ def fetch_all_verbose(data_dir, verbose):
 # == Print messages ================================================================================
 
 
-def confirm_msg(data_name):
+def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
+    # noinspection PyShadowingNames
     """
     Returns a message for comfirming whether to proceed to collect a certain cluster of data.
 
-    :param data_name: The name of data, e.g. "Railway Codes".
+    :param data_name: The name of the dataset to be collected, e.g. ``"Railway Codes"``.
     :type data_name: str
-    :return: A confirmation message.
+    :param initial: The initial letter for the code; defaults to ``None``.
+    :type initial: str | None
+    :param ending: The ending of the confirmation message; defaults to ``"\n?"``.
+    :type ending: str
+    :return: A confirmation message asking whether to proceed with the dataset collection.
     :rtype: str
 
     **Examples**::
 
-        >>> from pyrcs.utils import confirm_msg
-        >>> msg = confirm_msg(data_name="Railway Codes")
-        >>> print(msg)
+        >>> from pyrcs.utils import format_confirmation_prompt
+        >>> prompt = format_confirmation_prompt(data_name="Railway Codes")
+        >>> print(prompt)
         To collect data of Railway Codes
+        ?
+        >>> prompt = format_confirmation_prompt(data_name="location codes", initial="A")
+        >>> print(prompt)
+        To collect data of location codes beginning with "A"
         ?
     """
 
-    cfm_msg = f"To collect data of {data_name}\n?"
+    prompt = f"To collect data of {data_name}"
+    prompt += (f' beginning with "{initial}"{ending}' if initial else ending)
 
-    return cfm_msg
+    return prompt
 
 
-def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
+def print_collect_msg(data_name, initial=None, verbose=False, confirmation_required=True,
+                      end=" ... "):
     """
     Prints a message indicating the status of data collection.
 
     :param data_name: The name of the data being collected.
     :type data_name: str
+    :param initial: The initial letter of the desired code or data; defaults to ``None``.
+    :type initial: str | None
     :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
     :param confirmation_required: Whether user confirmation is required before proceeding.
@@ -257,15 +271,22 @@ def print_collect_msg(data_name, verbose, confirmation_required, end=" ... "):
     **Examples**::
 
         >>> from pyrcs.utils import print_collect_msg
-        >>> print_collect_msg("Railway Codes", verbose=2, confirmation_required=False)
+        >>> print_collect_msg("Railway Codes", verbose=True, confirmation_required=False)
         Collecting the data of "Railway Codes" ...
     """
 
-    if verbose == 2:
+    message_ = "Collecting the data"
+
+    if verbose in {True, 1}:
         if confirmation_required:
-            print("Collecting the data", end=end)
+            print(message_, end=end)
+
         else:
-            print(f"Collecting the data of \"{data_name}\"", end=end)
+            if initial:
+                initial_ = validate_initial(x=initial)
+                print(f'{message_} of {data_name} beginning with "{initial_}"', end=end)
+            else:
+                print(f'{message_} of "{data_name}"', end=end)
 
 
 def print_conn_err(verbose=False):
@@ -289,28 +310,9 @@ def print_conn_err(verbose=False):
                   "The current instance relies on local backup.")
 
 
-def format_err_msg(e):
-    """
-    Formats an error message from an exception.
-
-    :param e: An instance of an exception or ``None``.
-    :type e: Exception | None
-    :return: A formatted error message.
-    :rtype: str
-    """
-
-    if e:
-        e_ = f"{e}"
-        err_msg = e_ + "." if not e_.endswith((".", "!", "?")) else e_
-    else:
-        err_msg = ""
-
-    return err_msg
-
-
 def print_inst_conn_err(update=False, verbose=False, e=None):
     """
-    Print a message when an instance fails to establish an Internet connection.
+    Prints a message when an instance fails to establish an Internet connection.
 
     :param update: Reflects the ``update`` parameter from the parent function;
         defaults to ``False``
@@ -327,10 +329,13 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
         The Internet connection is not available.
     """
 
+    if verbose == 2:
+        print("Failed.", end=" ")
+
     if e is None:
         err_msg = "The Internet connection is not available."
     else:
-        err_msg = format_err_msg(e)
+        err_msg = _format_error_message(e)
 
     if update and verbose:
         print((err_msg + " " if err_msg else err_msg) + "Failed to update the data.")
@@ -556,7 +561,7 @@ def _update_location_names_errata(new_items, regex, verbose=False):
 
     new_items_keys = list(new_items.keys())
 
-    if confirmed(f"To update \"{json_filename}\" with {{\"{new_items_keys[0]}\"... }}?"):
+    if confirmed(f'To update "{json_filename}" with {{"{new_items_keys[0]}"... }}?'):
         path_to_json = cd_data(json_filename)
         location_name_repl_dict = load_data(path_to_json)
 
@@ -568,7 +573,8 @@ def _update_location_names_errata(new_items, regex, verbose=False):
         save_data(location_name_repl_dict, path_to_json, verbose=verbose)
 
 
-def save_data_to_file(cls_instance, data, data_name, ext, dump_dir=None, verbose=False, **kwargs):
+def save_data_to_file(cls_instance, data, data_name, ext=".pkl", dump_dir=None, verbose=False,
+                      **kwargs):
     """
     Saves collected data to a file based on the specified parameters.
 
@@ -601,38 +607,44 @@ def save_data_to_file(cls_instance, data, data_name, ext, dump_dir=None, verbose
         path_to_file = make_file_pathname(
             cls_instance=cls_instance, data_name=data_name, ext=file_ext, data_dir=dump_dir)
 
-        kwargs.update({'data': data, 'path_to_file': path_to_file, 'verbose': verbose})
-        save_data(**kwargs)
+        save_data(
+            data=data, path_to_file=path_to_file, verbose=True if verbose == 2 else False,
+            **kwargs)
 
     else:
         print_void_msg(data_name=data_name, verbose=verbose)
 
 
-def fetch_data_from_file(cls_instance, method, data_name, ext, update, dump_dir, verbose,
-                         data_dir=None, save_data_kwargs=None, **kwargs):
+def fetch_data_from_file(cls_instance, data_name, method, ext=".pkl", update=False, dump_dir=None,
+                         verbose=False, raise_error=False, data_dir=None, save_data_kwargs=None,
+                         **kwargs):
     """
     Fetches or loads data from a backup file based on the specified parameters.
 
     :param cls_instance: An instance of a class managing a specific data cluster.
     :type cls_instance: object
-    :param method: The name of the method in ``cls_instance`` used to collect the data.
-    :type method: str
     :param data_name: The key identifying the data within a specific cluster.
     :type data_name: str
-    :param ext: The file extension or a boolean indicating whether to save the data.
+    :param method: The method used to collect the data.
+    :type method: typing.Callable
+    :param ext: The file extension or a boolean indicating whether to save the data;
+        defaults to ``".pkl"``.
     :type ext: bool | str
     :param update: Whether to perform an update check on the package data; defaults to ``False``.
     :type update: bool
     :param dump_dir: The directory where the file is stored; defaults to ``None``.
     :type dump_dir: str | pathlib.Path | None
-    :param verbose: Whether to print detailed information to the console.
+    :param verbose: Whether to print detailed information to the console; defaults to ``False``.
     :type verbose: bool | int
     :param data_dir: The directory where the data is fetched from; defaults to ``None``.
-    :type data_dir: str | os.PathLike[str] | None
-    :param save_data_kwargs: Additional parameters for :func:`pyrcs.utils.save_data_to_file`;
-        defaults to ``None``.
+    :type data_dir: str | os.PathLike | None
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
+    :param save_data_kwargs: [Optional] Additional parameters for the
+        :func:`pyrcs.utils.save_data_to_file` function; defaults to ``None``.
     :type save_data_kwargs: dict | None
-    :param kwargs: [Optional] Additional parameters for the ``cls_instance.method`` being called.
+    :param kwargs: [Optional] Additional parameters for the ``method`` being called.
     :return: The fetched data for the specified cluster.
     :rtype: dict | None
     """
@@ -641,13 +653,13 @@ def fetch_data_from_file(cls_instance, method, data_name, ext, update, dump_dir,
         path_to_file = make_file_pathname(
             cls_instance=cls_instance, data_name=data_name, ext=ext, data_dir=data_dir)
         if os.path.isfile(path_to_file) and not update:
-            data = load_data(path_to_file)
+            data = load_data(path_to_file, verbose=True if verbose == 2 else False)
 
         else:
             verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
 
             kwargs.update({'confirmation_required': False, 'verbose': verbose_})
-            data = getattr(cls_instance, method)(**kwargs)
+            data = method(**kwargs)
 
         if dump_dir is not None:
             if save_data_kwargs is None:
@@ -657,10 +669,7 @@ def fetch_data_from_file(cls_instance, method, data_name, ext, update, dump_dir,
                 cls_instance=cls_instance, data=data, data_name=data_name, ext=ext,
                 dump_dir=dump_dir, verbose=verbose, **save_data_kwargs)
 
+        return data
+
     except Exception as e:
-        if verbose:
-            print(f"Some errors occurred when fetching the data. {format_err_msg(e)}")
-
-        data = None
-
-    return data
+        _print_failure_message(e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
