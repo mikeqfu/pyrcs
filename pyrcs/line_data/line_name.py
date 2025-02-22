@@ -6,16 +6,13 @@ import re
 import urllib.parse
 
 import pandas as pd
-import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers
 
-from ..parser import get_catalogue, get_last_updated_date, parse_table
-from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from .._base import _Base
+from ..parser import _get_last_updated_date, parse_table
+from ..utils import home_page_url
 
 
-class LineNames:
+class LineNames(_Base):
     """
     A class for collecting data of
     `railway line names <http://www.railwaycodes.org.uk/misc/line_names.shtm>`_.
@@ -56,39 +53,9 @@ class LineNames:
             'http://www.railwaycodes.org.uk/misc/line_names.shtm'
         """
 
-        print_conn_err(verbose=verbose)
-
-        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
-
-        self.last_updated_date = get_last_updated_date(url=self.URL)
-
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
-
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
-        """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
-
-        The default data directory for this class is: ``"data\\line-data\\line-names"``.
-
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
-        :rtype: str
-
-        .. _`pyhelpers.dir.cd()`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
-        """
-
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
-
-        return path
+        super().__init__(
+            data_dir=data_dir, content_type='catalogue', data_category="line-data", update=update,
+            verbose=verbose)
 
     @staticmethod
     def _parse_route(x):
@@ -116,7 +83,27 @@ class LineNames:
 
         return route, route_note
 
-    def collect_codes(self, confirmation_required=True, verbose=False):
+    def _collect_codes(self, source, verbose=False):
+        (columns, records), soup = parse_table(source=source)
+        line_names = pd.DataFrame(
+            [[rec.replace('\xa0', '').strip() for rec in record] for record in records],
+            columns=columns)
+
+        rte_col = ['Route', 'Route_note']
+        temp = line_names['Route'].map(self._parse_route)
+        line_names[rte_col] = pd.DataFrame(zip(*temp)).T
+
+        last_updated_date = _get_last_updated_date(soup=soup)
+        line_names_data = {self.KEY: line_names, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(data=line_names_data, data_name=self.KEY, verbose=verbose)
+
+        return line_names_data
+
+    def collect_codes(self, confirmation_required=True, verbose=False, raise_error=True):
         """
         Collects data of `railway line names`_ and associated route data from the source web page.
 
@@ -127,6 +114,9 @@ class LineNames:
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
+            if ``raise_error=False``, the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing railway line names, route data and the last update date,
             or ``None`` if no data is collected.
         :rtype: dict | None
@@ -148,61 +138,23 @@ class LineNames:
             >>> type(line_names_codes_dat)
             pandas.core.frame.DataFrame
             >>> line_names_codes_dat.head()
-                         Line name  ... Route_note
-            0           Abbey Line  ...       None
-            1        Airedale Line  ...       None
-            2          Argyle Line  ...       None
-            3     Arun Valley Line  ...       None
-            4  Atlantic Coast Line  ...       None
+                      Line name  ... Route_note
+            0        Abbey Line  ...       None
+            1     Aberdare Line  ...       None
+            2     Airedale Line  ...       None
+            3       Argyle Line  ...       None
+            4  Arun Valley Line  ...       None
             [5 rows x 3 columns]
         """
 
-        data_name = self.NAME.lower()
+        data = self._collect_data_from_source(
+            data_name=self.NAME.lower(), method=self._collect_codes, url=self.URL,
+            confirmation_required=confirmation_required, verbose=verbose,
+            raise_error=raise_error)
 
-        if confirmed(
-                f"To collect British {data_name}\n?", confirmation_required=confirmation_required):
+        return data
 
-            print_collect_msg(
-                data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
-
-            line_names_data = None
-
-            try:
-                source = requests.get(url=self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    columns, records = parse_table(source=source, parser='html.parser')
-                    line_names = pd.DataFrame(
-                        [[rec.replace('\xa0', '').strip() for rec in record] for record in records],
-                        columns=columns)
-
-                    rte_col = ['Route', 'Route_note']
-                    temp = line_names['Route'].map(self._parse_route)
-                    line_names[rte_col] = pd.DataFrame(zip(*temp)).T
-
-                    line_names_data = {
-                        self.KEY: line_names,
-                        self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(self.URL)
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=line_names_data, data_name=self.KEY, ext=".pkl", verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return line_names_data
-
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
         Fetches data of `railway line names`_ and associated route data.
 
@@ -242,8 +194,9 @@ class LineNames:
             [5 rows x 3 columns]
         """
 
-        line_names_data = fetch_data_from_file(
-            self, method='collect_codes', data_name=self.KEY, ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+        kwargs.update({'data_name': self.KEY, 'method': self.collect_codes})
+
+        line_names_data = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return line_names_data
