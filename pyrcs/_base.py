@@ -451,7 +451,11 @@ class _Base:
                 verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
 
                 kwargs.update({'confirmation_required': False, 'verbose': verbose_})
-                data = method(**kwargs)
+
+                if isinstance(method, str):
+                    data = getattr(self, method)(**kwargs)
+                else:
+                    data = method(**kwargs)
 
             if dump_dir is not None:
                 if save_data_kwargs is None:
