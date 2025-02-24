@@ -153,8 +153,9 @@ class Bridges(_Base):
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
-        :param confirmation_required: Whether to prompt for confirmation before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information in the console; defaults to ``False``.
         :type verbose: bool | int

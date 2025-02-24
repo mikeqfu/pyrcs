@@ -315,19 +315,20 @@ class Electrification(_Base):
         return data
 
     def collect_national_network_codes(self, confirmation_required=True, verbose=False,
-                                       raise_error=True):
+                                       raise_error=False):
         """
         Collects the section codes for Overhead Line Electrification (OLE) installations for the
         `national network <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary of OLE section codes for the national network,
             or ``None`` if not applicable.
@@ -498,19 +499,20 @@ class Electrification(_Base):
         return indep_line_names
 
     def collect_independent_lines_codes(self, confirmation_required=True, verbose=False,
-                                        raise_error=True):
+                                        raise_error=False):
         """
         Collects OLE section codes for `independent lines`_ from the source web page.
 
         .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary of OLE section codes for independent lines,
             or ``None`` if not applicable.
@@ -623,20 +625,22 @@ class Electrification(_Base):
 
         return independent_lines_ole
 
-    def collect_ohns_codes(self, confirmation_required=True, verbose=False, raise_error=True):
+    def collect_ohns_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects codes for
         `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary of OHNS codes, or ``None`` if not applicable.
         :rtype: dict | None
 
@@ -725,19 +729,21 @@ class Electrification(_Base):
 
         return ohns_codes
 
-    def collect_etz_codes(self, confirmation_required=True, verbose=False, raise_error=True):
+    def collect_etz_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary of OLE section codes for national network energy tariff zones.
         :rtype: dict | None
 
@@ -896,13 +902,7 @@ class Electrification(_Base):
         }
 
         if dump_dir is not None:
-            args = {
-                'cls_instance': self,
-                'data': data,
-                'data_name': self.KEY,
-            }
-            kwargs.update(args)
-
+            kwargs.update({'data': data, 'data_name': self.KEY})
             self._save_data_to_file(dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return data

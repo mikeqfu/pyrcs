@@ -103,19 +103,20 @@ class LineNames(_Base):
 
         return line_names_data
 
-    def collect_codes(self, confirmation_required=True, verbose=False, raise_error=True):
+    def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects data of `railway line names`_ and associated route data from the source web page.
 
         .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing railway line names, route data and the last update date,
             or ``None`` if no data is collected.

@@ -339,19 +339,21 @@ class ELRMileages(_Base):
 
         return data
 
-    def collect_elr(self, initial, confirmation_required=True, verbose=False, raise_error=True):
+    def collect_elr(self, initial, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects Engineer's Line References (ELRs) that begin with a specified initial letter
         from the source web page.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR.
         :type initial: str
-        :param confirmation_required:
-        :type confirmation_required:
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing ELR data whose names start with the given initial letter,
             along with the date of the last update.
@@ -393,8 +395,7 @@ class ELRMileages(_Base):
 
         data = self._collect_data_from_source(
             data_name=self.NAME, method=self._collect_elr, initial=initial_,
-            confirmation_required=confirmation_required, verbose=verbose,
-            raise_error=raise_error)
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
         return data
 
@@ -822,7 +823,7 @@ class ELRMileages(_Base):
         return mileage_file
 
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
-                             verbose=False, raise_error=True):
+                             verbose=False, raise_error=False):
         """
         Collects the mileage file for the specified ELR from the source web page.
 
@@ -831,15 +832,16 @@ class ELRMileages(_Base):
         :type elr: str
         :param parsed: Whether to parse the scraped mileage data; defaults to ``True``.
         :type parsed: bool
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param dump_it: Whether to save the collected data as a pickle file; defaults to ``False``.
         :type dump_it: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing the mileage file for the specified ELR.
         :rtype: dict
@@ -972,7 +974,8 @@ class ELRMileages(_Base):
                         _print_failure_message(
                             e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
 
-    def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False, raise_error=True):
+    def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
+                           raise_error=False):
         """
         Fetches the mileage file for the specified ELR.
 
@@ -986,8 +989,8 @@ class ELRMileages(_Base):
         :type dump_dir: str | None
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception; defaults to ``True``.
-            if ``raise_error=False``, the error will be suppressed.
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing the mileage file (codes), line name and
             any additional information or notes.
