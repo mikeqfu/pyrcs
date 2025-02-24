@@ -76,17 +76,25 @@ class _Base:
 
         self.catalogue, self.introduction = None, None
 
+        verbose_ = True if verbose == 2 else False
+
         if isinstance(content_type, str):
             content_type_ = content_type.lower()
-            verbose_ = True if verbose == 2 else False
-            if content_type_.startswith('cat'):
-                self.catalogue = get_catalogue(
-                    url=self.URL, update=update, confirmation_required=False, verbose=verbose_)
-            elif content_type_.startswith('intro'):
+
+            if content_type_.startswith('cat'):  # Get the catalogue of the data
+                self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+
+            elif content_type_.startswith('intro'):  # Get the introductory text of the data
                 self.introduction = get_introduction(url=self.URL, verbose=verbose_)
+
+        elif content_type is True:  # Get both the catalogue and introductory text of the data
+            self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+
+            self.introduction = get_introduction(url=self.URL, verbose=verbose_)
 
         self.last_updated_date = get_last_updated_date(url=self.URL)
 
+        # Initialise the data directory for storing or retrieving data
         self.data_dir, self.current_data_dir = self._setup_data_dir(
             data_dir=data_dir, category=data_category, cluster=data_cluster)
 
@@ -193,9 +201,25 @@ class _Base:
 
         return prompt
 
+    def _initialise_fallback_data(self, initial, additional_fields):
+        """Creates a fallback data dictionary in case of failure."""
+        if not initial:
+            return None
+
+        data = {initial: None, self.KEY_TO_LAST_UPDATED_DATE: None}
+
+        if additional_fields:
+            if isinstance(additional_fields, dict):
+                data.update(additional_fields)
+            else:
+                data.update({additional_fields: None})
+
+        return data
+
     def _collect_data_from_source(self, data_name, method, url=None, initial=None,
-                                  confirmation_required=True, confirmation_prompt=None,
-                                  verbose=False, raise_error=False, **kwargs):
+                                  additional_fields=None, confirmation_required=True,
+                                  confirmation_prompt=None, verbose=False, raise_error=False,
+                                  **kwargs):
         """
         Collects data from the specified source webpage(s).
 
@@ -212,6 +236,9 @@ class _Base:
         :type method: typing.Callable
         :param initial: The initial letter of the desired code or data; defaults to ``None``.
         :type initial: str | None
+        :param additional_fields: Extra key-value pairs to be included in the returned dictionary
+            if data collection fails or is canceled; defaults to ``None``.
+        :type additional_fields: dict | str | None
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation
             before proceeding with data collection.
@@ -230,39 +257,35 @@ class _Base:
         prompt = self._format_confirmation_message(
             data_name=data_name, confirmation_prompt=confirmation_prompt, initial=initial)
 
-        if confirmed(prompt=prompt, confirmation_required=confirmation_required):
-            print_collect_msg(
-                data_name=data_name, initial=initial, verbose=verbose,
-                confirmation_required=confirmation_required)
+        if not confirmed(prompt=prompt, confirmation_required=confirmation_required):
+            return None
 
-            if url is None:
-                url_ = self.catalogue[initial] if initial else self.catalogue[data_name]
-            else:
-                url_ = copy.copy(url)
+        print_collect_msg(
+            data_name=data_name, initial=initial, verbose=verbose,
+            confirmation_required=confirmation_required)
 
-            try:
-                source = requests.get(url=url_, headers=fake_requests_headers())
+        try:
+            url_ = copy.copy(url or self.catalogue.get(initial or data_name))
+            source = requests.get(url=url_, headers=fake_requests_headers())
+            source.raise_for_status()  # Raises HTTPError for bad responses (4xx, 5xx)
+        except Exception as e:
+            print_inst_conn_err(verbose=verbose, e=e)
+            return self._initialise_fallback_data(initial, additional_fields=additional_fields)
 
-            except Exception as e:
-                print_inst_conn_err(verbose=verbose, e=e)
+        # Build kwargs dynamically based on method signature
+        kwargs.update({'source': source, 'verbose': verbose})
 
-            else:
-                kwargs.update({'source': source, 'verbose': verbose})
+        for param in ('data_name', 'initial'):
+            if param in inspect.signature(method).parameters:
+                kwargs.update({param: locals()[param]})
 
-                method_params = set(inspect.signature(method).parameters)
-                if 'data_name' in method_params:
-                    kwargs.update({'data_name': data_name})
-                if 'initial' in method_params:
-                    kwargs.update({'initial': initial})
-
-                try:
-                    return method(**kwargs)
-
-                except Exception as e:
-                    _print_failure_message(
-                        e=e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
-
-                    return {initial: None, self.KEY_TO_LAST_UPDATED_DATE: None} if initial else None
+        # Attempt method execution
+        try:
+            return method(**kwargs)
+        except Exception as e:
+            _print_failure_message(
+                e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
+            return self._initialise_fallback_data(initial, additional_fields=additional_fields)
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
         """
@@ -297,7 +320,7 @@ class _Base:
             'pyrcs\\data\\a-z\\example-data.json'
         """
 
-        filename = data_name.lower().replace(" ", "-") + ext
+        filename = data_name.lower().replace(",", "").replace(" ", "-") + ext
 
         if sub_dir:
             sub_dir_ = [sub_dir] if isinstance(sub_dir, str) else sub_dir
@@ -309,7 +332,6 @@ class _Base:
             file_pathname = os.path.join(self.current_data_dir, *sub_dir_, filename)
 
         else:  # data_dir is None or data_dir == ""
-            # func = [x for x in dir(self) if x.startswith('_cdd')][0]
             file_pathname = self._cdd(*sub_dir_, filename, **kwargs)
 
         return file_pathname
@@ -359,9 +381,11 @@ class _Base:
             >>> os.remove(example_filepath)
         """
 
+        # Check if data has content
         data_has_contents = bool(data) if not isinstance(data, pd.DataFrame) else True
 
         if data_has_contents:
+            # Ensure extension starts with '.'
             if isinstance(ext, str):
                 file_ext = "." + ext if not ext.startswith(".") else copy.copy(ext)
             else:
@@ -370,8 +394,7 @@ class _Base:
             path_to_file = self._make_file_pathname(
                 data_name=data_name, ext=file_ext, data_dir=dump_dir, sub_dir=sub_dir)
 
-            verbose_ = True if verbose == 2 else False
-            save_data(data=data, path_to_file=path_to_file, verbose=verbose_, **kwargs)
+            save_data(data=data, path_to_file=path_to_file, verbose=(verbose == 2), **kwargs)
 
         else:
             print_void_msg(data_name=data_name, verbose=verbose)
@@ -441,11 +464,12 @@ class _Base:
         """
 
         try:
+            # Generate the file path
             path_to_file = self._make_file_pathname(
                 data_name=data_name, ext=ext, data_dir=data_dir, sub_dir=sub_dir)
 
-            if os.path.isfile(path_to_file) and not update:
-                data = load_data(path_to_file, verbose=True if verbose == 2 else False)
+            if os.path.isfile(path_to_file) and not update:  # Attempt to load existing data
+                data = load_data(path_to_file, verbose=(verbose == 2))
 
             else:
                 verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
@@ -457,15 +481,12 @@ class _Base:
                 else:
                     data = method(**kwargs)
 
-            if dump_dir is not None:
-                if save_data_kwargs is None:
-                    save_data_kwargs = {}
-
+            if dump_dir:
                 self._save_data_to_file(
-                    data=data, data_name=data_name, ext=ext,
-                    dump_dir=dump_dir, sub_dir=sub_dir, verbose=verbose, **save_data_kwargs)
+                    data=data, data_name=data_name, ext=ext, dump_dir=dump_dir, sub_dir=sub_dir,
+                    verbose=verbose, **(save_data_kwargs or {}))
 
             return data
 
         except Exception as e:
-            _print_failure_message(e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
+            _print_failure_message(e=e, prefix="Error:", verbose=verbose, raise_error=raise_error)
