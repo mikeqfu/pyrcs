@@ -17,8 +17,7 @@ from pyhelpers.ops import fake_requests_headers
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
 from ..utils import collect_in_fetch_verbose, format_confirmation_prompt, home_page_url, \
-    is_home_connectable, print_inst_conn_err, print_void_msg, save_data_to_file, validate_dir, \
-    validate_initial
+    is_home_connectable, print_inst_conn_err, print_void_msg, validate_dir, validate_initial
 
 
 def _parse_raw_location_name(x):
@@ -438,6 +437,9 @@ def _parse_stanox_note(data):
     col_name = 'STANOX'
     note_col_name = col_name + '_Note'
 
+    # noinspection SpellCheckingInspection
+    data[col_name] = data[col_name].str.replace('NANAN', '')
+
     if not data.empty:
         parsed_dat = data[col_name].map(_stanox_note).to_list()
         data[[col_name, note_col_name]] = pd.DataFrame(parsed_dat, index=data.index)
@@ -706,19 +708,6 @@ class LocationIdentifiers(_Base):
 
         return loc_id_data
 
-    @staticmethod
-    def _fix_potential_errors(data):
-        # Likely errors in 'STANME' and 'STANOX' (spotted occasionally)
-        err_cols = ['STANME', 'STANOX']
-
-        row_idx = data[data.Location == 'Selby Melmerby Estates'].index[0]
-        data.loc[row_idx, err_cols] = ['', '']
-
-        row_idx = data[data.Location == 'Selby Potter Group'].index[0]
-        data.loc[row_idx, err_cols] = data.loc[row_idx, err_cols].values
-
-        return data
-
     def fetch_loc_id(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
         Collects `CRS, NLC, TIPLOC, STANME and STANOX codes
@@ -797,10 +786,7 @@ class LocationIdentifiers(_Base):
 
             # Select DataFrames only
             data = pd.concat(
-                (item[x] for item, x in zip(dat_list, string.ascii_uppercase)), ignore_index=True,
-                sort=False)
-
-            data = self._fix_potential_errors(data)
+                (item[x] for item, x in zip(dat_list, string.ascii_uppercase)), ignore_index=True)
 
             # Get the latest updated date
             last_updated_dates = (
@@ -1189,8 +1175,46 @@ class LocationIdentifiers(_Base):
 
         return location_codes
 
-    def make_xref_dict(self, keys, initials=None, main_key=None, as_dict=False,
-                       drop_duplicates=False, dump_it=False, dump_dir=None, verbose=False):
+    @staticmethod
+    def _make_xref_dict(location_codes, keys, drop_duplicates=False, as_dict=False, main_key=None):
+        # Extract relevant columns and remove empty rows
+        key_locid = location_codes[['Location'] + keys].query(
+            ' | '.join([f"{k} != ''" for k in keys]))
+
+        # Further clean location_code
+        if drop_duplicates:
+            location_codes_ref = key_locid.drop_duplicates(keys, keep='first').set_index(keys)
+
+        else:  # drop_duplicates is False or None
+            locid_unique = key_locid.drop_duplicates(subset=keys, keep=False)
+
+            dupl_temp_1 = key_locid[key_locid.duplicated(['Location'] + keys, keep=False)]
+            dupl_temp_2 = key_locid[key_locid.duplicated(keys, keep=False)]
+            duplicated_1 = dupl_temp_2[dupl_temp_1.eq(dupl_temp_2)].dropna().drop_duplicates()
+            duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
+            duplicated_entries = pd.concat([duplicated_1, duplicated_2], axis=0)
+
+            grouped_duplicates = duplicated_entries.groupby(keys).agg(tuple)
+            grouped_duplicates['Location'] = grouped_duplicates['Location'].map(
+                lambda x: x[0] if len(set(x)) == 1 else x)
+
+            locid_unique.set_index(keys, inplace=True)
+            location_codes_ref = pd.concat([locid_unique, grouped_duplicates])
+
+        if as_dict:
+            location_codes_dict = location_codes_ref.to_dict()
+            if main_key:
+                location_codes_dict = {main_key: location_codes_dict.pop('Location')}
+            else:
+                location_codes_dict = location_codes_dict['Location']
+
+        else:
+            location_codes_dict = location_codes_ref
+
+        return location_codes_dict
+
+    def make_xref_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False,
+                       main_key=None, update=False, dump_it=False, dump_dir=None, verbose=False):
         """
         Creates a dictionary or dataframe containing location code data for the specified ``keys``.
 
@@ -1200,15 +1224,17 @@ class LocationIdentifiers(_Base):
         :param initials: A string or list of initials for which the codes are filtered;
             defaults to ``None``.
         :type initials: str | list | None
-        :param main_key: The key used for the returned dictionary when ``as_dict=True``;
-            defaults to ``None``.
-        :type main_key: str | None
-        :param as_dict: If ``True``, returns the result as a dictionary;
-            otherwise, returns a dataframe; defaults to ``False``.
-        :type as_dict: bool
         :param drop_duplicates: If ``True``, removes duplicate entries from the result;
             defaults to ``False``.
         :type drop_duplicates: bool
+        :param as_dict: If ``True``, returns the result as a dictionary;
+            otherwise, returns a dataframe; defaults to ``False``.
+        :type as_dict: bool
+        :param main_key: The key used for the returned dictionary when ``as_dict=True``;
+            defaults to ``None``.
+        :type main_key: str | None
+        :param update: Whether to check for updates to the package data; defaults to ``False``.
+        :type update: bool
         :param dump_it: If ``True``, saves the result to a file; defaults to ``False``.
         :type dump_it: bool
         :param dump_dir: The directory path where the file can be saved, if ``dump_it=True``;
@@ -1225,10 +1251,10 @@ class LocationIdentifiers(_Base):
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
             >>> lid = LocationIdentifiers()
-            >>> stanox_dictionary = lid.make_xref_dict(keys='STANOX')
-            >>> type(stanox_dictionary)
+            >>> stanox_dict = lid.make_xref_dict(keys='STANOX')
+            >>> type(stanox_dict)
             pandas.core.frame.DataFrame
-            >>> stanox_dictionary.head()
+            >>> stanox_dict.head()
                                       Location
             STANOX
             00005                       Aachen
@@ -1264,77 +1290,49 @@ class LocationIdentifiers(_Base):
         """
 
         valid_keys = {'CRS', 'NLC', 'TIPLOC', 'STANOX', 'STANME'}
-        assert_msg = f"`keys` must be one of {valid_keys}."
-
         if isinstance(keys, str):
-            assert keys in valid_keys, assert_msg
             keys = [keys]
-        else:  # isinstance(keys, list):
-            assert all(x in valid_keys for x in keys), assert_msg
+        if not all(k in valid_keys for k in keys):
+            raise ValueError(f"`keys` must be one of {valid_keys}, but got {keys}.")
 
-        if main_key:
-            assert isinstance(main_key, str), "`main_key` must be a string."
+        if main_key and not isinstance(main_key, str):
+            raise TypeError("`main_key` must be a string.")
 
-        if initials is not None:
+        # Validate `initials`
+        if initials:
             if isinstance(initials, str):
                 initials = [validate_initial(initials, as_is=True)]
-            else:  # e.g. isinstance(initials, list)
-                assert all(x in set(string.ascii_letters) for x in initials)
-            temp = [self.fetch_loc_id(x, verbose=verbose)[x.upper()] for x in initials]
-            location_codes = pd.concat(temp, axis=0, ignore_index=True, sort=False)
+            elif not all(isinstance(x, str) and x in string.ascii_letters for x in initials):
+                raise ValueError("`initials` must be a string or a list of letters.")
+
+            dat_list = [
+                self.fetch_loc_id(x, update=update, verbose=verbose).get(x.upper())
+                for x in initials]
+            location_codes = pd.concat(dat_list, ignore_index=True)
+
         else:
-            location_codes = self.fetch_codes(verbose=verbose)[self.KEY]
+            location_codes = self.fetch_codes(update=update, verbose=verbose).get(self.KEY)
 
         if verbose == 2:
-            print("To make/update a location code dictionary", end=" ... ")
+            print("Generating location code dictionary", end=" ... ")
 
-        try:  # Deep cleansing location_code
-            key_locid = location_codes[['Location'] + keys]
-            key_locid = key_locid.query(' | '.join(['{} != \'\''.format(k) for k in keys]))
-
-            if drop_duplicates:
-                locid_subset = key_locid.drop_duplicates(subset=keys, keep='first')
-                locid_dupe = None
-
-            else:  # drop_duplicates is False or None
-                locid_subset = key_locid.drop_duplicates(subset=keys, keep=False)
-
-                dupl_temp_1 = key_locid[key_locid.duplicated(['Location'] + keys, keep=False)]
-                dupl_temp_2 = key_locid[key_locid.duplicated(keys, keep=False)]
-                duplicated_1 = dupl_temp_2[dupl_temp_1.eq(dupl_temp_2)].dropna().drop_duplicates()
-                duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
-                duplicated = pd.concat([duplicated_1, duplicated_2], axis=0, sort=False)
-                locid_dupe = duplicated.groupby(keys).agg(tuple)
-                locid_dupe.Location = locid_dupe.Location.map(
-                    lambda x: x[0] if len(set(x)) == 1 else x)
-
-            locid_subset.set_index(keys, inplace=True)
-            location_codes_ref = pd.concat([locid_subset, locid_dupe], axis=0, sort=False)
-
-            if as_dict:
-                location_codes_ref_dict = location_codes_ref.to_dict()
-                if main_key is None:
-                    location_codes_dictionary = location_codes_ref_dict['Location']
-                else:
-                    location_codes_ref_dict[main_key] = location_codes_ref_dict.pop('Location')
-                    location_codes_dictionary = location_codes_ref_dict
-            else:
-                location_codes_dictionary = location_codes_ref
+        try:
+            location_codes_dict = self._make_xref_dict(
+                location_codes, keys=keys, drop_duplicates=drop_duplicates, as_dict=as_dict,
+                main_key=main_key)
 
             if verbose == 2:
                 print("Successfully.")
 
             if dump_it:
-                dump_dir_ = validate_dir(dump_dir) if dump_dir else self._cdd("xref-dicts")
-                data_name = "-".join(keys) + ("" if initials is None else "-" + "".join(initials))
-                ext = ".json" if as_dict and len(keys) == 1 else ".pkl"
+                self._save_data_to_file(
+                    data=location_codes_dict,
+                    data_name="-".join(keys) + (f"-{''.join(initials)}" if initials else ""),
+                    ext=".json" if as_dict and len(keys) == 1 else ".pkl",
+                    dump_dir=validate_dir(dump_dir) if dump_dir else self._cdd("xref-dicts"),
+                    verbose=verbose)
 
-                save_data_to_file(
-                    self, data=location_codes_dictionary, data_name=data_name, ext=ext,
-                    dump_dir=dump_dir_, verbose=verbose)
+            return location_codes_dict
 
         except Exception as e:
             _print_failure_message(e)
-            location_codes_dictionary = None
-
-        return location_codes_dictionary
