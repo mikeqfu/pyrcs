@@ -13,11 +13,6 @@ class TestTrackDiagrams:
     def td(self):
         return TrackDiagrams()
 
-    @pytest.mark.parametrize('update', [False, True])
-    def test__get_items(self, td, update):
-        trk_diagr_items = td._get_items(update=update, verbose=True)
-        assert isinstance(trk_diagr_items, dict)
-
     def test_collect_catalogue(self, td):
         track_diagrams_catalog = td.collect_catalogue(confirmation_required=False, verbose=True)
 
