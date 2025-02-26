@@ -52,26 +52,29 @@ Alternatively, we can create the instance using the :class:`~pyrcs.collector.Lin
 Location identifiers by initial letter
 --------------------------------------
 
-We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting with a specific letter using the :meth:`LocationIdentifiers.collect_codes_by_initial()<pyrcs.line_data.LocationIdentifiers.collect_codes_by_initial>` method. This input value for the parameter is case-insensitive. For example, to get the codes for locations whose names begin with the letter ``'A'`` (or ``'a'``):
+We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting with a specific letter using the :meth:`LocationIdentifiers.collect_loc_id()<pyrcs.line_data.LocationIdentifiers.collect_loc_id>` method. This input value for the parameter is case-insensitive. For example, to get the codes for locations whose names begin with the letter ``'A'`` (or ``'a'``):
 
 .. code-block:: python
 
-    >>> loc_a_codes = lid.collect_codes_by_initial(initial='a')
+    >>> loc_a_codes = lid.collect_loc_id(initial='a', verbose=True)
+    To collect data of CRS, NLC, TIPLOC and STANOX codes beginning with "A"
+    ? [No]|Yes:  yes
+    Collecting the data ... Done.
     >>> type(loc_a_codes)
     dict
     >>> list(loc_a_codes.keys())
-    ['A', 'Additional notes', 'Last updated date']
+    ['A', 'Notes', 'Last updated date']
 
 As shown above, ``loc_a_codes`` is a `dictionary`_ (i.e. in `dict`_ format) with the following *keys*:
 
 -  ``'A'``
--  ``'Additional notes'``
+-  ``'Notes'``
 -  ``'Last updated date'``
 
 The corresponding *values* are:
 
 -  ``loc_a_codes['A']`` - CRS, NLC, TIPLOC and STANOX codes for the locations whose names begin with ``'A'``, referring to the table on the `Locations beginning A`_ web page.
--  ``loc_a_codes['Additional notes']`` - Any additional information provided on the web page (if available).
+-  ``loc_a_codes['Notes']`` - Any additional information provided on the web page (if available).
 -  ``loc_a_codes['Last updated date']`` - The date when the `Locations beginning A`_ web page was last updated.
 
 A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
@@ -89,8 +92,14 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
     3  A483 Road Scheme Supervisors Closed      ...
     4                               Aachen      ...
     [5 rows x 12 columns]
+    >>> print("Notes: {}".format(loc_a_codes['Notes']))
     >>> print("Last updated date: {}".format(loc_a_codes['Last updated date']))
-    Last updated date: 2024-08-24
+    Notes: None
+    Last updated date: 2025-02-19
+
+    >>> ## Try more examples! Uncomment the lines below and run:
+    >>> # loc_a_codes = lid.fetch_loc_id('a')  # Fetch location codes starting with 'A'
+    >>> # loc_codes = lid.fetch_loc_id()  # Fetch all location codes
 
 .. _quickstart-all-available-location-identifiers:
 
@@ -105,18 +114,18 @@ Beyond retrieving location codes for a specific letter, we can use the :meth:`Lo
     >>> type(loc_codes)
     dict
     >>> list(loc_codes.keys())
-    ['LocationID', 'Other systems', 'Additional notes', 'Last updated date']
+    ['Location ID', 'Other systems', 'Additional notes', 'Last updated date']
 
 The ``loc_codes`` object is a dictionary with the following *keys*:
 
--  ``'LocationID'``
+-  ``'Location ID'``
 -  ``'Other systems'``
 -  ``'Additional notes'``
 -  ``'Latest update date'``
 
 The corresponding *values* are:
 
--  ``loc_codes['LocationID']`` - CRS, NLC, TIPLOC, and STANOX codes for all locations listed across the relevant web pages.
+-  ``loc_codes['Location ID']`` - CRS, NLC, TIPLOC, and STANOX codes for all locations listed across the relevant web pages.
 -  ``loc_codes['Other systems']`` - Codes related to the `other systems`_.
 -  ``loc_codes['Additional notes']`` - Any additional notes and information (if available).
 -  ``loc_codes['Latest update date']`` - The latest ``'Last updated date'`` across all initial-specific data.
@@ -126,8 +135,8 @@ Here is a snapshot of the data contained in ``loc_codes``:
 .. code-block:: python
 
     >>> lid.KEY
-    'LocationID'
-    >>> loc_codes_dat = loc_codes[lid.KEY]  # loc_codes['LocationID']
+    'Location ID'
+    >>> loc_codes_dat = loc_codes[lid.KEY]  # loc_codes['Location ID']
     >>> type(loc_codes_dat)
     pandas.core.frame.DataFrame
     >>> loc_codes_dat.tail()
@@ -180,6 +189,11 @@ For example, to view the data for Crossrail:
     4                                 Canary Wharf  ...                CWX
     [5 rows x 5 columns]
 
+    >>> ## Try more examples! Uncomment the lines below and run:
+    >>> ## Get a dictionary for STANOX codes and location names
+    >>> # stanox_dict = lid.make_xref_dict('STANOX')
+    >>> ## ... and for STANOX, TIPLOC and location names starting with 'A'
+    >>> # stanox_tiploc_dict_a = lid.make_xref_dict(['STANOX', 'TIPLOC'], initials='a')
 
 .. _quickstart-elrs-and-mileages:
 
@@ -205,11 +219,14 @@ ELRs and mileages
 Engineer's Line References (ELRs)
 ---------------------------------
 
-Similar to location identifiers, the ELR codes on the `Railway Codes`_ website are arranged alphabetically based on their initial letters. We can use the :meth:`ELRMileages.collect_elr_by_initial()<pyrcs.line_data.ELRMileages.collect_elr_by_initial>` method to obtain ELRs starting with a specific letter. For example, to get the data for ELRs beginning with the letter ``'A'``:
+Similar to location identifiers, the ELR codes on the `Railway Codes`_ website are arranged alphabetically based on their initial letters. We can use the :meth:`ELRMileages.collect_elr()<pyrcs.line_data.ELRMileages.collect_elr>` method to obtain ELRs starting with a specific letter. For example, to get the data for ELRs beginning with the letter ``'A'``:
 
 .. code-block:: python
 
-    >>> elrs_a_codes = em.collect_elr_by_initial(initial='a')
+    >>> elrs_a_codes = em.collect_elr(initial='a')
+    To collect data of Engineer's Line References (ELRs) beginning with "A"
+    ? [No]|Yes:  yes
+    Collecting the data ... Done.
     >>> type(elrs_a_codes)
     dict
     >>> list(elrs_a_codes.keys())
@@ -241,7 +258,7 @@ Here is a snapshot of the data contained in ``elrs_a_codes``:
     4  ABB  ...
     [5 rows x 5 columns]
     >>> print("Last updated date: {}".format(elrs_a_codes['Last updated date']))
-    Last updated date: 2024-08-04
+    Last updated date: 2024-10-20
 
 To retrieve data for all ELRs (from ``'A'`` to ``'Z'``), we can use the :meth:`ELRMileages.fetch_elr()<pyrcs.line_data.ELRMileages.fetch_elr>` method:
 
@@ -278,6 +295,10 @@ Here is a snapshot of the data contained in ``elrs_codes``:
     4578   ZZZ                      Record to be deleted  ...   n/a
     4579  ZZZ9  Dummy ELR for demonstrations and testing  ...   n/a
     [5 rows x 5 columns]
+
+    >>> ## Try more examples! Uncomment the lines below and run:
+    >>> # elrs_a_codes = em.fetch_elr(initial='a')  # Fetch ELRs starting with 'A'
+    >>> # elrs_b_codes = em.fetch_elr(initial='B')  # Fetch ELRs starting with 'B'
 
 .. _quickstart-mileage-file-of-a-given-elr:
 
@@ -327,6 +348,9 @@ Here is a snapshot of the data contained in ``amm_mileage_file``:
     4  1.1408               ...
     [5 rows x 11 columns]
 
+    >>> ## Try more examples! Uncomment the lines below and run:
+    >>> # xre_mileage_file = em.fetch_mileage_file('XRE')  # Fetch mileage file for 'XRE'
+    >>> # your_mileage_file = em.fetch_mileage_file(elr='?')  # ... and for a given ELR '?'
 
 .. _quickstart-railway-station-data:
 
@@ -369,11 +393,14 @@ Alternatively, we can also create the instance by using the :class:`~pyrcs.colle
 Railway stations by initial letter
 ----------------------------------
 
-We can obtain railway station data based on the first letter (e.g. ``'A'`` or ``'Z'``) of the station's name using the :meth:`Stations.collect_locations_by_initial()<pyrcs.other_assets.Stations.collect_locations_by_initial>` method. For example, to get data for stations starting with ``'A'``:
+We can obtain railway station data based on the first letter (e.g. ``'A'`` or ``'Z'``) of the station's name using the :meth:`Stations.collect_locations()<pyrcs.other_assets.Stations.collect_locations>` method. For example, to get data for stations starting with ``'A'``:
 
 .. code-block:: python
 
-    >>> stn_loc_a_codes = stn.collect_locations_by_initial(initial='a')
+    >>> stn_loc_a_codes = stn.collect_locations(initial='a')
+    To collect data of mileages, operators and grid coordinates beginning with "A"
+    ? [No]|Yes:  yes
+    Collecting the data ... Done.
     >>> type(stn_loc_a_codes)
     dict
     >>> list(stn_loc_a_codes.keys())
@@ -427,7 +454,7 @@ Here is a snapshot of the data contained in ``stn_loc_a``:
     3                           Abercynon  CAM  16m 28ch
     4                           Abercynon  ABD  16m 28ch
     >>> print("Last updated date: {}".format(stn_loc_a_codes['Last updated date']))
-    Last updated date: 2024-09-23
+    Last updated date: 2025-02-12
 
 .. _quickstart-all-available-railway-stations:
 
@@ -481,8 +508,11 @@ Here is a snapshot of the data contained in ``stn_loc_codes``:
     2901   Ystrad Mynach   CAR   13m 60ch            -3.2414           51.6414
     2902  Ystrad Rhondda   THT   20m 05ch            -3.4666           51.6436
     >>> print("Last updated date: {}".format(stn_loc_codes['Last updated date']))
-    Last updated date: 2024-10-07
+    Last updated date: 2025-02-26
 
+    >>> ## Try more examples! Uncomment the lines below and run:
+    >>> # stn_loc_a_codes = em.fetch_locations('a')  # railway stations starting with 'A'
+    >>> # your_stn_loc_codes = em.fetch_locations('?')  # ... and a given letter '?'
 
 .. _quickstart-the-end:
 
