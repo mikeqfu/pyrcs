@@ -10,16 +10,6 @@ import pytest
 from pyrcs.other_assets import SignalBoxes
 
 
-# def test_collect_prefix_codes(self):
-#     sb_a_codes = sb.collect_prefix_codes(initial='a', update=True, verbose=True)
-#
-#     assert isinstance(sb_a_codes, dict)
-#     assert list(sb_a_codes.keys()) == ['A', 'Last updated date']
-#
-#     sb_a_codes_dat = sb_a_codes['A']
-#     assert isinstance(sb_a_codes_dat, pd.DataFrame)
-
-
 @pytest.mark.parametrize('update', [True, False])
 class TestSignalBoxes:
 
@@ -27,8 +17,8 @@ class TestSignalBoxes:
     def sb(self):
         return SignalBoxes()
 
-    def test_collect_prefix_codes(self, sb, update):
-        sb_a_codes = sb.collect_prefix_codes(initial='a', update=update, verbose=True)
+    def test_fetch_prefix_codes(self, sb, update):
+        sb_a_codes = sb.collect_prefix_codes(initial='a', confirmation_required=False, verbose=True)
 
         assert isinstance(sb_a_codes, dict)
         assert list(sb_a_codes.keys()) == ['A', 'Last updated date']
@@ -36,7 +26,6 @@ class TestSignalBoxes:
         sb_a_codes_dat = sb_a_codes['A']
         assert isinstance(sb_a_codes_dat, pd.DataFrame)
 
-    def test_fetch_prefix_codes(self, sb, update):
         sb_prefix_codes = sb.fetch_prefix_codes(update=update, verbose=True)
 
         assert isinstance(sb_prefix_codes, dict)
@@ -82,7 +71,7 @@ class TestSignalBoxes:
         assert isinstance(sb_bell_codes, dict)
         assert list(sb_bell_codes.keys()) == ['Bell codes', 'Last updated date']
         sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
-        assert isinstance(sb_bell_codes_dat, collections.OrderedDict)
+        assert isinstance(sb_bell_codes_dat, dict)
         sb_nr_bell_codes = sb_bell_codes_dat['Network Rail codes']
         assert isinstance(sb_nr_bell_codes, dict)
 
