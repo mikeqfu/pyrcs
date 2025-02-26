@@ -2,22 +2,19 @@
 Collects data of `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
 """
 
+import itertools
 import re
 import urllib.parse
 
 import bs4
 import pandas as pd
-import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers
 
-from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import confirm_msg, fetch_data_from_file, format_err_msg, home_page_url, \
-    init_data_dir, is_home_connectable, print_collect_msg, print_conn_err, print_inst_conn_err, \
-    save_data_to_file
+from .._base import _Base
+from ..parser import _get_last_updated_date, parse_tr
+from ..utils import fetch_all_verbose, home_page_url
 
 
-class Depots:
+class Depots(_Base):
     """
     A class for collecting data of
     `depot codes <http://www.railwaycodes.org.uk/depots/depots0.shtm>`_.
@@ -67,50 +64,45 @@ class Depots:
             'http://www.railwaycodes.org.uk/depots/depots0.shtm'
         """
 
-        print_conn_err(verbose=verbose)
+        super().__init__(
+            data_dir=data_dir, content_type='catalogue', data_category="other-assets",
+            update=update, verbose=verbose)
 
-        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
+    def _collect_tops_codes(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        self.last_updated_date = get_last_updated_date(url=self.URL)
+        thead, tbody = soup.find('thead'), soup.find('tbody')
+        ths = [th.text for th in thead.find_all(name='th')]
+        trs = tbody.find_all(name='tr')
+        two_char_tops_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, "other-assets")
+        two_char_tops_codes_data = {
+            self.KEY_TO_TOPS: two_char_tops_codes,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup)
+        }
 
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
-        """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
+        if verbose in {True, 1}:
+            print("Done.")
 
-        The default data directory for this class is: ``"data\\other-assets\\depots"``.
+        self._save_data_to_file(
+            data=two_char_tops_codes_data, data_name=self.KEY_TO_TOPS, verbose=verbose)
 
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
-        :rtype: str
+        return two_char_tops_codes_data
 
-        .. _`pyhelpers.dir.cd()`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
-        """
-
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
-
-        return path
-
-    def collect_tops_codes(self, confirmation_required=True, verbose=False):
+    def collect_tops_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects `two-character TOPS codes <http://www.railwaycodes.org.uk/depots/depots1.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the two-character TOPS codes and
             the date they were last updated, or ``None`` if no data is collected.
         :rtype: dict | None
@@ -141,51 +133,16 @@ class Depots:
             [5 rows x 5 columns]
         """
 
-        cfm_msg = confirm_msg(self.KEY_TO_TOPS)
+        two_char_tops_codes_data = self._collect_data_from_source(
+            data_name=self.KEY_TO_TOPS.lower(), method=self._collect_tops_codes,
+            url=self.catalogue[self.KEY_TO_TOPS],
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-        if confirmed(cfm_msg, confirmation_required=confirmation_required):
-            print_collect_msg(self.KEY_TO_TOPS, verbose, confirmation_required)
+        return two_char_tops_codes_data
 
-            two_char_tops_codes_data = None
-
-            try:
-                url = self.catalogue[self.KEY_TO_TOPS]
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    thead, tbody = soup.find('thead'), soup.find('tbody')
-                    ths = [th.text for th in thead.find_all(name='th')]
-                    trs = tbody.find_all(name='tr')
-                    two_char_tops_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    two_char_tops_codes_data = {
-                        self.KEY_TO_TOPS: two_char_tops_codes,
-                        self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url)
-                    }
-
-                    save_data_to_file(
-                        self, data=two_char_tops_codes_data, data_name=self.KEY_TO_TOPS, ext=".pkl",
-                        verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return two_char_tops_codes_data
-
-    def fetch_tops_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_tops_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `two-character TOPS codes`_.
+        Fetches data of `two-character TOPS codes`_.
 
         .. _`two-character TOPS codes`: http://www.railwaycodes.org.uk/depots/depots1.shtm
 
@@ -224,22 +181,73 @@ class Depots:
             [5 rows x 5 columns]
         """
 
-        two_char_tops_codes_data = fetch_data_from_file(
-            self, method='collect_tops_codes', data_name=self.KEY_TO_TOPS, ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+        kwargs.update({'data_name': self.KEY_TO_TOPS, 'method': self.collect_tops_codes})
+
+        two_char_tops_codes_data = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return two_char_tops_codes_data
 
-    def collect_pre_tops_codes(self, confirmation_required=True, verbose=False):
+    @staticmethod
+    def _identify_region(x):
+        if 2000 <= x < 3000:
+            _region_name = 'London Midland'
+        elif 3000 <= x < 4000:
+            _region_name = 'Western'
+        elif 4000 <= x < 5000:
+            _region_name = 'Southern'
+        elif 5000 <= x < 7000:
+            _region_name = 'Eastern'
+        else:  # x >= 7000:
+            _region_name = 'Scottish'
+        return _region_name
+
+    def _collect_pre_tops_codes(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        thead, tbody = soup.find('thead'), soup.find('tbody')
+
+        ths = [th.get_text(strip=True) for th in thead.find_all(name='th')]
+        trs = tbody.find_all(name='tr')
+        codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+        codes.Code = codes['Code'].map(int)
+
+        codes['Region'] = codes.Code.map(self._identify_region)
+
+        dagger_mark, depot_name_column = ' †', 'Depot name'
+        codes['Main Works site'] = codes[depot_name_column].map(
+            lambda x: True if x.endswith(dagger_mark) else False)
+
+        codes[depot_name_column] = codes[depot_name_column].str.rstrip(dagger_mark)
+
+        four_digit_pre_tops_codes_data = {
+            self.KEY_TO_PRE_TOPS: codes,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=four_digit_pre_tops_codes_data,
+            data_name=self.KEY_TO_PRE_TOPS[:1].lower() + self.KEY_TO_PRE_TOPS[1:], verbose=verbose)
+
+        return four_digit_pre_tops_codes_data
+
+    def collect_pre_tops_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects `four-digit pre-TOPS codes <http://www.railwaycodes.org.uk/depots/depots2.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the four-digit pre-TOPS codes and
             the date they were last updated, or ``None`` if no data is collected.
         :rtype: dict | None
@@ -269,78 +277,16 @@ class Depots:
             4  2006                Burnley  London Midland            False
         """
 
-        data_name = self.KEY_TO_PRE_TOPS[:1].lower() + self.KEY_TO_PRE_TOPS[1:]
-        cfm_msg = confirm_msg(data_name)
-        if confirmed(cfm_msg, confirmation_required=confirmation_required):
-            print_collect_msg(data_name, verbose, confirmation_required)
+        four_digit_pre_tops_codes_data = self._collect_data_from_source(
+            data_name=self.KEY_TO_PRE_TOPS[:1].lower() + self.KEY_TO_PRE_TOPS[1:],
+            method=self._collect_pre_tops_codes, url=self.catalogue[self.KEY_TO_PRE_TOPS],
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-            four_digit_pre_tops_codes_data = None
+        return four_digit_pre_tops_codes_data
 
-            try:
-                url = self.catalogue[self.KEY_TO_PRE_TOPS]
-                # headers_, four_digit_pre_tops_codes = pd.read_html(url)
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    thead, tbody = soup.find('thead'), soup.find('tbody')
-
-                    ths = [th.text for th in thead.find_all(name='th')]
-                    trs = tbody.find_all(name='tr')
-                    codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-                    codes.Code = codes['Code'].map(int)
-
-                    dagger_mark, depot_name_column, region_column = ' †', 'Depot name', 'Region'
-
-                    def _identify_region(x):
-                        if 2000 <= x < 3000:
-                            _region_name = 'London Midland'
-                        elif 3000 <= x < 4000:
-                            _region_name = 'Western'
-                        elif 4000 <= x < 5000:
-                            _region_name = 'Southern'
-                        elif 5000 <= x < 7000:
-                            _region_name = 'Eastern'
-                        else:  # x >= 7000:
-                            _region_name = 'Scottish'
-                        return _region_name
-
-                    codes[region_column] = codes.Code.map(_identify_region)
-
-                    codes['Main Works site'] = codes[depot_name_column].map(
-                        lambda x: True if x.endswith(dagger_mark) else False)
-
-                    codes[depot_name_column] = codes[depot_name_column].str.rstrip(dagger_mark)
-
-                    last_updated_date = get_last_updated_date(url)
-
-                    four_digit_pre_tops_codes_data = {
-                        self.KEY_TO_PRE_TOPS: codes,
-                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=four_digit_pre_tops_codes_data, data_name=data_name, ext=".pkl",
-                        verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return four_digit_pre_tops_codes_data
-
-    def fetch_pre_tops_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_pre_tops_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `four-digit pre-TOPS codes`_.
+        Fetches data of `four-digit pre-TOPS codes`_.
 
         .. _`four-digit pre-TOPS codes`: http://www.railwaycodes.org.uk/depots/depots2.shtm
 
@@ -378,25 +324,56 @@ class Depots:
             4  2006                Burnley  London Midland            False
         """
 
-        data_name = re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS)
+        args = {
+            'data_name': re.sub(r'[ -]', '-', self.KEY_TO_PRE_TOPS),
+            'method': self.collect_pre_tops_codes,
+        }
+        kwargs.update(args)
 
-        four_digit_pre_tops_codes_data = fetch_data_from_file(
-            self, method='collect_pre_tops_codes', data_name=data_name, ext=".pkl", update=update,
-            dump_dir=dump_dir, verbose=verbose)
+        four_digit_pre_tops_codes_data = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return four_digit_pre_tops_codes_data
 
-    def collect_1950_system_codes(self, confirmation_required=True, verbose=False):
+    def _collect_1950_system_codes(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        thead, tbody = soup.find('thead'), soup.find('tbody')
+
+        ths = [th.text for th in thead.find_all(name='th')]
+        trs = tbody.find_all(name='tr')
+        system_1950_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        system_1950_codes_data = {
+            self.KEY_TO_1950_SYSTEM: system_1950_codes,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=system_1950_codes_data,
+            data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM), verbose=verbose)
+
+        return system_1950_codes_data
+
+    def collect_1950_system_codes(self, confirmation_required=True, verbose=False,
+                                  raise_error=False):
         """
         Collects
         `1950 system (pre-TOPS) codes <http://www.railwaycodes.org.uk/depots/depots3.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the 1950 system (pre-TOPS) codes and
             the date they were last updated, or ``None`` if no data is collected.
         :rtype: dict | None
@@ -426,54 +403,15 @@ class Depots:
             4   1D        Marylebone  Previously 14F to 31 August 1963.  Became ME f...
         """
 
-        if confirmed(confirm_msg(self.KEY_TO_1950_SYSTEM), confirmation_required):
-            print_collect_msg(self.KEY_TO_1950_SYSTEM, verbose, confirmation_required)
+        system_1950_codes_data = self._collect_data_from_source(
+            data_name=self.KEY_TO_1950_SYSTEM, method=self._collect_1950_system_codes,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-            system_1950_codes_data = None
+        return system_1950_codes_data
 
-            try:
-                url = self.catalogue[self.KEY_TO_1950_SYSTEM]
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-                    source.close()
-
-                    thead, tbody = soup.find('thead'), soup.find('tbody')
-
-                    ths = [th.text for th in thead.find_all(name='th')]
-                    trs = tbody.find_all(name='tr')
-                    system_1950_codes = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-
-                    last_updated_date = get_last_updated_date(url)
-
-                    system_1950_codes_data = {
-                        self.KEY_TO_1950_SYSTEM: system_1950_codes,
-                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=system_1950_codes_data,
-                        data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM), ext=".pkl",
-                        verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return system_1950_codes_data
-
-    def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `1950 system (pre-TOPS) codes`_.
+        Fetches data of `1950 system (pre-TOPS) codes`_.
 
         .. _`1950 system (pre-TOPS) codes`: http://www.railwaycodes.org.uk/depots/depots3.shtm
 
@@ -511,24 +449,77 @@ class Depots:
             4   1D        Marylebone  Previously 14F to 31 August 1963.  Became ME f...
         """
 
-        system_1950_data = fetch_data_from_file(
-            self, method='collect_1950_system_codes',
-            data_name=re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(), ext=".pkl",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+        args = {
+            'data_name': re.sub(r' \(|\) | ', '-', self.KEY_TO_1950_SYSTEM).lower(),
+            'method': self.collect_1950_system_codes,
+        }
+        kwargs.update(args)
+
+        system_1950_data = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return system_1950_data
 
-    def collect_gwr_codes(self, confirmation_required=True, verbose=False):
+    def _collect_gwr_codes(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        theads, tbodies = soup.find_all(name='thead'), soup.find_all(name='tbody')
+
+        tables = []
+        for thead, tbody in zip(theads, tbodies):
+            ths = [th.text for th in thead.find_all(name='th')]
+            trs = tbody.find_all(name='tr')
+
+            if len(ths) == 2:
+                table = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+            else:
+                list_dat = [[td.text for td in tr.find_all('td')] for tr in trs]
+                table = pd.DataFrame(data=list_dat, columns=ths)
+
+            tables.append(table)
+
+        alphabetical_codes, numerical_codes = tables
+
+        span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
+        num_codes_dict = dict([
+            (int(span_tag.text), str(span_tag.next_sibling).replace(' = ', '').strip())
+            for span_tag in span_tags])
+
+        numerical_codes.rename(columns={'sort by division': 'Division'}, inplace=True)
+        numerical_codes.Division = numerical_codes.Code.map(
+            lambda x: num_codes_dict[int(str(x)[-1])])
+
+        h3_titles = [h3.text for h3 in soup.find_all('h3')]
+        gwr_depot_codes_data = dict(zip(h3_titles, [alphabetical_codes, numerical_codes]))
+
+        gwr_depot_codes = {
+            self.KEY_TO_GWR: gwr_depot_codes_data,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=gwr_depot_codes, data_name=self.KEY_TO_GWR, verbose=verbose)
+
+        return gwr_depot_codes
+
+    def collect_gwr_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects `Great Western Railway (GWR) depot codes
         <http://www.railwaycodes.org.uk/depots/depots4.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the GWR depot codes and
             the date they were last updated, or ``None`` if no data is collected.
         :rtype: dict | None
@@ -563,75 +554,15 @@ class Depots:
             4    ABH  Aberystwyth
         """
 
-        if confirmed(confirm_msg(self.KEY_TO_GWR), confirmation_required=confirmation_required):
-            print_collect_msg(self.KEY_TO_GWR, verbose, confirmation_required)
+        gwr_depot_codes = self._collect_data_from_source(
+            data_name=self.KEY_TO_GWR, method=self._collect_gwr_codes,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-            gwr_depot_codes = None
+        return gwr_depot_codes
 
-            try:
-                url = self.catalogue[self.KEY_TO_GWR]
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    theads, tbodies = soup.find_all(name='thead'), soup.find_all(name='tbody')
-
-                    tables = []
-                    for thead, tbody in zip(theads, tbodies):
-                        ths = [th.text for th in thead.find_all(name='th')]
-                        trs = tbody.find_all(name='tr')
-
-                        if len(ths) == 2:
-                            table = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-                        else:
-                            list_dat = [[td.text for td in tr.find_all('td')] for tr in trs]
-                            table = pd.DataFrame(data=list_dat, columns=ths)
-
-                        tables.append(table)
-
-                    alphabetical_codes, numerical_codes = tables
-
-                    span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
-                    num_codes_dict = dict([
-                        (int(span_tag.text), str(span_tag.next_sibling).replace(' = ', '').strip())
-                        for span_tag in span_tags])
-
-                    numerical_codes.rename(columns={'sort by division': 'Division'}, inplace=True)
-                    numerical_codes.Division = numerical_codes.Code.map(
-                        lambda x: num_codes_dict[int(str(x)[-1])])
-
-                    h3_titles = [h3.text for h3 in soup.find_all('h3')]
-                    gwr_depot_codes_data = dict(zip(h3_titles, [alphabetical_codes, numerical_codes]))
-
-                    last_updated_date = get_last_updated_date(url)
-
-                    gwr_depot_codes = {
-                        self.KEY_TO_GWR: gwr_depot_codes_data,
-                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=gwr_depot_codes, data_name=self.KEY_TO_GWR, ext=".pkl",
-                        verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return gwr_depot_codes
-
-    def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `Great Western Railway (GWR) depot codes`_.
+        Fetches data of `Great Western Railway (GWR) depot codes`_.
 
         .. _`Great Western Railway (GWR) depot codes`:
             http://www.railwaycodes.org.uk/depots/depots4.shtm
@@ -675,15 +606,16 @@ class Depots:
             4    ABH  Aberystwyth
         """
 
-        gwr_depot_codes = fetch_data_from_file(
-            self, method='collect_gwr_codes', data_name=self.KEY_TO_GWR, ext=".pkl", update=update,
-            dump_dir=dump_dir, verbose=verbose)
+        kwargs.update({'data_name': self.KEY_TO_GWR, 'method': self.collect_gwr_codes})
+
+        gwr_depot_codes = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return gwr_depot_codes
 
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `depot codes`_.
+        Fetches data of `depot codes`_.
 
         .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
 
@@ -737,22 +669,21 @@ class Depots:
             [5 rows x 5 columns]
         """
 
-        verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
+        verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
 
         depot_data = []
         for func in dir(self):
-            if func.startswith('fetch_') and func != 'fetch_codes':
-                depot_data.append(getattr(self, func)(
-                    update=update, verbose=verbose_ if is_home_connectable() else False))
+            if re.match(r'fetch_(.*)_codes', func):
+                depot_data.append(getattr(self, func)(update=update, verbose=verbose_, **kwargs))
 
         depot_codes = {
             self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_data},
-            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date
+            self.KEY_TO_LAST_UPDATED_DATE:
+                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in depot_data)
         }
 
         if dump_dir is not None:
-            save_data_to_file(
-                self, data=depot_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
-                verbose=verbose)
+            self._save_data_to_file(
+                data=depot_codes, data_name=self.KEY, dump_dir=dump_dir, verbose=verbose)
 
         return depot_codes

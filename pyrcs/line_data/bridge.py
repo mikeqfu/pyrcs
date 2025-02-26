@@ -7,16 +7,14 @@ import re
 import urllib.parse
 
 import bs4
-import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers, split_list_by_size
+from pyhelpers.ops import split_list_by_size
 
-from ..parser import get_introduction, get_last_updated_date
-from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from .._base import _Base
+from ..parser import _get_last_updated_date
+from ..utils import home_page_url
 
 
-class Bridges:
+class Bridges(_Base):
     """
     A class for collecting data of
     `railway bridges <http://www.railwaycodes.org.uk/bridges/bridges0.shtm>`_.
@@ -26,12 +24,12 @@ class Bridges:
     NAME: str = 'Railway bridges'
     #: The key for accessing the data.
     KEY: str = 'Bridges'
-    #: The URL of the main web page for the data.
+    #: The URL of the main webpage for the data.
     URL: str = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
-    def __init__(self, data_dir=None, verbose=True):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         :param data_dir: Directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
@@ -45,7 +43,7 @@ class Bridges:
 
         **Examples**::
 
-            >>> from pyrcs.line_data import Bridges  # alternatively, from pyrcs import Bridges
+            >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
             >>> bdg = Bridges()
             >>> bdg.NAME
             'Railway bridges'
@@ -53,39 +51,9 @@ class Bridges:
             'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
         """
 
-        print_conn_err(verbose=verbose)
-
-        self.introduction = get_introduction(url=self.URL, verbose=verbose)
-
-        self.last_updated_date = get_last_updated_date(url=self.URL)
-
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
-
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
-        """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
-
-        The default data directory for this class is: ``"data\\line-data\\bridges"``.
-
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
-        :rtype: str
-
-        .. _`pyhelpers.dir.cd()`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
-        """
-
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
-
-        return path
+        super().__init__(
+            data_dir=data_dir, content_type='introduction', data_category="line-data",
+            update=update, verbose=verbose)
 
     def _parse_h4_ul_li(self, h4_ul_li):
         h4_ul_li_contents = h4_ul_li.contents
@@ -113,17 +81,87 @@ class Bridges:
 
         return h4_ul_li_dict
 
-    def collect_codes(self, confirmation_required=True, verbose=False):
+    def _parse_h4(self, h4):
+        h4_txt = h4.get_text(strip=True)
+
+        h4_dat = None
+
+        h4_ul = h4.find_next(name='ul')
+        if isinstance(h4_ul, bs4.Tag):
+            h4_ul_lis = h4_ul.find_all(name='li')
+            h4_dat = {}
+            for h4_ul_li in h4_ul_lis:
+                h4_dat.update(self._parse_h4_ul_li(h4_ul_li))
+
+        elif h4_ul is None:
+            h4_pre = h4.find_next('pre')
+            if isinstance(h4_pre, bs4.Tag):
+                h4_dat = dict([x.split('\t') for x in h4_pre.text.split('\n')])
+
+        return {h4_txt: h4_dat}
+
+    def _parse_source(self, source, verbose=False):
         """
-        Collects the codes of `railway bridges`_ from the source webpage.
+        Scrapes codes of `railway bridges`_ from its source webpage.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
-        :param confirmation_required: Whether to prompt for confirmation before proceeding;
-            defaults to ``True``.
+        :param source: HTTP response containing the webpage content.
+        :type source: requests.Response
+        :param verbose: Whether to print relevant information in the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing railway bridge data and the date of the last update.
+        :rtype: dict
+        """
+
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        h4_list = soup.find_all(name='h4')
+
+        data = {k: v for h4 in h4_list for k, v in self._parse_h4(h4).items()}
+
+        # Key to text presentation conventions
+        keys_h3 = h4_list[-1].find_next(name='h3')
+        keys_p_contents = keys_h3.find_next('p').contents
+
+        keys_p_contents_ = []
+        for x in keys_p_contents:
+            if isinstance(x, str):
+                y = re.sub(r'( = +)|\n', '', x).capitalize()
+            else:
+                y = x.get_text(strip=True)
+            keys_p_contents_.append(y)
+
+        sub_dict = split_list_by_size(keys_p_contents_, sub_len=2)
+        keys_dict = {keys_h3.text: {k: v for k, v in sub_dict}}
+
+        data.update(keys_dict)
+
+        last_updated_date = _get_last_updated_date(soup=soup, parsed=True)
+        data = {self.KEY: data, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(data, data_name=self.KEY, ext=".json", verbose=verbose, indent=4)
+
+        return data
+
+    def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        """
+        Collects codes of `railway bridges`_ from its source webpage.
+
+        .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
+
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information in the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing railway bridge data and the date of the last update,
             or ``None`` if no data is collected.
         :rtype: dict | None
@@ -132,20 +170,20 @@ class Bridges:
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
             >>> bdg = Bridges()
-            >>> bdg_codes = bdg.collect_codes()
+            >>> bdg_codes = bdg.collect_codes(verbose=True)
             To collect data of railway bridges
             ? [No]|Yes: yes
             >>> type(bdg_codes)
             dict
             >>> list(bdg_codes.keys())
             ['East Coast Main Line',
+             'Midland Main Line',
              'West Coast Main Line',
              'Scotland',
              'Elizabeth Line',
              'London Overground',
              'Anglia',
              'London Underground',
-             'Addendum',
              'Key to text presentation conventions']
             >>> bdg_codes['Key to text presentation conventions']
             {'Bold': 'Existing bridges',
@@ -161,83 +199,15 @@ class Bridges:
              'Deep blue': 'Boundaries'}
         """
 
-        data_name = f"data of {self.NAME.lower()}"
+        data = self._collect_data_from_source(
+            data_name=self.NAME.lower(), method=self._parse_source, url=self.URL,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-        if confirmed(f"To collect {data_name}\n?", confirmation_required=confirmation_required):
+        return data
 
-            print_collect_msg(
-                data_name=data_name, verbose=verbose, confirmation_required=confirmation_required)
-
-            bridges_data = None
-
-            try:
-                # url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
-                # source = requests.get(url, headers=fake_requests_headers(randomized=True))
-                source = requests.get(url=self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    h4s = soup.find_all(name='h4')
-
-                    bridges_data = {}
-                    for h4 in h4s:
-                        h4_text = h4.get_text(strip=True)
-
-                        h4_dat = None
-
-                        h4_ul = h4.find_next(name='ul')
-                        if isinstance(h4_ul, bs4.Tag):
-                            h4_ul_lis = h4_ul.find_all(name='li')
-                            h4_dat = {}
-                            for h4_ul_li in h4_ul_lis:
-                                h4_dat.update(self._parse_h4_ul_li(h4_ul_li))
-                        elif h4_ul is None:
-                            h4_pre = h4.find_next('pre')
-                            if isinstance(h4_pre, bs4.Tag):
-                                # noinspection PyTypeChecker
-                                h4_dat = dict([x.split('\t') for x in h4_pre.text.split('\n')])
-
-                        bridges_data.update({h4_text: h4_dat})
-
-                    # Key to text presentation conventions
-                    keys_h3 = h4s[-1].find_next(name='h3')
-                    keys_p_contents = keys_h3.find_next('p').contents
-
-                    keys_p_contents_ = []
-                    for x in keys_p_contents:
-                        if isinstance(x, str):
-                            y = re.sub(r'( = +)|\n', '', x).capitalize()
-                        else:
-                            y = x.get_text(strip=True)
-                        keys_p_contents_.append(y)
-
-                    sub_dict = split_list_by_size(keys_p_contents_, sub_len=2)
-                    keys_dict = {keys_h3.text: {k: v for k, v in sub_dict}}
-
-                    bridges_data.update(keys_dict)
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=bridges_data, data_name=self.KEY, ext=".json", verbose=verbose,
-                        indent=4)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return bridges_data
-
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the codes of `railway bridges`_.
+        Fetches codes of `railway bridges`_.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
@@ -283,8 +253,14 @@ class Bridges:
              'Deep blue': 'Boundaries'}
         """
 
-        bridges_data = fetch_data_from_file(
-            self, method='collect_codes', data_name=self.KEY, ext=".json",
-            update=update, dump_dir=dump_dir, verbose=verbose)
+        args = {
+            'data_name': self.KEY,
+            'method': self.collect_codes,
+            'ext': ".json",
+        }
+        kwargs.update(args)
+
+        bridges_data = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return bridges_data

@@ -5,18 +5,26 @@ A subpackage for collecting codes of
 (See also the :py:class:`~pyrcs.collector.OtherAssets` class.)
 """
 
+from .buzzer import Buzzer
 from .depot import Depots
 from .feature import Features
+from .habd_wild import HabdWild
 from .sig_box import SignalBoxes
 from .station import Stations
+from .telegraph import Telegraph
+from .trough import WaterTroughs
 from .tunnel import Tunnels
 from .viaduct import Viaducts
 
 __all__ = [
-    'sig_box', 'SignalBoxes',
-    'tunnel', 'Tunnels',
-    'viaduct', 'Viaducts',
-    'station', 'Stations',
+    'buzzer', 'Buzzer',
     'depot', 'Depots',
     'feature', 'Features',
+    'habd_wild', 'HabdWild',
+    'sig_box', 'SignalBoxes',
+    'station', 'Stations',
+    'telegraph', 'Telegraph',
+    'trough', 'WaterTroughs',
+    'tunnel', 'Tunnels',
+    'viaduct', 'Viaducts',
 ]

@@ -15,20 +15,19 @@ class TestStations:
     def stn(self):
         return Stations()
 
-    def test__get_station_data_catalogue(self, stn, update):
-        stn_data_cat = stn.get_catalogue(update=update, verbose=True)
+    def test_fetch_catalogue(self, stn, update):
+        stn_data_cat = stn.fetch_catalogue(update=update, verbose=True)
         assert isinstance(stn_data_cat, dict)
 
-    def test_collect_locations_by_initial(self, stn, update, verbose=True):
-        stn_locations_a = stn.collect_locations_by_initial(
-            initial='a', update=update, verbose=verbose)
+    def test_fetch_locations(self, stn, update):
+        stn_locations_a = stn.collect_locations(
+            initial='a', confirmation_required=False, verbose=True)
 
         assert isinstance(stn_locations_a, dict)
         assert list(stn_locations_a.keys()) == ['A', 'Last updated date']
         stn_locations_a_codes = stn_locations_a['A']
         assert isinstance(stn_locations_a_codes, pd.DataFrame)
 
-    def test_fetch_locations(self, stn, update):
         stn_location_codes = stn.fetch_locations(update=update, verbose=True)
         assert isinstance(stn_location_codes, dict)
         assert list(stn_location_codes.keys()) == [

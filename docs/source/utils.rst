@@ -30,10 +30,9 @@ Print messages
     :toctree: _generated/
     :template: function.rst
 
-    confirm_msg
+    format_confirmation_prompt
     print_collect_msg
     print_conn_err
-    format_err_msg
     print_inst_conn_err
     print_void_msg
 
@@ -44,8 +43,4 @@ Save and retrieve pre-packed data
     :toctree: _generated/
     :template: function.rst
 
-    init_data_dir
-    make_file_pathname
     fetch_location_names_errata
-    save_data_to_file
-    fetch_data_from_file

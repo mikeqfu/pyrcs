@@ -19,3 +19,7 @@ other_assets
     Stations
     Depots
     Features
+    HabdWild
+    WaterTroughs
+    Telegraph
+    Buzzer

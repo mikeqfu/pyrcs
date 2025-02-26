@@ -10,16 +10,16 @@ import urllib.parse
 import bs4
 import pandas as pd
 import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.ops import confirmed, fake_requests_headers, remove_dict_keys, update_dict_keys
 from pyhelpers.store import load_data
+from pyhelpers.text import find_similar_str
 
-from ..parser import get_catalogue, get_last_updated_date, parse_tr
-from ..utils import fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    is_home_connectable, print_conn_err, print_inst_conn_err, print_void_msg, save_data_to_file
+from .._base import _Base
+from ..parser import _get_last_updated_date, parse_tr
+from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg
 
 
-class LOR:
+class LOR(_Base):
     """
     A class for collecting data of
     `Line of Route (LOR/PRIDE) <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_.
@@ -72,41 +72,112 @@ class LOR:
             'http://www.railwaycodes.org.uk/pride/pride0.shtm'
         """
 
-        print_conn_err(verbose=verbose)
-
-        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
-
-        self.last_updated_date = get_last_updated_date(url=self.URL)
-
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
+        super().__init__(
+            data_dir=data_dir, content_type='catalogue', data_category="line-data",
+            update=update, verbose=verbose)
 
         self.valid_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
 
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
+    def validate_prefix(self, prefix):
         """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
+        Validates and standardises a PRIDE/LOR code prefix.
 
-        The default data directory for this class is: ``"data\\line-data\\lor"``.
+        If the provided `prefix` is not found in the list of valid prefixes, an attempt is made
+        to find the closest matching valid prefix. If no match is found, an error is raised.
 
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
+        :param prefix: The PRIDE/LOR code prefix to validate.
+        :type prefix: str
+        :raises AssertionError: If the `prefix` is not a valid PRIDE/LOR prefix.
+        :return: A validated and standardised uppercase prefix.
         :rtype: str
 
-        .. _pyhelpers.dir.cd():
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor.validate_prefix(prefix='cy')
+            'CY'
+            >>> lor.validate_prefix(prefix='ca')
+            Traceback (most recent call last):
+                ...
+            AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
         """
 
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
+        prefix_ = prefix.upper()
 
-        return path
+        if prefix_ not in self.valid_prefixes:
+            prefix_ = find_similar_str(prefix_, self.valid_prefixes)
+
+            if not prefix_:
+                raise AssertionError(f"`prefix` must be one of {self.valid_prefixes}")
+
+        return prefix_
+
+    def get_url(self, prefix):
+        """
+        Generates the URL for the given PRIDE/LOR code prefix.
+
+        This method constructs the appropriate webpage URL based on the provided `prefix`,
+        ensuring that it is valid before appending the correct suffix.
+
+        :param prefix: The PRIDE/LOR code prefix.
+        :type prefix: str
+        :return: A fully constructed URL corresponding to the given prefix.
+        :rtype: str
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor.get_url(prefix='CY')
+            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
+            >>> lor.get_url(prefix='CA')
+            Traceback (most recent call last):
+                ...
+            AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
+        """
+
+        url = urllib.parse.urljoin(home_page_url(), '/pride/pride')
+
+        prefix_ = self.validate_prefix(prefix)
+
+        if prefix_ in ("NW", "NZ"):
+            url += 'nw.shtm'
+        else:
+            url += f'{prefix_.lower()}.shtm'
+
+        return url
+
+    def _keys_to_prefixes_fallback_data(self, prefixes_only):
+        """Creates a fallback data dictionary in case of failure."""
+        if prefixes_only:
+            keys_to_prefixes = []
+        else:
+            keys_to_prefixes = {self.KEY_P: None, self.KEY_TO_LAST_UPDATED_DATE: None}
+
+        return keys_to_prefixes
+
+    def _parse_keys_to_prefixes(self, source, prefixes_only=True, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
+
+        data = [
+            (x.get_text(strip=True), str(x.next_sibling).strip().replace('=  ', ''))
+            for x in span_tags]
+
+        lor_pref = pd.DataFrame(data=data, columns=['Prefixes', 'Name'])
+
+        if prefixes_only:
+            keys_to_prefixes = lor_pref['Prefixes'].to_list()
+        else:
+            keys_to_prefixes = {
+                self.KEY_P: lor_pref, self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
+
+        self._save_data_to_file(
+            data=keys_to_prefixes, data_name=f"{'' if prefixes_only else 'keys-to-'}prefixes",
+            verbose=verbose)
+
+        return keys_to_prefixes
 
     def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
         """
@@ -161,32 +232,15 @@ class LOR:
             try:
                 source = requests.get(url=self.URL, headers=fake_requests_headers())
 
-                soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-                span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
-
-                data = [(x.text, str(x.next_sibling).strip().replace('=  ', '')) for x in span_tags]
-
-                lor_pref = pd.DataFrame(data=data, columns=['Prefixes', 'Name'])
-
             except Exception as e:
                 verbose_ = True if (update and verbose != 2) \
                     else (False if verbose == 2 else verbose)
-                if verbose_:
-                    print("Failed. ", end="")
                 print_inst_conn_err(update=update, verbose=verbose_, e=e)
 
             else:
                 try:
-                    if prefixes_only:
-                        keys_to_prefixes = lor_pref['Prefixes'].to_list()
-                    else:
-                        keys_to_prefixes = {
-                            self.KEY_P: lor_pref,
-                            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
-                        }
-
-                    save_data_to_file(
-                        self, data=keys_to_prefixes, data_name=data_name, ext=ext, verbose=verbose)
+                    keys_to_prefixes = self._parse_keys_to_prefixes(
+                        source=source, prefixes_only=prefixes_only, verbose=verbose)
 
                 except Exception as e:
                     print("Failed to get the keys to LOR prefixes. {}.".format(e))
@@ -257,8 +311,8 @@ class LOR:
                         os.path.basename(self.URL), x['href'])
                         for x in links]))
 
-                    save_data_to_file(
-                        self, data=lor_page_urls, data_name=data_name, ext=ext, verbose=verbose)
+                    self._save_data_to_file(
+                        data=lor_page_urls, data_name=data_name, ext=ext, verbose=verbose)
 
                 except Exception as e:
                     print("Failed to get the URLs to LOR codes web pages. {}.".format(e))
@@ -269,8 +323,9 @@ class LOR:
         """
         Updates catalogue data including keys to prefixes and LOR page URLs.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
@@ -350,72 +405,60 @@ class LOR:
 
         return tbl_, note
 
-    def _collect_codes_by_prefix(self, prefix_, data_name, verbose):
-        if prefix_ in ("NW", "NZ"):
-            url = home_page_url() + '/pride/pridenw.shtm'
-            prefix_ = "NW/NZ"
-        else:
-            url = home_page_url() + '/pride/pride{}.shtm'.format(prefix_.lower())
+    def _parse_codes(self, prefix, source, verbose=False):
+        # prefix = prefix.upper()
+        # assert prefix in self.valid_prefixes, f"`prefix` must be one of {self.valid_prefixes}"
 
-        if verbose == 2:
-            print("To collect LOR codes prefixed by \"{}\". ".format(prefix_), end=" ... ")
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        lor_codes_by_initials = None
+        h3, table = soup.find_all(name='h3'), soup.find_all(name='table')
+        if len(h3) == 0:
+            code_data, code_notes = self._parse_h3_table(table[0])
 
-        try:
-            source = requests.get(url=url, headers=fake_requests_headers())
-
-        except Exception as e:
-            if verbose == 2:
-                print("Failed. ", end="")
-            print_inst_conn_err(verbose=verbose, e=e)
+            lor_codes_by_initials = {prefix: code_data, 'Notes': code_notes}
 
         else:
-            try:
-                soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+            # code_data_and_notes = [
+            #     dict(zip([prefix, 'Notes'], self._parse_h3_table(x, soup=soup)))
+            #     for x in zip(*[iter(table)] * 2)]
+            data_and_note = [self._parse_h3_table(tbl) for tbl in table]
+            keys = [(h3_.text, h3_.text + ' note') for h3_ in h3]
 
-                h3, table = soup.find_all(name='h3'), soup.find_all(name='table')
-                if len(h3) == 0:
-                    code_data, code_notes = self._parse_h3_table(table[0])
-                    lor_codes_by_initials = {prefix_: code_data, 'Notes': code_notes}
+            code_data_and_notes = dict(
+                zip(*map(itertools.chain.from_iterable, [keys, data_and_note])))
 
-                else:
-                    # code_data_and_notes = [
-                    #     dict(zip([prefix_, 'Notes'], self._parse_h3_table(x, soup=soup)))
-                    #     for x in zip(*[iter(table)] * 2)]
-                    data_and_note = [self._parse_h3_table(tbl) for tbl in table]
-                    keys = [(h3_.text, h3_.text + ' note') for h3_ in h3]
-                    code_data_and_notes = dict(zip(*map(
-                        itertools.chain.from_iterable, [keys, data_and_note])))
-                    lor_codes_by_initials = {prefix_: code_data_and_notes}
+            lor_codes_by_initials = {prefix: code_data_and_notes}
 
-                last_updated_date = get_last_updated_date(url=url)
+        last_updated_date = _get_last_updated_date(soup=soup)
 
-                lor_codes_by_initials.update({self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
+        lor_codes_by_initials.update({self.KEY_TO_LAST_UPDATED_DATE: last_updated_date})
 
-                if verbose == 2:
-                    print("Done.")
+        if verbose in {True, 1}:
+            print("Done.")
 
-                save_data_to_file(
-                    self, data=lor_codes_by_initials, data_name=data_name,
-                    ext=".pkl", dump_dir=self._cdd("prefixes"), verbose=verbose)
-
-            except Exception as e:
-                print(f"Failed. {format_err_msg(e)}")
+        self._save_data_to_file(
+            data=lor_codes_by_initials,
+            data_name="nw-nz" if prefix in ("NW", "NZ") else prefix.lower(), sub_dir="prefixes",
+            verbose=verbose)
 
         return lor_codes_by_initials
 
-    def collect_codes_by_prefix(self, prefix, update=False, verbose=False):
+    def collect_codes(self, prefix, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects the data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
-        based on the given prefix.
+        Collects data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        for the given prefix.
 
         :param prefix: The prefix of LOR codes to collect.
         :type prefix: str
-        :param update: Whether to check for updates to the package data; defaults to ``False``.
-        :type update: bool
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the LOR codes for the given ``prefix``,
             or ``None`` if no data is available.
         :rtype: dict | None
@@ -424,7 +467,7 @@ class LOR:
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
             >>> lor = LOR()
-            >>> lor_codes_cy = lor.collect_codes_by_prefix(prefix='CY')
+            >>> lor_codes_cy = lor.collect_codes(prefix='CY')
             >>> type(lor_codes_cy)
             dict
             >>> list(lor_codes_cy.keys())
@@ -437,7 +480,7 @@ class LOR:
             0   CY240  ...           Caerwent branch RA4
             1  CY1540  ...  Pembroke - Pembroke Dock RA6
             [2 rows x 5 columns]
-            >>> lor_codes_nw = lor.collect_codes_by_prefix(prefix='NW')
+            >>> lor_codes_nw = lor.collect_codes(prefix='NW')
             >>> type(lor_codes_nw)
             dict
             >>> list(lor_codes_nw.keys())
@@ -451,7 +494,7 @@ class LOR:
             3  NW1004  ...
             4  NW1005  ...
             [5 rows x 5 columns]
-            >>> lor_codes_xr = lor.collect_codes_by_prefix(prefix='XR')
+            >>> lor_codes_xr = lor.collect_codes(prefix='XR')
             >>> type(lor_codes_xr)
             dict
             >>> list(lor_codes_xr.keys())
@@ -473,28 +516,24 @@ class LOR:
             [2 rows x 5 columns]
         """
 
-        prefix_ = prefix.upper()
-        assert prefix_ in self.valid_prefixes, f"`prefix` must be one of {self.valid_prefixes}"
+        prefix_ = self.validate_prefix(prefix=prefix)
 
-        data_name = "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower()
-        ext = ".pkl"
-        path_to_pickle = self._cdd("prefixes", data_name + ext)
+        url = self.get_url(prefix=prefix_)
 
-        if os.path.isfile(path_to_pickle) and not update:
-            lor_codes_by_initials = load_data(path_to_pickle)
+        lor_codes = self._collect_data_from_source(
+            data_name=self.KEY, method=self._parse_codes, url=url, initial=prefix_, prefix=prefix_,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-        else:
-            lor_codes_by_initials = self._collect_codes_by_prefix(
-                prefix_=prefix_, data_name=data_name, verbose=verbose)
+        return lor_codes
 
-        return lor_codes_by_initials
-
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, prefix=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `PRIDE/LOR codes`_.
+        Fetches data of `PRIDE/LOR codes`_.
 
         .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
+        :param prefix: The prefix of LOR codes; defaults to ``None``.
+        :type prefix: str | None
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
         :param dump_dir: The path to a directory where the data file will be saved;
@@ -509,6 +548,9 @@ class LOR:
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
             >>> lor = LOR()
+            >>> lor_codes_dat = lor.fetch_codes(prefix='CY')
+
+
             >>> lor_codes_dat = lor.fetch_codes()
             >>> type(lor_codes_dat)
             dict
@@ -517,14 +559,12 @@ class LOR:
             >>> l_codes = lor_codes_dat['LOR']
             >>> type(l_codes)
             dict
-            >>> list(l_codes.keys())
-            ['CY', 'EA', 'GW', 'LN', 'MD', 'NW/NZ', 'SC', 'SO', 'SW', 'XR']
+            >>> list(l_codes.keys())[:5]
+            ['CY', 'CY Notes', 'EA', 'EA Notes', 'GW']
             >>> cy_codes = l_codes['CY']
             >>> type(cy_codes)
-            dict
-            >>> list(cy_codes.keys())
-            ['CY', 'Notes', 'Last updated date']
-            >>> cy_codes['CY']
+            pandas.core.frame.DataFrame
+            >>> cy_codes
                  Code  ...                       RA Note
             0   CY240  ...           Caerwent branch RA4
             1  CY1540  ...  Pembroke - Pembroke Dock RA6
@@ -533,70 +573,138 @@ class LOR:
             >>> type(xr_codes)
             dict
             >>> list(xr_codes.keys())
-            ['XR', 'Last updated date']
-            >>> xr_codes_ = xr_codes['XR']
-            >>> type(xr_codes_)
-            dict
-            >>> list(xr_codes_.keys())
             ['Current codes', 'Current codes note', 'Past codes', 'Past codes note']
-            >>> xr_codes_['Past codes'].head()
+            >>> xr_codes['Past codes']
                 Code  ... RA Note
             0  XR001  ...
             1  XR002  ...
             [2 rows x 5 columns]
-            >>> xr_codes_['Current codes'].head()
+            >>> xr_codes['Current codes']
                 Code  ...                     RA Note
             0  XR001  ...  Originally reported as RA4
             1  XR002  ...  Originally reported as RA4
             [2 rows x 5 columns]
         """
 
-        prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
+        if prefix:
+            prefix_ = self.validate_prefix(prefix)
+            args = {
+                'data_name': "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower(),
+                'method': self.collect_codes,
+                'sub_dir': "prefixes",
+                'prefix': prefix_,
+            }
+            kwargs.update(args)
 
-        verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
+            lor_data = self._fetch_data_from_file(
+                update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
-        lor_codes = [
-            self.collect_codes_by_prefix(
-                prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False)
-            for p in prefixes if p != 'NZ']
+        else:
+            prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
 
-        if all(x is None for x in lor_codes):
-            if update:
-                print_inst_conn_err(verbose=verbose)
-                print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
+            # Adjust prefixes list: replace 'NW' with 'NW/NZ' and remove 'NZ'
+            prefixes_ = ['NW/NZ' if p == 'NW' else p for p in prefixes if p != 'NZ']
+
+            # Set verbosity based on conditions
+            verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
+
+            # Fetch LOR codes
             lor_codes = [
-                self.collect_codes_by_prefix(prefix=p, update=False, verbose=verbose_)
+                self.fetch_codes(
+                    prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False,
+                    **kwargs)
                 for p in prefixes if p != 'NZ']
 
-        prefixes[prefixes.index('NW')] = 'NW/NZ'
-        prefixes.remove('NZ')
+            # Retry if all fetches failed
+            if all(x is None for x in lor_codes):
+                if update:
+                    print_inst_conn_err(verbose=verbose)
+                    print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
 
-        lor_data = {self.KEY: dict(zip(prefixes, lor_codes))}
+                lor_codes = [
+                    self.fetch_codes(prefix=p, update=False, verbose=verbose_)
+                    for p in prefixes if p != 'NZ']
 
-        # Get the latest updated date
-        last_updated_dates = (x[self.KEY_TO_LAST_UPDATED_DATE] for x, _ in zip(lor_codes, prefixes))
-        latest_update_date = max(d for d in last_updated_dates if d is not None)
+            # Process fetched data
+            lor_data, last_updated_dates = {self.KEY: {}}, []
 
-        lor_data.update({self.KEY_TO_LAST_UPDATED_DATE: latest_update_date})
+            for p, dat in zip(prefixes_, lor_codes):
+                last_updated_dates.append(dat.get(self.KEY_TO_LAST_UPDATED_DATE))
+                remove_dict_keys(dat, self.KEY_TO_LAST_UPDATED_DATE)
 
-        if dump_dir is not None:
-            save_data_to_file(
-                self, data=lor_data, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
-                verbose=verbose)
+                # Merge fetched data with optional renaming of "Notes" keys
+                lor_data[self.KEY].update(
+                    update_dict_keys(dat, replacements={'Notes': f'{p} Notes'}) if 'Notes' in dat
+                    else dat)
+
+            # Get the latest updated date
+            latest_update_date = max(filter(None, last_updated_dates), default=None)
+            lor_data.update({self.KEY_TO_LAST_UPDATED_DATE: latest_update_date})
+
+        if dump_dir:
+            self._save_data_to_file(
+                data=lor_data, data_name=self.KEY, dump_dir=dump_dir, verbose=verbose)
 
         return lor_data
 
-    def collect_elr_lor_converter(self, confirmation_required=True, verbose=False):
+    # == ELR/LOR converter =========================================================================
+
+    def _collect_elr_lor_converter(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        thead, tbody = soup.find_all('thead')[0], soup.find_all('tbody')[0]
+        ths = thead.find_all('th')
+        trs = tbody.find_all(name='tr')
+
+        elr_lor_dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        elr_links = soup.find_all(name='td', string=re.compile(r'([A-Z]{3})(\d)?'))
+        lor_links = soup.find_all(name='a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
+
+        # if len(elr_links) != len(elr_lor_dat):
+        #     duplicates = elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
+        #     for i in duplicates.index:
+        #         if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
+        #             elr_links.insert(i, elr_links[i - 1])
+        #         if not lor_links[i].endswith(duplicates['LOR code'].loc[i].lower()):
+        #             lor_links.insert(i, lor_links[i - 1])
+
+        elr_lor_dat['ELR_URL'] = [
+            urllib.parse.urljoin(home_page_url(), x.a.get('href')) if x.a else None
+            for x in elr_links]
+
+        elr_lor_dat['LOR_URL'] = [
+            urllib.parse.urljoin(home_page_url(), 'pride/' + x.get('href'))
+            for x in lor_links]
+
+        elr_lor_converter = {
+            self.KEY_ELC: elr_lor_dat,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup)}
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=elr_lor_converter, data_name=re.sub(r"[/ ]", "-", self.KEY_ELC), verbose=verbose)
+
+        return elr_lor_converter
+
+    def collect_elr_lor_converter(self, confirmation_required=True, verbose=False,
+                                  raise_error=False):
         """
-        Collects the data of
+        Collects data of
         `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
         from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the data of ELR/LOR converter,
             or ``None`` if no data is collected.
         :rtype: dict | None
@@ -625,77 +733,15 @@ class LOR:
             [5 rows x 6 columns]
         """
 
-        if confirmed("To collect data of {}\n?".format(self.KEY_ELC), confirmation_required):
+        elr_lor_converter = self._collect_data_from_source(
+            data_name=self.KEY_ELC, method=self._collect_elr_lor_converter,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-            url = self.catalogue[self.KEY_ELC]
+        return elr_lor_converter
 
-            if verbose == 2:
-                print("Collecting data of {}".format(self.KEY_ELC), end=" ... ")
-
-            elr_lor_converter = None
-
-            try:
-                # headers, elr_lor_dat = pd.read_html(io=url)
-                # elr_lor_dat.columns = list(headers)
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    thead, tbody = soup.find_all('thead')[0], soup.find_all('tbody')[0]
-                    ths = thead.find_all('th')
-                    trs = tbody.find_all(name='tr')
-
-                    elr_lor_dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-
-                    elr_links = soup.find_all(name='td', string=re.compile(r'([A-Z]{3})(\d)?'))
-                    lor_links = soup.find_all(name='a', href=re.compile(r'pride([a-z]{2})\.shtm#'))
-
-                    # if len(elr_links) != len(elr_lor_dat):
-                    #     duplicates = \
-                    #         elr_lor_dat[elr_lor_dat.duplicated(['ELR', 'LOR code'], keep=False)]
-                    #     for i in duplicates.index:
-                    #         if not duplicates['ELR'].loc[i].lower() in elr_links[i]:
-                    #             elr_links.insert(i, elr_links[i - 1])
-                    #         if not lor_links[i].endswith(
-                    #                 duplicates['LOR code'].loc[i].lower()):
-                    #             lor_links.insert(i, lor_links[i - 1])
-
-                    elr_lor_dat['ELR_URL'] = [
-                        urllib.parse.urljoin(home_page_url(), x.a.get('href')) if x.a else None
-                        for x in elr_links
-                    ]
-                    elr_lor_dat['LOR_URL'] = [
-                        urllib.parse.urljoin(home_page_url(), 'pride/' + x.get('href'))
-                        for x in lor_links
-                    ]
-                    #
-                    elr_lor_converter = {
-                        self.KEY_ELC: elr_lor_dat,
-                        self.KEY_TO_LAST_UPDATED_DATE: get_last_updated_date(url)
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=elr_lor_converter, data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
-                        ext=".pkl", verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-            return elr_lor_converter
-
-    def fetch_elr_lor_converter(self, update=False, dump_dir=None, verbose=False):
+    def fetch_elr_lor_converter(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `ELR/LOR converter`_.
+        Fetches data of `ELR/LOR converter`_.
 
         .. _`ELR/LOR converter`: http://www.railwaycodes.org.uk/pride/elrmapping.shtm
 
@@ -731,8 +777,13 @@ class LOR:
             [5 rows x 6 columns]
         """
 
-        elr_lor_converter = fetch_data_from_file(
-            self, method='collect_elr_lor_converter', data_name=re.sub(r"[/ ]", "-", self.KEY_ELC),
-            ext=".pkl", update=update, dump_dir=dump_dir, verbose=verbose)
+        args = {
+            'data_name': re.sub(r"[/ ]", "-", self.KEY_ELC),
+            'method': self.collect_elr_lor_converter,
+        }
+        kwargs.update(args)
+
+        elr_lor_converter = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return elr_lor_converter
