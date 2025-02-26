@@ -14,12 +14,32 @@ from pyhelpers.ops import confirmed
 
 from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
     TrackDiagrams
-from .other_assets import Depots, Features, SignalBoxes, Stations, Tunnels, Viaducts
+from .other_assets import Buzzer, Depots, Features, HABDWILD, SignalBoxes, Stations, Telegraph, \
+    Tunnels, Viaducts, WaterTroughs
 from .parser import get_category_menu
 from .utils import is_home_connectable, print_conn_err, print_inst_conn_err
 
 
-class LineData:
+class _Base:
+    #: The name of the data.
+    NAME: str = 'Railway Codes and other data'
+
+    def __init__(self, update=False, verbose=True, raise_error=False):
+        if not is_home_connectable():
+            self.connected = False
+            print_conn_err(verbose=verbose)
+
+        else:
+            self.connected = True
+
+        self.cls_init_kwargs = {'update': update, 'verbose': verbose}
+
+        self.catalogue = get_category_menu(
+            self.NAME, update=update, confirmation_required=False, verbose=verbose,
+            raise_error=raise_error)
+
+
+class LineData(_Base):
     """
     A class representation of all modules of the subpackage :py:mod:`~pyrcs.line_data`
     for collecting the codes of `line data`_.
@@ -30,7 +50,7 @@ class LineData:
     #: The name of the data.
     NAME: str = 'Line data'
 
-    def __init__(self, update=False, verbose=True):
+    def __init__(self, update=False, verbose=True, raise_error=False):
         """
         :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
@@ -90,22 +110,16 @@ class LineData:
             [5 rows x 3 columns]
         """
 
-        if not is_home_connectable():
-            self.connected = False
-            print_conn_err(verbose=verbose)
-        else:
-            self.connected = True
-
-        self.catalogue = get_category_menu(self.NAME, update=update, confirmation_required=False)
+        super().__init__(update=update, verbose=verbose, raise_error=raise_error)
 
         # Relevant classes
-        self.ELRMileages = ELRMileages(update=update, verbose=False)
-        self.Electrification = Electrification(update=update, verbose=False)
-        self.LocationIdentifiers = LocationIdentifiers(update=update, verbose=False)
-        self.LOR = LOR(update=update, verbose=False)
-        self.LineNames = LineNames(update=update, verbose=False)
-        self.TrackDiagrams = TrackDiagrams(update=update, verbose=False)
-        self.Bridges = Bridges(verbose=False)
+        self.ELRMileages = ELRMileages(**self.cls_init_kwargs)
+        self.Electrification = Electrification(**self.cls_init_kwargs)
+        self.LocationIdentifiers = LocationIdentifiers(**self.cls_init_kwargs)
+        self.LOR = LOR(**self.cls_init_kwargs)
+        self.LineNames = LineNames(**self.cls_init_kwargs)
+        self.TrackDiagrams = TrackDiagrams(**self.cls_init_kwargs)
+        self.Bridges = Bridges(**self.cls_init_kwargs)
 
     def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
         """
@@ -151,7 +165,7 @@ class LineData:
 
                 # Electrification
                 print(f"\n{self.Electrification.NAME}:")
-                _ = self.Electrification.get_indep_line_catalogue(**update_args)
+                _ = self.Electrification.get_independent_lines_catalogue(**update_args)
                 _ = self.Electrification.fetch_codes(**update_args)
 
                 time.sleep(interval)
@@ -189,7 +203,7 @@ class LineData:
                 _ = self.Bridges.fetch_codes(**update_args)
 
 
-class OtherAssets:
+class OtherAssets(_Base):
     """
     A class representation of all modules of the subpackage :py:mod:`~pyrcs.other_assets`
     for collecting the codes of `other assets`_.
@@ -200,7 +214,7 @@ class OtherAssets:
     #: The name of the data.
     NAME: str = 'Other assets'
 
-    def __init__(self, update=False, verbose=True):
+    def __init__(self, update=False, verbose=True, raise_error=False):
         """
         :param update: Whether to check for updates to the catalogue; defaults to ``False``.
         :type update: bool
@@ -256,21 +270,19 @@ class OtherAssets:
             [5 rows x 8 columns]
         """
 
-        if not is_home_connectable():
-            self.connected = False
-            print_conn_err(verbose=verbose)
-        else:
-            self.connected = True
-
-        self.catalogue = get_category_menu(self.NAME, update=update, confirmation_required=False)
+        super().__init__(update=update, verbose=verbose, raise_error=raise_error)
 
         # Relevant classes
-        self.SignalBoxes = SignalBoxes(update=update, verbose=False)
-        self.Tunnels = Tunnels(update=update, verbose=False)
-        self.Viaducts = Viaducts(update=update, verbose=False)
-        self.Stations = Stations(verbose=False)
-        self.Depots = Depots(update=update, verbose=False)
-        self.Features = Features(update=update, verbose=False)
+        self.SignalBoxes = SignalBoxes(**self.cls_init_kwargs)
+        self.Tunnels = Tunnels(**self.cls_init_kwargs)
+        self.Viaducts = Viaducts(**self.cls_init_kwargs)
+        self.Stations = Stations(**self.cls_init_kwargs)
+        self.Depots = Depots(**self.cls_init_kwargs)
+        self.HABDWILD = HABDWILD(**self.cls_init_kwargs)
+        self.WaterTroughs = WaterTroughs(**self.cls_init_kwargs)
+        self.Telegraph = Telegraph(**self.cls_init_kwargs)
+        self.Buzzer = Buzzer(**self.cls_init_kwargs)
+        self.Features = Features(**self.cls_init_kwargs)
 
     def update(self, confirmation_required=True, verbose=False, interval=5, init_update=False):
         """
