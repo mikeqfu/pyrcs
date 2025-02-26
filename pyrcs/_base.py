@@ -201,12 +201,15 @@ class _Base:
 
         return prompt
 
-    def _initialise_fallback_data(self, initial, additional_fields):
-        """Creates a fallback data dictionary in case of failure."""
-        if not initial:
+    def _fallback_data(self, key=None, additional_fields=None):
+        """
+        Creates a fallback data dictionary in case of failure.
+        """
+
+        if not key:
             return None
 
-        data = {initial: None, self.KEY_TO_LAST_UPDATED_DATE: None}
+        data = {key: None, self.KEY_TO_LAST_UPDATED_DATE: None}
 
         if additional_fields:
             if isinstance(additional_fields, dict):
@@ -264,13 +267,20 @@ class _Base:
             data_name=data_name, initial=initial, verbose=verbose,
             confirmation_required=confirmation_required)
 
+        fallback_data = self._fallback_data(key=initial, additional_fields=additional_fields)
+
+        url_ = copy.copy(url or self.catalogue.get(initial or data_name))
+        if not url_:
+            if initial and verbose:
+                print(f'No data is available for codes beginning with "{initial}".')
+            return fallback_data
+
         try:
-            url_ = copy.copy(url or self.catalogue.get(initial or data_name))
             source = requests.get(url=url_, headers=fake_requests_headers())
             source.raise_for_status()  # Raises HTTPError for bad responses (4xx, 5xx)
         except Exception as e:
             print_inst_conn_err(verbose=verbose, e=e)
-            return self._initialise_fallback_data(initial, additional_fields=additional_fields)
+            return fallback_data
 
         # Build kwargs dynamically based on method signature
         kwargs.update({'source': source, 'verbose': verbose})
@@ -285,7 +295,7 @@ class _Base:
         except Exception as e:
             _print_failure_message(
                 e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
-            return self._initialise_fallback_data(initial, additional_fields=additional_fields)
+            return fallback_data
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
         """
