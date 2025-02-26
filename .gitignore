@@ -23,7 +23,7 @@ dist/
 # Project-specific directories / files
 *[!_]_.py
 pyrcs/data/*
-!metadata
+!.metadata
 tutorials/*
 .pypirc
 cmd.md

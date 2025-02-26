@@ -1,0 +1,11 @@
+{
+    "Project": "PyRCS",
+    "Description": "An open-source tool for collecting railway codes used in different UK rail industry systems",
+    "Package": "pyrcs",
+    "Author": "Qian Fu",
+    "Affiliation": "School of Engineering, University of Birmingham",
+    "Email": "q.fu@bham.ac.uk",
+    "Version": "1.0.0dev1",
+    "License": "MIT License",
+    "First release": "August 2019"
+}

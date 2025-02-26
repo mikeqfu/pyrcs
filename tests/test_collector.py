@@ -14,7 +14,7 @@ def test_LineData():
     location_codes = ld.LocationIdentifiers.fetch_codes()
     assert isinstance(location_codes, dict)
     assert list(location_codes.keys()) == [
-        'LocationID', 'Other systems', 'Additional notes', 'Last updated date']
+        'Location ID', 'Other systems', 'Notes', 'Last updated date']
 
     location_codes_dat = location_codes[ld.LocationIdentifiers.KEY]
     assert isinstance(location_codes_dat, pd.DataFrame)

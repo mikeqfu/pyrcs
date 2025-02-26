@@ -46,22 +46,22 @@ def test_fetch_all_verbose():
 
 
 def test_confirm_msg():
-    from pyrcs.utils import confirm_msg
+    from pyrcs.utils import format_confirmation_prompt
 
-    msg = confirm_msg(data_name="Railway Codes")
+    msg = format_confirmation_prompt(data_name="Railway Codes")
     assert msg == 'To collect data of Railway Codes\n?'
 
 
 def test_print_collect_msg(capfd):
     from pyrcs.utils import print_collect_msg
 
-    print_collect_msg("Railway Codes", verbose=2, confirmation_required=True)
+    print_collect_msg("Railway Codes", verbose=True, confirmation_required=True)
     out, _ = capfd.readouterr()
-    assert out == 'Collecting the data ... '
+    assert out.startswith('Collecting the data ... ')
 
-    print_collect_msg("Railway Codes", verbose=2, confirmation_required=False)
+    print_collect_msg("Railway Codes", verbose=True, confirmation_required=False)
     out, _ = capfd.readouterr()
-    assert out == 'Collecting the data of "Railway Codes" ... '
+    assert out.startswith('Collecting the data of Railway Codes ... ')
 
 
 def test_print_inst_conn_err(capfd):
@@ -73,7 +73,7 @@ def test_print_inst_conn_err(capfd):
 
     print_inst_conn_err(update=True, verbose=True, e='')
     out, _ = capfd.readouterr()
-    assert out == 'Failed to update the data.\n'
+    assert out == 'The Internet connection is not available. Failed to update the data.\n'
 
 
 def test_print_void_msg(capfd):
@@ -92,30 +92,6 @@ def test_cd_data():
     assert os.path.relpath(path_to_dat_dir) == 'pyrcs\\data'
 
 
-def test_init_data_dir():
-    from pyrcs.utils import init_data_dir
-    from pyrcs.line_data import Bridges
-    import os
-
-    bridges = Bridges()
-
-    dat_dir, current_dat_dir = init_data_dir(bridges, data_dir="data", category="line-data")
-    assert os.path.relpath(dat_dir) == 'data'
-
-    assert os.path.relpath(current_dat_dir) == 'data'
-
-
-def test_make_file_pathname():
-    from pyrcs.utils import make_file_pathname
-    from pyrcs.line_data import Bridges
-    import os
-
-    bridges = Bridges()
-
-    example_pathname = make_file_pathname(bridges, data_name="example-data", ext=".pickle")
-    assert os.path.relpath(example_pathname) == 'pyrcs\\data\\line-data\\bridges\\example-data.pickle'
-
-
 def test_fetch_location_names_errata():
     from pyrcs.utils import fetch_location_names_errata
 
@@ -124,18 +100,6 @@ def test_fetch_location_names_errata():
 
     repl_dict = fetch_location_names_errata(regex=True, as_dataframe=True)
     assert isinstance(repl_dict, pd.DataFrame)
-
-
-def test_fetch_data_from_file(capfd):
-    from pyrcs.utils import fetch_data_from_file
-
-    data = fetch_data_from_file(
-        cls_instance=None, method=None, data_name=None, ext=None, update=None, dump_dir=None,
-        verbose=True)
-    out, _ = capfd.readouterr()
-    assert out == "Some errors occurred when fetching the data. " \
-                  "'NoneType' object has no attribute 'lower'.\n"
-    assert data is None
 
 
 if __name__ == '__main__':

@@ -2,22 +2,18 @@
 Collects British `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
 """
 
-import os
 import urllib.parse
 
 import bs4
 import pandas as pd
-import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import confirmed, fake_requests_headers
-from pyhelpers.store import load_data
+from pyhelpers._cache import _print_failure_message
 
-from ..parser import get_last_updated_date
-from ..utils import cd_data, fetch_data_from_file, format_err_msg, home_page_url, init_data_dir, \
-    print_collect_msg, print_conn_err, print_inst_conn_err, save_data_to_file
+from .._base import _Base
+from ..parser import _get_last_updated_date
+from ..utils import cd_data, home_page_url
 
 
-class TrackDiagrams:
+class TrackDiagrams(_Base):
     """
     A class for collecting data of British
     `railway track diagrams <http://www.railwaycodes.org.uk/track/diagrams0.shtm>`_.
@@ -58,104 +54,12 @@ class TrackDiagrams:
             'http://www.railwaycodes.org.uk/line/diagrams0.shtm'
         """
 
-        print_conn_err(verbose=verbose)
+        super().__init__(
+            data_dir=data_dir, data_category="line-data", update=update, verbose=verbose)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL)
+        self.catalogue = self.fetch_catalogue(update=update, verbose=(verbose == 2 or False))
 
-        self.catalogue = self.fetch_catalogue(
-            update=update, verbose=True if verbose == 2 else False)
-
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, category="line-data")
-
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
-        """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
-
-        The default data directory for this class is: ``"data\\line-data\\track-diagrams"``.
-
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
-        :rtype: str
-
-        .. _pyhelpers.dir.cd():
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
-        """
-
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
-
-        return path
-
-    def _get_items(self, update=False, verbose=False):
-        """
-        Gets the catalogue of track diagrams.
-
-        :param update: Whether to check for updates to the package data; defaults to ``False``.
-        :type update: bool
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
-        :type verbose: bool | int
-        :return: The catalogue of railway station data.
-        :rtype: dict
-
-        **Examples**::
-
-            >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
-            >>> td = TrackDiagrams()
-            >>> trk_diagr_items = td._get_items()
-            >>> trk_diagr_items
-            {'Track diagrams': {'London Underground',
-              'Main line diagrams',
-              'Miscellaneous',
-              'Tram systems'}}
-        """
-
-        dat_name = self.KEY.lower()
-        ext = ".pkl"
-        path_to_cat = cd_data("catalogue", dat_name.replace(" ", "-") + ext)
-
-        if os.path.isfile(path_to_cat) and not update:
-            items = load_data(path_to_cat)
-
-        else:
-            if verbose == 2:
-                print("Collecting a list of {} items".format(dat_name), end=" ... ")
-
-            items = None
-
-            try:
-                source = requests.get(url=self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(update=update, verbose=verbose, e=e)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-                    h3 = {x.get_text(strip=True) for x in soup.find_all('h3', string=True)}
-                    items = {self.KEY: h3}
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=items, data_name=dat_name, ext=ext, dump_dir=cd_data("catalogue"),
-                        verbose=verbose)
-
-                except Exception as e:
-                    print(f"Failed. {format_err_msg(e)}")
-
-        return items
-
-    def _collect_catalogue(self, source, data_name, verbose):
+    def _collect_catalogue(self, source, verbose=False):
         track_diagrams_catalogue_ = {}
 
         try:
@@ -196,31 +100,34 @@ class TrackDiagrams:
 
             track_diagrams_catalogue = {
                 self.KEY: track_diagrams_catalogue_,
-                self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
+                self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
             }
 
-            if verbose == 2:
+            if verbose in {True, 1}:
                 print("Done.")
 
-            save_data_to_file(
-                self, data=track_diagrams_catalogue, data_name=data_name, ext=".pkl",
+            self._save_data_to_file(
+                data_name=self.KEY.lower(), data=track_diagrams_catalogue,
                 dump_dir=cd_data("catalogue"), verbose=verbose)
 
+            return track_diagrams_catalogue
+
         except Exception as e:
-            print(f"Failed. {format_err_msg(e)}")
-            track_diagrams_catalogue = None
+            _print_failure_message(e)
 
-        return track_diagrams_catalogue
-
-    def collect_catalogue(self, confirmation_required=True, verbose=False):
+    def collect_catalogue(self, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects the catalogue of sample railway track diagrams from the source web page.
 
-        :param confirmation_required: Whether user confirmation is required before proceeding;
-            defaults to ``True``.
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
         :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the railway track diagram catalogue and
             the date it was last updated, or ``None`` if no data is collected.
         :rtype: dict | None
@@ -252,25 +159,13 @@ class TrackDiagrams:
             1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
         """
 
-        data_name = self.KEY.lower()
+        track_diagrams_catalogue = self._collect_data_from_source(
+            data_name=self.KEY.lower(), method=self._collect_catalogue, url=self.URL,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
-        if confirmed(f"To collect the catalogue of {data_name}\n?", confirmation_required):
-            print_collect_msg(data_name, verbose, confirmation_required)
+        return track_diagrams_catalogue
 
-            try:
-                source = requests.get(url=self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                track_diagrams_catalogue = self._collect_catalogue(source, data_name, verbose)
-
-                return track_diagrams_catalogue
-
-    def fetch_catalogue(self, update=False, dump_dir=None, verbose=False):
+    def fetch_catalogue(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
         Fetches the catalogue of railway track diagrams.
 
@@ -310,8 +205,14 @@ class TrackDiagrams:
             1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
         """
 
-        track_diagrams_catalogue = fetch_data_from_file(
-            self, method='collect_catalogue', data_name=self.KEY, ext=".pkl", update=update,
-            dump_dir=dump_dir, verbose=verbose, data_dir=cd_data("catalogue"))
+        args = {
+            'data_name': self.KEY,
+            'method': self.collect_catalogue,
+            'data_dir': cd_data("catalogue"),
+        }
+        kwargs.update(args)
+
+        track_diagrams_catalogue = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return track_diagrams_catalogue

@@ -3,21 +3,16 @@ Collects codes of `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunn
 """
 
 import itertools
-import os
 import re
 import urllib.parse
 
-import requests
-from pyhelpers.dirs import cd
-from pyhelpers.ops import fake_requests_headers
-from pyhelpers.store import load_data
-
-from ..parser import get_catalogue, get_last_updated_date, parse_table
-from ..utils import home_page_url, init_data_dir, is_home_connectable, print_conn_err, \
-    print_inst_conn_err, save_data_to_file, validate_page_name
+from .._base import _Base
+from ..parser import _get_last_updated_date, parse_table
+from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg, \
+    validate_page_name
 
 
-class Viaducts:
+class Viaducts(_Base):
     """
     A class for collecting codes of
     `railway viaducts <http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm>`_.
@@ -58,41 +53,31 @@ class Viaducts:
             'http://www.railwaycodes.org.uk/viaducts/viaducts0.shtm'
         """
 
-        print_conn_err(verbose=verbose)
+        super().__init__(
+            data_dir=data_dir, content_type='catalogue', data_category="other-assets",
+            update=update, verbose=verbose)
 
-        self.catalogue = get_catalogue(url=self.URL, update=update, confirmation_required=False)
+        self.page_range = range(1, 7)
 
-        self.last_updated_date = get_last_updated_date(url=self.URL)
+    def _collect_codes(self, page_no, source, verbose=False):
+        page_name = validate_page_name(self, page_no, valid_page_no=self.page_range)
 
-        self.data_dir, self.current_data_dir = init_data_dir(self, data_dir, "other-assets")
+        codes_dat, soup = parse_table(source=source, parser='html.parser', as_dataframe=True)
 
-    def _cdd(self, *sub_dir, mkdir=True, **kwargs):
-        """
-        Changes the current directory to the package's data directory,
-        or its specified subdirectories (or file).
+        codes_on_page = {
+            page_name: codes_dat,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
 
-        The default data directory for this class is: ``"data\\other-assets\\viaducts"``.
+        if verbose in {True, 1}:
+            print("Done.")
 
-        :param sub_dir: One or more subdirectories and/or a file to navigate to
-            within the data directory.
-        :type sub_dir: str
-        :param mkdir: Whether to create the specified directory if it doesn't exist;
-            defaults to ``True``.
-        :type mkdir: bool
-        :param kwargs: [Optional] Additional parameters for the `pyhelpers.dir.cd()`_ function.
-        :return: The path to the backup data directory or its specified subdirectories (or file).
-        :rtype: str
+        data_name = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower()
+        self._save_data_to_file(data=codes_on_page, data_name=data_name, verbose=verbose)
 
-        .. _`pyhelpers.dir.cd()`:
-            https://pyhelpers.readthedocs.io/en/latest/_generated/pyhelpers.dir.cd.html
-        """
+        return codes_on_page
 
-        kwargs.update({'mkdir': mkdir})
-        path = cd(self.data_dir, *sub_dir, **kwargs)
-
-        return path
-
-    def collect_codes_by_page(self, page_no, update=False, verbose=False):
+    def collect_codes(self, page_no, confirmation_required=True, verbose=False, raise_error=False):
         """
         Collects data of `railway viaducts`_ for a specified page number
         from the source web page.
@@ -100,12 +85,17 @@ class Viaducts:
         .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
         :param page_no: The page number to collect data from;
-            valid values include ``1``, ``2``, ``3``, ``4``, ``5`` and ``6``
+            valid values are ``1``, ``2``, ``3`` and ``4``.
         :type page_no: int | str
-        :param update: Whether to check for updates to the package data; defaults to ``False``.
-        :type update: bool
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
         :return: A dictionary containing the data of railway viaducts for the specified ``page_no``
             and the date of when the data was last updated.
         :rtype: dict
@@ -114,7 +104,7 @@ class Viaducts:
 
             >>> from pyrcs.other_assets import Viaducts  # from pyrcs import Viaducts
             >>> vdct = Viaducts()
-            >>> page_1_codes = vdct.collect_codes_by_page(page_no=1)
+            >>> page_1_codes = vdct.collect_codes(page_no=1)
             >>> type(page_1_codes)
             dict
             >>> list(page_1_codes.keys())
@@ -132,60 +122,28 @@ class Viaducts:
             [5 rows x 7 columns]
         """
 
-        page_name = validate_page_name(self, page_no, valid_page_no=set(range(1, 7)))
-        # page_name = get_page_name(vdct, page_no, valid_page_no=set(range(1, 7)))
+        data_name = self.NAME.lower()
 
-        data_name = re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower()
-        ext = ".pkl"
-        path_to_pickle = self._cdd(data_name + ext)
+        page_name = validate_page_name(self, page_no, valid_page_no=self.page_range)
 
-        if os.path.exists(path_to_pickle) and not update:
-            codes_on_page = load_data(path_to_pickle)
+        viaducts_codes = self._collect_data_from_source(
+            data_name=data_name,
+            method=self._collect_codes, initial=page_name, page_no=page_no,
+            url=self.catalogue.get(page_name), confirmation_required=confirmation_required,
+            confirmation_prompt=f"To collect data of {data_name} ({page_name})\n?",
+            verbose=verbose, raise_error=raise_error)
 
-        else:
-            if verbose == 2:
-                print(f"Collecting data of {self.KEY.lower()} on {page_name}", end=" ... ")
+        return viaducts_codes
 
-            codes_on_page = None
-
-            try:
-                url = self.catalogue[page_name]
-                # url = vdct.catalogue[page_name]
-                source = requests.get(url=url, headers=fake_requests_headers())
-
-            except Exception as e:
-                if verbose == 2:
-                    print("Failed. ", end="")
-                print_inst_conn_err(verbose=verbose, e=e)
-
-            else:
-                try:
-                    codes_dat = parse_table(source=source, parser='html.parser', as_dataframe=True)
-
-                    last_updated_date = get_last_updated_date(url)
-
-                    codes_on_page = {
-                        page_name: codes_dat,
-                        self.KEY_TO_LAST_UPDATED_DATE: last_updated_date,
-                    }
-
-                    if verbose == 2:
-                        print("Done.")
-
-                    save_data_to_file(
-                        self, data=codes_on_page, data_name=data_name, ext=ext, verbose=verbose)
-
-                except Exception as e:
-                    print("Failed. \"{}\": {}".format(page_name, e))
-
-        return codes_on_page
-
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, page_no=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
         Fetches the data of `railway viaducts`_.
 
         .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 
+        :param page_no: The page number to collect data from;
+            valid values are ``1``, ``2``, ``3`` and ``4``; defaults to ``None``.
+        :type page_no: int | str
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
         :param dump_dir: The path to a directory where the data file will be saved;
@@ -231,30 +189,44 @@ class Viaducts:
             [5 rows x 7 columns]
         """
 
-        verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
-        verbose_2 = verbose_1 if is_home_connectable() else False
+        if page_no:
+            page_name = validate_page_name(self, page_no, valid_page_no=self.page_range)
 
-        codes_on_pages = [
-            self.collect_codes_by_page(page_no, update=update, verbose=verbose_2)
-            for page_no in range(1, 7)]
+            args = {
+                'data_name': re.sub(r"[()]", "", re.sub(r"[ -]", "-", page_name)).lower(),
+                'method': self.collect_codes,
+                'page_no': page_no,
+            }
+            kwargs.update(args)
 
-        if all(x is None for x in codes_on_pages):
-            if update:
-                print_inst_conn_err(verbose=verbose)
-                print("No data of the {} has been freshly collected.".format(self.KEY.lower()))
+            viaducts_codes = self._fetch_data_from_file(
+                update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+
+        else:
+            verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
+            verbose_2 = verbose_1 if is_home_connectable() else False
+
             codes_on_pages = [
-                self.collect_codes_by_page(page_no, update=False, verbose=verbose_1)
-                for page_no in range(1, 7)]
+                self.fetch_codes(page_no=page_no, update=update, verbose=verbose_2)
+                for page_no in self.page_range]
 
-        viaducts_codes = {
-            self.KEY: {next(iter(x)): next(iter(x.values())) for x in codes_on_pages},
-            self.KEY_TO_LAST_UPDATED_DATE:
-                max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes_on_pages),
-        }
+            if all(x is None for x in codes_on_pages):
+                if update:
+                    print_inst_conn_err(verbose=verbose)
+                    print_void_msg(data_name=self.KEY, verbose=verbose)
+
+                codes_on_pages = [
+                    self.fetch_codes(page_no=page_no, update=False, verbose=verbose_1)
+                    for page_no in self.page_range]
+
+            viaducts_codes = {
+                self.KEY: {next(iter(x)): next(iter(x.values())) for x in codes_on_pages},
+                self.KEY_TO_LAST_UPDATED_DATE:
+                    max(next(itertools.islice(iter(x.values()), 1, 2)) for x in codes_on_pages),
+            }
 
         if dump_dir is not None:
-            save_data_to_file(
-                self, data=viaducts_codes, data_name=self.KEY, ext=".pkl", dump_dir=dump_dir,
-                verbose=verbose)
+            self._save_data_to_file(
+                data=viaducts_codes, data_name=self.KEY, dump_dir=dump_dir, verbose=verbose)
 
         return viaducts_codes

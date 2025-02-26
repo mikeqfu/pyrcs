@@ -20,13 +20,13 @@ class TestElectrification:
         assert isinstance(nn_codes, dict)
         assert list(nn_codes.keys()) == ['National network', 'Last updated date']
 
-    def test_get_indep_line_catalogue(self, elec):
-        indep_line_cat = elec.get_indep_line_catalogue(update=True, verbose=True)
+    def test_get_independent_lines_catalogue(self, elec):
+        indep_line_cat = elec.get_independent_lines_catalogue(update=True, verbose=True)
 
         assert isinstance(indep_line_cat, pd.DataFrame)
 
-    def test_collect_indep_lines_codes(self, elec):
-        indep_lines_codes = elec.collect_indep_lines_codes(
+    def test_collect_independent_lines_codes(self, elec):
+        indep_lines_codes = elec.collect_independent_lines_codes(
             confirmation_required=False, verbose=True)
 
         assert isinstance(indep_lines_codes, dict)

@@ -16,18 +16,20 @@ class TestELRMileages:
     def em(self):
         return ELRMileages()
 
-    @pytest.mark.parametrize('update', [False, True])
-    def test_collect_elr_by_initial(self, em, update):
+    def test_collect_elr(self, em, capfd):
         test_initials = ['a', 'q']
-        for test_initial in test_initials:
-            elr_codes = em.collect_elr_by_initial(initial=test_initial, update=update, verbose=True)
+        for initial in test_initials:
+            elr_codes = em.collect_elr(initial=initial, confirmation_required=False, verbose=True)
 
-            test_initial_ = test_initial.upper()
+            test_initial = initial.upper()
+
+            out, _ = capfd.readouterr()
+            assert f'beginning with "{test_initial}"' in out and "Done." in out
 
             assert isinstance(elr_codes, dict)
-            assert list(elr_codes.keys()) == [test_initial_, 'Last updated date']
+            assert list(elr_codes.keys()) == [test_initial, 'Last updated date']
 
-            elrs_codes_dat = elr_codes[test_initial_]
+            elrs_codes_dat = elr_codes[test_initial]
             assert isinstance(elrs_codes_dat, pd.DataFrame)
 
     @pytest.mark.parametrize('update', [False, True])
