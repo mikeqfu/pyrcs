@@ -2,7 +2,6 @@
 Test parser.py
 """
 
-import collections
 import datetime
 
 import bs4
@@ -33,7 +32,7 @@ def test_parse_table():
 
     source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
 
-    columns_dat, records_dat = parse_table(source_dat)
+    (columns_dat, records_dat), soup = parse_table(source_dat)
 
     assert columns_dat == ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
     assert isinstance(records_dat, list)
@@ -59,14 +58,14 @@ def test_get_site_map():
 
     site_map_dat = get_site_map(update=True, confirmation_required=False, verbose=True)
 
-    assert isinstance(site_map_dat, collections.OrderedDict)
+    assert isinstance(site_map_dat, dict)
     assert list(site_map_dat.keys()) == [
         'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
     assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
 
     site_map_dat = get_site_map()
 
-    assert isinstance(site_map_dat, collections.OrderedDict)
+    assert isinstance(site_map_dat, dict)
     assert list(site_map_dat.keys()) == [
         'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
     assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
@@ -107,8 +106,7 @@ def test_get_catalogue():
     from pyrcs.parser import get_catalogue
 
     elr_cat = get_catalogue(
-        url='http://www.railwaycodes.org.uk/elrs/elr0.shtm', update=True,
-        confirmation_required=False, verbose=True)
+        url='http://www.railwaycodes.org.uk/elrs/elr0.shtm', update=True, verbose=True)
     assert isinstance(elr_cat, dict)
 
     location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
