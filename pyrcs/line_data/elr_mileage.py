@@ -401,7 +401,7 @@ class ELRMileages(_Base):
 
     def fetch_elr(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetch data of ELRs and their associated mileages.
+        Fetches data of ELRs and their associated mileages.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR; defaults to ``None``.
         :type initial: str | None
@@ -833,7 +833,7 @@ class ELRMileages(_Base):
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
                              verbose=False, raise_error=False):
         """
-        Collects the mileage file for the specified ELR from the source web page.
+        Collects the mileage file for a specific ELR from the source web page.
 
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
@@ -985,7 +985,7 @@ class ELRMileages(_Base):
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
         """
-        Fetches the mileage file for the specified ELR.
+        Fetches the mileage file for a specific ELR.
 
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).

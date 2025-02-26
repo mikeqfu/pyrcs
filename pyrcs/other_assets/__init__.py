@@ -8,7 +8,7 @@ A subpackage for collecting codes of
 from .buzzer import Buzzer
 from .depot import Depots
 from .feature import Features
-from .habd_wild import HABDWILD
+from .habd_wild import HabdWild
 from .sig_box import SignalBoxes
 from .station import Stations
 from .telegraph import Telegraph
@@ -20,7 +20,7 @@ __all__ = [
     'buzzer', 'Buzzer',
     'depot', 'Depots',
     'feature', 'Features',
-    'habd_wild', 'HABDWILD',
+    'habd_wild', 'HabdWild',
     'sig_box', 'SignalBoxes',
     'station', 'Stations',
     'telegraph', 'Telegraph',

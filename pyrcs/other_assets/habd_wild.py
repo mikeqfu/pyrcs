@@ -13,9 +13,10 @@ from ..parser import _get_last_updated_date, parse_tr
 from ..utils import cd_data, home_page_url
 
 
-class HABDWILD(_Base):
+class HabdWild(_Base):
     """
-    A class for `HABDs and WILDs <http://www.railwaycodes.org.uk/features/habdwild.shtm>`_.
+    A class for collecting data of
+    `HABDs and WILDs <http://www.railwaycodes.org.uk/features/habdwild.shtm>`_.
 
     .. note::
 
@@ -48,8 +49,8 @@ class HABDWILD(_Base):
 
         **Examples**::
 
-            >>> from pyrcs.other_assets import HABDWILD  # from pyrcs import HABDWILD
-            >>> hw = HABDWILD()
+            >>> from pyrcs.other_assets import HabdWild  # from pyrcs import HABDWILD
+            >>> hw = HabdWild()
             >>> hw.NAME
             'Hot axle box detectors (HABDs) and wheel impact load detectors (WILDs)'
         """
@@ -116,8 +117,8 @@ class HABDWILD(_Base):
 
         **Examples**::
 
-            >>> from pyrcs.other_assets import HABDWILD  # from pyrcs import HABDWILD
-            >>> hw = HABDWILD()
+            >>> from pyrcs.other_assets import HabdWild  # from pyrcs import HABDWILD
+            >>> hw = HabdWild()
             >>> hw_codes = hw.collect_codes()
             To collect data of HABD and WILD
             ? [No]|Yes: yes
@@ -164,7 +165,7 @@ class HABDWILD(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the codes of `HABDs and WILDs`_.
+        Fetches codes of `HABDs and WILDs`_.
 
         .. _`HABDs and WILDs`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 
@@ -181,8 +182,8 @@ class HABDWILD(_Base):
 
         **Examples**::
 
-            >>> from pyrcs.other_assets import HABDWILD  # from pyrcs import HABDWILD
-            >>> hw = HABDWILD()
+            >>> from pyrcs.other_assets import HabdWild  # from pyrcs import HABDWILD
+            >>> hw = HabdWild()
             >>> hw_codes = hw.fetch_codes()
             >>> type(hw_codes)
             dict

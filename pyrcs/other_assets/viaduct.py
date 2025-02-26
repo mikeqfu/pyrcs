@@ -79,7 +79,7 @@ class Viaducts(_Base):
 
     def collect_codes(self, page_no, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects data of `railway viaducts`_ for a specified page number
+        Collects data of `railway viaducts`_ for a specific page number
         from the source web page.
 
         .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
@@ -137,7 +137,7 @@ class Viaducts(_Base):
 
     def fetch_codes(self, page_no=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `railway viaducts`_.
+        Fetches data of `railway viaducts`_.
 
         .. _`railway viaducts`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 

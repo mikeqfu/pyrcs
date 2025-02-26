@@ -453,7 +453,7 @@ class Electrification(_Base):
 
     def get_independent_lines_catalogue(self, update=False, verbose=False):
         """
-        Gets a catalogue for the
+        Gets the catalogue for the
         `independent lines <http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm>`_.
 
         :param update: Whether to check for updates to the package data; defaults to ``False``.

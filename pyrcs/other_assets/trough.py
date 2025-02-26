@@ -51,7 +51,8 @@ def _parse_vulgar_fraction_in_length(x):
 
 class WaterTroughs(_Base):
     """
-    A class for `water troughs locations <http://www.railwaycodes.org.uk/features/troughs.shtm>`_.
+    A class for collecting data of
+    `water troughs locations <http://www.railwaycodes.org.uk/features/troughs.shtm>`_.
     """
 
     #: The name of the data.
@@ -168,7 +169,7 @@ class WaterTroughs(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the codes of `water troughs locations`_.
+        Fetches codes of `water troughs locations`_.
 
         .. _`water troughs locations`: http://www.railwaycodes.org.uk/misc/troughs.shtm
 

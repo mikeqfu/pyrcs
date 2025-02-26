@@ -316,6 +316,24 @@ class Stations(_Base):
         return catalogue
 
     def collect_catalogue(self, confirmation_required=True, verbose=False, raise_error=False):
+        """
+        Collects the catalogue of `railway station data`_ from the source web page.
+
+        .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
+
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
+        :return: A dictionary containing the catalogue of railway station data,
+            or ``None`` if no data catalogue is collected.
+        :rtype: dict | None
+        """
 
         catalogue = self._collect_data_from_source(
             data_name=f'{self.NAME.lower()} catalogue', method=self._collect_catalogue,
@@ -326,7 +344,9 @@ class Stations(_Base):
 
     def fetch_catalogue(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Gets the catalogue of railway station data.
+        Fetches the catalogue of `railway station data`_.
+
+        .. _`railway station data`: http://www.railwaycodes.org.uk/stations/station0.shtm
 
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
@@ -501,7 +521,7 @@ class Stations(_Base):
 
     def fetch_locations(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `railway station locations`_ (mileages, operators and grid coordinates).
+        Fetches data of `railway station locations`_ (mileages, operators and grid coordinates).
 
         .. _`railway station locations`:
             http://www.railwaycodes.org.uk/stations/station0.shtm

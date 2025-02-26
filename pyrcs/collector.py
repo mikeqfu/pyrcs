@@ -14,7 +14,7 @@ from pyhelpers.ops import confirmed
 
 from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
     TrackDiagrams
-from .other_assets import Buzzer, Depots, Features, HABDWILD, SignalBoxes, Stations, Telegraph, \
+from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
     Tunnels, Viaducts, WaterTroughs
 from .parser import get_category_menu
 from .utils import is_home_connectable, print_conn_err, print_inst_conn_err
@@ -56,6 +56,9 @@ class LineData(_Base):
         :type update: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
 
         :ivar bool connected: Whether the Internet / the Railway Codes website is connected.
         :ivar dict catalogue: The catalogue of the line data.
@@ -220,6 +223,9 @@ class OtherAssets(_Base):
         :type update: bool
         :param verbose: Whether to print relevant information to the console; defaults to ``True``.
         :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
 
         :ivar bool connected: Whether the Internet / the Railway Codes website is connected.
         :ivar dict catalogue: The catalogue of the data.
@@ -229,6 +235,10 @@ class OtherAssets(_Base):
         :ivar Stations Stations: An instance of the :class:`~station.Stations` class.
         :ivar Depots Depots: An instance of the :class:`~depot.Depots` class.
         :ivar Features Features: An instance of the :class:`~feature.Features` class.
+        :ivar HabdWild HabdWild: An instance of the :class:`~habd_wild.HabdWild` class.
+        :ivar WaterTroughs WaterTroughs: An instance of the :class:`~trough.WaterTroughs` class.
+        :ivar Telegraph Telegraph: An instance of the :class:`~telegraph.Telegraph` class.
+        :ivar Buzzer Buzzer: An instance of the :class:`~buzzer.Buzzer` class.
 
         **Examples**::
 
@@ -278,7 +288,7 @@ class OtherAssets(_Base):
         self.Viaducts = Viaducts(**self.cls_init_kwargs)
         self.Stations = Stations(**self.cls_init_kwargs)
         self.Depots = Depots(**self.cls_init_kwargs)
-        self.HABDWILD = HABDWILD(**self.cls_init_kwargs)
+        self.HabdWild = HabdWild(**self.cls_init_kwargs)
         self.WaterTroughs = WaterTroughs(**self.cls_init_kwargs)
         self.Telegraph = Telegraph(**self.cls_init_kwargs)
         self.Buzzer = Buzzer(**self.cls_init_kwargs)

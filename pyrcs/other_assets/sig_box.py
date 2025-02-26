@@ -96,8 +96,7 @@ class SignalBoxes(_Base):
     def collect_prefix_codes(self, initial, confirmation_required=True, verbose=False,
                              raise_error=False):
         """
-        Collects `signal box prefix codes`_ starting with a given initial letter
-        from the source web page.
+        Collects `signal box prefix codes`_ for a given initial letter from the source web page.
 
         .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
 
@@ -149,7 +148,7 @@ class SignalBoxes(_Base):
     def fetch_prefix_codes(self, initial=None, update=False, dump_dir=None, verbose=False,
                            **kwargs):
         """
-        Fetches the data of `signal box prefix codes`_.
+        Fetches data of `signal box prefix codes`_.
 
         .. _`signal box prefix codes`: http://www.railwaycodes.org.uk/signal/signal_boxes0.shtm
 
@@ -296,7 +295,7 @@ class SignalBoxes(_Base):
     def collect_non_national_rail_codes(self, confirmation_required=True, verbose=False,
                                         raise_error=False):
         """
-        Collects the signal box prefix codes for `non-national rail
+        Collects signal box prefix codes for `non-national rail
         <http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm>`_ from the source web page.
 
         :param confirmation_required: Whether user confirmation is required;
@@ -369,7 +368,7 @@ class SignalBoxes(_Base):
 
     def fetch_non_national_rail_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the signal box prefix codes for `non-national rail`_.
+        Fetches signal box prefix codes for `non-national rail`_.
 
         .. _`non-national rail`: http://www.railwaycodes.org.uk/signal/signal_boxesX.shtm
 
@@ -519,7 +518,7 @@ class SignalBoxes(_Base):
 
     def fetch_ireland_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `Irish signal cabin prefix codes`_.
+        Fetches data of `Irish signal cabin prefix codes`_.
 
         .. _`Irish signal cabin prefix codes`:
             http://www.railwaycodes.org.uk/signal/signal_boxes1.shtm
@@ -674,7 +673,7 @@ class SignalBoxes(_Base):
 
     def fetch_wr_mas_dates(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `WR (western region) MAS (multiple aspect signalling) dates`_.
+        Fetches data of `WR (western region) MAS (multiple aspect signalling) dates`_.
 
         .. _`WR (western region) MAS (multiple aspect signalling) dates`:
             http://www.railwaycodes.org.uk/signal/dates.shtm
@@ -813,7 +812,7 @@ class SignalBoxes(_Base):
 
     def fetch_bell_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `bell codes`_.
+        Fetches data of `bell codes`_.
 
         .. _`bell codes`: http://www.railwaycodes.org.uk/signal/bellcodes.shtm
 

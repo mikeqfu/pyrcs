@@ -117,7 +117,9 @@ class TrackDiagrams(_Base):
 
     def collect_catalogue(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects the catalogue of sample railway track diagrams from the source web page.
+        Collects the catalogue of sample `railway track diagrams`_ from the source web page.
+
+        .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
 
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation
@@ -167,7 +169,9 @@ class TrackDiagrams(_Base):
 
     def fetch_catalogue(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the catalogue of railway track diagrams.
+        Fetches the catalogue of `railway track diagrams`_.
+
+        .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
 
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool

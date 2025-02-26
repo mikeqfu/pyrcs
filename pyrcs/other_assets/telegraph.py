@@ -26,7 +26,8 @@ def _parse_telegraph_in_use_term(x):
 
 class Telegraph(_Base):
     """
-    A class for `telegraph code words <http://www.railwaycodes.org.uk/features/telegraph.shtm>`_.
+    A class for collecting data of
+    `telegraph code words <http://www.railwaycodes.org.uk/features/telegraph.shtm>`_.
     """
 
     #: The name of the data.
@@ -168,7 +169,7 @@ class Telegraph(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `telegraph code words`_.
+        Fetches data of `telegraph code words`_.
 
         .. _`telegraph code words`: http://www.railwaycodes.org.uk/misc/telegraph.shtm
 

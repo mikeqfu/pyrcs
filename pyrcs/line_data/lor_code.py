@@ -79,6 +79,30 @@ class LOR(_Base):
         self.valid_prefixes = self.get_keys_to_prefixes(prefixes_only=True)
 
     def validate_prefix(self, prefix):
+        """
+        Validates and standardises a PRIDE/LOR code prefix.
+
+        If the provided `prefix` is not found in the list of valid prefixes, an attempt is made
+        to find the closest matching valid prefix. If no match is found, an error is raised.
+
+        :param prefix: The PRIDE/LOR code prefix to validate.
+        :type prefix: str
+        :raises AssertionError: If the `prefix` is not a valid PRIDE/LOR prefix.
+        :return: A validated and standardised uppercase prefix.
+        :rtype: str
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor.validate_prefix(prefix='cy')
+            'CY'
+            >>> lor.validate_prefix(prefix='ca')
+            Traceback (most recent call last):
+                ...
+            AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
+        """
+
         prefix_ = prefix.upper()
 
         if prefix_ not in self.valid_prefixes:
@@ -90,6 +114,29 @@ class LOR(_Base):
         return prefix_
 
     def get_url(self, prefix):
+        """
+        Generates the URL for the given PRIDE/LOR code prefix.
+
+        This method constructs the appropriate webpage URL based on the provided `prefix`,
+        ensuring that it is valid before appending the correct suffix.
+
+        :param prefix: The PRIDE/LOR code prefix.
+        :type prefix: str
+        :return: A fully constructed URL corresponding to the given prefix.
+        :rtype: str
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor.get_url(prefix='CY')
+            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
+            >>> lor.get_url(prefix='CA')
+            Traceback (most recent call last):
+                ...
+            AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
+        """
+
         url = urllib.parse.urljoin(home_page_url(), '/pride/pride')
 
         prefix_ = self.validate_prefix(prefix)
@@ -398,8 +445,8 @@ class LOR(_Base):
 
     def collect_codes(self, prefix, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects the data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
-        based on the given prefix.
+        Collects data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        for the given prefix.
 
         :param prefix: The prefix of LOR codes to collect.
         :type prefix: str
@@ -481,7 +528,7 @@ class LOR(_Base):
 
     def fetch_codes(self, prefix=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `PRIDE/LOR codes`_.
+        Fetches data of `PRIDE/LOR codes`_.
 
         .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
@@ -645,7 +692,7 @@ class LOR(_Base):
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False,
                                   raise_error=False):
         """
-        Collects the data of
+        Collects data of
         `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
         from the source web page.
 
@@ -694,7 +741,7 @@ class LOR(_Base):
 
     def fetch_elr_lor_converter(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `ELR/LOR converter`_.
+        Fetches data of `ELR/LOR converter`_.
 
         .. _`ELR/LOR converter`: http://www.railwaycodes.org.uk/pride/elrmapping.shtm
 
