@@ -183,9 +183,9 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     records = _check_row_spanned(records, row_spanned)
 
     if isinstance(ths, bs4.Tag):
-        column_names = [th.text.strip() for th in ths.find_all('th')]
+        column_names = [th.get_text(strip=True) for th in ths.find_all('th')]
     elif all(isinstance(x, bs4.Tag) for x in ths):
-        column_names = [th.text.strip() for th in ths]
+        column_names = [th.get_text(strip=True) for th in ths]
     else:
         column_names = copy.copy(ths)
 
@@ -256,7 +256,7 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
     tables = []
     for thead, tbody in zip(theads, tbodies):
-        ths = [th.text.strip() for th in thead.find_all(name='th')]
+        ths = [th.get_text(strip=True) for th in thead.find_all(name='th')]
         trs = tbody.find_all(name='tr')
 
         if as_dataframe:
@@ -408,12 +408,12 @@ def _get_site_map_sub_dl(h3_dl_dts):
     return h3_dl_dt_dd_dict
 
 
-def _get_site_map(source):
+def _get_site_map(source, parser='html.parser'):
     """
     Parses the site map from the given HTML source and returns a structured dictionary.
     """
 
-    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+    soup = bs4.BeautifulSoup(markup=source.content, features=parser)
     site_map = {}
 
     h3s = soup.find_all(name='h3', attrs={"class": "site"})
@@ -484,14 +484,11 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
     path_to_file = cd_data("site-map.json", mkdir=True)
 
     if os.path.isfile(path_to_file) and not update:
-        # site_map = load_data(path_to_file)
-        site_map = load_data(path_to_file, object_pairs_hook=dict)
+        return load_data(path_to_file, object_pairs_hook=dict)
 
     else:
-        site_map = None
-
         if confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
-            if verbose == 2:
+            if verbose in {True, 1}:
                 print("Updating the package data", end=" ... ")
 
             try:
@@ -500,27 +497,26 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
 
             except requests.exceptions.ConnectionError:
                 print_inst_conn_err(update=update, verbose=True if update else verbose)
+                return None
 
-            else:
-                try:
-                    site_map = _get_site_map(source=source)
+            try:
+                site_map = _get_site_map(source=source)
 
-                    if verbose == 2:
-                        print("Done. ")
+                if verbose in {True, 1}:
+                    print("Done.")
 
-                    if site_map is not None:
-                        save_data(site_map, path_to_file, indent=4, verbose=verbose)
+                if site_map:
+                    save_data(site_map, path_to_file, indent=4, verbose=(verbose == 2 or False))
 
-                except Exception as e:
-                    _print_failure_message(
-                        e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
+                return site_map
 
+            except Exception as e:
+                _print_failure_message(
+                    e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
         else:
-            if verbose == 2:
+            if verbose in {True, 1}:
                 print("Cancelled. ")
             # site_map = load_data(path_to_file)
-
-    return site_map
 
 
 def _get_last_updated_date(soup, parsed=True, as_date_type=False):
@@ -624,22 +620,28 @@ def get_financial_year(date):
     return financial_date.year
 
 
-def _parse_h3_paras(h3):
-    p = h3.find_next(name='p')
+def _parse_introduction(source, delimiter='\n'):
+    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+    intro_h3 = [h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
+
+    p = intro_h3.find_next(name='p')
     prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
-    paras = []
-    while prev_h3 == h3 and prev_h4 is None:
+    intro_paras = []
+    while prev_h3 == intro_h3 and prev_h4 is None:
         para_text = p.text.replace('  ', ' ')
-        paras.append(para_text)
+        intro_paras.append(para_text)
 
         p = p.find_next(name='p')
         prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
-    return paras
+    introduction = delimiter.join(intro_paras)
+
+    return introduction
 
 
-def get_introduction(url, delimiter='\n', verbose=True):
+def get_introduction(url, delimiter='\n', update=False, verbose=True, raise_error=False):
     """
     Gets the introduction section of a specified web page.
 
@@ -651,8 +653,13 @@ def get_introduction(url, delimiter='\n', verbose=True):
     :param delimiter: The delimiter used to separate paragraphs in the returned content;
         defaults to ``'\\n'`` (newline).
     :type delimiter: str
+    :param update: Whether to check for updates to the package data; defaults to ``False``.
+    :type update: bool
     :param verbose: Whether to print relevant information to the console; defaults to ``True``.
     :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
     :return: The introductory text from the web page, formatted with the specified delimiter.
     :rtype: str
 
@@ -665,27 +672,59 @@ def get_introduction(url, delimiter='\n', verbose=True):
         "There are thousands of bridges over and under the railway system. These pages attempt to...
     """
 
-    introduction = None
+    intro_filename = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
+        '.shtm', '.pkl').split('/') if x)
+    path_to_file = cd_data("introduction", intro_filename, mkdir=True)
+
+    if os.path.isfile(path_to_file) and not update:
+        return load_data(path_to_file)
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
     except requests.exceptions.ConnectionError:
-        print_inst_conn_err(verbose=verbose)
+        print_conn_err(verbose=verbose)
+        return None
 
+    try:
+        introduction = _parse_introduction(source=source, delimiter=delimiter)
+
+        if introduction:
+            save_data(introduction, path_to_file=path_to_file, verbose=verbose)
+
+        return introduction
+
+    except Exception as e:
+        _print_failure_message(e=e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
+
+
+def _parse_catalogue(source, url):
+    """
+    Extracts a catalogue of links from the provided ``BeautifulSoup4`` object.
+
+    :param source: HTML content.
+    :param url: Base (page) URL to resolve relative links.
+    :return: Typically, a dictionary mapping link text to absolute URLs.
+    """
+
+    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+    # Try to find the primary container, fallback to alternative
+    cold_soup = soup.find(name='div', attrs={'class': 'fixed'}) or soup.find(name='h1')
+
+    # Extract anchor tags (if fallback is used, get all following <a> tags)
+    links = cold_soup.find_all('a') if cold_soup else []
+
+    if len(links) > 0:
+        catalogue = {
+            a.text.replace('\xa0', ' ').strip(): urllib.parse.urljoin(url, a.get('href'))
+            for a in links}
     else:
-        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        catalogue = None
 
-        intro_h3 = [
-            h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
-
-        intro_paras = _parse_h3_paras(intro_h3)
-
-        introduction = delimiter.join(intro_paras)
-
-    return introduction
+    return catalogue
 
 
-def get_catalogue(url, update=False, confirmation_required=True, json_it=True, verbose=False):
+def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=False):
     """
     Gets the catalogue of items from the main page of a data cluster.
 
@@ -696,13 +735,13 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
     :type url: str
     :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
-    :param confirmation_required: Whether user confirmation is required before proceeding;
-        defaults to ``True``.
-    :type confirmation_required: bool
     :param json_it: Whether to save the catalogue as a JSON file; defaults to ``True``.
     :type json_it: bool
     :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
     :return: The catalogue in the form of a dictionary, where keys are entry titles and
         values are URLs, or ``None`` if the operation is unsuccessful.
     :rtype: dict | None
@@ -730,58 +769,35 @@ def get_catalogue(url, update=False, confirmation_required=True, json_it=True, v
         ['W', 'X', 'Y', 'Z', 'Other systems']
     """
 
-    cat_json = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
+    cat_filename = '-'.join(x for x in urllib.parse.urlparse(url).path.replace(
         '.shtm', '.json').split('/') if x)
-    path_to_cat_json = cd_data("catalogue", cat_json, mkdir=True)
+    path_to_file = cd_data("catalogue", cat_filename, mkdir=True)
 
-    if os.path.isfile(path_to_cat_json) and not update:
-        catalogue = load_data(path_to_cat_json)
+    if os.path.isfile(path_to_file) and not update:
+        return load_data(path_to_file)
 
-    else:
-        catalogue = None
+    try:
+        source = requests.get(url=url, headers=fake_requests_headers())
+        source.raise_for_status()
+    except Exception as e:
+        print_inst_conn_err(verbose=verbose, e=e)
+        return None
 
-        if confirmed("To collect/update catalogue?", confirmation_required=confirmation_required):
+    try:
+        catalogue = _parse_catalogue(source=source, url=url)
 
-            try:
-                source = requests.get(url=url, headers=fake_requests_headers())
-            except requests.exceptions.ConnectionError:
-                print_conn_err(verbose=verbose)
+        if catalogue and json_it:
+            save_data(catalogue, path_to_file=path_to_file, verbose=verbose, indent=4)
 
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        return catalogue
 
-                    try:
-                        cold_soup = soup.find(name='div', attrs={'class': 'fixed'})
-
-                        catalogue = {
-                            a.text.replace('\xa0', ' ').strip():
-                                urllib.parse.urljoin(url, a.get('href'))
-                            for a in cold_soup.find_all('a')
-                        }
-
-                    except AttributeError:
-                        cold_soup = soup.find(name='h1').find_all_next(name='a')
-                        # assert all(isinstance(a, bs4.Tag) for a in cold_soup)
-                        # noinspection PyUnresolvedReferences
-                        catalogue = {
-                            a.text.replace('\xa0', ' ').strip():
-                                urllib.parse.urljoin(url, a.get('href')) for a in cold_soup
-                        }
-
-                    if json_it and catalogue is not None:
-                        save_data(catalogue, path_to_cat_json, verbose=verbose, indent=4)
-
-                except Exception as e:
-                    _print_failure_message(e, prefix="Failed to get the catalogue.")
-
-        else:
-            print("The catalogue for the requested data has not been acquired.")
-
-    return catalogue
+    except Exception as e:
+        _print_failure_message(e=e, prefix="Failed.", verbose=verbose, raise_error=raise_error)
+        # print("The catalogue for the requested data has not been acquired.")
 
 
-def get_category_menu(name, update=False, confirmation_required=True, verbose=False):
+def get_category_menu(name, update=False, confirmation_required=True, verbose=False,
+                      raise_error=False):
     """
     Gets a menu of the available classes from the specified URL.
 
@@ -798,6 +814,9 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
     :type confirmation_required: bool
     :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
     :return: A category menu in dictionary form,
         where keys are data cluster names and values are URLs.
     :rtype: dict | None
@@ -818,43 +837,39 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
         "catalogue", f"{name.lower().replace(' ', '-')}-menu.json", mkdir=True)
 
     if os.path.isfile(path_to_menu_json) and not update:
-        cls_menu = load_data(path_to_menu_json)
+        return load_data(path_to_menu_json)
+
+    if confirmed("To collect/update category menu?", confirmation_required=confirmation_required):
+        try:
+            source = requests.get(url=home_page_url(), headers=fake_requests_headers())
+        except requests.exceptions.ConnectionError:
+            print_conn_err(verbose=verbose)
+            return None
+
+        try:
+            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+            drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
+            drop_btn = drop_btn_[0]
+
+            a_href_list = drop_btn.find_next_sibling('div').find_all('a')
+
+            cls_menu_ = [
+                (a.get_text(), urllib.parse.urljoin(home_page_url(), a['href']))
+                for a in a_href_list]
+
+            cls_menu = {name: dict(cls_menu_)}
+
+            save_data(cls_menu, path_to_menu_json, indent=4, verbose=(verbose == 2 or False))
+
+            return cls_menu
+
+        except Exception as e:
+            _print_failure_message(
+                e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
 
     else:
-        cls_menu = None
-
-        if confirmed("To collect/update category menu?", confirmation_required):
-
-            try:
-                source = requests.get(url=home_page_url(), headers=fake_requests_headers())
-            except requests.exceptions.ConnectionError:
-                print_conn_err(verbose=verbose)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
-                    drop_btn = drop_btn_[0]
-
-                    a_href_list = drop_btn.find_next_sibling('div').findChildren('a')
-
-                    cls_menu_ = [
-                        (a.get_text(), urllib.parse.urljoin(home_page_url(), a['href']))
-                        for a in a_href_list]
-
-                    cls_menu = {name: dict(cls_menu_)}
-
-                    if cls_menu is not None:
-                        save_data(cls_menu, path_to_menu_json, indent=4, verbose=verbose)
-
-                except Exception as e:
-                    _print_failure_message(e, prefix="Failed to get the category menu.")
-
-        else:
-            print("The category menu has not been acquired.")
-
-    return cls_menu
+        print("The category menu has not been acquired.")
 
 
 def get_heading_text(heading_tag, elem_tag_name='em'):
@@ -897,7 +912,7 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 
 
 def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', feature_tag_name='h3',
-                       verbose=False):
+                       verbose=False, raise_error=False):
     """
     Gets the catalogue of features from the main page of a data cluster.
 
@@ -915,6 +930,9 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
     :type feature_tag_name: str
     :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
     :return: A dataframe containing the page's feature catalogue with columns for feature, URL and
         heading.
     :rtype: pandas.DataFrame
@@ -949,8 +967,9 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
 
     except requests.exceptions.ConnectionError:
         print_inst_conn_err(verbose=verbose)
+        return None
 
-    else:
+    try:
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
         page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
@@ -979,6 +998,9 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
         page_catalogue['Heading'] = feature_headings
 
         return page_catalogue
+
+    except Exception as e:
+        _print_failure_message(e, verbose=verbose, raise_error=raise_error)
 
 
 def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
