@@ -505,6 +505,25 @@ class ELRMileages(_Base):
                 data=mileage_file, data_name=data_name, ext=".pkl", dump_dir=dump_dir,
                 verbose=verbose)
 
+    def _handle_err404(self, elr, notes_dat, parsed, dump_it, verbose):
+        elr_alt = re.search(r'(?<= )[A-Z]{3}(\d)?', notes_dat).group(0)
+        mileage_file_alt = self.collect_mileage_file(
+            elr=elr_alt, parsed=parsed, confirmation_required=False, dump_it=False,
+            verbose=verbose)
+
+        if notes_dat.startswith('Now'):
+            mileage_file_former = copy.copy(mileage_file_alt)
+
+            mileage_file_alt.update({'Formerly': elr})
+            self._dump_mileage_file(
+                elr_alt, mileage_file=mileage_file_alt, dump_it=dump_it, verbose=verbose)
+
+            mileage_file_former.update(({'Now': elr_alt}))
+            self._dump_mileage_file(
+                elr, mileage_file=mileage_file_former, dump_it=dump_it, verbose=verbose)
+
+        return mileage_file_alt
+
     @staticmethod
     def _get_parsed_contents(elr_dat, notes):
         val_cols = ['Line name', 'Mileages', 'Datum']
@@ -559,6 +578,61 @@ class ELRMileages(_Base):
         parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
 
         return line_name, parsed_content
+
+    def _parse_mileage_and_notes(self, content):
+        # Search for notes
+        notes_dat = []
+        parsed_content = content.copy()
+        # measure_headers = []
+        measure_headers_indices = []
+
+        for _, x in enumerate(content):
+            if len(x) == 1:
+                x_ = x[0] + '.' if x[0].endswith(tuple(string.ascii_letters)) else x[0]
+                notes_dat.append(x_)
+                parsed_content.remove(x)
+            else:
+                mil_dat, txt_dat = x
+                if mil_dat == '':
+                    if txt_dat in self.measure_headers or any(
+                            mh in txt_dat for mh in self.measure_headers):
+                        # measure_headers.append(txt_dat)
+                        measure_headers_indices.append(parsed_content.index(x))
+                    elif 'Revised distances are thus:' in txt_dat:
+                        txt_dat = 'Current measure'
+                        j = parsed_content.index(x)
+                        parsed_content[j] = [mil_dat, txt_dat]
+                        # measure_headers.append(txt_dat)
+                        measure_headers_indices.append(j)
+                    elif 'Later (post-preservation measure)' in txt_dat:
+                        txt_dat = 'Later measure (post-preservation measure)'
+                        j = parsed_content.index(x)
+                        parsed_content[j] = [mil_dat, txt_dat]
+                        measure_headers_indices.append(j)
+                    elif 'Distances in km' in txt_dat or \
+                            'measured from accurate mapping systems' in txt_dat or \
+                            len(txt_dat) >= 25:
+                        notes_dat.append(txt_dat)
+                        parsed_content.remove(x)
+                    elif re.search(r'\b[Mm]easure\b', txt_dat):
+                        # measure_headers.append(txt_dat)
+                        measure_headers_indices.append(parsed_content.index(x))
+
+        if any('Distances in km' in x for x in notes_dat):
+            parsed_content = [
+                [x[0] + 'km', x[1]] if not x[0].endswith('km') else x for x in parsed_content]
+
+        # Create a table of the mileage data
+        mileage_data = pd.DataFrame(parsed_content, columns=['Mileage', 'Node'])
+
+        # If there are multiple measures in 'mileage_data', e.g. current/former measures
+        mileage_data = self._split_measures(
+            mileage_data=mileage_data, measure_headers_indices=measure_headers_indices)
+
+        # Make a dict of note
+        notes_data = {'Notes': ' '.join(notes_dat).strip()}
+
+        return mileage_data, notes_data
 
     def _split_measures(self, mileage_data, measure_headers_indices):
         """
@@ -713,23 +787,7 @@ class ELRMileages(_Base):
 
             notes_dat = elr_data['Notes'].iloc[0]
             if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes_dat):
-                elr_alt = re.search(r'(?<= )[A-Z]{3}(\d)?', notes_dat).group(0)
-                mileage_file_alt = self.collect_mileage_file(
-                    elr=elr_alt, parsed=parsed, confirmation_required=False, dump_it=False,
-                    verbose=verbose)
-
-                if notes_dat.startswith('Now'):
-                    mileage_file_former = copy.copy(mileage_file_alt)
-
-                    mileage_file_alt.update({'Formerly': elr})
-                    self._dump_mileage_file(
-                        elr_alt, mileage_file=mileage_file_alt, dump_it=dump_it, verbose=verbose)
-
-                    mileage_file_former.update(({'Now': elr_alt}))
-                    self._dump_mileage_file(
-                        elr, mileage_file=mileage_file_former, dump_it=dump_it, verbose=verbose)
-
-                return mileage_file_alt
+                return self._handle_err404(elr, notes_dat, parsed, dump_it, verbose)
 
             else:
                 line_name, content = self._get_parsed_contents(elr_data, notes_dat)
@@ -752,57 +810,7 @@ class ELRMileages(_Base):
         # Make a dict of line information
         line_info = {'ELR': elr, 'Line': line_name, 'Sub-Line': sub_headers}
 
-        # Search for notes
-        notes_dat = []
-        parsed_content = content.copy()
-        # measure_headers = []
-        measure_headers_indices = []
-
-        for _, x in enumerate(content):
-            if len(x) == 1:
-                x_ = x[0] + '.' if x[0].endswith(tuple(string.ascii_letters)) else x[0]
-                notes_dat.append(x_)
-                parsed_content.remove(x)
-            else:
-                mil_dat, txt_dat = x
-                if mil_dat == '':
-                    if txt_dat in self.measure_headers or any(
-                            mh in txt_dat for mh in self.measure_headers):
-                        # measure_headers.append(txt_dat)
-                        measure_headers_indices.append(parsed_content.index(x))
-                    elif 'Revised distances are thus:' in txt_dat:
-                        txt_dat = 'Current measure'
-                        j = parsed_content.index(x)
-                        parsed_content[j] = [mil_dat, txt_dat]
-                        # measure_headers.append(txt_dat)
-                        measure_headers_indices.append(j)
-                    elif 'Later (post-preservation measure)' in txt_dat:
-                        txt_dat = 'Later measure (post-preservation measure)'
-                        j = parsed_content.index(x)
-                        parsed_content[j] = [mil_dat, txt_dat]
-                        measure_headers_indices.append(j)
-                    elif 'Distances in km' in txt_dat or \
-                            'measured from accurate mapping systems' in txt_dat or \
-                            len(txt_dat) >= 25:
-                        notes_dat.append(txt_dat)
-                        parsed_content.remove(x)
-                    elif re.search(r'\b[Mm]easure\b', txt_dat):
-                        # measure_headers.append(txt_dat)
-                        measure_headers_indices.append(parsed_content.index(x))
-
-        if any('Distances in km' in x for x in notes_dat):
-            parsed_content = [
-                [x[0] + 'km', x[1]] if not x[0].endswith('km') else x for x in parsed_content]
-
-        # Make a dict of note
-        notes_data = {'Notes': ' '.join(notes_dat).strip()}
-
-        # Create a table of the mileage data
-        mileage_data = pd.DataFrame(parsed_content, columns=['Mileage', 'Node'])
-
-        # If there are multiple measures in 'mileage_data', e.g. current/former measures
-        mileage_data = self._split_measures(
-            mileage_data=mileage_data, measure_headers_indices=measure_headers_indices)
+        mileage_data, notes_data = self._parse_mileage_and_notes(content=content)
 
         if parsed:
             if isinstance(mileage_data, dict) and len(mileage_data) > 1:
@@ -814,7 +822,7 @@ class ELRMileages(_Base):
         mileage_file = dict(
             pair for x in [line_info, {'Mileage': mileage_data}, notes_data] for pair in x.items())
 
-        if verbose == 2:
+        if verbose in {True, 1}:
             print("Done.")
 
         self._dump_mileage_file(

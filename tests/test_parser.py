@@ -32,7 +32,7 @@ def test_parse_table():
 
     source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
 
-    (columns_dat, records_dat), soup = parse_table(source_dat)
+    (columns_dat, records_dat), _ = parse_table(source_dat)
 
     assert columns_dat == ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
     assert isinstance(records_dat, list)
