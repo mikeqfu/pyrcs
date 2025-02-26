@@ -12,12 +12,13 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
+from pyhelpers.dirs import validate_dir
 from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
 from ..utils import collect_in_fetch_verbose, format_confirmation_prompt, home_page_url, \
-    is_home_connectable, print_inst_conn_err, print_void_msg, validate_dir, validate_initial
+    is_home_connectable, print_inst_conn_err, print_void_msg, validate_initial
 
 
 def _parse_raw_location_name(x):
@@ -914,8 +915,8 @@ class LocationIdentifiers(_Base):
         """
 
         other_systems_codes = self._collect_data_from_source(
-            data_name=self.KEY_TO_OTHER_SYSTEMS, method=self._collect_other_systems_codes,
-            # url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS],
+            data_name=self.KEY_TO_OTHER_SYSTEMS.lower(), method=self._collect_other_systems_codes,
+            url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS],
             confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
         return other_systems_codes
@@ -1042,7 +1043,8 @@ class LocationIdentifiers(_Base):
         """
 
         explanatory_notes = self._collect_data_from_source(
-            data_name=self.KEY_TO_MSCEN, method=self._collect_notes,
+            data_name=self.KEY_TO_MSCEN.lower(), method=self._collect_notes,
+            url=self.catalogue[self.KEY_TO_MSCEN],
             confirmation_required=confirmation_required,
             confirmation_prompt=format_confirmation_prompt(data_name=self.KEY_TO_MSCEN.lower()),
             verbose=verbose, raise_error=raise_error)

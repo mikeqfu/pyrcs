@@ -137,7 +137,7 @@ class WaterTroughs(_Base):
             >>> from pyrcs.other_assets import WaterTroughs  # from pyrcs import WaterTroughs
             >>> wt = WaterTroughs()
             >>> wt_codes = wt.collect_codes()
-            To collect data of Water troughs
+            To collect data of water troughs
             ? [No]|Yes: yes
             >>> type(wt_codes)
             dict
@@ -159,7 +159,7 @@ class WaterTroughs(_Base):
         """
 
         water_troughs_codes = self._collect_data_from_source(
-            data_name=self.KEY, method=self._collect_codes, url=self.URL,
+            data_name=self.KEY.lower(), method=self._collect_codes, url=self.URL,
             confirmation_required=confirmation_required,
             confirmation_prompt=f"To collect data of {self.KEY.lower()}\n?",
             verbose=verbose, raise_error=raise_error)

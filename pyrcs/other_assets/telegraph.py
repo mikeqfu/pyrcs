@@ -122,7 +122,7 @@ class Telegraph(_Base):
             >>> from pyrcs.other_assets import Telegraph  # from pyrcs import Telegraph
             >>> tel = Telegraph()
             >>> tel_codes = tel.collect_codes()
-            To collect data of Telegraphic codes
+            To collect data of telegraphic codes
             ? [No]|Yes: yes
             >>> type(tel_codes)
             dict
@@ -159,7 +159,7 @@ class Telegraph(_Base):
         """
 
         telegraph_code_words = self._collect_data_from_source(
-            data_name=self.KEY, method=self._collect_codes, url=self.URL,
+            data_name=self.KEY.lower(), method=self._collect_codes, url=self.URL,
             confirmation_required=confirmation_required,
             confirmation_prompt=f"To collect data of {self.KEY.lower()}\n?",
             verbose=verbose, raise_error=raise_error)

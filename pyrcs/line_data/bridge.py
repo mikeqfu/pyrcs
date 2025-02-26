@@ -29,7 +29,7 @@ class Bridges(_Base):
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
-    def __init__(self, data_dir=None, verbose=True):
+    def __init__(self, data_dir=None, update=False, verbose=True):
         """
         :param data_dir: Directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
@@ -53,7 +53,7 @@ class Bridges(_Base):
 
         super().__init__(
             data_dir=data_dir, content_type='introduction', data_category="line-data",
-            verbose=verbose)
+            update=update, verbose=verbose)
 
     def _parse_h4_ul_li(self, h4_ul_li):
         h4_ul_li_contents = h4_ul_li.contents

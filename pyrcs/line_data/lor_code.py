@@ -564,7 +564,8 @@ class LOR(_Base):
             # Fetch LOR codes
             lor_codes = [
                 self.fetch_codes(
-                    prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False)
+                    prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False,
+                    **kwargs)
                 for p in prefixes if p != 'NZ']
 
             # Retry if all fetches failed
@@ -592,6 +593,10 @@ class LOR(_Base):
             # Get the latest updated date
             latest_update_date = max(filter(None, last_updated_dates), default=None)
             lor_data.update({self.KEY_TO_LAST_UPDATED_DATE: latest_update_date})
+
+        if dump_dir:
+            self._save_data_to_file(
+                data=lor_data, data_name=self.KEY, dump_dir=dump_dir, verbose=verbose)
 
         return lor_data
 

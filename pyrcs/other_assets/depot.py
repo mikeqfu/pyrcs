@@ -134,7 +134,8 @@ class Depots(_Base):
         """
 
         two_char_tops_codes_data = self._collect_data_from_source(
-            data_name=self.KEY_TO_TOPS, method=self._collect_tops_codes,
+            data_name=self.KEY_TO_TOPS.lower(), method=self._collect_tops_codes,
+            url=self.catalogue[self.KEY_TO_TOPS],
             confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
         return two_char_tops_codes_data
@@ -612,7 +613,7 @@ class Depots(_Base):
 
         return gwr_depot_codes
 
-    def fetch_codes(self, update=False, dump_dir=None, verbose=False):
+    def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
         Fetches the data of `depot codes`_.
 
@@ -673,7 +674,7 @@ class Depots(_Base):
         depot_data = []
         for func in dir(self):
             if re.match(r'fetch_(.*)_codes', func):
-                depot_data.append(getattr(self, func)(update=update, verbose=verbose_))
+                depot_data.append(getattr(self, func)(update=update, verbose=verbose_, **kwargs))
 
         depot_codes = {
             self.KEY: {next(iter(x)): next(iter(x.values())) for x in depot_data},

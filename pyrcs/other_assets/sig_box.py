@@ -743,7 +743,7 @@ class SignalBoxes(_Base):
             self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
         }
 
-        if verbose == 2:
+        if verbose in {True, 1}:
             print("Done.")
 
         self._save_data_to_file(data=bell_codes, data_name=self.KEY_TO_BELL_CODES, verbose=verbose)

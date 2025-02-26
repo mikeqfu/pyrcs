@@ -52,8 +52,8 @@ def _parse_notes(h3):
     while next_p and next_p.find_previous('h3') == h3:
         notes_2 = get_hypertext(hypertext_tag=next_p, hyperlink_tag_name='a')
         if notes_2:
-            notes_2 = notes_2.replace(' Section codes known at present are:', '') \
-                             .replace('Known prefixes are:', ' ')
+            notes_2 = notes_2.replace(' Section codes known at present are:', '').replace(
+                'Known prefixes are:', ' ')
             notes_.append(notes_2)
 
         next_p = next_p.find_next('p')
@@ -70,7 +70,7 @@ def _parse_data_with_lists(h3, ul):
     table_1 = {data_1_key: None}
     if ul:
         table_1[data_1_key] = pd.DataFrame(
-            [re.sub(r'[()]', '', li.text).split(' ', 1) for li in ul.findChildren('li')
+            [re.sub(r'[()]', '', li.text).split(' ', 1) for li in ul.find_all('li')
              if li.text.strip()],
             columns=['Code', 'Area'])
 
@@ -93,7 +93,7 @@ def _parse_data_with_lists(h3, ul):
 def _parse_lists_only(h3, ul):
     sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
-    list_data = [get_hypertext(x) for x in ul.findChildren('li')] if ul else []
+    list_data = [get_hypertext(x) for x in ul.find_all('li')] if ul else []
     notes = (_parse_notes(h3) or "").strip().replace(' were:', '.')
 
     codes_with_lists = {sub_heading: {'Codes': list_data, 'Notes': notes}}
@@ -377,8 +377,9 @@ class Electrification(_Base):
 
         national_network_ole = self._collect_data_from_source(
             data_name=self.KEY_TO_NATIONAL_NETWORK, method=self._collect_elec_codes,
+            url=self.catalogue[self.KEY_TO_NATIONAL_NETWORK],
             confirmation_required=confirmation_required,
-            confirmation_prompt=self._confirm_to_collect,
+            confirmation_prompt=self._confirm_to_collect(self.KEY_TO_NATIONAL_NETWORK),
             verbose=verbose, raise_error=raise_error)
 
         return national_network_ole
@@ -493,8 +494,8 @@ class Electrification(_Base):
                 verbose=verbose)
 
             self._save_data_to_file(
-                data=indep_line_names, data_name=data_name, ext=ext,
-                dump_dir=cd_data("catalogue"), verbose=verbose)
+                data=indep_line_names, data_name=data_name, ext=ext, dump_dir=cd_data("catalogue"),
+                verbose=verbose)
 
         return indep_line_names
 
@@ -550,7 +551,7 @@ class Electrification(_Base):
         independent_lines_ole = self._collect_data_from_source(
             data_name=self.KEY_TO_INDEPENDENT_LINES, method=self._collect_elec_codes,
             confirmation_required=confirmation_required,
-            confirmation_prompt=self._confirm_to_collect,
+            confirmation_prompt=self._confirm_to_collect(self.KEY_TO_INDEPENDENT_LINES),
             verbose=verbose, raise_error=raise_error)
 
         return independent_lines_ole
@@ -675,7 +676,8 @@ class Electrification(_Base):
         ohns_data = self._collect_data_from_source(
             data_name=self.KEY_TO_OHNS, method=self._collect_elec_codes,
             parser_func=_parse_ohns_codes, confirmation_required=confirmation_required,
-            confirmation_prompt=self._confirm_to_collect, verbose=verbose, raise_error=raise_error)
+            confirmation_prompt=self._confirm_to_collect(self.KEY_TO_OHNS), verbose=verbose,
+            raise_error=raise_error)
 
         return ohns_data
 
@@ -787,8 +789,8 @@ class Electrification(_Base):
         etz_ole = self._collect_data_from_source(
             data_name=self.KEY_TO_ETZ, method=self._collect_elec_codes,
             confirmation_required=confirmation_required,
-            confirmation_prompt=self._confirm_to_collect,
-            verbose=verbose, raise_error=raise_error)
+            confirmation_prompt=self._confirm_to_collect(self.KEY_TO_ETZ), verbose=verbose,
+            raise_error=raise_error)
 
         return etz_ole
 
@@ -893,7 +895,7 @@ class Electrification(_Base):
         codes = []
         for func in dir(self):
             if re.match(r'fetch_(.*)_codes', func):
-                codes.append(getattr(self, func)(update=update, verbose=verbose_))
+                codes.append(getattr(self, func)(update=update, verbose=verbose_, **kwargs))
 
         data = {
             self.KEY: {next(iter(x)): next(iter(x.values())) for x in codes},

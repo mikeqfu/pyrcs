@@ -13,7 +13,7 @@ import pandas as pd
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
 from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg, \
-    save_data_to_file, validate_page_name
+    validate_page_name
 
 
 class Tunnels(_Base):
@@ -397,8 +397,7 @@ class Tunnels(_Base):
             }
 
         if dump_dir is not None:
-            save_data_to_file(
-                self, data=tunnel_lengths, data_name=self.KEY, ext=".pkl",
-                dump_dir=dump_dir, verbose=verbose)
+            self._save_data_to_file(
+                data=tunnel_lengths, data_name=self.KEY, dump_dir=dump_dir, verbose=verbose)
 
         return tunnel_lengths
