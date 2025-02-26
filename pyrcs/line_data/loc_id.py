@@ -711,8 +711,10 @@ class LocationIdentifiers(_Base):
 
     def fetch_loc_id(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Collects `CRS, NLC, TIPLOC, STANME and STANOX codes
-        <http://www.railwaycodes.org.uk/crs/crs0.shtm>`_ for a given initial letter.
+        Fetches data of `CRS, NLC, TIPLOC, STANME and STANOX codes`_ for a given initial letter.
+
+        .. _`CRS, NLC, TIPLOC, STANME and STANOX codes`:
+            http://www.railwaycodes.org.uk/crs/crs0.shtm
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of a location name.
         :type initial: str

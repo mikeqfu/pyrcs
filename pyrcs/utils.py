@@ -226,7 +226,7 @@ def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     :type data_name: str
     :param initial: The initial letter for the code; defaults to ``None``.
     :type initial: str | None
-    :param ending: The ending of the confirmation message; defaults to ``"\n?"``.
+    :param ending: The ending of the confirmation message; defaults to ``"\\n?"``.
     :type ending: str
     :return: A confirmation message asking whether to proceed with the dataset collection.
     :rtype: str

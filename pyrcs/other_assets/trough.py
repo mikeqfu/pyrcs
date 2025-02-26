@@ -115,9 +115,9 @@ class WaterTroughs(_Base):
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects codes of
-        `water troughs locations <http://www.railwaycodes.org.uk/misc/troughs.shtm>`_
-        from the source web page.
+        Collects codes of `water troughs locations`_ from the source web page.
+
+        .. _`water troughs locations`: http://www.railwaycodes.org.uk/misc/troughs.shtm
 
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation

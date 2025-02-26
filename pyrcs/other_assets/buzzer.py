@@ -76,8 +76,9 @@ class Buzzer(_Base):
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects data of `buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.shtm>`_
-        from the source web page.
+        Collects data of `buzzer codes`_ from the source web page.
+
+        .. _`buzzer codes`: http://www.railwaycodes.org.uk/misc/buzzer.shtm
 
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation

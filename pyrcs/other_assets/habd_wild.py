@@ -1,5 +1,7 @@
 """
-Collects codes of `HABD and WILD <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_.
+Collects codes of `HABD and WILD`_.
+
+..`HABD and WILD`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 """
 
 import urllib.parse
@@ -90,8 +92,9 @@ class HABDWILD(_Base):
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects codes of `HABDs and WILDs <http://www.railwaycodes.org.uk/misc/habdwild.shtm>`_
-        from the source web page.
+        Collects codes of `HABDs and WILDs`_ from the source web page.
+
+        .. _`HABDs and WILDs`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 
         .. note::
 

@@ -100,9 +100,9 @@ class Telegraph(_Base):
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects data of
-        `telegraph code words <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
-        from the source web page.
+        Collects data of `telegraph code words`_ from the source web page.
+
+        .. _`telegraph code words`: http://www.railwaycodes.org.uk/misc/telegraph.shtm
 
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation
