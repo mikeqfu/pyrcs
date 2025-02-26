@@ -11,7 +11,7 @@ from .utils import is_home_connectable, print_conn_err
 
 def _update_prepacked_data(verbose=False, interval=5, **kwargs):
     """
-    Update pre-packed data.
+    Updates pre-packed data.
 
     :param verbose: Whether to print relevant information to the console; defaults to ``True``.
     :type verbose: bool | int

@@ -13,7 +13,7 @@ import inspect
 import itertools
 
 from .buzzer import Buzzer
-from .habd_wild import HABDWILD
+from .habd_wild import HabdWild
 from .telegraph import Telegraph
 from .trough import WaterTroughs
 from .._base import _Base
@@ -22,7 +22,7 @@ from ..utils import fetch_all_verbose, is_home_connectable
 
 class Features(_Base):
     """
-    A class for collecting codes of several infrastructure features, including
+    A class for collecting data of several infrastructure features, including
     *HABDs and WILDs*, *water troughs locations*, *telegraph code words* and *buzzer codes*.
     """
 
@@ -32,7 +32,7 @@ class Features(_Base):
     KEY: str = 'Features'
 
     #: The key for accessing the data of *HABD* and *WILD*.
-    KEY_TO_HABD_WILD: str = HABDWILD.KEY
+    KEY_TO_HABD_WILD: str = HabdWild.KEY
     #: The key for accessing the data of *water troughs*.
     KEY_TO_TROUGH: str = WaterTroughs.KEY
     #: The key for accessing the data of *telegraph codes*.
@@ -41,7 +41,7 @@ class Features(_Base):
     KEY_TO_BUZZER: str = Buzzer.KEY
 
     #: The URL of the main web page for the data.
-    URL: str = HABDWILD.URL
+    URL: str = HabdWild.URL
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -115,7 +115,7 @@ class Features(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the codes of infrastructure features.
+        Fetches data of infrastructure features.
 
         Including:
 

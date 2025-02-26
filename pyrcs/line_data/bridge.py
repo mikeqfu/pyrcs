@@ -43,7 +43,7 @@ class Bridges(_Base):
 
         **Examples**::
 
-            >>> from pyrcs.line_data import Bridges  # alternatively, from pyrcs import Bridges
+            >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
             >>> bdg = Bridges()
             >>> bdg.NAME
             'Railway bridges'
@@ -102,7 +102,7 @@ class Bridges(_Base):
 
     def _parse_source(self, source, verbose=False):
         """
-        Scrapes the data of `railway bridges`_ from its source webpage.
+        Scrapes codes of `railway bridges`_ from its source webpage.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
@@ -149,7 +149,7 @@ class Bridges(_Base):
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects the data of `railway bridges`_ from its source webpage.
+        Collects codes of `railway bridges`_ from its source webpage.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
@@ -207,7 +207,7 @@ class Bridges(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the codes of `railway bridges`_.
+        Fetches codes of `railway bridges`_.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
@@ -260,7 +260,7 @@ class Bridges(_Base):
         }
         kwargs.update(args)
 
-        data = self._fetch_data_from_file(
+        bridges_data = self._fetch_data_from_file(
             update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
-        return data
+        return bridges_data

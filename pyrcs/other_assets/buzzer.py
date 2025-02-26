@@ -11,7 +11,8 @@ from ..utils import cd_data, home_page_url
 
 class Buzzer(_Base):
     """
-    A class for `buzzer codes <http://www.railwaycodes.org.uk/features/buzzer.shtm>`_.
+    A class for collecting data of
+    `buzzer codes <http://www.railwaycodes.org.uk/features/buzzer.shtm>`_.
     """
 
     #: The name of the data.
@@ -128,7 +129,7 @@ class Buzzer(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `buzzer codes`_.
+        Fetches data of `buzzer codes`_.
 
         .. _`buzzer codes`: http://www.railwaycodes.org.uk/misc/buzzer.shtm
 

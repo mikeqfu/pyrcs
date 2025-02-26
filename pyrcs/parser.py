@@ -596,7 +596,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
 
 def get_financial_year(date):
     """
-    Convert the calendar year of a given date to the corresponding financial year.
+    Gets the financial year of a given date.
 
     The financial year runs from 1st April to 31st March of the following year.
     This function takes a date and determines the financial year it falls into.

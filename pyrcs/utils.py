@@ -353,7 +353,7 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
 
 def print_void_msg(data_name, verbose):
     """
-    Print a message when the data collection process fails.
+    Prints a message when the data collection process fails.
 
     :param data_name: The name of the data being collected.
     :type data_name: str

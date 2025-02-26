@@ -191,7 +191,7 @@ class Tunnels(_Base):
 
     def collect_codes(self, page_no, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects data of `railway tunnel lengths`_ for a specified page number
+        Collects data of `railway tunnel lengths`_ for a specific page number
         from the source web page.
 
         .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
@@ -284,7 +284,7 @@ class Tunnels(_Base):
 
     def fetch_codes(self, page_no=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `railway tunnel lengths`_.
+        Fetches data of `railway tunnel lengths`_.
 
         .. _`railway tunnel lengths`: http://www.railwaycodes.org.uk/tunnels/tunnels0.shtm
 

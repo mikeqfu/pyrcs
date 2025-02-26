@@ -142,7 +142,7 @@ class Depots(_Base):
 
     def fetch_tops_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `two-character TOPS codes`_.
+        Fetches data of `two-character TOPS codes`_.
 
         .. _`two-character TOPS codes`: http://www.railwaycodes.org.uk/depots/depots1.shtm
 
@@ -286,7 +286,7 @@ class Depots(_Base):
 
     def fetch_pre_tops_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `four-digit pre-TOPS codes`_.
+        Fetches data of `four-digit pre-TOPS codes`_.
 
         .. _`four-digit pre-TOPS codes`: http://www.railwaycodes.org.uk/depots/depots2.shtm
 
@@ -411,7 +411,7 @@ class Depots(_Base):
 
     def fetch_1950_system_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `1950 system (pre-TOPS) codes`_.
+        Fetches data of `1950 system (pre-TOPS) codes`_.
 
         .. _`1950 system (pre-TOPS) codes`: http://www.railwaycodes.org.uk/depots/depots3.shtm
 
@@ -562,7 +562,7 @@ class Depots(_Base):
 
     def fetch_gwr_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `Great Western Railway (GWR) depot codes`_.
+        Fetches data of `Great Western Railway (GWR) depot codes`_.
 
         .. _`Great Western Railway (GWR) depot codes`:
             http://www.railwaycodes.org.uk/depots/depots4.shtm
@@ -615,7 +615,7 @@ class Depots(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the data of `depot codes`_.
+        Fetches data of `depot codes`_.
 
         .. _`depot codes`: http://www.railwaycodes.org.uk/depots/depots0.shtm
 

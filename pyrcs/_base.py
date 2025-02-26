@@ -21,6 +21,9 @@ from .utils import cd_data, collect_in_fetch_verbose, format_confirmation_prompt
 
 
 class _Base:
+    """
+    The base class for handling railway codes and related data.
+    """
 
     #: The name of the data.
     NAME: str = 'Railway Codes and other data'
@@ -34,8 +37,6 @@ class _Base:
     def __init__(self, data_dir=None, content_type=None, data_category="", data_cluster=None,
                  update=False, verbose=True):
         """
-        Initialises the base class for handling railway codes and related data.
-
         :param data_dir: Path to the directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
         :param content_type: Type of content to process, defaults to ``None``.
@@ -202,7 +203,7 @@ class _Base:
 
     def _fallback_data(self, key=None, additional_fields=None):
         """
-        Creates a fallback data dictionary in case of failure.
+        Returns a fallback data dictionary in case of failure.
         """
 
         if not key:
