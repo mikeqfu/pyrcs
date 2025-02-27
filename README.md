@@ -4,6 +4,7 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs)](https://docs.python.org/3/)
 [![License](https://img.shields.io/github/license/mikeqfu/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
 [![Read the Docs - Documentation](https://img.shields.io/readthedocs/pyrcs?logo=readthedocs)](https://pyrcs.readthedocs.io/en/latest/?badge=latest)
+[![GitHub Pages - Documentation](https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&label=docs)](https://mikeqfu.github.io/pyrcs/)
 [![Codacy - Code Quality](https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5)](https://app.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![DOI](https://img.shields.io/badge/10.5281%2Fzenodo.4026744-blue?label=doi)](https://doi.org/10.5281/zenodo.4026744)
 
