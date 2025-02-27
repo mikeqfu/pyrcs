@@ -9,7 +9,8 @@ import pkgutil
 from .collector import LineData, OtherAssets
 from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
     TrackDiagrams
-from .other_assets import Depots, Features, SignalBoxes, Stations, Tunnels, Viaducts
+from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
+    Tunnels, Viaducts, WaterTroughs
 
 metadata = json.loads(pkgutil.get_data(__name__, "data/.metadata").decode())
 
@@ -37,10 +38,14 @@ __all__ = [
     'LOR',
     'TrackDiagrams',
     'Bridges',
-    'Depots',
-    'Features',
     'SignalBoxes',
-    'Stations',
     'Tunnels',
     'Viaducts',
+    'Stations',
+    'Depots',
+    'Features',
+    'HabdWild',
+    'WaterTroughs',
+    'Telegraph',
+    'Buzzer',
 ]
