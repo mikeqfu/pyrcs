@@ -9,7 +9,7 @@ PyRCS
     :target: https://pypi.org/project/pyrcs/
 .. |PyPI - Python Version| image:: https://img.shields.io/pypi/pyversions/pyrcs
     :alt: PyPI - Python Version
-    :target: https://www.python.org/downloads/
+    :target: https://docs.python.org/3/
 .. |Read the Docs - Documentation| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
     :alt: Read the Docs - Documentation
     :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
