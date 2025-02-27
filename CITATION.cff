@@ -1,0 +1,85 @@
+cff-version: 1.2.0
+title: >-
+  PyRCS: An open-source tool for collecting railway codes
+  used in different UK rail industry systems
+message: >-
+  If you use PyRCS and/or any code from its GitHub
+  repository, please cite it using the metadata provided in
+  this file. For specific version references of PyRCS,
+  please refer to Zenodo
+type: software
+authors:
+  - given-names: Qian
+    family-names: Fu
+    email: q.fu@bham.ac.uk
+    affiliation: University of Birmingham
+    orcid: 'https://orcid.org/0000-0002-6502-9934'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.4026744
+    description: >-
+      This DOI represents all versions of PyRCS, and will
+      always resolve to the latest one.
+repository-code: 'https://github.com/mikeqfu/pyrcs'
+url: 'https://mikeqfu.github.io/pyrcs/'
+repository: 'https://pyrcs.readthedocs.io/'
+repository-artifact: 'https://pypi.org/project/pyrcs/'
+abstract: >-
+  PyRCS is an open-source Python package designed to
+  simplify the collection and management of diverse codes
+  used in different systems within the UK rail industry. It
+  serves as a practical toolkit for researchers,
+  practitioners, and individuals who frequently interact
+  with the Railway Codes website and work extensively with
+  railway codes in the UK. Leveraging the capabilities of
+  the Python programming language, PyRCS enables efficient
+  access to and manipulation of railway code data, enhancing
+  productivity and effectiveness in working with these
+  codes.
+
+  During installation, PyRCS includes a set of pre-packaged
+  data. When users request data from a specific category
+  listed on the Railway Codes website, PyRCS automatically
+  loads the corresponding pre-packaged data for that
+  category by default. Additionally, it provides
+  functionality that enables direct access to the latest
+  data from the data source website, ensuring users can stay
+  updated with the most current information. Furthermore,
+  PyRCS users can conveniently update the relevant
+  pre-packaged data, keeping their data resources
+  synchronized with the latest developments.
+
+  With PyRCS, users can leverage Python's power to
+  streamline workflows and enhance productivity when working
+  with railway codes in the UK rail industry.
+keywords:
+  - Python
+  - Railway
+  - Railway Codes
+  - Bridges
+  - Computer Reservation System
+  - CRS
+  - National Location Codes
+  - NLC
+  - Timing Point Locations
+  - TIPLOC
+  - Station Number Names
+  - STANME
+  - Station Numbers
+  - STANOX
+  - Electrification
+  - Engineer's Line References
+  - ELR
+  - Mileage
+  - Line Of Route
+  - LOR
+  - Railway Line Names
+  - Railway Bridges
+  - Stations
+  - Signal Boxes
+  - Tunnels
+  - Viaducts
+  - Depots
+  - Tracks
+license: MIT
+date-released: '2020-09-12'
