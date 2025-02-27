@@ -2,7 +2,7 @@
 PyRCS
 #####
 
-|PyPI - Version| |PyPI - Python Version| |Read the Docs - Documentation| |GitHub Pages - Documentation| |License| |Codacy - Code Quality| |DOI|
+|PyPI - Version| |PyPI - Python Version| |Read the Docs - Documentation| |GitHub Actions Workflow Status| |License| |Codacy - Code Quality| |DOI|
 
 .. |PyPI - Version| image:: https://img.shields.io/pypi/v/pyrcs
     :alt: PyPI - Version
@@ -13,9 +13,9 @@ PyRCS
 .. |Read the Docs - Documentation| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
     :alt: Read the Docs - Documentation
     :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
-.. |GitHub Pages - Documentation| image:: https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&label=docs
-    :alt: GitHub Pages - Documentation
-    :target: https://mikeqfu.github.io/pyrcs/
+.. |GitHub Actions Workflow Status| image:: https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&branch=master
+    :alt: GitHub Actions Workflow Status
+    :target: https://github.com/mikeqfu/pyrcs/actions
 .. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
     :alt: License
     :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE

@@ -11,7 +11,7 @@ import unicodedata
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import cd_data, home_page_url
+from ..utils import home_page_url
 
 
 def _decode_vulgar_fraction(x):
@@ -109,7 +109,7 @@ class WaterTroughs(_Base):
             print("Done.")
 
         self._save_data_to_file(
-            data=water_troughs_codes, data_name=self.KEY, dump_dir=cd_data("features"),
+            data=water_troughs_codes, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
             verbose=verbose)
 
         return water_troughs_codes
@@ -211,7 +211,7 @@ class WaterTroughs(_Base):
         args = {
             'data_name': self.KEY,
             'method': self.collect_codes,
-            'data_dir': cd_data("features"),
+            'data_dir': self._cdd("..", "features"),
         }
         kwargs.update(args)
 

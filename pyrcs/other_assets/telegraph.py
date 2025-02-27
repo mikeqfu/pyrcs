@@ -8,7 +8,7 @@ import bs4
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import cd_data, home_page_url
+from ..utils import home_page_url
 
 
 def _parse_telegraph_in_use_term(x):
@@ -94,7 +94,7 @@ class Telegraph(_Base):
             print("Done.")
 
         self._save_data_to_file(
-            data=telegraph_code_words, data_name=self.KEY, dump_dir=cd_data("features"),
+            data=telegraph_code_words, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
             verbose=verbose)
 
         return telegraph_code_words
@@ -226,7 +226,7 @@ class Telegraph(_Base):
         args = {
             'data_name': self.KEY,
             'method': self.collect_codes,
-            'data_dir': cd_data("features"),
+            'data_dir': self._cdd("..", "features"),
         }
         kwargs.update(args)
 
