@@ -1,5 +1,5 @@
 ===========
-Use of data
+Use of Data
 ===========
 
-For the use of the data pre-packed with, and collected by, PyRCS, please refer to this link: http://www.railwaycodes.org.uk/misc/contributing.shtm
+For information on using the data pre-packaged with and collected by PyRCS, please refer to the `Use/Contribute <http://www.railwaycodes.org.uk/misc/contributing.shtm>`_ page.
