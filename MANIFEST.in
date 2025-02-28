@@ -1,5 +1,6 @@
 # Include package data
+include LICENSE
 recursive-include pyrcs/data *
 
 # Exclude tests
-recursive-exclude tests *
+prune tests
