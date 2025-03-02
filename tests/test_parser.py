@@ -56,19 +56,18 @@ def test_parse_date():
 def test_get_site_map():
     from pyrcs.parser import get_site_map
 
-    site_map_dat = get_site_map(update=True, confirmation_required=False, verbose=True)
+    main_keys = ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
+    home_value = {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
 
+    site_map_dat = get_site_map(update=True, confirmation_required=False, verbose=True)
     assert isinstance(site_map_dat, dict)
-    assert list(site_map_dat.keys()) == [
-        'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
-    assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
+    assert list(site_map_dat.keys()) == main_keys
+    assert site_map_dat['Home'] == home_value
 
     site_map_dat = get_site_map()
-
     assert isinstance(site_map_dat, dict)
-    assert list(site_map_dat.keys()) == [
-        'Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
-    assert site_map_dat['Home'] == {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
+    assert list(site_map_dat.keys()) == main_keys
+    assert site_map_dat['Home'] == home_value
 
 
 def test_get_last_updated_date():
