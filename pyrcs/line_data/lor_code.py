@@ -278,8 +278,9 @@ class LOR(_Base):
     def collect_page_urls(self, confirmation_required=True, verbose=False, raise_error=False):
         # noinspection PyShadowingNames
         """
-        Collects a list of URLs to
-        `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ web pages.
+        Collects a list of URLs to `PRIDE/LOR codes`_ web pages.
+
+        .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation
