@@ -86,10 +86,11 @@ def test_print_void_msg(capfd):
 
 def test_cd_data():
     from pyrcs.utils import cd_data
+    from pyhelpers.dirs import normalize_pathname
     import os
 
     path_to_dat_dir = cd_data(data_dir="data")
-    assert os.path.relpath(path_to_dat_dir) == 'pyrcs\\data'
+    assert normalize_pathname(os.path.relpath(path_to_dat_dir)) == normalize_pathname('pyrcs\\data')
 
 
 def test_fetch_location_names_errata():
