@@ -14,7 +14,7 @@ import dateutil.parser
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
@@ -320,89 +320,105 @@ def parse_date(str_date, as_date_type=False):
 # == Extract information ===========================================================================
 
 
-def _parse_dd_or_dt_contents(dd_or_dt_contents):
+def _parse_dd_or_dt(dd_or_dt):
+    """
+    Extracts text and href attributes from dt or dd elements.
+    """
+
+    dd_or_dt_contents = dd_or_dt.contents
+
     if len(dd_or_dt_contents) == 1:
         content = dd_or_dt_contents[0]
         if isinstance(content, str):
-            text = content
-            href = None
+            text, href = content, None
         else:
             text = content.get_text(strip=True)
-            href = content.get(key='href') if content.name == 'a' else ''
+            href = content.get(key='href') if content.name == 'a' else None
 
-    else:  # len(dd_or_dt_contents) == 2:
+    # Case 2: Two elements (text with a hyperlink reference)
+    else:
         a_href, text = dd_or_dt_contents
         if not isinstance(text, str):
             text, a_href = dd_or_dt_contents
+        # if re.search(r'\((.*?)\)', text) and text[1].islower():
+        #     text = f'{text[1].upper()}{text[2:-1]}'
+        href = a_href.find('a').get('href')
 
-        text = re.search(r'\((.*?)\)', text).group(1)
-        text = text[0].capitalize() + text[1:]
-        href = a_href.find(name='a').get(key='href')
+    return text.replace("–", "-"), href
 
-    return text, href
+
+def _get_site_map_h3_dl_dt_dds(h3_dl_dt, next_dd=None):
+    if next_dd is None:
+        next_dd = h3_dl_dt.find_next('dd')
+
+    prev_dt = next_dd.find_previous(name='dt')
+
+    h3_dl_dt_dds = {}
+    while prev_dt == h3_dl_dt:
+        next_dd_sub_dl_ = next_dd.find('dl')
+
+        if next_dd_sub_dl_ is None:
+            next_dd_contents = [x for x in next_dd.contents if x != '\n']
+
+            if len(next_dd_contents) == 1:
+                next_dd_content = next_dd_contents[0]
+                text = next_dd_content.get_text(strip=True)
+                href = next_dd_content.get(key='href')
+
+            else:  # len(next_dd_contents) == 2:
+                a_href, text = next_dd_contents
+                if not isinstance(text, str):
+                    text, a_href = next_dd_contents
+
+                href = a_href.find(name='a').get(key='href')
+
+            h3_dl_dt_dds.update(
+                {text.replace("–", "-"): urllib.parse.urljoin(home_page_url(), href)})
+
+        else:
+            sub_dts = next_dd_sub_dl_.find_all(name='dt')
+
+            for sub_dt in sub_dts:
+                sub_dt_text, _ = _parse_dd_or_dt(sub_dt)
+                sub_dt_dds = sub_dt.find_next_siblings(name='dd')
+                sub_dt_dds_dict = _get_site_map_sub_dl(h3_dl_dts=sub_dt_dds)
+
+                h3_dl_dt_dds.update({sub_dt_text.replace("–", "-"): sub_dt_dds_dict})
+
+        try:
+            next_dd = next_dd.find_next_sibling(name='dd')
+            prev_dt = next_dd.find_previous_sibling(name='dt')
+        except AttributeError:
+            break
+
+    return h3_dl_dt_dds
 
 
 def _get_site_map_sub_dl(h3_dl_dts):
+    """
+    Recursively processes nested dl/dt/dd elements to build a structured dictionary.
+    """
+
     h3_dl_dt_dd_dict = {}
 
     for h3_dl_dt in h3_dl_dts:
+        dt_text, dt_href = _parse_dd_or_dt(dd_or_dt=h3_dl_dt)
 
-        dt_text, dt_href = _parse_dd_or_dt_contents(h3_dl_dt.contents)
-
-        if dt_href is not None:
-            dt_link = urllib.parse.urljoin(home_page_url(), dt_href)
-            h3_dl_dt_dd_dict.update({dt_text: dt_link})
+        if dt_href:
+            h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(home_page_url(), dt_href)})
 
         else:
             next_dd = h3_dl_dt.find_next('dd')
-            prev_dt = next_dd.find_previous(name='dt')
-            next_dd_sub_dl = next_dd.find(name='dl')
+            next_dd_sub_dl = next_dd.find(name='dd')
 
-            if next_dd_sub_dl is not None:
-                next_dd_sub_dl_dts = next_dd_sub_dl.find_all(name='dt')
-                h3_dl_dt_dd_dict = _get_site_map_sub_dl(next_dd_sub_dl_dts)
+            if next_dd_sub_dl:
+                # next_dd_sub_dl_dts = next_dd_sub_dl.find_all(name='dt')
+                next_dd_sub_dl_dts = [
+                    dt for dt in next_dd.find_all(name='dt') if dt.has_attr('class')]
+                h3_dl_dt_dd_dict.update({dt_text: _get_site_map_sub_dl(next_dd_sub_dl_dts)})
 
             else:
-                h3_dl_dt_dds = {}
-                while prev_dt == h3_dl_dt:
-                    next_dd_sub_dl_ = next_dd.find('dl')
-
-                    if next_dd_sub_dl_ is None:
-                        next_dd_contents = [x for x in next_dd.contents if x != '\n']
-
-                        if len(next_dd_contents) == 1:
-                            next_dd_content = next_dd_contents[0]
-                            text = next_dd_content.get_text(strip=True)
-                            href = next_dd_content.get(key='href')
-
-                        else:  # len(next_dd_contents) == 2:
-                            a_href, text = next_dd_contents
-                            if not isinstance(text, str):
-                                text, a_href = next_dd_contents
-
-                            text = re.search(r'\((.*?)\)', text).group(1)
-                            text = text[0].capitalize() + text[1:]
-                            href = a_href.find(name='a').get(key='href')
-
-                        link = urllib.parse.urljoin(home_page_url(), href)
-                        h3_dl_dt_dds.update({text: link})
-
-                    else:
-                        sub_dts = next_dd_sub_dl_.find_all(name='dt')
-
-                        for sub_dt in sub_dts:
-                            sub_dt_text, _ = _parse_dd_or_dt_contents(sub_dt.contents)
-                            sub_dt_dds = sub_dt.find_next_siblings(name='dd')
-                            sub_dt_dds_dict = _get_site_map_sub_dl(sub_dt_dds)
-
-                            h3_dl_dt_dds.update({sub_dt_text: sub_dt_dds_dict})
-
-                    try:
-                        next_dd = next_dd.find_next_sibling(name='dd')
-                        prev_dt = next_dd.find_previous_sibling(name='dt')
-                    except AttributeError:
-                        break
-
+                h3_dl_dt_dds = _get_site_map_h3_dl_dt_dds(h3_dl_dt=h3_dl_dt, next_dd=next_dd)
                 h3_dl_dt_dd_dict.update({dt_text: h3_dl_dt_dds})
 
     return h3_dl_dt_dd_dict
@@ -420,29 +436,27 @@ def _get_site_map(source, parser='html.parser'):
 
     for h3 in h3s:
         h3_title = h3.get_text(strip=True)
+        h3_dl_dts = h3.find_next(name='dl').find_all(name='dt')  # h3 > dl > dt
 
-        dl_tag = h3.find_next(name='dl')
-        dt_tags = dl_tag.find_all(name='dt')  # h3 > dl > dt
-
-        if len(dt_tags) == 1:
+        if len(h3_dl_dts) == 1:
             dd_dict = {}  # h3 > dl > dt > dd
 
-            h3_dl_dt = dt_tags[0]
+            h3_dl_dt = h3_dl_dts[0]
             h3_dl_dt_text = h3_dl_dt.get_text(strip=True)
 
             if h3_dl_dt_text == '':
-                h3_dl_dt_dds = h3_dl_dt.find_next_siblings('dd')
-
-                for h3_dl_dt_dd in h3_dl_dt_dds:
-                    text, href = _parse_dd_or_dt_contents(h3_dl_dt_dd.contents)
-                    link = urllib.parse.urljoin(home_page_url(), href)
-
-                    dd_dict.update({text: link})
+                for dd in h3_dl_dt.find_next_siblings('dd'):
+                    text, href = _parse_dd_or_dt(dd)
+                    dd_dict.update({text: urllib.parse.urljoin(home_page_url(), href)})
 
         else:
-            dd_dict = _get_site_map_sub_dl(dt_tags)
+            dd_dict = _get_site_map_sub_dl(h3_dl_dts=h3_dl_dts)
 
         site_map.update({h3_title: dd_dict})
+
+    # noinspection SpellCheckingInspection
+    site_map = update_dict_keys(
+        site_map, replacements={"(all ogher languages)": "(all other languages)"})
 
     return site_map
 

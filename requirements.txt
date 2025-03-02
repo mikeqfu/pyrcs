@@ -1,12 +1,12 @@
 build==1.2.2.post1
 fqdn==1.5.1
 furo==2024.8.6
+id==1.5.0
 isoduration==20.11.0
 jaraco.collections==5.1.0
 jsonpointer==3.0.0
 notebook==7.3.2
 pip-chill==1.0.3
-pkginfo==1.10.0
 pyhelpers==2.1.0
 pytest-cov==6.0.0
 sphinx-copybutton==0.5.2

@@ -23,6 +23,7 @@ dist/
 # Project-specific directories / files
 *[!_]_.py
 pyrcs/data/*
+!pyrcs/data/*.json
 !.metadata
 tutorials/*
 .pypirc

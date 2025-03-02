@@ -9,14 +9,12 @@ import urllib.parse
 
 import bs4
 import pandas as pd
-import requests
-from pyhelpers.ops import confirmed, fake_requests_headers, remove_dict_keys, update_dict_keys
-from pyhelpers.store import load_data
+from pyhelpers.ops import remove_dict_keys, update_dict_keys
 from pyhelpers.text import find_similar_str
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg
+from ..utils import fetch_all_verbose, home_page_url, print_inst_conn_err, print_void_msg
 
 
 class LOR(_Base):
@@ -148,16 +146,7 @@ class LOR(_Base):
 
         return url
 
-    def _keys_to_prefixes_fallback_data(self, prefixes_only):
-        """Creates a fallback data dictionary in case of failure."""
-        if prefixes_only:
-            keys_to_prefixes = []
-        else:
-            keys_to_prefixes = {self.KEY_P: None, self.KEY_TO_LAST_UPDATED_DATE: None}
-
-        return keys_to_prefixes
-
-    def _parse_keys_to_prefixes(self, source, prefixes_only=True, verbose=False):
+    def _parse_keys_to_prefixes(self, source, verbose=False):
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
         span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
 
@@ -167,19 +156,53 @@ class LOR(_Base):
 
         lor_pref = pd.DataFrame(data=data, columns=['Prefixes', 'Name'])
 
-        if prefixes_only:
-            keys_to_prefixes = lor_pref['Prefixes'].to_list()
-        else:
-            keys_to_prefixes = {
-                self.KEY_P: lor_pref, self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
+        keys_to_prefixes = {
+            self.KEY_P: lor_pref, self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
 
         self._save_data_to_file(
-            data=keys_to_prefixes, data_name=f"{'' if prefixes_only else 'keys-to-'}prefixes",
-            verbose=verbose)
+            data=keys_to_prefixes, data_name="keys-to-prefixes", verbose=verbose)
 
         return keys_to_prefixes
 
-    def get_keys_to_prefixes(self, prefixes_only=True, update=False, verbose=False):
+    def collect_keys_to_prefixes(self, confirmation_required=True, verbose=False,
+                                 raise_error=False):
+        # noinspection PyShadowingNames
+        """
+        Collects the keys to PRIDE/LOR code prefixes from the source web page.
+
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
+        :return: A dictionary containing code prefixes and the last updated date,
+            or ``None`` if no data is available.
+        :rtype: dict | None
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor_page_urls = lor.collect_keys_to_prefixes()
+            To collect data of URLs to LOR codes web pages
+            ? [No]|Yes: yes
+            Collecting the data ... Done.
+            >>> lor_page_urls[0]
+            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
+        """
+
+        keys_to_prefixes = self._collect_data_from_source(
+            data_name='keys to LOR prefixes', method=self._parse_keys_to_prefixes, url=self.URL,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+
+        return keys_to_prefixes
+
+    def get_keys_to_prefixes(self, prefixes_only=True, update=False, dump_dir=None, verbose=False,
+                             **kwargs):
         """
         Gets the keys to PRIDE/LOR code prefixes.
 
@@ -188,6 +211,9 @@ class LOR(_Base):
         :type prefixes_only: bool
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
         :return: A list of the keys to LOR code prefixes if ``prefixes_only=True``,
@@ -219,53 +245,87 @@ class LOR(_Base):
             4       MD       North West: former Midlands lines
         """
 
-        data_name = "{}prefixes".format("" if prefixes_only else "keys-to-")
-        ext = ".pkl"
-        path_to_pkl = self._cdd(data_name + ext)
+        kwargs.update({'data_name': "keys-to-prefixes", 'method': self.collect_keys_to_prefixes})
 
-        if os.path.isfile(path_to_pkl) and not update:
-            keys_to_prefixes = load_data(path_to_pkl)
+        keys_to_prefixes = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
-        else:
-            keys_to_prefixes = None
+        if prefixes_only:
+            keys_to_prefixes = keys_to_prefixes[self.KEY_P]['Prefixes'].to_list()
 
-            try:
-                source = requests.get(url=self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                verbose_ = True if (update and verbose != 2) \
-                    else (False if verbose == 2 else verbose)
-                print_inst_conn_err(update=update, verbose=verbose_, e=e)
-
-            else:
-                try:
-                    keys_to_prefixes = self._parse_keys_to_prefixes(
-                        source=source, prefixes_only=prefixes_only, verbose=verbose)
-
-                except Exception as e:
-                    print("Failed to get the keys to LOR prefixes. {}.".format(e))
-                    if prefixes_only:
-                        keys_to_prefixes = []
-                    else:
-                        keys_to_prefixes = {self.KEY_P: None, self.KEY_TO_LAST_UPDATED_DATE: None}
-
-            if len(keys_to_prefixes) > 0 and prefixes_only:
-                setattr(self, 'valid_prefixes', keys_to_prefixes)
+            if update and len(keys_to_prefixes) > 0:
+                self.valid_prefixes = keys_to_prefixes
 
         return keys_to_prefixes
 
-    def get_page_urls(self, update=False, verbose=False):
+    def _parse_page_urls(self, source, verbose=False):
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        links = soup.find_all(
+            name='a', href=re.compile('^pride|elrmapping'),
+            string=re.compile('.*(codes|converter|Historical)'))
+
+        lor_page_urls = list(
+            dict.fromkeys([self.URL.replace(os.path.basename(self.URL), x['href']) for x in links]))
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(data=lor_page_urls, data_name="prefix-page-urls", verbose=verbose)
+
+        return lor_page_urls
+
+    def collect_page_urls(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection PyShadowingNames
         """
-        Gets URLs to `PRIDE/LOR codes`_ with different prefixes.
+        Collects a list of URLs to `PRIDE/LOR codes`_ web pages.
+
+        .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
+
+        :param confirmation_required: Whether user confirmation is required;
+            if ``confirmation_required=True`` (default), prompts the user for confirmation
+            before proceeding with data collection.
+        :type confirmation_required: bool
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :param raise_error: Whether to raise the provided exception;
+            if ``raise_error=False`` (default), the error will be suppressed.
+        :type raise_error: bool
+        :return: A list of URLs of web pages the LOR codes.
+        :rtype: list
+
+        **Examples**::
+
+            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+            >>> lor = LOR()
+            >>> lor_page_urls = lor.collect_page_urls()
+            To collect data of URLs to LOR codes web pages
+            ? [No]|Yes: yes
+            Collecting the data ... Done.
+            >>> lor_page_urls[0]
+            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
+        """
+
+        lor_page_urls = self._collect_data_from_source(
+            data_name='URLs to LOR codes web pages', method=self._parse_page_urls, url=self.URL,
+            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+
+        return lor_page_urls
+
+    def get_page_urls(self, update=False, dump_dir=None, verbose=False, **kwargs):
+        """
+        Gets a list of URLs to
+        `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_ web pages.
 
         :param update: Whether to check for updates to the package data; defaults to ``False``.
         :type update: bool
+        :param dump_dir: The path to a directory where the data file will be saved;
+            defaults to ``None``.
+        :type dump_dir: str | None
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
         :return: A list of URLs of the web pages hosting LOR codes for each prefix.
         :rtype: list | None
-
-        .. _`PRIDE/LOR codes`: http://www.railwaycodes.org.uk/pride/pride0.shtm
 
         **Examples**::
 
@@ -278,73 +338,12 @@ class LOR(_Base):
             'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
         """
 
-        data_name = "prefix-page-urls"
-        ext = ".pkl"
-        path_to_pickle = self._cdd(data_name + ext)
+        kwargs.update({'data_name': "prefix-page-urls", 'method': self.collect_page_urls})
 
-        if os.path.isfile(path_to_pickle) and not update:
-            lor_page_urls = load_data(path_to_pickle)
-
-        else:
-            lor_page_urls = None
-
-            try:
-                source = requests.get(self.URL, headers=fake_requests_headers())
-
-            except Exception as e:
-                verbose_ = True if (update and verbose != 2) else (False if verbose == 2 else verbose)
-                if verbose_:
-                    print("Failed. ", end="")
-                print_inst_conn_err(update=update, verbose=verbose_, e=e)
-
-                lor_page_urls = load_data(path_to_pickle)
-
-            else:
-                try:
-                    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-                    links = soup.find_all(
-                        name='a', href=re.compile('^pride|elrmapping'),
-                        string=re.compile('.*(codes|converter|Historical)'))
-
-                    lor_page_urls = list(dict.fromkeys([self.URL.replace(
-                        os.path.basename(self.URL), x['href'])
-                        for x in links]))
-
-                    self._save_data_to_file(
-                        data=lor_page_urls, data_name=data_name, ext=ext, verbose=verbose)
-
-                except Exception as e:
-                    print("Failed to get the URLs to LOR codes web pages. {}.".format(e))
+        lor_page_urls = self._fetch_data_from_file(
+            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         return lor_page_urls
-
-    def _update_catalogue(self, confirmation_required=True, verbose=False):
-        """
-        Updates catalogue data including keys to prefixes and LOR page URLs.
-
-        :param confirmation_required: Whether user confirmation is required;
-            if ``confirmation_required=True`` (default), prompts the user for confirmation
-            before proceeding with data collection.
-        :type confirmation_required: bool
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
-        :type verbose: bool | int
-
-        **Examples**::
-
-            >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
-            >>> lor = LOR()
-            >>> lor._update_catalogue()
-            To update catalogue
-            ? [No]|Yes: yes
-            Updating "keys-to-prefixes.pkl" at "pyrcs\\dat\\line-data\\lor" ... Done.
-            Updating "prefix-page-urls.pkl" at "pyrcs\\dat\\line-data\\lor" ... Done.
-        """
-
-        if confirmed("To update catalogue\n?", confirmation_required=confirmation_required):
-            self.get_keys_to_prefixes(prefixes_only=True, update=True, verbose=verbose)
-            self.get_keys_to_prefixes(prefixes_only=False, update=True, verbose=2)
-            self.get_page_urls(update=True, verbose=2)
 
     @staticmethod
     def _parse_line_name(x):
@@ -437,8 +436,7 @@ class LOR(_Base):
             print("Done.")
 
         self._save_data_to_file(
-            data=lor_codes_by_initials,
-            data_name="nw-nz" if prefix in ("NW", "NZ") else prefix.lower(), sub_dir="prefixes",
+            data=lor_codes_by_initials, data_name=prefix.lower(), sub_dir="prefixes",
             verbose=verbose)
 
         return lor_codes_by_initials
@@ -548,9 +546,16 @@ class LOR(_Base):
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
             >>> lor = LOR()
-            >>> lor_codes_dat = lor.fetch_codes(prefix='CY')
-
-
+            >>> lor_codes_dat_cy = lor.fetch_codes(prefix='CY')
+            >>> type(lor_codes_dat_cy)
+            dict
+            >>> list(lor_codes_dat_cy)
+            ['CY', 'Notes', 'Last updated date']
+            >>> lor_codes_dat_cy['CY']
+                 Code  ...                       RA Note
+            0   CY240  ...           Caerwent branch RA4
+            1  CY1540  ...  Pembroke - Pembroke Dock RA6
+            [2 rows x 5 columns]
             >>> lor_codes_dat = lor.fetch_codes()
             >>> type(lor_codes_dat)
             dict
@@ -589,7 +594,7 @@ class LOR(_Base):
         if prefix:
             prefix_ = self.validate_prefix(prefix)
             args = {
-                'data_name': "nw-nz" if prefix_ in ("NW", "NZ") else prefix_.lower(),
+                'data_name': prefix_.lower(),
                 'method': self.collect_codes,
                 'sub_dir': "prefixes",
                 'prefix': prefix_,
@@ -602,18 +607,16 @@ class LOR(_Base):
         else:
             prefixes = self.get_keys_to_prefixes(prefixes_only=True, verbose=verbose)
 
-            # Adjust prefixes list: replace 'NW' with 'NW/NZ' and remove 'NZ'
-            prefixes_ = ['NW/NZ' if p == 'NW' else p for p in prefixes if p != 'NZ']
+            # # Adjust prefixes list: replace 'NW' with 'NW/NZ' and remove 'NZ'
+            # prefixes_ = ['NW/NZ' if p == 'NW' else p for p in prefixes if p != 'NZ']
 
             # Set verbosity based on conditions
-            verbose_ = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
+            verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
 
             # Fetch LOR codes
             lor_codes = [
-                self.fetch_codes(
-                    prefix=p, update=update, verbose=verbose_ if is_home_connectable() else False,
-                    **kwargs)
-                for p in prefixes if p != 'NZ']
+                self.fetch_codes(prefix=p, update=update, verbose=verbose_, **kwargs)
+                for p in prefixes]
 
             # Retry if all fetches failed
             if all(x is None for x in lor_codes):
@@ -623,12 +626,12 @@ class LOR(_Base):
 
                 lor_codes = [
                     self.fetch_codes(prefix=p, update=False, verbose=verbose_)
-                    for p in prefixes if p != 'NZ']
+                    for p in prefixes]
 
             # Process fetched data
             lor_data, last_updated_dates = {self.KEY: {}}, []
 
-            for p, dat in zip(prefixes_, lor_codes):
+            for p, dat in zip(prefixes, lor_codes):
                 last_updated_dates.append(dat.get(self.KEY_TO_LAST_UPDATED_DATE))
                 remove_dict_keys(dat, self.KEY_TO_LAST_UPDATED_DATE)
 
