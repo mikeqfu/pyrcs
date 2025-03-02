@@ -2,7 +2,7 @@
 PyRCS
 #####
 
-|PyPI - Version| |PyPI - Python Version| |Read the Docs - Documentation| |GitHub Actions Workflow Status| |License| |Codacy - Code Quality| |DOI|
+|PyPI - Version| |PyPI - Python Version| |License| |Read the Docs - Documentation| |GitHub Actions Workflow Status| |Codacy - Code Quality| |DOI|
 
 .. |PyPI - Version| image:: https://img.shields.io/pypi/v/pyrcs
     :alt: PyPI - Version
@@ -10,15 +10,15 @@ PyRCS
 .. |PyPI - Python Version| image:: https://img.shields.io/pypi/pyversions/pyrcs
     :alt: PyPI - Python Version
     :target: https://docs.python.org/3/
+.. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
+    :alt: License
+    :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
 .. |Read the Docs - Documentation| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
     :alt: Read the Docs - Documentation
     :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
 .. |GitHub Actions Workflow Status| image:: https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&branch=master
     :alt: GitHub Actions Workflow Status
     :target: https://github.com/mikeqfu/pyrcs/actions
-.. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
-    :alt: License
-    :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
 .. |Codacy - Code Quality| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
     :alt: Codacy - Code Quality
     :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
