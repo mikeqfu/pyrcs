@@ -8,13 +8,13 @@ import pytest
 from pyrcs.line_data import LOR
 
 
+@pytest.mark.parametrize('update', [True, False])
 class TestLOR:
 
     @pytest.fixture(scope='class')
     def lor(self):
         return LOR()
 
-    @pytest.mark.parametrize('update', [True, False])
     def test_get_keys_to_prefixes(self, lor, update):
         keys_to_pfx = lor.get_keys_to_prefixes(update=update, verbose=True)
         assert keys_to_pfx == ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
@@ -26,17 +26,14 @@ class TestLOR:
         keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
         assert isinstance(keys_to_pfx_codes, pd.DataFrame)
 
-    @pytest.mark.parametrize('update', [True, False])
     def test_get_page_urls(self, lor, update):
         lor_urls = lor.get_page_urls(update=update, verbose=True)
         assert isinstance(lor_urls, list)
 
-    def test_collect_codes(self, lor):
+    def test_collect_and_fetch_codes(self, lor, update):
         lor_codes_cy = lor.collect_codes(prefix='CY', confirmation_required=False, verbose=True)
-
         assert isinstance(lor_codes_cy, dict)
         assert list(lor_codes_cy.keys()) == ['CY', 'Notes', 'Last updated date']
-
         cy_codes = lor_codes_cy['CY']
         assert isinstance(cy_codes, pd.DataFrame)
 
@@ -45,27 +42,26 @@ class TestLOR:
         nw_codes = lor_codes_nw['NW']
         assert isinstance(nw_codes, pd.DataFrame)
 
-        lor_codes_nw = lor.collect_codes(prefix='NZ', confirmation_required=False, verbose=True)
+        lor_codes_nw = lor.fetch_codes(prefix='NZ', verbose=True)
         assert isinstance(lor_codes_nw, dict)
         nw_codes = lor_codes_nw['NZ']
         assert isinstance(nw_codes, pd.DataFrame)
 
-        lor_codes_xr = lor.collect_codes(prefix='XR', confirmation_required=False, verbose=True)
+        lor_codes_xr = lor.fetch_codes(prefix='XR', update=update, verbose=2)
+        assert isinstance(lor_codes_xr, dict)
+        lor_codes_xr = lor.fetch_codes(prefix='XR', verbose=True)
         assert isinstance(lor_codes_xr, dict)
         xr_codes = lor_codes_xr['XR']
         assert isinstance(xr_codes, dict)
         assert list(xr_codes.keys()) == [
             'Current codes', 'Current codes note', 'Past codes', 'Past codes note']
 
-    @pytest.mark.parametrize('update', [True, False])
-    def test_fetch_codes(self, lor, update):
-        lor_codes_dat = lor.fetch_codes(update=update, verbose=True)
+        lor_codes_dat = lor.fetch_codes(update=update, verbose=2)
         assert isinstance(lor_codes_dat, dict)
 
         l_codes = lor_codes_dat['LOR']
         assert isinstance(l_codes, dict)
 
-    @pytest.mark.parametrize('update', [True, False])
     def test_fetch_elr_lor_converter(self, lor, update):
         elr_lor_conv = lor.fetch_elr_lor_converter(update=update, verbose=True)
 
