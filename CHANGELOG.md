@@ -2,6 +2,21 @@
 
 <br/>
 
+#### **[1.0.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.0)**
+
+(*3 March 2025*)
+
+##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.7...1.0.0) since [0.3.7](https://pypi.org/project/pyrcs/0.3.7/):**
+
+- **Major Release:** Version 1.0.0 introduces significant improvements to both code and documentation.
+  - *Code enhancements*: Optimised performance and refactored core modules for better readability and maintainability.
+  - *Bug fixes*: Resolved various issues identified through practical use.
+- **License Update:** This release is now licensed under the [MIT License](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE), providing greater flexibility and usability.
+
+**For more information and detailed specifications, check out the [PyRCS 1.0.0 documentation](https://pyrcs.readthedocs.io/en/1.0.0/).**
+
+<br/>
+
 #### **[0.3.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.7)**
 
 (*16 September 2023*)
