@@ -2,26 +2,29 @@
 PyRCS
 #####
 
-|PyPI - Version| |PyPI - Python Version| |License| |Read the Docs - Documentation| |GitHub Actions Workflow Status| |Codacy - Code Quality| |DOI|
+|PyPI| |Python| |License| |Docs| |Build| |Codacy| |Codecov| |DOI|
 
-.. |PyPI - Version| image:: https://img.shields.io/pypi/v/pyrcs
-    :alt: PyPI - Version
+.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
+    :alt: PyPI Release Version
     :target: https://pypi.org/project/pyrcs/
-.. |PyPI - Python Version| image:: https://img.shields.io/pypi/pyversions/pyrcs
-    :alt: PyPI - Python Version
+.. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
+    :alt: Python Version
     :target: https://docs.python.org/3/
 .. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
     :alt: License
     :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
-.. |Read the Docs - Documentation| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
-    :alt: Read the Docs - Documentation
+.. |Docs| image:: https://img.shields.io/readthedocs/pyrcs?logo=readthedocs
+    :alt: ReadTheDocs Documentation
     :target: https://pyrcs.readthedocs.io/en/latest/?badge=latest
-.. |GitHub Actions Workflow Status| image:: https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&branch=master
+.. |Build| image:: https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&branch=master
     :alt: GitHub Actions Workflow Status
     :target: https://github.com/mikeqfu/pyrcs/actions
-.. |Codacy - Code Quality| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
-    :alt: Codacy - Code Quality
+.. |Codacy| image:: https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5
+    :alt: Codacy Code Quality
     :target: https://www.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mikeqfu/pyrcs&amp;utm_campaign=Badge_Grade
+.. |Codecov| image:: https://codecov.io/gh/mikeqfu/pyrcs/graph/badge.svg?token=6CKN8T1RVL
+    :alt: Codecov Test Coverage
+    :target: https://codecov.io/gh/mikeqfu/pyrcs
 .. |DOI| image:: https://img.shields.io/badge/10.5281%2Fzenodo.4026744-blue?label=doi
     :alt: DOI
     :target: https://doi.org/10.5281/zenodo.4026744

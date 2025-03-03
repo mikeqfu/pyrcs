@@ -1,11 +1,12 @@
 # PyRCS
 
-[![PyPI - Version](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyrcs)](https://docs.python.org/3/)
+[![PyPI Release Version](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
+[![Python Version](https://img.shields.io/pypi/pyversions/pyrcs)](https://docs.python.org/3/)
 [![License](https://img.shields.io/github/license/mikeqfu/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
-[![Read the Docs - Documentation](https://img.shields.io/readthedocs/pyrcs?logo=readthedocs)](https://pyrcs.readthedocs.io/en/latest/?badge=latest)
+[![ReadTheDocs Documentation](https://img.shields.io/readthedocs/pyrcs?logo=readthedocs)](https://pyrcs.readthedocs.io/en/latest/?badge=latest)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mikeqfu/pyrcs/github-pages.yml?logo=github&branch=master)](https://github.com/mikeqfu/pyrcs/actions)
 [![Codacy - Code Quality](https://app.codacy.com/project/badge/Grade/7369679225b14eaeb92ba40c12c339d5)](https://app.codacy.com/gh/mikeqfu/pyrcs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Codecov - Test Coverage](https://codecov.io/gh/mikeqfu/pyrcs/graph/badge.svg?token=6CKN8T1RVL)](https://codecov.io/gh/mikeqfu/pyrcs)
 [![DOI](https://img.shields.io/badge/10.5281%2Fzenodo.4026744-blue?label=doi)](https://doi.org/10.5281/zenodo.4026744)
 
 PyRCS is an open-source Python package designed to simplify the collection and management of diverse codes used in different systems within the UK rail industry. It serves as a practical toolkit for researchers, practitioners, and individuals who frequently interact with the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website and work extensively with railway codes in the UK. Leveraging the capabilities of the Python programming language, PyRCS enables efficient access to and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
