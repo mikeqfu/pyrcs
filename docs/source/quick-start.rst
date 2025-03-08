@@ -58,7 +58,7 @@ We can retrieve codes (in `pandas.DataFrame`_ format) for all locations starting
 
     >>> loc_a_codes = lid.collect_loc_id(initial='a', verbose=True)
     To collect data of CRS, NLC, TIPLOC and STANOX codes beginning with "A"
-    ? [No]|Yes:  yes
+    ? [No]|Yes: yes
     Collecting the data ... Done.
     >>> type(loc_a_codes)
     dict
@@ -85,15 +85,21 @@ A snapshot of the data contained in ``loc_a_codes`` is demonstrated below:
     >>> type(loc_a_codes_dat)
     pandas.core.frame.DataFrame
     >>> loc_a_codes_dat.head()
-                                  Location CRS  ... STANME_Note STANOX_Note
-    0                 1999 Reorganisations      ...
-    1                                   A1      ...
-    2                       A463 Traded In      ...
-    3  A483 Road Scheme Supervisors Closed      ...
-    4                               Aachen      ...
-    [5 rows x 12 columns]
-    >>> print("Notes: {}".format(loc_a_codes['Notes']))
-    >>> print("Last updated date: {}".format(loc_a_codes['Last updated date']))
+                                     Location CRS  ... STANME_Note STANOX_Note
+    0                    1999 Reorganisations      ...
+    1                                      A1      ...
+    2                          A463 Traded In      ...
+    3     A483 Road Scheme Supervisors Closed      ...
+    4                                  Aachen      ...
+    ...                                   ...  ..  ...         ...         ...
+    3319                       Ayr Wagon Team      ...
+    3320                       Ayr Wagon Team      ...
+    3321                       Ayr Wagon Team      ...
+    3322                          Ayr Welders      ...
+    3323                    Aztec Travel S378      ...
+    [3324 rows x 12 columns]
+    >>> print(f"Notes: {loc_a_codes['Notes']}")
+    >>> print(f"Last updated date: {loc_a_codes['Last updated date']}")
     Notes: None
     Last updated date: 2025-02-19
 
@@ -114,20 +120,20 @@ Beyond retrieving location codes for a specific letter, we can use the :meth:`Lo
     >>> type(loc_codes)
     dict
     >>> list(loc_codes.keys())
-    ['Location ID', 'Other systems', 'Additional notes', 'Last updated date']
+    ['Location ID', 'Other systems', 'Notes', 'Last updated date']
 
 The ``loc_codes`` object is a dictionary with the following *keys*:
 
 -  ``'Location ID'``
 -  ``'Other systems'``
--  ``'Additional notes'``
+-  ``'Notes'``
 -  ``'Latest update date'``
 
 The corresponding *values* are:
 
 -  ``loc_codes['Location ID']`` - CRS, NLC, TIPLOC, and STANOX codes for all locations listed across the relevant web pages.
 -  ``loc_codes['Other systems']`` - Codes related to the `other systems`_.
--  ``loc_codes['Additional notes']`` - Any additional notes and information (if available).
+-  ``loc_codes['Notes']`` - Any notes and information (if available).
 -  ``loc_codes['Latest update date']`` - The latest ``'Last updated date'`` across all initial-specific data.
 
 Here is a snapshot of the data contained in ``loc_codes``:
@@ -139,21 +145,34 @@ Here is a snapshot of the data contained in ``loc_codes``:
     >>> loc_codes_dat = loc_codes[lid.KEY]  # loc_codes['Location ID']
     >>> type(loc_codes_dat)
     pandas.core.frame.DataFrame
-    >>> loc_codes_dat.tail()
-                    Location CRS     NLC  ... TIPLOC_Note STANME_Note STANOX_Note
-    59783  Zone U3456 London      083900  ...
-    59784     Zone U4 London      084100  ...
-    59785    Zone U56 London      084700  ...
-    59786            ZNGHTYK              ...
-    59787            ZZWMNST              ...
-    [5 rows x 12 columns]
-    >>> loc_codes_dat[['Location', 'Location_Note']].tail()
-                    Location    Location_Note
-    59783  Zone U3456 London
-    59784     Zone U4 London
-    59785    Zone U56 London
-    59786            ZNGHTYK  see Naughty Kid
-    59787            ZZWMNST  see Westminster
+    >>> loc_codes_dat
+                                      Location CRS  ... STANME_Note STANOX_Note
+    0                     1999 Reorganisations      ...
+    1                                       A1      ...
+    2                           A463 Traded In      ...
+    3      A483 Road Scheme Supervisors Closed      ...
+    4                                   Aachen      ...
+    ...                                    ...  ..  ...         ...         ...
+    59877                              ZZTYALS      ...
+    59878                              ZZTYKKH      ...
+    59879                              ZZTYLIN      ...
+    59880                              ZZTYSGY      ...
+    59881                              ZZWMNST      ...
+    [59882 rows x 12 columns]
+    >>> loc_codes_dat[['Location', 'Location_Note']]
+                                      Location    Location_Note
+    0                     1999 Reorganisations
+    1                                       A1
+    2                           A463 Traded In
+    3      A483 Road Scheme Supervisors Closed
+    4                                   Aachen
+    ...                                    ...              ...
+    59877                              ZZTYALS       see Alston
+    59878                              ZZTYKKH    see Kirkhaugh
+    59879                              ZZTYLIN      see Lintley
+    59880                              ZZTYSGY   see Slaggyford
+    59881                              ZZWMNST  see Westminster
+    [59882 rows x 2 columns]
 
 To access codes from other systems, such as Crossrail or the Tyne & Wear Metro:
 
@@ -223,9 +242,9 @@ Similar to location identifiers, the ELR codes on the `Railway Codes`_ website a
 
 .. code-block:: python
 
-    >>> elrs_a_codes = em.collect_elr(initial='a')
+    >>> elrs_a_codes = em.collect_elr(initial='a', verbose=True)
     To collect data of Engineer's Line References (ELRs) beginning with "A"
-    ? [No]|Yes:  yes
+    ? [No]|Yes: yes
     Collecting the data ... Done.
     >>> type(elrs_a_codes)
     dict
@@ -249,15 +268,21 @@ Here is a snapshot of the data contained in ``elrs_a_codes``:
     >>> elrs_a_codes_dat = elrs_a_codes['A']
     >>> type(elrs_a_codes_dat)
     pandas.core.frame.DataFrame
-    >>> elrs_a_codes_dat.head()
-       ELR  ...         Notes
-    0  AAL  ...      Now NAJ3
-    1  AAM  ...  Formerly AML
-    2  AAV  ...
-    3  ABB  ...       Now AHB
-    4  ABB  ...
-    [5 rows x 5 columns]
-    >>> print("Last updated date: {}".format(elrs_a_codes['Last updated date']))
+    >>> elrs_a_codes_dat
+          ELR  ...         Notes
+    0     AAL  ...      Now NAJ3
+    1     AAM  ...  Formerly AML
+    2     AAV  ...
+    3     ABB  ...       Now AHB
+    4     ABB  ...
+    ..    ...  ...           ...
+    186  AYR4  ...
+    187  AYR5  ...
+    188  AYR6  ...
+    189   AYS  ...
+    190   AYT  ...
+    [191 rows x 5 columns]
+    >>> print(f"Last updated date: {elrs_a_codes['Last updated date']}")
     Last updated date: 2024-10-20
 
 To retrieve data for all ELRs (from ``'A'`` to ``'Z'``), we can use the :meth:`ELRMileages.fetch_elr()<pyrcs.line_data.ELRMileages.fetch_elr>` method:
@@ -287,14 +312,20 @@ Here is a snapshot of the data contained in ``elrs_codes``:
     >>> elrs_codes_dat = elrs_codes[em.KEY]
     >>> type(elrs_codes_dat)
     pandas.core.frame.DataFrame
-    >>> elrs_codes_dat.tail()
-           ELR                                 Line name  ... Datum Notes
-    4575  ZGW1                     Records to be deleted  ...   n/a
-    4576  ZGW2        Records for comparison if required  ...   n/a
-    4577   ZZY                            Deleted record  ...   n/a
-    4578   ZZZ                      Record to be deleted  ...   n/a
-    4579  ZZZ9  Dummy ELR for demonstrations and testing  ...   n/a
-    [5 rows x 5 columns]
+    >>> elrs_codes_dat
+           ELR  ...         Notes
+    0      AAL  ...      Now NAJ3
+    1      AAM  ...  Formerly AML
+    2      AAV  ...
+    3      ABB  ...       Now AHB
+    4      ABB  ...
+    ...    ...  ...           ...
+    4542  ZGW1  ...
+    4543  ZGW2  ...
+    4544   ZZY  ...
+    4545   ZZZ  ...
+    4546  ZZZ9  ...
+    [4547 rows x 5 columns]
 
     >>> ## Try more examples! Uncomment the lines below and run:
     >>> # elrs_a_codes = em.fetch_elr(initial='a')  # Fetch ELRs starting with 'A'
@@ -339,14 +370,18 @@ Here is a snapshot of the data contained in ``amm_mileage_file``:
 
     >>> amm_mileage_file['Line']
     'Ashchurch and Malvern Line'
-    >>> amm_mileage_file['Mileage'].head()
-      Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
-    0  0.0000               ...
-    1  0.0154               ...
-    2  0.0396               ...
-    3  1.1012               ...
-    4  1.1408               ...
-    [5 rows x 11 columns]
+    >>> amm_mileage_file['Mileage']
+       Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
+    0   0.0000               ...
+    1   0.0154               ...
+    2   0.0396               ...
+    3   1.1012               ...
+    4   1.1408               ...
+    5   5.0330               ...
+    6   7.0374               ...
+    7  11.1298               ...
+    8  13.0638               ...
+    [9 rows x 11 columns]
 
     >>> ## Try more examples! Uncomment the lines below and run:
     >>> # xre_mileage_file = em.fetch_mileage_file('XRE')  # Fetch mileage file for 'XRE'
@@ -365,8 +400,7 @@ To get the data, let's import the :class:`~pyrcs.other_assets.Stations` class an
 
 .. code-block:: python
 
-    >>> from pyrcs.other_assets import Stations
-    >>> # Alternatively, from pyrcs import Stations
+    >>> from pyrcs.other_assets import Stations  # from pyrcs import Stations
     >>> stn = Stations()
     >>> stn.NAME
     'Railway station data'
@@ -397,9 +431,9 @@ We can obtain railway station data based on the first letter (e.g. ``'A'`` or ``
 
 .. code-block:: python
 
-    >>> stn_loc_a_codes = stn.collect_locations(initial='a')
+    >>> stn_loc_a_codes = stn.collect_locations(initial='a', verbose=True)
     To collect data of mileages, operators and grid coordinates beginning with "A"
-    ? [No]|Yes:  yes
+    ? [No]|Yes: yes
     Collecting the data ... Done.
     >>> type(stn_loc_a_codes)
     dict
@@ -423,14 +457,20 @@ Here is a snapshot of the data contained in ``stn_loc_a``:
     >>> stn_loc_a_codes_dat = stn_loc_a_codes['A']
     >>> type(stn_loc_a_codes_dat)
     pandas.core.frame.DataFrame
-    >>> stn_loc_a_codes_dat.head()
-                                  Station  ...                              Former Operator
-    0  Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Railway from 1 Ap...
-    1  Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Railway from 1 Ap...
-    2                                Aber  ...  Keolis Amey Operations/Gweithrediadau Ke...
-    3                           Abercynon  ...  Keolis Amey Operations/Gweithrediadau Ke...
-    4                           Abercynon  ...  Keolis Amey Operations/Gweithrediadau Ke...
-    [5 rows x 14 columns]
+    >>> stn_loc_a_codes_dat
+                                    Station  ...                Former Operator
+    0    Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Rai...
+    1    Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Rai...
+    2                                  Aber  ...  Keolis Amey Operations/Gwe...
+    3                             Abercynon  ...  Keolis Amey Operations/Gwe...
+    4                             Abercynon  ...  Keolis Amey Operations/Gwe...
+    ..                                  ...  ...                            ...
+    137              Aylesbury Vale Parkway  ...
+    138                           Aylesford  ...  London & South Eastern Rai...
+    139                            Aylesham  ...  London & South Eastern Rai...
+    140                                 Ayr  ...  Abellio ScotRail from 1 Ap...
+    141                                 Ayr  ...  Abellio ScotRail from 1 Ap...
+    [142 rows x 14 columns]
     >>> stn_loc_a_codes_dat.columns.to_list()
     ['Station',
      'Station Note',
@@ -446,14 +486,21 @@ Here is a snapshot of the data contained in ``stn_loc_a``:
      'Former Owner',
      'Operator',
      'Former Operator']
-    >>> stn_loc_a_codes_dat[['Station', 'ELR', 'Mileage']].head()
-                                  Station  ELR   Mileage
-    0  Abbey Wood Abbey Wood / ABBEY WOOD  NKL  11m 43ch
-    1  Abbey Wood Abbey Wood / ABBEY WOOD  XRS  24.458km
-    2                                Aber  CAR   8m 69ch
-    3                           Abercynon  CAM  16m 28ch
-    4                           Abercynon  ABD  16m 28ch
-    >>> print("Last updated date: {}".format(stn_loc_a_codes['Last updated date']))
+    >>> stn_loc_a_codes_dat[['Station', 'ELR', 'Mileage']]
+                                    Station   ELR   Mileage
+    0    Abbey Wood Abbey Wood / ABBEY WOOD   NKL  11m 43ch
+    1    Abbey Wood Abbey Wood / ABBEY WOOD   XRS  24.458km
+    2                                  Aber   CAR   8m 69ch
+    3                             Abercynon   CAM  16m 28ch
+    4                             Abercynon   ABD  16m 28ch
+    ..                                  ...   ...       ...
+    137              Aylesbury Vale Parkway  MCJ2  40m 38ch
+    138                           Aylesford  PWS2  38m 74ch
+    139                            Aylesham   FDM  68m 66ch
+    140                                 Ayr  AYR6  40m 49ch
+    141                                 Ayr  STR1  40m 49ch
+    [142 rows x 3 columns]
+    >>> print(f"Last updated date: {stn_loc_a_codes['Last updated date']}")
     Last updated date: 2025-02-12
 
 .. _quickstart-all-available-railway-stations:
@@ -490,24 +537,29 @@ Here is a snapshot of the data contained in ``stn_loc_codes``:
     >>> stn_loc_codes_dat = stn_loc_codes[stn.KEY_TO_STN]
     >>> type(stn_loc_codes_dat)
     pandas.core.frame.DataFrame
-    >>> stn_loc_codes_dat.tail()
-                 Station  ...                                    Former Operator
-    2898            York  ...  East Coast Main Line Company 14 November 2009 ...
-    2899            York  ...  East Coast Main Line Company 14 November 2009 ...
-    2900          Yorton  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    2901   Ystrad Mynach  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    2902  Ystrad Rhondda  ...  Keolis Amey Operations/Gweithrediadau Keolis A...
-    [5 rows x 14 columns]
-    >>> stn_loc_codes_dat.columns.to_list()
+    >>> stn_loc_codes_dat
+                                     Station  ...               Former Operator
+    0     Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Ra...
+    1     Abbey Wood Abbey Wood / ABBEY WOOD  ...  London & South Eastern Ra...
+    2                                   Aber  ...  Keolis Amey Operations/Gw...
+    3                              Abercynon  ...  Keolis Amey Operations/Gw...
+    4                              Abercynon  ...  Keolis Amey Operations/Gw...
+    ...                                  ...  ...                           ...
+    2900                                York  ...  East Coast Main Line Comp...
+    2901                                York  ...  East Coast Main Line Comp...
+    2902                              Yorton  ...  Keolis Amey Operations/Gw...
+    2903                       Ystrad Mynach  ...  Keolis Amey Operations/Gw...
+    2904                      Ystrad Rhondda  ...  Keolis Amey Operations/Gw...
+    [2905 rows x 14 columns]
     >>> sel_cols = ['Station', 'ELR', 'Mileage', 'Degrees Longitude', 'Degrees Latitude']
     >>> stn_loc_codes_dat[sel_cols].tail()
                  Station   ELR    Mileage  Degrees Longitude  Degrees Latitude
-    2898            York  ECM5    0m 00ch            -1.0920           53.9584
-    2899            York  ECM4  188m 40ch            -1.0920           53.9584
-    2900          Yorton   SYC   25m 14ch            -2.7360           52.8083
-    2901   Ystrad Mynach   CAR   13m 60ch            -3.2414           51.6414
-    2902  Ystrad Rhondda   THT   20m 05ch            -3.4666           51.6436
-    >>> print("Last updated date: {}".format(stn_loc_codes['Last updated date']))
+    2900            York  ECM5    0m 00ch            -1.0920           53.9584
+    2901            York  ECM4  188m 40ch            -1.0920           53.9584
+    2902          Yorton   SYC   25m 14ch            -2.7360           52.8083
+    2903   Ystrad Mynach   CAR   13m 60ch            -3.2414           51.6414
+    2904  Ystrad Rhondda   THT   20m 05ch            -3.4666           51.6436
+    >>> print(f"Last updated date: {stn_loc_codes['Last updated date']}")
     Last updated date: 2025-02-26
 
     >>> ## Try more examples! Uncomment the lines below and run:
