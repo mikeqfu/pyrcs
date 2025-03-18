@@ -5,12 +5,12 @@ id==1.5.0
 isoduration==20.11.0
 jaraco.collections==5.1.0
 jsonpointer==3.0.0
-notebook==7.3.2
+notebook==7.3.3
 pip-chill==1.0.3
-pyhelpers==2.1.0
+pyhelpers==2.2.0
 pytest-cov==6.0.0
 sphinx-copybutton==0.5.2
-sphinx-new-tab-link==0.6.1
+sphinx-new-tab-link==0.7.0
 sphinx-toggleprompt==0.6.0
 tomli==2.0.1
 twine==6.0.1
