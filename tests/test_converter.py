@@ -106,6 +106,9 @@ def test_shift_mileage_by_yard():
     n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221)
     assert n_mileage == 0.0617
 
+    n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221, as_numeric=False)
+    assert n_mileage == '0.0617'
+
     n_mileage = shift_mileage_by_yard(mileage=10, shift_yards=220)
     assert n_mileage == 10.022
 
