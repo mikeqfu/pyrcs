@@ -95,7 +95,6 @@ def _parse_mileages(mileages):
             miles_chains = mileage_.map(mileage_to_mile_chain)  # Warning: Might contain issues!
 
         else:
-            # miles_chains = mileage.map(lambda x: re.sub(r'/?\d+\.\d+km/?', '', x))
             miles_chains = mileage.str.replace(r'/?\d+\.\d+km/?', '', regex=True)
             mileage_ = miles_chains.map(mile_chain_to_mileage)
 
@@ -123,13 +122,6 @@ def _parse_mileages(mileages):
 
 
 def _parse_node(node):
-    # node_x = node_x.replace(
-    #     ' with Freightliner terminal', ' & Freightliner Terminal').replace(
-    #     ' with curve to', ' with').replace(
-    #     ' (0.37 long)', '')
-    # pat = re.compile(
-    #     r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with '
-    #     r'([A-Z]){3}(\d)?( \(\d+\.\d+\))?')
     pat = re.compile(r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with ([A-Z]).*(\d)?( \(\d+\.\d+\))?')
 
     if re.match(pat, node):
@@ -954,12 +946,13 @@ class ELRMileages(_Base):
 
         elr_ = remove_punctuation(elr).upper()
 
-        if elr_ != '':
-
+        if elr_:
             if confirmed(f"To collect mileage file of \"{elr_}\"\n?", confirmation_required):
-
-                if verbose == 2:
-                    print(f"Collecting mileage file of \"{elr_}\"", end=" ... ")
+                if verbose in {True, 1}:
+                    message_ = "Collecting the mileage file"
+                    if not confirmation_required:
+                        message_ += f' of "{elr_}"'
+                    print(message_, end=" ... ")
 
                 try:
                     url = home_page_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
@@ -967,16 +960,16 @@ class ELRMileages(_Base):
 
                 except Exception as e:
                     print_inst_conn_err(verbose=verbose, e=e)
+                    return None
 
-                else:
-                    try:
-                        return self._collect_mileage_file(
-                            source=source, elr=elr_, parsed=parsed, dump_it=dump_it,
-                            verbose=verbose)
+                try:
+                    return self._collect_mileage_file(
+                        source=source, elr=elr_, parsed=parsed, dump_it=dump_it,
+                        verbose=verbose)
 
-                    except Exception as e:
-                        _print_failure_message(
-                            e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
+                except Exception as e:
+                    _print_failure_message(
+                        e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
@@ -1293,6 +1286,6 @@ class ELRMileages(_Base):
                 start_dest_mileage, conn_orig_mileage = '', ''
 
         else:
-            return [''] * 5
+            return tuple([''] * 5)
 
         return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage
