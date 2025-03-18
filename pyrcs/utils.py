@@ -485,7 +485,7 @@ def _update_location_names_errata(new_items, regex, verbose=False):
     :type verbose: bool | int
     """
 
-    json_filename = "location-names-repl{}.json".format("" if not regex else "-regex")
+    json_filename = "location-names-errata{}.json".format("" if not regex else "-regex")
 
     new_items_keys = list(new_items.keys())
 
@@ -498,4 +498,8 @@ def _update_location_names_errata(new_items, regex, verbose=False):
 
         location_name_repl_dict.update(new_items)
 
-        save_data(location_name_repl_dict, path_to_json, verbose=verbose)
+        save_data(location_name_repl_dict, path_to_json, indent=4, verbose=verbose)
+
+    else:
+        if verbose:
+            print("Cancelled.")
