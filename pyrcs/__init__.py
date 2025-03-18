@@ -7,7 +7,11 @@ import json
 import pkgutil
 
 from . import collector, converter, line_data, other_assets, parser, utils
-from .collector import *
+from .collector import LineData, OtherAssets
+from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
+    TrackDiagrams
+from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
+    Tunnels, Viaducts, WaterTroughs
 
 metadata = json.loads(pkgutil.get_data(__name__, "data/.metadata").decode())
 
