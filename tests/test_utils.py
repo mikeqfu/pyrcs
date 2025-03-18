@@ -103,5 +103,22 @@ def test_fetch_location_names_errata():
     assert isinstance(repl_dict, pd.DataFrame)
 
 
+@pytest.mark.parametrize('regex', [False, True])
+def test__update_location_names_errata(regex, monkeypatch, capfd):
+    from pyrcs.utils import _update_location_names_errata
+
+    new_items = {"Leeds Balm Rd Loco (Fhh)": "Leeds Balm Road Loco Freightliner Heavy Haul"}
+
+    monkeypatch.setattr('builtins.input', lambda _: "Yes")
+    _update_location_names_errata(new_items, regex=regex, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Updating" in out and "Done." in out
+
+    monkeypatch.setattr('builtins.input', lambda _: "No")
+    _update_location_names_errata(new_items, regex=False, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Cancelled." in out
+
+
 if __name__ == '__main__':
     pytest.main()
