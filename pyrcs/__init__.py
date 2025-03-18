@@ -29,6 +29,12 @@ __copyright__ = f'2019-{datetime.datetime.now().year}, {__author__}'
 __first_release__ = metadata['First release']
 
 __all__ = [
+    'collector',
+    'converter',
+    'parser',
+    'utils',
+    'line_data',
+    'other_assets',
     'LineData',
     'OtherAssets',
     'Electrification',
