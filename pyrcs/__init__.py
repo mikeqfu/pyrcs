@@ -6,6 +6,7 @@ import datetime
 import json
 import pkgutil
 
+from . import collector, converter, line_data, other_assets, parser, utils
 from .collector import LineData, OtherAssets
 from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, LocationIdentifiers, \
     TrackDiagrams
@@ -29,6 +30,12 @@ __copyright__ = f'2019-{datetime.datetime.now().year}, {__author__}'
 __first_release__ = metadata['First release']
 
 __all__ = [
+    'collector',
+    'converter',
+    'parser',
+    'utils',
+    'line_data',
+    'other_assets',
     'LineData',
     'OtherAssets',
     'Electrification',

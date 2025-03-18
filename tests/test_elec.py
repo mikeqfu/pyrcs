@@ -45,9 +45,10 @@ class TestElectrification:
         assert list(rail_etz_codes.keys()) == [
             'National network energy tariff zones', 'Last updated date']
 
-    def test_fetch_codes(self, elec):
-        elec_codes = elec.fetch_codes(verbose=True)
-
+    def test_fetch_codes(self, elec, tmp_path, capfd):
+        elec_codes = elec.fetch_codes(verbose=2, dump_dir=tmp_path)
+        out, _ = capfd.readouterr()
+        assert "Saving" in out and "Done." in out
         assert isinstance(elec_codes, dict)
         assert list(elec_codes.keys()) == ['Electrification', 'Last updated date']
 

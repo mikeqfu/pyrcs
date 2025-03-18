@@ -10,6 +10,12 @@ import pytest
 from pyrcs.line_data.loc_id import LocationIdentifiers, _parse_raw_location_name
 
 
+def test__extra_annotations():
+    from pyrcs.line_data.loc_id import _extra_annotations
+
+    assert isinstance(_extra_annotations(), list)
+
+
 class TestLocationIdentifiers:
 
     @pytest.fixture(scope='class')
@@ -64,8 +70,11 @@ class TestLocationIdentifiers:
         os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
         assert isinstance(os_codes_dat, collections.defaultdict)
 
-    def test_fetch_codes(self, lid):
-        loc_codes = lid.fetch_codes()
+    def test_fetch_codes(self, lid, tmp_path, capfd):
+        loc_codes = lid.fetch_codes(dump_dir=tmp_path, verbose=2)
+
+        out, _ = capfd.readouterr()
+        assert "Saving" in out and "Done." in out
 
         assert isinstance(loc_codes, dict)
         assert list(loc_codes.keys()) == [
@@ -74,15 +83,20 @@ class TestLocationIdentifiers:
         loc_codes_dat = loc_codes[lid.KEY]
         assert isinstance(loc_codes_dat, pd.DataFrame)
 
-    def test_make_xref_dict(self, lid):
+    def test_make_xref_dict(self, lid, capfd, tmp_path):
         stanox_dictionary = lid.make_xref_dict(keys='STANOX')
         assert isinstance(stanox_dictionary, pd.DataFrame)
 
-        s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
+        s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a', verbose=2)
+        out, _ = capfd.readouterr()
+        assert "Generating location code dictionary" in out and "Done." in out
         assert isinstance(s_t_dictionary, pd.DataFrame)
 
         s_t_dictionary = lid.make_xref_dict(
-            keys=['STANOX', 'TIPLOC'], initials='b', main_key='Data', as_dict=True)
+            keys=['STANOX', 'TIPLOC'], initials='b', main_key='Data', as_dict=True, verbose=2,
+            dump_it=True, dump_dir=tmp_path)
+        out, _ = capfd.readouterr()
+        assert "Saving" in out and "Done." in out
         assert isinstance(s_t_dictionary, dict)
         assert list(s_t_dictionary.keys()) == ['Data']
 

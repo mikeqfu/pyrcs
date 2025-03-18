@@ -41,7 +41,7 @@ def _parse_non_float_str_mileage(mileage):
     for m_ in mileage:
         m = m_.strip()
 
-        if not m:  # m == '':
+        if not m:  # e.g. m == '':
             miles_chains.append('')
             mileage_note.append('')
 
@@ -68,10 +68,6 @@ def _parse_non_float_str_mileage(mileage):
             mileage_note.append("(See 'Notes')")
 
         else:  # Convert "1,234" → "1.234", and "1 234" → "1.234"
-            # if re.match(r'\d+,\d+', m):
-            #     miles_chains.append(m.replace(',', '.'))
-            # else:
-            #     miles_chains.append(m.replace(' ', '.'))
             miles_chains.append(re.sub(r'[ ,]', '.', m))
             mileage_note.append('')
 
@@ -1230,10 +1226,9 @@ class ELRMileages(_Base):
             ('', '', '', '', '')
         """
 
-        kwargs.update({'update': update})
-
         start_file, end_file = map(
-            functools.partial(self.fetch_mileage_file, **kwargs), [start_elr, end_elr])
+            functools.partial(self.fetch_mileage_file, update=update, **kwargs),
+            [start_elr, end_elr])
 
         if start_file is not None and end_file is not None:
             start_elr, end_elr = start_file['ELR'], end_file['ELR']
@@ -1298,7 +1293,6 @@ class ELRMileages(_Base):
                 start_dest_mileage, conn_orig_mileage = '', ''
 
         else:
-            start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage = \
-                [''] * 5
+            return [''] * 5
 
         return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage

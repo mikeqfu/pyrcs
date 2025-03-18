@@ -1326,7 +1326,7 @@ class LocationIdentifiers(_Base):
                 main_key=main_key)
 
             if verbose == 2:
-                print("Successfully.")
+                print("Done.")
 
             if dump_it:
                 self._save_data_to_file(

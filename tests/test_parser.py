@@ -53,13 +53,16 @@ def test_parse_date():
     assert parsed_date_dat == datetime.date(2020, 1, 1)
 
 
-def test_get_site_map():
+def test_get_site_map(monkeypatch, capfd):
     from pyrcs.parser import get_site_map
 
     main_keys = ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
     home_value = {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
 
-    site_map_dat = get_site_map(update=True, confirmation_required=False, verbose=True)
+    monkeypatch.setattr('builtins.input', lambda _: "Yes")
+    site_map_dat = get_site_map(update=True, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Updating the package data" in out and "Done." in out
     assert isinstance(site_map_dat, dict)
     assert list(site_map_dat.keys()) == main_keys
     assert site_map_dat['Home'] == home_value
@@ -68,6 +71,12 @@ def test_get_site_map():
     assert isinstance(site_map_dat, dict)
     assert list(site_map_dat.keys()) == main_keys
     assert site_map_dat['Home'] == home_value
+
+    monkeypatch.setattr('builtins.input', lambda _: "No")
+    site_map_dat = get_site_map(update=True, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Cancelled." in out
+    assert site_map_dat is None
 
 
 def test_get_last_updated_date():
@@ -92,13 +101,22 @@ def test_get_financial_year():
     assert financial_year == 2020
 
 
-def test_get_introduction():
+@pytest.mark.parametrize('update', [False, True])
+def test_get_introduction(update, capfd):
     from pyrcs.parser import get_introduction
 
     bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
 
-    intro_text = get_introduction(url=bridges_url)
+    intro_text = get_introduction(url=bridges_url, update=update)
+    out, _ = capfd.readouterr()
+    if update:
+        assert "Updating" in out and "Done." in out
     assert isinstance(intro_text, str)
+
+    intro_text = get_introduction(url=bridges_url.replace('railwaycodes', '123'), update=True)
+    out, _ = capfd.readouterr()
+    assert intro_text is None
+    assert "The Internet connection is not available." in out
 
 
 def test_get_catalogue():
@@ -112,10 +130,11 @@ def test_get_catalogue():
     assert isinstance(location_code_cat, dict)
 
 
-def test_get_category_menu():
+def test_get_category_menu(monkeypatch, capfd):
     from pyrcs.parser import get_category_menu
 
-    menu = get_category_menu('Line data', update=True, confirmation_required=False, verbose=True)
+    monkeypatch.setattr('builtins.input', lambda _: "Yes")
+    menu = get_category_menu('Line data', update=True, verbose=True)
 
     assert isinstance(menu, dict)
     assert list(menu.keys()) == ['Line data']
@@ -124,6 +143,12 @@ def test_get_category_menu():
 
     assert isinstance(menu, dict)
     assert list(menu.keys()) == ['Line data']
+
+    monkeypatch.setattr('builtins.input', lambda _: "No")
+    menu = get_category_menu('Line data', update=True, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Cancelled." in out
+    assert menu is None
 
 
 def test_get_heading_text():
