@@ -58,13 +58,6 @@ def _parse_other_tags_in_td_contents(x):
     return td_text
 
 
-def _move_element_to_end(text_, char='\t\t'):
-    for i, x in enumerate(text_):
-        if char in x:
-            text_.append(text_.pop(i))
-            # break
-
-
 def _prep_records(trs, ths, sep=' / '):
     ths_len = len(ths)
 
@@ -306,9 +299,11 @@ def parse_date(str_date, as_date_type=False):
     try:
         temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
         # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
+
     except (TypeError, calendar.IllegalMonthError):
-        month_name = find_similar_str(x=str_date, lookup_list=calendar.month_name)
-        err_month_ = find_similar_str(x=month_name, lookup_list=str_date.split(' '))
+        month_name = find_similar_str(str_date, lookup_list=calendar.month_name)
+        err_month_ = find_similar_str(month_name, lookup_list=str_date.split(' '))
+
         temp_date = dateutil.parser.parse(
             timestr=str_date.replace(err_month_, month_name), fuzzy=True)
 
@@ -498,7 +493,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
     path_to_file = cd_data("site-map.json", mkdir=True)
 
     if os.path.isfile(path_to_file) and not update:
-        return load_data(path_to_file, object_pairs_hook=dict)
+        return load_data(path_to_file)
 
     else:
         if confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
@@ -527,6 +522,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
             except Exception as e:
                 _print_failure_message(
                     e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
+
         else:
             if verbose in {True, 1}:
                 print("Cancelled. ")
@@ -696,7 +692,7 @@ def get_introduction(url, delimiter='\n', update=False, verbose=True, raise_erro
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
     except requests.exceptions.ConnectionError:
-        print_conn_err(verbose=verbose)
+        print_inst_conn_err(update=update, verbose=True if update else verbose)
         return None
 
     try:
@@ -883,7 +879,8 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
                 e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
 
     else:
-        print("The category menu has not been acquired.")
+        if verbose in {True, 1}:
+            print("Cancelled.")
 
 
 def get_heading_text(heading_tag, elem_tag_name='em'):
@@ -1060,13 +1057,8 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
         if x.name == hyperlink_tag_name:
             # noinspection PyUnresolvedReferences
             href = x.get('href')
-
-            if md_style:
-                x_text = '[' + x.text + ']' + f'({href})'
-            else:
-                x_text = x.text + f' ({href})'
+            x_text = '[' + x.text + ']' + f'({href})' if md_style else x.text + f' ({href})'
             hypertext_x.append(x_text)
-
         else:
             hypertext_x.append(x.text)
 
