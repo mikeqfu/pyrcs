@@ -33,7 +33,9 @@ def _parse_non_float_str_mileage(mileage):
     Parses non-float mileage strings into structured mileage and notes.
 
     :param mileage: List of mileage strings.
-    :return: Tuple containing lists of ``miles_chains`` and ``mileage_note``.
+    :type mileage: pandas.Series | list | tuple
+    :return: A tuple containing lists of ``miles_chains`` and ``mileage_note``.
+    :rtype: tuple[list, list]
     """
 
     miles_chains, mileage_note = [], []
@@ -41,7 +43,7 @@ def _parse_non_float_str_mileage(mileage):
     for m_ in mileage:
         m = m_.strip()
 
-        if not m:  # m == '':
+        if not m:  # e.g. m == '':
             miles_chains.append('')
             mileage_note.append('')
 
@@ -68,10 +70,6 @@ def _parse_non_float_str_mileage(mileage):
             mileage_note.append("(See 'Notes')")
 
         else:  # Convert "1,234" → "1.234", and "1 234" → "1.234"
-            # if re.match(r'\d+,\d+', m):
-            #     miles_chains.append(m.replace(',', '.'))
-            # else:
-            #     miles_chains.append(m.replace(' ', '.'))
             miles_chains.append(re.sub(r'[ ,]', '.', m))
             mileage_note.append('')
 
@@ -99,9 +97,10 @@ def _parse_mileages(mileages):
             miles_chains = mileage_.map(mileage_to_mile_chain)  # Warning: Might contain issues!
 
         else:
-            # miles_chains = mileage.map(lambda x: re.sub(r'/?\d+\.\d+km/?', '', x))
-            miles_chains = mileage.str.replace(r'/?\d+\.\d+km/?', '', regex=True)
+            # miles_chains = mileage.str.replace(r'/?\d+\.\d+km/?', '', regex=True)
+            miles_chains = mileage.where(~mileage.str.contains('km', na=False), '')
             mileage_ = miles_chains.map(mile_chain_to_mileage)
+            mileage = mileage.where(mileage.str.contains('km', na=False), '')
 
         # mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
         mileage_note = mileage.map(lambda x: f"{x} (Approximate)" if x.startswith('≈') else x)
@@ -127,13 +126,6 @@ def _parse_mileages(mileages):
 
 
 def _parse_node(node):
-    # node_x = node_x.replace(
-    #     ' with Freightliner terminal', ' & Freightliner Terminal').replace(
-    #     ' with curve to', ' with').replace(
-    #     ' (0.37 long)', '')
-    # pat = re.compile(
-    #     r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with '
-    #     r'([A-Z]){3}(\d)?( \(\d+\.\d+\))?')
     pat = re.compile(r'\w+.*( \(\d+\.\d+\))?(/| and \w+)? with ([A-Z]).*(\d)?( \(\d+\.\d+\))?')
 
     if re.match(pat, node):
@@ -481,9 +473,9 @@ class ELRMileages(_Base):
 
             data = {self.KEY: data_, self.KEY_TO_LAST_UPDATED_DATE: latest_update_date}
 
-        if dump_dir is not None:
-            self._save_data_to_file(
-                data=data, data_name=self.NAME, dump_dir=dump_dir, verbose=verbose)
+            if dump_dir is not None:
+                self._save_data_to_file(
+                    data=data, data_name=self.NAME, dump_dir=dump_dir, verbose=verbose)
 
         return data
 
@@ -529,39 +521,38 @@ class ELRMileages(_Base):
         val_cols = ['Line name', 'Mileages', 'Datum']
         line_name, mileages, _ = elr_dat[val_cols].values[0]
 
+        pat = re.compile(r' (and|&|to|-) ')
+
         if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
             line_name_ = re.search(r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to) ', line_name_)
+                loc_a, _, loc_b = re.split(pat, line_name_)
                 line_name = re.search(r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
             except ValueError:
                 try:
-                    loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
+                    loc_a, _, loc_b = re.split(pat, notes)
                     line_name = line_name_
                 except ValueError:
                     loc_a, loc_b = '', ''
 
-        elif elr_dat.Mileages.values[0].startswith('0.00') and elr_dat.Datum.values[0] != '':
-            loc_a = elr_dat.Datum.values[0]
-            if loc_a in line_name:
-                loc_b = re.split(r' (and|&|to) ', line_name)[2]
-            else:
-                loc_b = line_name
+        elif elr_dat['Mileages'].values[0].startswith('0.00') and elr_dat['Datum'].values[0] != '':
+            loc_a = elr_dat['Datum'].values[0]
+            loc_b = re.split(pat, line_name)[2] if loc_a in line_name else line_name
 
-        elif re.match(r'(\w ?)+ to (\w ?)+', notes):
-            loc_a, loc_b = notes.split(' to ')
+        elif re.match(r'(\w ?)+ (and|&|to) (\w ?)+', notes):
+            loc_a, _, loc_b = re.split(pat, notes)
 
         else:
             loc_a, loc_b = '', ''
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', notes)
+                loc_a, _, loc_b = re.split(pat, notes)
             except (ValueError, TypeError):
                 pass
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', line_name)
+                loc_a, _, loc_b = re.split(pat, line_name)
             except (ValueError, TypeError):
                 pass
 
@@ -958,12 +949,13 @@ class ELRMileages(_Base):
 
         elr_ = remove_punctuation(elr).upper()
 
-        if elr_ != '':
-
+        if elr_:
             if confirmed(f"To collect mileage file of \"{elr_}\"\n?", confirmation_required):
-
-                if verbose == 2:
-                    print(f"Collecting mileage file of \"{elr_}\"", end=" ... ")
+                if verbose in {True, 1}:
+                    message_ = "Collecting the mileage file"
+                    if not confirmation_required:
+                        message_ += f' of "{elr_}"'
+                    print(message_, end=" ... ")
 
                 try:
                     url = home_page_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
@@ -971,16 +963,16 @@ class ELRMileages(_Base):
 
                 except Exception as e:
                     print_inst_conn_err(verbose=verbose, e=e)
+                    return None
 
-                else:
-                    try:
-                        return self._collect_mileage_file(
-                            source=source, elr=elr_, parsed=parsed, dump_it=dump_it,
-                            verbose=verbose)
+                try:
+                    return self._collect_mileage_file(
+                        source=source, elr=elr_, parsed=parsed, dump_it=dump_it,
+                        verbose=verbose)
 
-                    except Exception as e:
-                        _print_failure_message(
-                            e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
+                except Exception as e:
+                    _print_failure_message(
+                        e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
@@ -1230,10 +1222,9 @@ class ELRMileages(_Base):
             ('', '', '', '', '')
         """
 
-        kwargs.update({'update': update})
-
         start_file, end_file = map(
-            functools.partial(self.fetch_mileage_file, **kwargs), [start_elr, end_elr])
+            functools.partial(self.fetch_mileage_file, update=update, **kwargs),
+            [start_elr, end_elr])
 
         if start_file is not None and end_file is not None:
             start_elr, end_elr = start_file['ELR'], end_file['ELR']
@@ -1298,7 +1289,6 @@ class ELRMileages(_Base):
                 start_dest_mileage, conn_orig_mileage = '', ''
 
         else:
-            start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage = \
-                [''] * 5
+            return tuple([''] * 5)
 
         return start_dest_mileage, conn_elr, conn_orig_mileage, conn_dest_mileage, end_orig_mileage

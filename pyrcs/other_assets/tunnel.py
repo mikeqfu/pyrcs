@@ -80,7 +80,7 @@ class Tunnels(_Base):
             >>> tunl._parse_length('')
             (nan, 'Unavailable')
             >>> tunl._parse_length('1m 182y')
-            (1775.7648, None)
+            (1775.7648, '')
             >>> tunl._parse_length('formerly 0m236y')
             (215.7984, 'Formerly')
             >>> tunl._parse_length('0.325km (0m 356y)')

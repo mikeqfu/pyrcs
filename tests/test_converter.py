@@ -4,10 +4,10 @@ Test the module :py:mod:`pyrcs.converter`.
 
 import pytest
 
-from pyrcs.converter import *
-
 
 def test_fix_mileage():
+    from pyrcs.converter import fix_mileage
+
     fixed_mileage = fix_mileage(mileage=29.011)
     assert fixed_mileage == '29.0110'
 
@@ -19,6 +19,8 @@ def test_fix_mileage():
 
 
 def test_yard_to_mileage():
+    from pyrcs.converter import yard_to_mileage
+
     mileage_dat = yard_to_mileage(yard=396)
     assert mileage_dat == '0.0396'
 
@@ -36,6 +38,8 @@ def test_yard_to_mileage():
 
 
 def test_mileage_to_yard():
+    from pyrcs.converter import mileage_to_yard
+
     yards_dat = mileage_to_yard(mileage='0.0396')
     assert yards_dat == 396
 
@@ -47,6 +51,8 @@ def test_mileage_to_yard():
 
 
 def test_mile_chain_to_mileage():
+    from pyrcs.converter import mile_chain_to_mileage
+
     # AAM 0.18 Tewkesbury Junction with ANZ (84.62)
     mileage_data = mile_chain_to_mileage(mile_chain='0.18')
     assert mileage_data == '0.0396'
@@ -57,6 +63,8 @@ def test_mile_chain_to_mileage():
 
 
 def test_mileage_to_mile_chain():
+    from pyrcs.converter import mileage_to_mile_chain
+
     mile_chain_data = mileage_to_mile_chain(mileage='0.0396')
     assert mile_chain_data == '0.18'
 
@@ -69,6 +77,8 @@ def test_mileage_to_mile_chain():
 
 
 def test_mile_yard_to_mileage():
+    from pyrcs.converter import mile_yard_to_mileage
+
     m, y = 10, 1500
 
     mileage_data = mile_yard_to_mileage(mile=m, yard=y)
@@ -84,14 +94,19 @@ def test_mile_yard_to_mileage():
 
 
 def test_mileage_str_to_num():
+    from pyrcs.converter import mileage_str_to_num
+    import numpy as np
+
     mileage_num = mileage_str_to_num(mileage='0.0396')
     assert mileage_num == 0.0396
 
     mileage_num = mileage_str_to_num(mileage='')
-    assert pd.isna(mileage_num)
+    assert np.isnan(mileage_num)
 
 
 def test_mileage_num_to_str():
+    from pyrcs.converter import mileage_num_to_str
+
     mileage_str = mileage_num_to_str(mileage=0.0396)
     assert mileage_str == '0.0396'
 
@@ -100,17 +115,24 @@ def test_mileage_num_to_str():
 
 
 def test_shift_mileage_by_yard():
+    from pyrcs.converter import shift_mileage_by_yard
+
     n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=220)
     assert n_mileage == 0.0616
 
     n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221)
     assert n_mileage == 0.0617
 
+    n_mileage = shift_mileage_by_yard(mileage='0.0396', shift_yards=221, as_numeric=False)
+    assert n_mileage == '0.0617'
+
     n_mileage = shift_mileage_by_yard(mileage=10, shift_yards=220)
     assert n_mileage == 10.022
 
 
 def test_fix_stanox():
+    from pyrcs.converter import fix_stanox
+
     fixed_stanox = fix_stanox(stanox=65630)
     assert fixed_stanox == '65630'
 
@@ -122,6 +144,8 @@ def test_fix_stanox():
 
 
 def test_kilometer_to_yard():
+    from pyrcs.converter import kilometer_to_yard
+
     rslt = kilometer_to_yard(1)
     assert rslt == 1093.6132983377079
 

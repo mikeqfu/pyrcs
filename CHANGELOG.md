@@ -1,12 +1,26 @@
-### Changelog / Release notes
+# Changelog / Release notes
 
 <br/>
 
-#### **[1.0.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.0)**
+## **[1.0.1](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.1)**
+
+(*19 March 2025*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.0.0...1.0.1) since [1.0.0](https://pypi.org/project/pyrcs/1.0.0/):**
+
+- Enhanced existing tests to improve coverage and reliability. 
+- Fixed minor bugs. 
+- Updated project requirements.
+
+**For more information and detailed specifications, check out the [PyRCS 1.0.1 documentation](https://pyrcs.readthedocs.io/en/1.0.1/).**
+
+<br/>
+
+## **[1.0.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.0)**
 
 (*3 March 2025*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.7...1.0.0) since [0.3.7](https://pypi.org/project/pyrcs/0.3.7/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.7...1.0.0) since [0.3.7](https://pypi.org/project/pyrcs/0.3.7/):**
 
 - **Major Release:** Version 1.0.0 introduces significant improvements to both code and documentation.
   - *Code enhancements*: Optimised performance and refactored core modules for better readability and maintainability.
@@ -17,11 +31,11 @@
 
 <br/>
 
-#### **[0.3.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.7)**
+## **[0.3.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.7)**
 
 (*16 September 2023*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.6...0.3.7) since [0.3.6](https://pypi.org/project/pyrcs/0.3.6/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.6...0.3.7) since [0.3.6](https://pypi.org/project/pyrcs/0.3.6/):**
 
 - Enhanced the functions [get_site_map()](https://github.com/mikeqfu/pyrcs/commit/c306b102bb681e4148c56fd595b784ae8da813c5#diff-9f446a48cdb82259e3132abf65a2d39122ee7d123d7968ec2b6780123c5d6819L404-R410) and [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/c306b102bb681e4148c56fd595b784ae8da813c5#diff-9f446a48cdb82259e3132abf65a2d39122ee7d123d7968ec2b6780123c5d6819L65-R176) in the [parser](https://github.com/mikeqfu/pyrcs/blob/e2f6576a5d74cd6ab7070c0bfaf1dffffca78150/pyrcs/parser.py) module.
 - Fixed potential bugs and made improvements to [various classes](https://github.com/mikeqfu/pyrcs/commit/df087f2a52ffe0b287ecd04e59ac08ece7b310c9).
@@ -30,11 +44,11 @@
 
 <br/>
 
-#### **[0.3.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.6)**
+## **[0.3.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.6)**
 
 (*10 June 2023*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.5...0.3.6) since [0.3.5](https://pypi.org/project/pyrcs/0.3.5/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.5...0.3.6) since [0.3.5](https://pypi.org/project/pyrcs/0.3.5/):**
 
 - Improved the following functions and classes with bug fixes:
   - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/66914b12e42bf81f7f19415ec50598efdaf0d03d) in the module [parser](https://github.com/mikeqfu/pyrcs/blob/203ab72e713c54537c4e9a4721c16c930deafd44/pyrcs/parser.py);
@@ -46,11 +60,11 @@
 
 <br/>
 
-#### **[0.3.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.5)**
+## **[0.3.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.5)**
 
 (*26 February 2023*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.4...0.3.5) since [0.3.4](https://pypi.org/project/pyrcs/0.3.4/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.4...0.3.5) since [0.3.4](https://pypi.org/project/pyrcs/0.3.4/):**
 
 - Improved the following function and methods with bug fixes:
   - [kilometer_to_yard()](https://github.com/mikeqfu/pyrcs/commit/994e9f3c3145ad73b47164dd898118b0a0c70ace) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/46d519c2ba0a390bf053c6c90df3c79746c6381e/pyrcs/converter.py);
@@ -61,11 +75,11 @@
 
 <br/>
 
-#### **[0.3.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.4)**
+## **[0.3.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.4)**
 
 (*9 January 2023*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.3...0.3.4) since [0.3.3](https://pypi.org/project/pyrcs/0.3.3/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.3...0.3.4) since [0.3.3](https://pypi.org/project/pyrcs/0.3.3/):**
 
 - Improved the modules [collector](https://github.com/mikeqfu/pyrcs/blob/c77554a4686b630d0b95bc155722c7e5c7a7c453/pyrcs/collector.py) and [_updater](https://github.com/mikeqfu/pyrcs/blob/c77554a4686b630d0b95bc155722c7e5c7a7c453/pyrcs/_updater.py) with a [bug fix](https://github.com/mikeqfu/pyrcs/commit/986637ed7df18bc5e656d4ba0aab736105f4dfb7). 
 
@@ -73,11 +87,11 @@
 
 <br/>
 
-#### **[0.3.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.3)**
+## **[0.3.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.3)**
 
 (*15 November 2022*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.2...0.3.3) since [0.3.2](https://pypi.org/project/pyrcs/0.3.2/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.2...0.3.3) since [0.3.2](https://pypi.org/project/pyrcs/0.3.2/):**
 
 - Fixed a major bug in the function [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/3348c9cdfe62197405d68fa8aa8d5c053a9fae78) in the module [parser](https://github.com/mikeqfu/pyrcs/blob/4f63edb931e1a174b5ce61326d2741f3a6e3a7a9/pyrcs/parser.py).
 - Improved the following classes with bug fixes: [LocationIdentifiers](https://github.com/mikeqfu/pyrcs/commit/68a8ae4ac202af90a0181fcc11371f45b8869c5a), [LOR](https://github.com/mikeqfu/pyrcs/commit/3a1137f56fbda55da72315f872671d8d27b62401) and [Stations](https://github.com/mikeqfu/pyrcs/commit/2a62e5ac7c9461f151efa7d9fc95227bc30ac4c2).
@@ -87,11 +101,11 @@
 
 <br/>
 
-#### **[0.3.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.2)**
+## **[0.3.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.2)**
 
 (*18 August 2022*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.1...0.3.2) since [0.3.1](https://pypi.org/project/pyrcs/0.3.1/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.1...0.3.2) since [0.3.1](https://pypi.org/project/pyrcs/0.3.1/):**
 
 - Fixed a few minor bugs.
 
@@ -99,11 +113,11 @@
 
 <br/>
 
-#### **[0.3.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.1)**
+## **[0.3.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.1)**
 
 (*14 June 2022*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.0...0.3.1) since [0.3.0](https://pypi.org/project/pyrcs/0.3.0/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.3.0...0.3.1) since [0.3.0](https://pypi.org/project/pyrcs/0.3.0/):**
 
 - Updated import statements due to [a major change](https://github.com/mikeqfu/pyhelpers/releases/tag/1.4.0) in the dependency package [PyHelpers](https://pypi.org/project/pyhelpers/).
 
@@ -111,11 +125,11 @@
 
 <br/>
 
-#### **[0.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.0)**
+## **[0.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.0)**
 
 (*16 May 2022*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.15...0.3.0) since [0.2.15](https://pypi.org/project/pyrcs/0.2.15/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.15...0.3.0) since [0.2.15](https://pypi.org/project/pyrcs/0.2.15/):**
 
 - Split the module old [utils](https://github.com/mikeqfu/pyrcs/blob/dd7bb9df95ee86939b790eaba1f79e10bc54d1a4/pyrcs/utils.py) into three new modules: [utils](https://github.com/mikeqfu/pyrcs/commit/c55830dd3c250425916ba275eb9429972441b7e5), [converter](https://github.com/mikeqfu/pyrcs/commit/19c8d3911c86db02fbc94f64bb4a22e9de88fa6c) and [parser](https://github.com/mikeqfu/pyrcs/commit/34be0c12604694eb580bf55192e2ebe7fa0645d1).
 - Made extensive modifications (with bug fixes).
@@ -124,11 +138,11 @@
 
 <br/>
 
-#### **[0.2.15](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.15)**
+## **[0.2.15](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.15)**
 
 (*27 March 2021*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.14...0.2.15) since [0.2.14](https://pypi.org/project/pyrcs/0.2.14/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.14...0.2.15) since [0.2.14](https://pypi.org/project/pyrcs/0.2.14/):**
 
 - Changed the [dependency requirements](https://github.com/mikeqfu/pyrcs/commit/99c6b5400b0cc89540bd9de7060cb4562ff0b684) for the package.
 
@@ -136,11 +150,11 @@
 
 <br/>
 
-#### **[0.2.14](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.14)**
+## **[0.2.14](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.14)**
 
 (*22 March 2021*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.13...0.2.14) since [0.2.13](https://pypi.org/project/pyrcs/0.2.13/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.13...0.2.14) since [0.2.13](https://pypi.org/project/pyrcs/0.2.13/):**
 
 - Improved the following functions and class methods with bug fixes:
   - [get_site_map()](https://github.com/mikeqfu/pyrcs/commit/1231bdb62914485acead5751ea055e063c0fa711#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L636-R814) and [get_catalogue()](https://github.com/mikeqfu/pyrcs/commit/1231bdb62914485acead5751ea055e063c0fa711#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L844-R991) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/fd7e40834af60dc80d334e541cd26fe9d88865bc/pyrcs/utils.py);
@@ -151,11 +165,11 @@
 
 <br/>
 
-#### **[0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)**
+## **[0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)**
 
 (*9 January 2021*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.12...0.2.13) since [0.2.12](https://pypi.org/project/pyrcs/0.2.12/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.12...0.2.13) since [0.2.12](https://pypi.org/project/pyrcs/0.2.12/):**
 
 - Improved the following functions and classes/methods with bug fixes:
   - [parse_tr()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R426) and [parse_date()](https://github.com/mikeqfu/pyrcs/commit/e9b081523afad4ba5b43173e1f877964e2998c0b#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282R622) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/19429031fdd3ea8d0bfab8cdea43e2804636e278/pyrcs/utils.py);
@@ -166,11 +180,11 @@
 
 <br/>
 
-#### **[0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)**
+## **[0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)**
 
 (*11 November 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.11...0.2.12) since [0.2.11](https://pypi.org/project/pyrcs/0.2.11/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.11...0.2.12) since [0.2.11](https://pypi.org/project/pyrcs/0.2.11/):**
 
 - Enabled an offline mode (when Internet connection is lost).
 - Renamed the following:
@@ -197,11 +211,11 @@
 
 <br/>
 
-#### **[0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)**
+## **[0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)**
 
 (*31 October 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.10...0.2.11) since [0.2.10](https://pypi.org/project/pyrcs/0.2.10/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.10...0.2.11) since [0.2.10](https://pypi.org/project/pyrcs/0.2.10/):**
 
 - Renamed the following methods of the class [Stations](https://github.com/mikeqfu/pyrcs/blob/81fe73e419597868e58731cb9417f4583b5a3611/pyrcs/other_assets/station.py#L31):
   - [~~.collect_railway_station_data_by_initial()~~](https://github.com/mikeqfu/pyrcs/commit/6dd583dfbb0fc5d88c4f39d337dd4a438034a46c#diff-86956d6a0963926f04ed9d7c6bf99fb9763a0c7cabb22c88c3fa8f68e5a31e19L127) to [.collect_station_data_by_initial()](https://github.com/mikeqfu/pyrcs/blob/81fe73e419597868e58731cb9417f4583b5a3611/pyrcs/other_assets/station.py#L127);
@@ -211,11 +225,11 @@
 
 <br/>
 
-#### **[0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)**
+## **[0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)**
 
 (*25 October 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.9...0.2.10) since [0.2.9](https://pypi.org/project/pyrcs/0.2.9/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.9...0.2.10) since [0.2.9](https://pypi.org/project/pyrcs/0.2.9/):**
 
 - Renamed the following sub-modules **(with minor modifications)**:
   - [~~crs_nlc_tiploc_stanox~~](https://github.com/mikeqfu/pyrcs/commit/095b9d946e3c1f4a72b33ee1926f41654914f27c) to [loc_id](https://github.com/mikeqfu/pyrcs/blob/6a15470d22d8b2118ae59b688768cad92da92c34/pyrcs/line_data/loc_id.py);
@@ -236,11 +250,11 @@
 
 <br/>
 
-#### **[0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)**
+## **[0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)**
 
 (*13 September 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.8...0.2.9) since [0.2.8](https://pypi.org/project/pyrcs/0.2.8/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.8...0.2.9) since [0.2.8](https://pypi.org/project/pyrcs/0.2.8/):**
 
 - Updated pre-packed data
 
@@ -248,11 +262,11 @@
 
 <br/>
 
-#### **[0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)**
+## **[0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)**
 
 (*13 September 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.7...0.2.8) since [0.2.7](https://pypi.org/project/pyrcs/0.2.7/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.7...0.2.8) since [0.2.7](https://pypi.org/project/pyrcs/0.2.7/):**
 
 - Removed the function [~~fake_requests_headers()~~](https://github.com/mikeqfu/pyrcs/commit/4bcd0a2e329f37d7c74a3b5b9b3d9e56ba5df508#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L547-L562) from the module [utils](https://github.com/mikeqfu/pyrcs/blob/4bcd0a2e329f37d7c74a3b5b9b3d9e56ba5df508/pyrcs/utils.py).
 - Made modifications with bug fixes to: 
@@ -265,11 +279,11 @@
 
 <br/>
 
-#### **[0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)**
+## **[0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)**
 
 (*18 July 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.6...0.2.7) since [0.2.6](https://pypi.org/project/pyrcs/0.2.6/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.6...0.2.7) since [0.2.6](https://pypi.org/project/pyrcs/0.2.6/):**
 
 - Renamed the sub-packages (with modifications to all of their sub-modules): 
   - [~~line_data_cls~~](https://github.com/mikeqfu/pyrcs/commit/af64bddcbf15e60743e7339f0423c1872bbf3d8e) to [line_data](https://github.com/mikeqfu/pyrcs/tree/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/line_data);
@@ -287,32 +301,32 @@
 
 <br/>
 
-#### **[0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)**
+## **[0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)**
 
 (*8 March 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.5...0.2.6) since [0.2.5](https://pypi.org/project/pyrcs/0.2.5/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.5...0.2.6) since [0.2.5](https://pypi.org/project/pyrcs/0.2.5/):**
 
 - Added a new function [fix_num_stanox()](https://github.com/mikeqfu/pyrcs/blob/6b4c9214767f5b37a00ed374a049ab09ac9706b1/pyrcs/utils.py#L600) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/6b4c9214767f5b37a00ed374a049ab09ac9706b1/pyrcs/utils.py).
 
 <br/>
 
-#### **[0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)**
+## **[0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)**
 
 (*10 January 2020*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.4...0.2.5) since [0.2.4](https://pypi.org/project/pyrcs/0.2.4/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.4...0.2.5) since [0.2.4](https://pypi.org/project/pyrcs/0.2.4/):**
 
 - Renamed the function [~~update_package_data()~~](https://github.com/mikeqfu/pyrcs/commit/e46e17002cd048db63dc5c7c0e074b4162377705) to [update_pkg_metadata()](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/update.py#L11) in the module [update](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/update.py).
 - Improved the [keys of the dict-type data](https://github.com/mikeqfu/pyrcs/commit/48e2b908984f940c3abe3aba5899de5fe8c285cc) for relevant methods of the two classes: [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/line_data_cls/elrs_mileages.py#L244) and [SignalBoxes](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/other_assets_cls/signal_boxes.py#L18).
 
 <br/>
 
-#### **[0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)**
+## **[0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)**
 
 (*4 December 2019*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.3...0.2.4) since [0.2.3](https://pypi.org/project/pyrcs/0.2.3/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.3...0.2.4) since [0.2.3](https://pypi.org/project/pyrcs/0.2.3/):**
 
 - Removed the module [~~settings~~](https://github.com/mikeqfu/pyrcs/commit/8e6340bfe078f0cd558f059f89ef1d5029ef62b4).
 - Updated [import statements](https://github.com/mikeqfu/pyrcs/commit/aca6383be837a241ff0012a53a33ce5469cf676f) in some modules/sub-modules due to changes in their dependencies.
@@ -320,31 +334,31 @@
 
 <br/>
 
-#### **[0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)**
+## **[0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)**
 
 (*4 October 2019*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.2...0.2.3) since [0.2.2](https://pypi.org/project/pyrcs/0.2.2/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.2...0.2.3) since [0.2.2](https://pypi.org/project/pyrcs/0.2.2/):**
 
 - Fixed [a few bugs](https://github.com/mikeqfu/pyrcs/commit/7872dc917065623f3cb5f7939a065900c6070af4) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/f0d8f3b271234fd6710ff6dd4dae9b6315db6c01/pyrcs/utils.py).
 
 <br/>
 
-#### **[0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)**
+## **[0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)**
 
 (*27 September 2019*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.1...0.2.2) since [0.2.1](https://pypi.org/project/pyrcs/0.2.1/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.1...0.2.2) since [0.2.1](https://pypi.org/project/pyrcs/0.2.1/):**
 
 - Improved the methods [.collect_mileage_file_by_elr()](https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200) and [.get_conn_mileages()](https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3) of the class [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/4f4f3c765948f935bd8160071082c2b16237f1db/pyrcs/line_data_cls/elrs_mileages.py#L244) with bug fixes.
 
 <br/>
 
-#### **[0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)**
+## **[0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)**
 
 (*18 September 2019*)
 
-##### **Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.0...0.2.1) since [0.2.0](https://pypi.org/project/pyrcs/0.2.0/):**
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/0.2.0...0.2.1) since [0.2.0](https://pypi.org/project/pyrcs/0.2.0/):**
 
 - Removed the function [~~is_float()~~](https://github.com/mikeqfu/pyrcs/commit/80fed8c2fb3096457a20e543af5f15cb55f40407#diff-b10b1cca28c0fc2ed0bdb1f92c3c9f58dcc4279b09ad28a2a4c513a35861c282L436-L442) from the module [utils](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/utils.py).
 - Added new functions: 
@@ -353,7 +367,7 @@
 
 <br/>
 
-#### **[0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)**
+## **[0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)**
 
 (*29 August 2019*)
 
