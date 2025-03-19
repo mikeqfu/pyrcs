@@ -33,7 +33,9 @@ def _parse_non_float_str_mileage(mileage):
     Parses non-float mileage strings into structured mileage and notes.
 
     :param mileage: List of mileage strings.
-    :return: Tuple containing lists of ``miles_chains`` and ``mileage_note``.
+    :type mileage: pandas.Series | list | tuple
+    :return: A tuple containing lists of ``miles_chains`` and ``mileage_note``.
+    :rtype: tuple[list, list]
     """
 
     miles_chains, mileage_note = [], []
@@ -95,8 +97,10 @@ def _parse_mileages(mileages):
             miles_chains = mileage_.map(mileage_to_mile_chain)  # Warning: Might contain issues!
 
         else:
-            miles_chains = mileage.str.replace(r'/?\d+\.\d+km/?', '', regex=True)
+            # miles_chains = mileage.str.replace(r'/?\d+\.\d+km/?', '', regex=True)
+            miles_chains = mileage.where(~mileage.str.contains('km', na=False), '')
             mileage_ = miles_chains.map(mile_chain_to_mileage)
+            mileage = mileage.where(mileage.str.contains('km', na=False), '')
 
         # mileage_note = [x + ' (Approximate)' if x.startswith('≈') else x for x in list(mileage)]
         mileage_note = mileage.map(lambda x: f"{x} (Approximate)" if x.startswith('≈') else x)
@@ -469,9 +473,9 @@ class ELRMileages(_Base):
 
             data = {self.KEY: data_, self.KEY_TO_LAST_UPDATED_DATE: latest_update_date}
 
-        if dump_dir is not None:
-            self._save_data_to_file(
-                data=data, data_name=self.NAME, dump_dir=dump_dir, verbose=verbose)
+            if dump_dir is not None:
+                self._save_data_to_file(
+                    data=data, data_name=self.NAME, dump_dir=dump_dir, verbose=verbose)
 
         return data
 
@@ -517,39 +521,38 @@ class ELRMileages(_Base):
         val_cols = ['Line name', 'Mileages', 'Datum']
         line_name, mileages, _ = elr_dat[val_cols].values[0]
 
+        pat = re.compile(r' (and|&|to|-) ')
+
         if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
             line_name_ = re.search(r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to) ', line_name_)
+                loc_a, _, loc_b = re.split(pat, line_name_)
                 line_name = re.search(r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
             except ValueError:
                 try:
-                    loc_a, _, loc_b = re.split(r' (and|&|to) ', notes)
+                    loc_a, _, loc_b = re.split(pat, notes)
                     line_name = line_name_
                 except ValueError:
                     loc_a, loc_b = '', ''
 
-        elif elr_dat.Mileages.values[0].startswith('0.00') and elr_dat.Datum.values[0] != '':
-            loc_a = elr_dat.Datum.values[0]
-            if loc_a in line_name:
-                loc_b = re.split(r' (and|&|to) ', line_name)[2]
-            else:
-                loc_b = line_name
+        elif elr_dat['Mileages'].values[0].startswith('0.00') and elr_dat['Datum'].values[0] != '':
+            loc_a = elr_dat['Datum'].values[0]
+            loc_b = re.split(pat, line_name)[2] if loc_a in line_name else line_name
 
-        elif re.match(r'(\w ?)+ to (\w ?)+', notes):
-            loc_a, loc_b = notes.split(' to ')
+        elif re.match(r'(\w ?)+ (and|&|to) (\w ?)+', notes):
+            loc_a, _, loc_b = re.split(pat, notes)
 
         else:
             loc_a, loc_b = '', ''
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', notes)
+                loc_a, _, loc_b = re.split(pat, notes)
             except (ValueError, TypeError):
                 pass
 
             try:
-                loc_a, _, loc_b = re.split(r' (and|&|to|-) ', line_name)
+                loc_a, _, loc_b = re.split(pat, line_name)
             except (ValueError, TypeError):
                 pass
 
