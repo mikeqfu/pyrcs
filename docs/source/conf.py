@@ -2,16 +2,10 @@
 Configuration file for the Sphinx documentation builder.
 """
 
+# == Path setup ====================================================================================
 import os
 import sys
 
-from pygments.formatters.latex import LatexFormatter
-from sphinx.highlighting import PygmentsBridge
-
-from pyrcs import __affil__, __author__, __copyright__, __desc__, __first_release__, __pkgname__, \
-    __project__, __version__
-
-# == Path setup ====================================================================================
 # (If the directory is relative to the docs root, use os.path.abspath to make it absolute)
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../pyrcs'))
@@ -19,6 +13,9 @@ sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # == Project information (General information about the project) ===================================
+from pyrcs import __affil__, __author__, __copyright__, __desc__, __first_release__, __pkgname__, \
+    __project__, __version__  # noqa
+
 project = __project__
 copyright = __copyright__
 
@@ -228,6 +225,10 @@ copybutton_prompt_is_regexp = True
 
 
 # == Options for LaTeX output ======================================================================
+from pygments.formatters.latex import LatexFormatter  # noqa
+from sphinx.highlighting import PygmentsBridge  # noqa
+
+
 class CustomLatexFormatter(LatexFormatter):
     def __init__(self, **options):
         super(CustomLatexFormatter, self).__init__(**options)
