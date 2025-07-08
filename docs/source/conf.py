@@ -1,20 +1,24 @@
-"""Configuration file for the Sphinx documentation builder."""
+"""
+Configuration file for the Sphinx documentation builder.
+"""
 
-# == Path setup ====================================================================================
 import os
 import sys
 
-# If the directory is relative to the documentation root, use os.path.abspath to make it absolute:
+from pygments.formatters.latex import LatexFormatter
+from sphinx.highlighting import PygmentsBridge
+
+from pyrcs import __affil__, __author__, __copyright__, __desc__, __first_release__, __pkgname__, \
+    __project__, __version__
+
+# == Path setup ====================================================================================
+# (If the directory is relative to the docs root, use os.path.abspath to make it absolute)
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../pyrcs'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
-# == Project information ===========================================================================
-from pyrcs import (__affil__, __author__, __copyright__, __desc__, __first_release__,
-                   __pkgname__, __project__, __version__)
-
-# General information about the project:
+# == Project information (General information about the project) ===================================
 project = __project__
 copyright = __copyright__
 
@@ -145,7 +149,6 @@ autoclass_content = 'both'  # ['class', 'init']
 # Automatically documented members are sorted by source order ('bysource'):
 autodoc_member_order = 'bysource'
 
-
 # == Options for HTML and HTMLHelp output ==========================================================
 html_theme = 'furo'  # The theme to use for HTML & HTML Help pages  # 'sphinx_rtd_theme'
 html_title = __project__
@@ -223,11 +226,8 @@ myst_admonition_enable = True
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
 
+
 # == Options for LaTeX output ======================================================================
-from pygments.formatters.latex import LatexFormatter
-from sphinx.highlighting import PygmentsBridge
-
-
 class CustomLatexFormatter(LatexFormatter):
     def __init__(self, **options):
         super(CustomLatexFormatter, self).__init__(**options)
