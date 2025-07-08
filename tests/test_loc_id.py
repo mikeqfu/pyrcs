@@ -23,14 +23,14 @@ class TestLocationIdentifiers:
         return LocationIdentifiers()
 
     @pytest.mark.parametrize('update', [True, False])
-    def test_fetch_explanatory_note(self, lid, update):
-        exp_note = lid.fetch_notes(update=update, verbose=True)
+    def test_fetch_notes(self, lid, update):
+        notes = lid.fetch_notes(update=update, verbose=True)
 
-        assert isinstance(exp_note, dict)
-        assert list(exp_note.keys()) == [lid.KEY_TO_NOTES, lid.KEY_TO_LAST_UPDATED_DATE]
+        assert isinstance(notes, dict)
+        assert list(notes.keys()) == [lid.KEY_TO_NOTES, lid.KEY_TO_LAST_UPDATED_DATE]
 
-        exp_note_dat = exp_note[lid.KEY_TO_NOTES][lid.KEY_TO_MSCEN]
-        assert isinstance(exp_note_dat, pd.DataFrame)
+        notes_dat = notes[lid.KEY_TO_NOTES][lid.KEY_TO_MSCEN]
+        assert isinstance(notes_dat, list)
 
     def test__parse_location_name(self):
         dat = _parse_raw_location_name('Abbey Wood')
