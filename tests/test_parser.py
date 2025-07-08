@@ -102,21 +102,31 @@ def test_get_financial_year():
 
 
 @pytest.mark.parametrize('update', [False, True])
-def test_get_introduction(update, capfd):
+@pytest.mark.parametrize('raise_error', [False, True])
+def test_get_introduction(update, raise_error, capfd):
     from pyrcs.parser import get_introduction
 
-    bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
+    url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
 
-    intro_text = get_introduction(url=bridges_url, update=update)
+    intro_text = get_introduction(url=url, update=update, verbose=True)
     out, _ = capfd.readouterr()
     if update:
         assert "Updating" in out and "Done." in out
     assert isinstance(intro_text, str)
 
-    intro_text = get_introduction(url=bridges_url.replace('railwaycodes', '123'), update=True)
-    out, _ = capfd.readouterr()
-    assert intro_text is None
-    assert "The Internet connection is not available." in out
+    url_ = url.replace('railwaycodes', '123')
+    if raise_error:
+        with pytest.raises(IndexError):
+            get_introduction(url=url_, update=True, raise_error=raise_error)
+
+    else:
+        intro_text = get_introduction(url=url_, update=True, raise_error=raise_error)
+        assert intro_text is None
+
+        intro_text = get_introduction(url=url_, update=True, verbose=True, raise_error=raise_error)
+        out, _ = capfd.readouterr()
+        assert intro_text is None
+        assert "Failed." in out
 
 
 def test_get_catalogue():
