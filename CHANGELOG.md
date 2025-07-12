@@ -1,6 +1,22 @@
 # Changelog / Release notes
 
-<br/>
+
+## **[1.0.2](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.2)**
+
+(*12 July 2025*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.0.1...1.0.2) since [1.0.1](https://pypi.org/project/pyrcs/1.0.1/):
+
+- **Bug fixes:**
+  - Fixed `LocationIdentifiers.collect_notes()` logic and improve test coverage (#44).
+  - Handled `IndexError` in `get_introduction()` for invalid URLs, add test case (#46)
+- Packaging & docs:
+  - Removed `setup.cfg` and modified `pyproject.toml`
+  - Updated `requirements.txt`, `MANIFEST.in` and Sphinx config
+  - Improved doc templates and updated `conf.py`, `quick-start.rst`
+
+**For more information and detailed specifications, check out the [PyRCS 1.0.2 documentation](https://pyrcs.readthedocs.io/en/1.0.2/).**
+
 
 ## **[1.0.1](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.1)**
 
@@ -14,7 +30,6 @@
 
 **For more information and detailed specifications, check out the [PyRCS 1.0.1 documentation](https://pyrcs.readthedocs.io/en/1.0.1/).**
 
-<br/>
 
 ## **[1.0.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.0)**
 
@@ -29,7 +44,6 @@
 
 **For more information and detailed specifications, check out the [PyRCS 1.0.0 documentation](https://pyrcs.readthedocs.io/en/1.0.0/).**
 
-<br/>
 
 ## **[0.3.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.7)**
 
@@ -42,7 +56,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.7 documentation](https://pyrcs.readthedocs.io/en/0.3.7/).**
 
-<br/>
 
 ## **[0.3.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.6)**
 
@@ -58,7 +71,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.6 documentation](https://pyrcs.readthedocs.io/en/0.3.6/).**
 
-<br/>
 
 ## **[0.3.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.5)**
 
@@ -73,7 +85,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.5 documentation](https://pyrcs.readthedocs.io/en/0.3.5/).**
 
-<br/>
 
 ## **[0.3.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.4)**
 
@@ -85,7 +96,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.4 documentation](https://pyrcs.readthedocs.io/en/0.3.4/).**
 
-<br/>
 
 ## **[0.3.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.3)**
 
@@ -99,7 +109,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.3 documentation](https://pyrcs.readthedocs.io/en/0.3.3/).**
 
-<br/>
 
 ## **[0.3.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.2)**
 
@@ -111,7 +120,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.2 documentation](https://pyrcs.readthedocs.io/en/0.3.2/).**
 
-<br/>
 
 ## **[0.3.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.1)**
 
@@ -123,7 +131,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.1 documentation](https://pyrcs.readthedocs.io/en/0.3.1/).**
 
-<br/>
 
 ## **[0.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.3.0)**
 
@@ -136,7 +143,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.3.0 documentation](https://pyrcs.readthedocs.io/en/0.3.0/).**
 
-<br/>
 
 ## **[0.2.15](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.15)**
 
@@ -148,7 +154,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.15 documentation](https://pyrcs.readthedocs.io/en/0.2.15/).**
 
-<br/>
 
 ## **[0.2.14](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.14)**
 
@@ -163,7 +168,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.14 documentation](https://pyrcs.readthedocs.io/en/0.2.14/).** 
 
-<br/>
 
 ## **[0.2.13](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.13)**
 
@@ -178,7 +182,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.13 documentation](https://pyrcs.readthedocs.io/en/0.2.13/).** 
 
-<br/>
 
 ## **[0.2.12](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.12)**
 
@@ -209,7 +212,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.12 documentation](https://pyrcs.readthedocs.io/en/0.2.12/).** 
 
-<br/>
 
 ## **[0.2.11](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.11)**
 
@@ -223,7 +225,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.11 documentation](https://pyrcs.readthedocs.io/en/0.2.11/).** 
 
-<br/>
 
 ## **[0.2.10](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.10)**
 
@@ -248,7 +249,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.10 documentation](https://pyrcs.readthedocs.io/en/0.2.10/).**
 
-<br/>
 
 ## **[0.2.9](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.9)**
 
@@ -260,7 +260,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.9 documentation](https://pyrcs.readthedocs.io/en/0.2.9/).** 
 
-<br/>
 
 ## **[0.2.8](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.8)**
 
@@ -277,7 +276,6 @@
 
 **For more information and detailed specifications, check out [PyRCS 0.2.8 documentation](https://pyrcs.readthedocs.io/en/0.2.8/).** 
 
-<br/>
 
 ## **[0.2.7](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.7)**
 
@@ -299,7 +297,6 @@
   - [collect_site_map()](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/updater.py#L17) and [fetch_site_map()](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/updater.py#L88) to the module [updater](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/updater.py);
   - [homepage_url()](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/utils.py#L21) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/0e33eb393089fa706daedf31f1475dd3493c82ae/pyrcs/utils.py).
 
-<br/>
 
 ## **[0.2.6](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.6)**
 
@@ -309,7 +306,6 @@
 
 - Added a new function [fix_num_stanox()](https://github.com/mikeqfu/pyrcs/blob/6b4c9214767f5b37a00ed374a049ab09ac9706b1/pyrcs/utils.py#L600) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/6b4c9214767f5b37a00ed374a049ab09ac9706b1/pyrcs/utils.py).
 
-<br/>
 
 ## **[0.2.5](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.5)**
 
@@ -320,7 +316,6 @@
 - Renamed the function [~~update_package_data()~~](https://github.com/mikeqfu/pyrcs/commit/e46e17002cd048db63dc5c7c0e074b4162377705) to [update_pkg_metadata()](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/update.py#L11) in the module [update](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/update.py).
 - Improved the [keys of the dict-type data](https://github.com/mikeqfu/pyrcs/commit/48e2b908984f940c3abe3aba5899de5fe8c285cc) for relevant methods of the two classes: [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/line_data_cls/elrs_mileages.py#L244) and [SignalBoxes](https://github.com/mikeqfu/pyrcs/blob/e53a7e56146b2c20ca91e6aa278b1c333c09e69a/pyrcs/other_assets_cls/signal_boxes.py#L18).
 
-<br/>
 
 ## **[0.2.4](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.4)**
 
@@ -332,7 +327,6 @@
 - Updated [import statements](https://github.com/mikeqfu/pyrcs/commit/aca6383be837a241ff0012a53a33ce5469cf676f) in some modules/sub-modules due to changes in their dependencies.
 - Made [some modifications](https://github.com/mikeqfu/pyrcs/commit/0a31277fec3d87f6fe0b561a3b16d013cdd9eb8b) to a few sub-modules due to changes in the corresponding web pages of the Railway Codes website.
 
-<br/>
 
 ## **[0.2.3](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.3)**
 
@@ -342,7 +336,6 @@
 
 - Fixed [a few bugs](https://github.com/mikeqfu/pyrcs/commit/7872dc917065623f3cb5f7939a065900c6070af4) in the module [utils](https://github.com/mikeqfu/pyrcs/blob/f0d8f3b271234fd6710ff6dd4dae9b6315db6c01/pyrcs/utils.py).
 
-<br/>
 
 ## **[0.2.2](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.2)**
 
@@ -352,7 +345,6 @@
 
 - Improved the methods [.collect_mileage_file_by_elr()](https://github.com/mikeqfu/pyrcs/commit/3a4b210c8373de14de7740c9ca874db100687200) and [.get_conn_mileages()](https://github.com/mikeqfu/pyrcs/commit/bc45055b6d07f83bddadd29c590226d7ddb9a7d3) of the class [ELRMileages](https://github.com/mikeqfu/pyrcs/blob/4f4f3c765948f935bd8160071082c2b16237f1db/pyrcs/line_data_cls/elrs_mileages.py#L244) with bug fixes.
 
-<br/>
 
 ## **[0.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.1)**
 
@@ -365,7 +357,6 @@
   - [is_str_float()](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/line_data_cls/elrs_mileages.py#L33) to the module [elrs_mileages](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/line_data_cls/elrs_mileages.py);
   - [fetch_location_names_repl_dict()](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/utils.py#L440) and [update_location_name_repl_dict()](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/utils.py#L465) to the module [utils](https://github.com/mikeqfu/pyrcs/blob/036453c38c35f12183d5adc0fde88ffd5f402110/pyrcs/utils.py).
 
-<br/>
 
 ## **[0.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/0.2.0)**
 
