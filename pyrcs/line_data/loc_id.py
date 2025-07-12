@@ -453,6 +453,40 @@ def _parse_stanox_note(data):
     return data
 
 
+def _parse_note_page_pre_span(pre_span):
+
+    lines = pre_span.decode_contents().strip().split('\n')
+
+    data = []
+    for line in lines:
+        temp = bs4.BeautifulSoup(line, "html.parser")
+        spans = temp.find_all('span')
+        texts = [span.get_text(strip=True) for span in spans]
+
+        # Remaining text after last span (e.g., "BLU", "EBF", etc.)
+        remaining = temp.get_text(strip=True)
+        for t in texts:
+            remaining = remaining.replace(t, '', 1)
+        remaining = remaining.strip()
+
+        row = texts + [remaining]
+        data.append(row)
+
+    # Normalize rows to have equal length
+    max_len = max(len(row) for row in data)
+    for row in data:
+        while len(row) < max_len:
+            row.append(None)
+
+    # Create DataFrame
+    columns = ['location_name', 'CRS1', 'CRS2']
+    if max_len > 3:
+        columns += ['CRS3']
+    df = pd.DataFrame(data, columns=columns).fillna('')
+
+    return df
+
+
 class LocationIdentifiers(_Base):
     """
     A class for collecting data of location identifiers
@@ -561,27 +595,35 @@ class LocationIdentifiers(_Base):
         """
 
         soup = bs4.BeautifulSoup(markup=source.content, features=parser)
-        contents = soup.find_all(['p', 'pre'])
 
-        raw_text = filter(
-            None, [x.get_text(strip=True) for x in contents if isinstance(x.next_element, str)])
+        raw_text = []
+        for x in soup.find_all(['p', 'pre']):
+            if x.name == 'pre':
+                raw_text.append(_parse_note_page_pre_span(x))
+            elif isinstance(x.next_element, str):
+                x_ = x.get_text(strip=True)
+                if x_:
+                    raw_text.append(x_)
 
         notes = []
         for x in raw_text:
-            if '\n' in x and '\t' in x:
-                text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
-            else:
-                text = x.replace('\t', ' ').replace('\xa0', '')
+            if isinstance(x, str):
+                if '\n' in x and '\t' in x:
+                    text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
+                else:
+                    text = x.replace('\t', ' ').replace('\xa0', '')
 
-            if isinstance(text, list):
-                text = [[x.strip() for x in t.split(',')] for t in text if t != '']
-                text = [x + [''] if len(x) < 4 else x for x in text]
-                temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2'])
-                notes.append(temp.fillna(''))
-            else:
-                to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
-                if text.strip() != '' and not any(t in text for t in to_remove):
-                    notes.append(text)
+                if isinstance(text, list):
+                    text = [[x.strip() for x in t.split(',')] for t in text if t != '']
+                    text = [x + [''] if len(x) < 4 else x for x in text]
+                    temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2'])
+                    notes.append(temp.fillna(''))
+                else:
+                    to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
+                    if text.strip() != '' and not any(t in text for t in to_remove):
+                        notes.append(text)
+            elif isinstance(x, pd.DataFrame):
+                notes.append(x)
 
         return notes, soup
 
@@ -977,20 +1019,10 @@ class LocationIdentifiers(_Base):
     def _collect_notes(self, source, verbose=False, parser='html.parser'):
         notes_dat, soup = self._parse_notes_page(source=source, parser=parser)
 
-        notes = {}
-        explanatory_notes, additional_notes = {}, []
-
-        for x in notes_dat:
-            if isinstance(x, str):
-                if 'Last update' not in x:
-                    additional_notes.append(x)
-            else:
-                explanatory_notes.update({self.KEY_TO_MSCEN: x})
-
-        notes.update(
-            {self.KEY_TO_NOTES: explanatory_notes | {'Additional notes': additional_notes},
-             self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup)}
-        )
+        notes = {
+            self.KEY_TO_NOTES: {self.KEY_TO_MSCEN: [x for x in notes_dat if 'Last update' not in x]},
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
 
         if verbose in {True, 1}:
             print("Done.")
@@ -1023,32 +1055,32 @@ class LocationIdentifiers(_Base):
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
             >>> lid = LocationIdentifiers()
-            >>> explanatory_notes = lid.collect_notes()
+            >>> notes = lid.collect_notes()
             To collect data of multiple station codes explanatory note
             ? [No]|Yes: yes
-            >>> type(explanatory_notes)
+            >>> type(notes)
             dict
-            >>> list(explanatory_notes.keys())
-            ['Multiple station codes explanatory note', 'Notes', 'Last updated date']
-            >>> lid.KEY_TO_MSCEN
-            'Multiple station codes explanatory note'
-            >>> explanatory_notes_ = explanatory_notes[lid.KEY_TO_MSCEN]
-            >>> type(explanatory_notes_)
-            pandas.core.frame.DataFrame
-            >>> explanatory_notes_.head()
-                              Location  CRS CRS_alt1 CRS_alt2
-            0  Ebbsfleet International  EBD      EBF
-            1          Glasgow Central  GLC      GCL
-            2     Glasgow Queen Street  GLQ      GQL
-            3                  Heworth  HEW      HEZ
-            4     Highbury & Islington  HHY      HII      XHZ
+            >>> list(notes.keys())
+            ['Notes', 'Last updated date']
+            >>> lid.KEY_TO_NOTES
+            'Notes'
+            >>> notes_ = notes[lid.KEY_TO_NOTES]
+            >>> type(notes_)
+            dict
+            >>> notes_[lid.KEY_TO_MSCEN][2].head()
+                         location_name CRS1 CRS2 CRS3
+            0                Bletchley  BLY  BLU
+            1  Ebbsfleet International  EBD  EBF
+            2          Glasgow Central  GLC  GCL
+            3     Glasgow Queen Street  GLQ  GQL
+            4                  Heworth  HEW  HEZ
         """
 
         explanatory_notes = self._collect_data_from_source(
-            data_name=self.KEY_TO_MSCEN.lower(), method=self._collect_notes,
+            data_name="additional notes", method=self._collect_notes,
             url=self.catalogue[self.KEY_TO_MSCEN],
             confirmation_required=confirmation_required,
-            confirmation_prompt=format_confirmation_prompt(data_name=self.KEY_TO_MSCEN.lower()),
+            confirmation_prompt=format_confirmation_prompt(data_name="additional notes"),
             verbose=verbose, raise_error=raise_error)
 
         return explanatory_notes

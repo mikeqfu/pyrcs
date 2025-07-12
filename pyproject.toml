@@ -1,3 +1,64 @@
 [build-system]
-requires = ["setuptools>=70.0"]
+requires = ["setuptools>=70", "wheel", "build"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyrcs"
+dynamic = [
+    "version",
+    "description",
+    "urls",
+    "authors",
+    "license"
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+keywords = [
+    "Python",
+    "Railway",
+    "Railway Codes",
+    "Bridges",
+    "Computer Reservation System",
+    "CRS",
+    "National Location Codes",
+    "NLC",
+    "Timing Point Locations",
+    "TIPLOC",
+    "Station Number Names",
+    "STANME",
+    "Station Numbers",
+    "STANOX",
+    "Electrification",
+    "Engineer's Line References",
+    "ELR",
+    "Mileage",
+    "Line Of Route",
+    "LOR",
+    "Railway Line Names",
+    "Railway Bridges",
+    "Stations",
+    "Signal Boxes",
+    "Tunnels",
+    "Viaducts",
+    "Depots",
+    "Tracks"
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pyhelpers >= 2.3.0",
+    "beautifulsoup4"
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
+
+[tool.setuptools]
+packages = { find = {} }

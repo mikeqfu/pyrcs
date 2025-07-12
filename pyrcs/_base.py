@@ -45,7 +45,7 @@ class _Base:
             - ``'catalogue'``, ``'catalog'``, or ``'cat'`` for catalogue-related content.
             - ``'introduction'`` or ``'intro'`` for introductory content.
 
-        :type content_type: str | None
+        :type content_type: str | bool | None
         :param data_category: Category to which the data belongs; defaults to ``''``.
         :type data_category: str
         :param data_cluster: Optional override for ``KEY`` to specify a different subdirectory name.
@@ -87,7 +87,7 @@ class _Base:
             elif content_type_.startswith('intro'):  # Get the introductory text of the data
                 self.introduction = get_introduction(url=self.URL, verbose=verbose_)
 
-        elif content_type is True:  # Get both the catalogue and introductory text of the data
+        elif content_type:  # Get both the catalogue and introductory text of the data
             self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
 
             self.introduction = get_introduction(url=self.URL, verbose=verbose_)

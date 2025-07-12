@@ -651,7 +651,7 @@ def _parse_introduction(source, delimiter='\n'):
     return introduction
 
 
-def get_introduction(url, delimiter='\n', update=False, verbose=True, raise_error=False):
+def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_error=False):
     """
     Gets the introduction section of a specified web page.
 
@@ -665,7 +665,7 @@ def get_introduction(url, delimiter='\n', update=False, verbose=True, raise_erro
     :type delimiter: str
     :param update: Whether to check for updates to the package data; defaults to ``False``.
     :type update: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``True``.
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
         if ``raise_error=False`` (default), the error will be suppressed.
