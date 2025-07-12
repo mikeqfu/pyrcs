@@ -159,6 +159,9 @@ class LOR(_Base):
         keys_to_prefixes = {
             self.KEY_P: lor_pref, self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
 
+        if verbose in {True, 1}:
+            print("Done.")
+
         self._save_data_to_file(
             data=keys_to_prefixes, data_name="keys-to-prefixes", verbose=verbose)
 
