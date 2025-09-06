@@ -84,8 +84,6 @@ def _check_row_spans(dat):
     dat0[['ELR', 'Mileage']] = dat0[['ELR', 'Mileage']].map(lambda x: x.split(' &&& '))
     dat0 = dat0.explode(['ELR', 'Mileage'], ignore_index=True)
 
-    dat0.sort_values(['Station'], ignore_index=True, inplace=True)
-
     return dat0
 
 
@@ -122,22 +120,28 @@ def _parse_station_column(dat):
         x = 'Heathrow Junction [sometimes referred to as Heathrow Interchange]\t\t / [no CRS?]'
     """
 
-    temp1 = dat['Station'].str.split('\t\t', n=1, expand=True)
-    temp1.columns = ['Station', 'CRS']
-    dat['Station'] = temp1['Station'].str.rstrip(' / ').str.strip()
+    stn_col_name = [col for col in dat.columns if 'Station' in col][0]
+    temp1 = dat[stn_col_name].str.split('\t\t', n=1, expand=True)
+
+    if stn_col_name != 'Station':
+        dat.rename(columns={stn_col_name: 'Station'}, inplace=True)
+        stn_col_name = 'Station'
+
+    temp1.columns = [stn_col_name, 'CRS']
+    dat[stn_col_name] = temp1[stn_col_name].str.rstrip(' / ').str.strip()
 
     # Get notes for stations
     stn_note_ = pd.Series('', index=dat.index)
-    for i, x in enumerate(temp1['Station']):
+    for i, x in enumerate(temp1[stn_col_name]):
         if '[' in x and ']' in x:
             y = re.search(r' \[(.*)](✖.*)?', x).group(0)  # Station Note
-            dat.loc[i, 'Station'] = x.replace(y, '').strip()
+            dat.loc[i, stn_col_name] = str(x).replace(y, '').strip()
             if '✖' in y:
                 stn_note_[i] = '; '.join([y_.strip(' []') for y_ in y.split('✖')])
             else:
                 stn_note_[i] = y.strip(' []')
 
-    dat.insert(loc=dat.columns.get_loc('Station') + 1, column='Station Note', value=stn_note_)
+    dat.insert(loc=dat.columns.get_loc(stn_col_name) + 1, column='Station Note', value=stn_note_)
 
     temp2 = temp1['CRS'].str.replace(' / /', ' &&& ').str.split(
         r'  | / ', regex=True, expand=True).fillna('')
@@ -154,7 +158,7 @@ def _parse_station_column(dat):
         lambda z: ' and '.join(['{} [{}]'.format(*z_.split('✖')) for z_ in z.split(' &&& ')])
         if ' &&& ' in z else z).str.strip()
 
-    dat = pd.concat([dat, temp2], axis=1)
+    dat = pd.concat([dat, temp2], axis=1).sort_values(stn_col_name)
 
     return dat
 
