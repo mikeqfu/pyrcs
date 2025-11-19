@@ -691,9 +691,12 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
-    except requests.exceptions.ConnectionError:
-        print_inst_conn_err(update=update, verbose=True if update else verbose)
-        return None
+    except requests.exceptions.ConnectionError as e:
+        if raise_error:
+            raise e  # Raise the original connection error
+        else:
+            print_inst_conn_err(update=update, verbose=True if update else verbose, e=e)
+            return None
 
     try:
         introduction = _parse_introduction(source=source, delimiter=delimiter)
