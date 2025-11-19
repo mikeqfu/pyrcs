@@ -482,15 +482,18 @@ class Depots(_Base):
 
         span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
         num_codes_dict = dict([
-            (int(span_tag.text), str(span_tag.next_sibling).replace(' = ', '').strip())
+            (int(span_tag.text), str(span_tag.next_sibling).replace('=', '').strip())
             for span_tag in span_tags])
 
-        numerical_codes.rename(columns={'sort by division': 'Division'}, inplace=True)
-        numerical_codes.Division = numerical_codes.Code.map(
-            lambda x: num_codes_dict[int(str(x)[-1])])
+        temp = numerical_codes.iloc[:, 0].str.split(' ', expand=True)
+        temp.columns = ['Code', 'Division']
+        temp.loc[:, 'Division'] = temp['Division'].map(lambda x: num_codes_dict[int(str(x)[-1])])
+        numerical_codes = pd.concat(
+            [temp, numerical_codes.drop(columns=numerical_codes.columns[0])], axis=1)
 
         h3_titles = [h3.text for h3 in soup.find_all('h3')]
         gwr_depot_codes_data = dict(zip(h3_titles, [alphabetical_codes, numerical_codes]))
+        gwr_depot_codes_data.update({'Keys to numerical codes': num_codes_dict})
 
         gwr_depot_codes = {
             self.KEY_TO_GWR: gwr_depot_codes_data,
