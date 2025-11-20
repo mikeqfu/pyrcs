@@ -73,7 +73,7 @@ def _prep_records(trs, ths, sep=' / '):
 
         for td_no, td in enumerate(tds):
             if td.find('td'):
-                text_ = td.find('a').contents + ["\t\t / "]
+                text_ = [''] if td.find('a') is None else td.find('a').contents + ["\t\t / "]
             else:
                 text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
             # _move_element_to_end(text_, char='\t\t')
