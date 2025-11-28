@@ -1,6 +1,25 @@
 # Changelog / Release notes
 
 
+## **[1.0.3](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.3)**
+
+(*28 November 2025*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.0.2...1.0.3) since [1.0.2](https://pypi.org/project/pyrcs/1.0.2/):
+
+- **Bug fixes:**
+  - Fixed 'Station' `KeyError` in `Stations.collect_locations()` due to missing column before sorting (#52).
+  - Fixed `ConnectionError` handling in `get_introduction()` to properly respect the `raise_error` parameter and updated tests (#54).
+  - Resolved `TypeError: 'NoneType' object is not iterable` in `fetch_codes` by revising GWR data processing (#56).
+  - Fixed `TypeError` in viaduct data processing by adding null checks in `_prep_records` to handle missing anchor tags in HTML tables (#58).
+  - Fixed incomplete data collection in `get_site_map()` (#61).
+- **Packaging & maintenance:**
+  - Bumped minimum required Python version to 3.12.
+  - Updated `requirements.txt`.
+
+**For more information and detailed specifications, check out the [PyRCS 1.0.3 documentation](https://pyrcs.readthedocs.io/en/1.0.3/).**
+
+
 ## **[1.0.2](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.2)**
 
 (*12 July 2025*)
@@ -10,7 +29,7 @@
 - **Bug fixes:**
   - Fixed `LocationIdentifiers.collect_notes()` logic and improve test coverage (#44).
   - Handled `IndexError` in `get_introduction()` for invalid URLs, add test case (#46)
-- Packaging & docs:
+- **Packaging & docs**:
   - Removed `setup.cfg` and modified `pyproject.toml`
   - Updated `requirements.txt`, `MANIFEST.in` and Sphinx config
   - Improved doc templates and updated `conf.py`, `quick-start.rst`
