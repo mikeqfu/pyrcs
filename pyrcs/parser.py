@@ -315,6 +315,10 @@ def parse_date(str_date, as_date_type=False):
 # == Extract information ===========================================================================
 
 
+def _clean_key(k_text):
+    return k_text.replace("–", "-").strip("()").removesuffix(".shtml").removesuffix(".shtm")
+
+
 def _parse_dd_or_dt(dd_or_dt):
     """
     Extracts text and href attributes from dt or dd elements.
@@ -339,50 +343,37 @@ def _parse_dd_or_dt(dd_or_dt):
         #     text = f'{text[1].upper()}{text[2:-1]}'
         href = a_href.find('a').get('href')
 
-    return text.replace("–", "-"), href
+    return _clean_key(text), href
 
 
 def _get_site_map_h3_dl_dt_dds(h3_dl_dt, next_dd=None):
     if next_dd is None:
         next_dd = h3_dl_dt.find_next('dd')
 
-    prev_dt = next_dd.find_previous(name='dt')
+    prev_dt = next_dd.find_previous('dt')
 
     h3_dl_dt_dds = {}
     while prev_dt == h3_dl_dt:
         next_dd_sub_dl_ = next_dd.find('dl')
 
-        if next_dd_sub_dl_ is None:
-            next_dd_contents = [x for x in next_dd.contents if x != '\n']
-
-            if len(next_dd_contents) == 1:
-                next_dd_content = next_dd_contents[0]
-                text = next_dd_content.get_text(strip=True)
-                href = next_dd_content.get(key='href')
-
-            else:  # len(next_dd_contents) == 2:
-                a_href, text = next_dd_contents
-                if not isinstance(text, str):
-                    text, a_href = next_dd_contents
-
-                href = a_href.find(name='a').get(key='href')
-
-            h3_dl_dt_dds.update(
-                {text.replace("–", "-"): urllib.parse.urljoin(home_page_url(), href)})
-
-        else:
-            sub_dts = next_dd_sub_dl_.find_all(name='dt')
+        if next_dd_sub_dl_:
+            sub_dts = next_dd_sub_dl_.find_all('dt')
 
             for sub_dt in sub_dts:
                 sub_dt_text, _ = _parse_dd_or_dt(sub_dt)
-                sub_dt_dds = sub_dt.find_next_siblings(name='dd')
+                sub_dt_dds = sub_dt.find_next_siblings('dd')
                 sub_dt_dds_dict = _get_site_map_sub_dl(h3_dl_dts=sub_dt_dds)
 
-                h3_dl_dt_dds.update({sub_dt_text.replace("–", "-"): sub_dt_dds_dict})
+                h3_dl_dt_dds.update({_clean_key(sub_dt_text): sub_dt_dds_dict})
+
+        else:
+            a = next_dd.find('a')
+            text, href = _clean_key(a.get_text(strip=True)), a.get(key='href')
+            h3_dl_dt_dds.update({text: urllib.parse.urljoin(home_page_url(), href)})
 
         try:
-            next_dd = next_dd.find_next_sibling(name='dd')
-            prev_dt = next_dd.find_previous_sibling(name='dt')
+            next_dd = next_dd.find_next_sibling('dd')
+            prev_dt = next_dd.find_previous_sibling('dt')
         except AttributeError:
             break
 
@@ -397,19 +388,20 @@ def _get_site_map_sub_dl(h3_dl_dts):
     h3_dl_dt_dd_dict = {}
 
     for h3_dl_dt in h3_dl_dts:
-        dt_text, dt_href = _parse_dd_or_dt(dd_or_dt=h3_dl_dt)
+        dt_text_, dt_href = _parse_dd_or_dt(dd_or_dt=h3_dl_dt)
+        dt_text = _clean_key(dt_text_)
 
         if dt_href:
             h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(home_page_url(), dt_href)})
 
         else:
             next_dd = h3_dl_dt.find_next('dd')
-            next_dd_sub_dl = next_dd.find(name='dd')
+            next_dd_sub_dl = next_dd.find('dl')
 
             if next_dd_sub_dl:
                 # next_dd_sub_dl_dts = next_dd_sub_dl.find_all(name='dt')
                 next_dd_sub_dl_dts = [
-                    dt for dt in next_dd.find_all(name='dt') if dt.has_attr('class')]
+                    dt for dt in next_dd.find_all('dt') if dt.has_attr('class')]
                 h3_dl_dt_dd_dict.update({dt_text: _get_site_map_sub_dl(next_dd_sub_dl_dts)})
 
             else:
@@ -427,11 +419,11 @@ def _get_site_map(source, parser='html.parser'):
     soup = bs4.BeautifulSoup(markup=source.content, features=parser)
     site_map = {}
 
-    h3s = soup.find_all(name='h3', attrs={"class": "site"})
+    h3s = soup.find_all('h3', attrs={"class": "site"})
 
     for h3 in h3s:
         h3_title = h3.get_text(strip=True)
-        h3_dl_dts = h3.find_next(name='dl').find_all(name='dt')  # h3 > dl > dt
+        h3_dl_dts = h3.find_next('dl').find_all('dt')  # h3 > dl > dt
 
         if len(h3_dl_dts) == 1:
             dd_dict = {}  # h3 > dl > dt > dd
@@ -442,12 +434,12 @@ def _get_site_map(source, parser='html.parser'):
             if h3_dl_dt_text == '':
                 for dd in h3_dl_dt.find_next_siblings('dd'):
                     text, href = _parse_dd_or_dt(dd)
-                    dd_dict.update({text: urllib.parse.urljoin(home_page_url(), href)})
+                    dd_dict.update({_clean_key(text): urllib.parse.urljoin(home_page_url(), href)})
 
         else:
             dd_dict = _get_site_map_sub_dl(h3_dl_dts=h3_dl_dts)
 
-        site_map.update({h3_title: dd_dict})
+        site_map.update({_clean_key(h3_title): dd_dict})
 
     # noinspection SpellCheckingInspection
     site_map = update_dict_keys(
@@ -471,15 +463,15 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
     :param raise_error: Whether to raise the provided exception;
         if ``raise_error=False``, the error will be suppressed; defaults to ``True``.
     :type raise_error: bool
-    :return: An ordered dictionary containing the data of site map.
-    :rtype: collections.OrderedDict | None
+    :return: A dictionary containing the data of site map.
+    :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_site_map
         >>> site_map = get_site_map()
         >>> type(site_map)
-        collections.OrderedDict
+        dict
         >>> list(site_map.keys())
         ['Home',
          'Line data',
@@ -487,7 +479,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
          '"Legal/financial" lists',
          'Miscellaneous']
         >>> site_map['Home']
-        {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
+        {'index': 'http://www.railwaycodes.org.uk/index.shtml'}
     """
 
     path_to_file = cd_data("site-map.json", mkdir=True)

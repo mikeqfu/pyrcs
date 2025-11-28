@@ -57,7 +57,7 @@ def test_get_site_map(monkeypatch, capfd):
     from pyrcs.parser import get_site_map
 
     main_keys = ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
-    home_value = {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
+    home_value = {'index': 'http://www.railwaycodes.org.uk/index.shtml'}
 
     monkeypatch.setattr('builtins.input', lambda _: "Yes")
     site_map_dat = get_site_map(update=True, verbose=True)
