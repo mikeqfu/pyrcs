@@ -73,7 +73,7 @@ def _prep_records(trs, ths, sep=' / '):
 
         for td_no, td in enumerate(tds):
             if td.find('td'):
-                text_ = td.find('a').contents + ["\t\t / "]
+                text_ = [''] if td.find('a') is None else td.find('a').contents + ["\t\t / "]
             else:
                 text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
             # _move_element_to_end(text_, char='\t\t')
@@ -691,9 +691,12 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
-    except requests.exceptions.ConnectionError:
-        print_inst_conn_err(update=update, verbose=True if update else verbose)
-        return None
+    except requests.exceptions.ConnectionError as e:
+        if raise_error:
+            raise e  # Raise the original connection error
+        else:
+            print_inst_conn_err(update=update, verbose=True if update else verbose, e=e)
+            return None
 
     try:
         introduction = _parse_introduction(source=source, delimiter=delimiter)
