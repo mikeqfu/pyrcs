@@ -42,9 +42,9 @@ keywords = [
     "Depots",
     "Tracks"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
-    "pyhelpers >= 2.3.0",
+    "pyhelpers >= 2.3.1",
     "beautifulsoup4"
 ]
 classifiers = [

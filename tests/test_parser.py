@@ -57,7 +57,7 @@ def test_get_site_map(monkeypatch, capfd):
     from pyrcs.parser import get_site_map
 
     main_keys = ['Home', 'Line data', 'Other assets', '"Legal/financial" lists', 'Miscellaneous']
-    home_value = {'index.shtml': 'http://www.railwaycodes.org.uk/index.shtml'}
+    home_value = {'index': 'http://www.railwaycodes.org.uk/index.shtml'}
 
     monkeypatch.setattr('builtins.input', lambda _: "Yes")
     site_map_dat = get_site_map(update=True, verbose=True)
@@ -116,7 +116,7 @@ def test_get_introduction(update, raise_error, capfd):
 
     url_ = url.replace('railwaycodes', '123')
     if raise_error:
-        with pytest.raises(IndexError):
+        with pytest.raises(requests.exceptions.ConnectionError):
             get_introduction(url=url_, update=True, raise_error=raise_error)
 
     else:
@@ -126,7 +126,7 @@ def test_get_introduction(update, raise_error, capfd):
         intro_text = get_introduction(url=url_, update=True, verbose=True, raise_error=raise_error)
         out, _ = capfd.readouterr()
         assert intro_text is None
-        assert "Failed." in out
+        assert "Failed" in out
 
 
 def test_get_catalogue():
