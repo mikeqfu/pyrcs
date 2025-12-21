@@ -26,13 +26,13 @@ class Depots(_Base):
     KEY: str = 'Depots'
 
     #: The key for accessing the data of two character TOPS codes
-    KEY_TO_TOPS: str = 'Two character TOPS codes'
+    KEY_TO_TOPS: str = 'Two character TOPS'
     #: The key for accessing the data of four digit pre-TOPS codes
-    KEY_TO_PRE_TOPS: str = 'Four digit pre-TOPS codes'
+    KEY_TO_PRE_TOPS: str = 'Four digit pre-TOPS'
     #: The key for accessing the data of 1950 system (pre-TOPS) codes
-    KEY_TO_1950_SYSTEM: str = '1950 system (pre-TOPS) codes'
+    KEY_TO_1950_SYSTEM: str = '1950 system (pre-TOPS)'
     #: The key for accessing the data of GWR codes
-    KEY_TO_GWR: str = 'GWR codes'
+    KEY_TO_GWR: str = 'GWR'
 
     #: The URL of the main web page for the data.
     URL: str = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
