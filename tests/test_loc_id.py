@@ -2,8 +2,6 @@
 Test the module :py:mod:`pyrcs.line_data.loc_id`.
 """
 
-import collections
-
 import pandas as pd
 import pytest
 
@@ -68,7 +66,7 @@ class TestLocationIdentifiers:
         assert isinstance(os_codes, dict)
         assert list(os_codes.keys()) == ['Other systems', 'Last updated date']
         os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
-        assert isinstance(os_codes_dat, collections.defaultdict)
+        assert isinstance(os_codes_dat, dict)
 
     def test_fetch_codes(self, lid, tmp_path, capfd):
         loc_codes = lid.fetch_codes(dump_dir=tmp_path, verbose=2)
