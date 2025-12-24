@@ -8,11 +8,12 @@ import pytest
 from pyrcs.other_assets import Depots
 
 
-class TestDepots:
+@pytest.fixture(scope='class')
+def depots():
+    return Depots()
 
-    @pytest.fixture(scope='class')
-    def depots(self):
-        return Depots()
+
+class TestDepots:
 
     @staticmethod
     def _assert_test_fetch_codes(depots, depots_codes):

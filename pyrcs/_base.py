@@ -273,6 +273,9 @@ class _Base:
         if not url_:
             if initial and verbose:
                 print(f'No data is available for codes beginning with "{initial}".')
+            elif data_name and not url:
+                print('Key not found in `.catalogue`. '
+                      'Check `.catalogue` for valid keys, and verify `initial` or `data_name`.')
             return fallback_data
 
         try:
