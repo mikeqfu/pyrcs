@@ -2,20 +2,19 @@
 Test the module :py:mod:`pyrcs.other_assets.sig_box`.
 """
 
-import collections
-
 import pandas as pd
 import pytest
 
 from pyrcs.other_assets import SignalBoxes
 
 
+@pytest.fixture(scope='class')
+def sb():
+    return SignalBoxes()
+
+
 @pytest.mark.parametrize('update', [True, False])
 class TestSignalBoxes:
-
-    @pytest.fixture(scope='class')
-    def sb(self):
-        return SignalBoxes()
 
     def test_fetch_prefix_codes(self, sb, update):
         sb_a_codes = sb.collect_prefix_codes(initial='a', confirmation_required=False, verbose=True)
@@ -63,7 +62,7 @@ class TestSignalBoxes:
         assert isinstance(sb_wr_mas_dates, dict)
         assert list(sb_wr_mas_dates.keys()) == ['WR MAS dates', 'Last updated date']
         sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
-        assert isinstance(sb_wr_mas_dates_dat, collections.defaultdict)
+        assert isinstance(sb_wr_mas_dates_dat, dict)
 
     def test_fetch_bell_codes(self, sb, update):
         sb_bell_codes = sb.fetch_bell_codes(update=update, verbose=True)
