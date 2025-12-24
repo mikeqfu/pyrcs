@@ -900,7 +900,7 @@ class LocationIdentifiers(_Base):
                 other_systems_codes.update({h3.text: self._parse_tbl_dat(h3)})
 
         other_systems_codes = {
-            self.KEY_TO_OTHER_SYSTEMS: other_systems_codes,
+            self.KEY_TO_OTHER_SYSTEMS: dict(other_systems_codes),
             self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
         }
 
@@ -947,7 +947,7 @@ class LocationIdentifiers(_Base):
             'Other systems'
             >>> os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
             >>> type(os_codes_dat)
-            collections.defaultdict
+            dict
             >>> list(os_codes_dat.keys())
             ['Córas Iompair Éireann (Republic of Ireland)',
              'Crossrail',

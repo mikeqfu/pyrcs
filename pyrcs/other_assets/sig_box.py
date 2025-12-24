@@ -605,7 +605,7 @@ class SignalBoxes(_Base):
                 wr_mas_dates.update({h3.text: self._parse_tbl_dat(h3, ths)})
 
         wr_mas_dates_data = {
-            self.KEY_TO_WRMASD: wr_mas_dates,
+            self.KEY_TO_WRMASD: dict(wr_mas_dates),
             self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup),
         }
 
@@ -651,8 +651,8 @@ class SignalBoxes(_Base):
             'WR MAS dates'
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
-            collections.defaultdict
-            >>> list(sb_wr_mas_dates_dat.keys())
+            dict
+            >>> list(sb_wr_mas_dates_dat.keys())[:5]
             ['Paddington-Hayes',
              'Birmingham',
              'Plymouth',
@@ -702,7 +702,7 @@ class SignalBoxes(_Base):
             'WR MAS dates'
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
-            collections.defaultdict
+            dict
             >>> list(sb_wr_mas_dates_dat.keys())[:5]
             ['Paddington-Hayes',
              'Birmingham',
@@ -782,7 +782,7 @@ class SignalBoxes(_Base):
             'Bell codes'
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
-            collections.OrderedDict
+            dict
             >>> list(sb_bell_codes_dat.keys())
             ['Network Rail codes',
              'Southern Railway codes',
@@ -840,7 +840,7 @@ class SignalBoxes(_Base):
             'Bell codes'
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
-            collections.OrderedDict
+            dict
             >>> list(sb_bell_codes_dat.keys())
             ['Network Rail codes',
              'Southern Railway codes',
