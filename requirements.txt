@@ -4,7 +4,7 @@ furo==2025.12.19
 isoduration==20.11.0
 jsonpointer==3.0.0
 notebook==7.5.1
-pyhelpers==2.3.2rc1
+pyhelpers==2.3.2
 pytest-cov==7.0.0
 pytest-xdist==3.8.0
 rfc3987-syntax==1.1.0
