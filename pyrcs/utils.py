@@ -3,6 +3,7 @@ Provides a number of helper functions.
 """
 
 import importlib.resources
+import math
 import os
 import re
 import string
@@ -57,13 +58,20 @@ def is_home_connectable():
     return rslt
 
 
-def is_str_float(x):
+def is_str_float(x, finite_only=False):
     """
-    Checks and returns whether a string represents a float value.
+    Checks if a string represents and can be converted to a finite float value.
 
-    :param x: String-type data.
-    :type x: str
-    :return: Whether the string-type data represents a float value.
+    This function attempts to convert the input to a float. It returns ``False``
+    for non-numeric strings, ``None`` inputs, or special floating point
+    values like ``NaN`` or ``Infinity`` (optional).
+
+    :param x: String-type data or any object that can be converted to float.
+    :type x: str | typing.Any
+    :param finite_only: Whether to return ``False`` for special values such as
+        ``NaN`` and ``Infinity``; defaults to ``False``.
+    :type finite_only: bool
+    :return: ``True`` if the string represents a valid finite number, ``False`` otherwise.
     :rtype: bool
 
     **Examples**::
@@ -77,16 +85,26 @@ def is_str_float(x):
         True
         >>> is_str_float('1.1')
         True
+        >>> is_str_float('nan', finite_only=True)
+        False
+        >>> is_str_float('inf')
+        True
     """
 
+    # Handle NoneType or non-string inputs explicitly if needed
+    if x is None:
+        return False
+
     try:
-        float(x)  # float(re.sub('[()~]', '', text))
-        is_float = True
+        y = float(x)  # float(re.sub('[()~]', '', text))
 
-    except ValueError:
-        is_float = False
+        if finite_only:  # Reject NaN and Infinity a real number is needed
+            return math.isfinite(y)
 
-    return is_float
+        return True
+
+    except (ValueError, TypeError):
+        return False
 
 
 def validate_initial(x, as_is=False):
