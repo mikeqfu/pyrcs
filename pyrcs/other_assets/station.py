@@ -12,7 +12,7 @@ from pyhelpers.text import remove_punctuation
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_catalogue, parse_tr
-from ..utils import cd_data, collect_in_fetch_verbose, home_page_url, is_home_connectable, \
+from ..utils import cd_data, get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, \
     print_inst_conn_err, print_void_msg, validate_initial
 
 
@@ -602,7 +602,7 @@ class Stations(_Base):
                 update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         else:
-            verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+            verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
             verbose_2 = verbose_1 if is_home_connectable() else False
 
             data_sets = [

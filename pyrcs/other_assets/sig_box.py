@@ -11,7 +11,7 @@ import pandas as pd
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import collect_in_fetch_verbose, home_page_url, is_home_connectable, \
+from ..utils import get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, \
     print_inst_conn_err, print_void_msg, validate_initial
 
 
@@ -204,7 +204,7 @@ class SignalBoxes(_Base):
 
         else:
 
-            verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+            verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
             verbose_2 = verbose_1 if is_home_connectable() else False
 
             # Get every data table

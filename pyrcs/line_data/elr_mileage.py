@@ -24,7 +24,7 @@ from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import collect_in_fetch_verbose, home_page_url, is_home_connectable, is_str_float, \
+from ..utils import get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, is_str_float, \
     print_inst_conn_err, print_void_msg, validate_initial
 
 
@@ -1064,7 +1064,7 @@ class ELRMileages(_Base):
                 mileage_file = load_data(path_to_pickle)
 
             else:
-                verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+                verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
                 mileage_file = self.collect_mileage_file(
                     elr=elr_, parsed=True, confirmation_required=False, dump_it=True,
                     verbose=verbose_)

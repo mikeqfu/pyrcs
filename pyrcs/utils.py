@@ -186,30 +186,32 @@ def validate_page_name(cls_instance, page_no, valid_page_no):
     return page_name
 
 
-def collect_in_fetch_verbose(data_dir, verbose):
+def get_collect_verbosity_for_fetch(data_dir, verbose):
     """
     Creates a new parameter that indicates whether to print relevant information to the console.
 
     This function is used only if it is necessary to re-collect data when trying to fetch the data.
 
-    :param data_dir: The name of the folder where the pickle file is to be saved.
+    :param data_dir: The directory path where data is saved.
     :type data_dir: str | None
-    :param verbose: Whether to print relevant information to the console.
+    :param verbose: The requested verbosity level.
     :type verbose: bool | int
-    :return: A boolean indicating whether to print relevant information to the console when
-        collecting data.
+    :return: The resolved verbosity level (boolean or integer).
     :rtype: bool | int
 
     **Examples**::
 
-        >>> from pyrcs.utils import collect_in_fetch_verbose
-        >>> collect_in_fetch_verbose(data_dir="data", verbose=True)
+        >>> from pyrcs.utils import get_collect_verbosity_for_fetch
+        >>> get_collect_verbosity_for_fetch(data_dir="data", verbose=True)
         False
     """
 
-    verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+    # If saving to disk (data_dir) or verbose is off, return False.
+    if data_dir or not verbose:
+        return False
 
-    return verbose_
+    # Otherwise, preserve the specific integer level (e.g. 2) or default to True.
+    return 2 if verbose == 2 else True
 
 
 def fetch_all_verbose(data_dir, verbose):
@@ -234,7 +236,7 @@ def fetch_all_verbose(data_dir, verbose):
     """
 
     if is_home_connectable():
-        verbose_ = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
+        verbose_ = get_collect_verbosity_for_fetch(data_dir=data_dir, verbose=verbose)
     else:
         verbose_ = False
 
