@@ -12,7 +12,7 @@ import pandas as pd
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
 from ..utils import get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, \
-    print_instance_connection_error, print_void_msg, validate_initial
+    print_instance_connection_error, print_void_collection_message, validate_initial
 
 
 class SignalBoxes(_Base):
@@ -215,7 +215,7 @@ class SignalBoxes(_Base):
             if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
                 if update:
                     print_instance_connection_error(verbose=verbose)
-                    print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY.lower(), verbose=verbose)
 
                 data = [
                     self.fetch_prefix_codes(initial=x, update=False, verbose=verbose_1)

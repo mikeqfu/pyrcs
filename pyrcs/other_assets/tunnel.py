@@ -13,7 +13,7 @@ import pandas as pd
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
 from ..utils import home_page_url, is_home_connectable, print_instance_connection_error, \
-    print_void_msg, validate_page_name
+    print_void_collection_message, validate_page_name
 
 
 class Tunnels(_Base):
@@ -385,7 +385,7 @@ class Tunnels(_Base):
             if all(x is None for x in codes_on_pages):
                 if update:
                     print_instance_connection_error(verbose=verbose)
-                    print_void_msg(data_name=self.KEY, verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY, verbose=verbose)
 
                 codes_on_pages = [
                     self.fetch_codes(x, update=False, verbose=verbose_1) for x in self.page_range]

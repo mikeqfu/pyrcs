@@ -15,7 +15,7 @@ from pyhelpers.text import find_similar_str
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
 from ..utils import get_batch_fetch_verbosity, home_page_url, print_instance_connection_error, \
-    print_void_msg
+    print_void_collection_message
 
 
 class LOR(_Base):
@@ -626,7 +626,7 @@ class LOR(_Base):
             if all(x is None for x in lor_codes):
                 if update:
                     print_instance_connection_error(verbose=verbose)
-                    print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY.lower(), verbose=verbose)
 
                 lor_codes = [
                     self.fetch_codes(prefix=p, update=False, verbose=verbose_)

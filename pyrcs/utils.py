@@ -397,7 +397,7 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
-def print_void_msg(data_name, verbose):
+def print_void_collection_message(data_name, verbose):
     """
     Prints a warning message when the data collection process fails and
     no fresh data was collected.
@@ -409,8 +409,8 @@ def print_void_msg(data_name, verbose):
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_void_msg
-        >>> print_void_msg(data_name="Railway Codes", verbose=True)
+        >>> from pyrcs.utils import print_void_collection_message
+        >>> print_void_collection_message(data_name="Railway Codes", verbose=True)
         No data of "Railway Codes" has been freshly collected.
     """
 
