@@ -8,7 +8,7 @@ import re
 import string
 
 import pandas as pd
-from pyhelpers._cache import _format_error_message
+from pyhelpers._cache import _format_error_message, _print_failure_message
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
 
@@ -296,19 +296,26 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
                 print(message_, end=end)
 
 
-def print_conn_err(verbose=False):
+def print_connection_warning(verbose=False):
     """
-    Prints a message if an Internet connection attempt is unsuccessful.
+    Checks the Internet connection and prints a warning if the source is unreachable.
 
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``
+    This function attempts to connect to the source homepage of Railway Codes.
+    If the connection fails and ``verbose`` is ``True``, it alerts the user that the instance
+    will rely on local backup data.
+
+    :param verbose: Whether to print the warning message; defaults to ``False``.
     :type verbose: bool | int
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_conn_err
-        >>> # If Internet connection is ready, nothing would be printed
-        >>> print_conn_err(verbose=True)
+        >>> from pyrcs.utils import print_connection_warning
+        >>> # If the website is reachable, nothing is printed:
+        >>> print_connection_warning(verbose=True)
 
+        >>> # If the website is unreachable, a warning is printed:
+        >>> print_connection_warning(verbose=True)
+        Failed to establish an Internet connection. The current instance relies on local backup.
     """
 
     if not is_home_connectable():
@@ -317,7 +324,7 @@ def print_conn_err(verbose=False):
                   "The current instance relies on local backup.")
 
 
-def print_inst_conn_err(update=False, verbose=False, e=None):
+def print_inst_conn_err(update=False, verbose=False, e=None, raise_error=False):
     """
     Prints an error message when an instance fails to establish an Internet connection.
 
@@ -327,6 +334,9 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     :type verbose: bool | int
     :param e: An optional exception message to display.
     :type e: Exception | None
+    :param raise_error: Whether to raise the exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
 
     **Examples**::
 
@@ -335,6 +345,12 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
         The Internet connection is not available.
         >>> print_inst_conn_err(update=True, verbose=True)
         The Internet connection is not available. Failed to update the data.
+        >>> print_inst_conn_err(update=True, verbose=2, raise_error=True)
+        Failed. The Internet connection is not available. Failed to update the data.
+        Traceback (most recent call last):
+          ...
+            ...
+        TypeError: exceptions must derive from BaseException
     """
 
     if not verbose:
@@ -348,7 +364,8 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     if update:
         err_msg += " Failed to update the data."
 
-    print(err_msg)
+    # print(err_msg)
+    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
 def print_void_msg(data_name, verbose):
