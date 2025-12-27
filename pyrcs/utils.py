@@ -285,8 +285,8 @@ def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     return prompt
 
 
-def print_collect_msg(data_name, initial=None, verbose=False, confirmation_required=True,
-                      end=" ... "):
+def print_collection_message(data_name, initial=None, verbose=False, confirmation_required=True,
+                             end=" ... "):
     """
     Prints a message indicating the status of data collection.
 
@@ -303,9 +303,9 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_collect_msg
-        >>> print_collect_msg("Railway Codes", verbose=True, confirmation_required=False)
-        Collecting the data of "Railway Codes" ...
+        >>> from pyrcs.utils import print_collection_message
+        >>> print_collection_message("Railway Codes", verbose=True, confirmation_required=False)
+        Collecting the data of Railway Codes ...
     """
 
     message_ = "Collecting the data"
@@ -317,7 +317,7 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
         else:
             message_ += f" of {data_name}"
             if initial:
-                if initial.lower() in string.ascii_letters:
+                if initial.lower() in set(string.ascii_letters):
                     print(f'{message_} beginning with "{initial}"', end=end)
                 else:
                     print(f'{message_} ({initial})', end=end)
