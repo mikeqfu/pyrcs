@@ -8,7 +8,7 @@ import urllib.parse
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg, \
+from ..utils import home_page_url, is_home_connectable, print_instance_connection_error, print_void_msg, \
     validate_page_name
 
 
@@ -212,7 +212,7 @@ class Viaducts(_Base):
 
             if all(x is None for x in codes_on_pages):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
                     print_void_msg(data_name=self.KEY, verbose=verbose)
 
                 codes_on_pages = [

@@ -14,7 +14,8 @@ from pyhelpers.text import find_similar_str
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import get_batch_fetch_verbosity, home_page_url, print_inst_conn_err, print_void_msg
+from ..utils import get_batch_fetch_verbosity, home_page_url, print_instance_connection_error, \
+    print_void_msg
 
 
 class LOR(_Base):
@@ -624,7 +625,7 @@ class LOR(_Base):
             # Retry if all fetches failed
             if all(x is None for x in lor_codes):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
                     print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
 
                 lor_codes = [

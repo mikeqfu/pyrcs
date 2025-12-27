@@ -353,7 +353,7 @@ def print_connection_warning(verbose=False):
                   "The current instance relies on local backup.")
 
 
-def print_inst_conn_err(update=False, verbose=False, e=None, raise_error=False):
+def print_instance_connection_error(update=False, verbose=False, e=None, raise_error=False):
     """
     Prints an error message when an instance fails to establish an Internet connection.
 
@@ -369,12 +369,12 @@ def print_inst_conn_err(update=False, verbose=False, e=None, raise_error=False):
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_inst_conn_err
-        >>> print_inst_conn_err(verbose=True)
+        >>> from pyrcs.utils import print_instance_connection_error
+        >>> print_instance_connection_error(verbose=True)
         The Internet connection is not available.
-        >>> print_inst_conn_err(update=True, verbose=True)
+        >>> print_instance_connection_error(update=True, verbose=True)
         The Internet connection is not available. Failed to update the data.
-        >>> print_inst_conn_err(update=True, verbose=2, raise_error=True)
+        >>> print_instance_connection_error(update=True, verbose=2, raise_error=True)
         Failed. The Internet connection is not available. Failed to update the data.
         Traceback (most recent call last):
           ...
@@ -399,9 +399,10 @@ def print_inst_conn_err(update=False, verbose=False, e=None, raise_error=False):
 
 def print_void_msg(data_name, verbose):
     """
-    Prints a message when the data collection process fails.
+    Prints a warning message when the data collection process fails and
+    no fresh data was collected.
 
-    :param data_name: The name of the data being collected.
+    :param data_name: Name of the data being collected.
     :type data_name: str
     :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int

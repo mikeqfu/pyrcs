@@ -18,7 +18,7 @@ from pyhelpers.ops import fake_requests_headers
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
 from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, home_page_url, \
-    is_home_connectable, print_inst_conn_err, print_void_msg, validate_initial
+    is_home_connectable, print_instance_connection_error, print_void_msg, validate_initial
 
 
 def _parse_raw_location_name(x):
@@ -889,7 +889,7 @@ class LocationIdentifiers(_Base):
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
                     print_void_msg(data_name=self.KEY, verbose=verbose)
 
                 dat_list = [
