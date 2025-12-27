@@ -713,7 +713,7 @@ class LocationIdentifiers(_Base):
         return loc_id_notes
 
     def _collect_loc_id(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         # url = lid.catalogue[initial_]
         # source = requests.get(url)
@@ -809,7 +809,7 @@ class LocationIdentifiers(_Base):
             [5 rows x 12 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         loc_id_data = self._collect_data_from_source(
             data_name=self.NAME, method=self._collect_loc_id, initial=initial_,

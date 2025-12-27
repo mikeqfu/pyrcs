@@ -514,7 +514,7 @@ class Stations(_Base):
             4   Abercynon  ABD  16m 28ch
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
             data_name=self.KEY_TO_STN.lower(), method=self._collect_locations, initial=initial_,

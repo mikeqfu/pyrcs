@@ -309,7 +309,7 @@ class ELRMileages(_Base):
               ('measure', 'route', 'diversion')))]
 
     def _collect_elr(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         # Create a DataFrame of the requested table
         (columns, records), soup = parse_table(source=source)
@@ -383,7 +383,7 @@ class ELRMileages(_Base):
             [5 rows x 5 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
             data_name=self.NAME, method=self._collect_elr, initial=initial_,

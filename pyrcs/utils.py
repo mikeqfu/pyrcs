@@ -107,18 +107,20 @@ def is_str_float(x, finite_only=False):
         return False
 
 
-def validate_initial(x, as_is=False):
+def validate_initial(initial, as_is=False):
     """
-    Validates if a string is a single letter, returning it in upper case or as is.
+    Validates if a value is a single ASCII letter.
 
-    :param x: The input value to validate,
+    :param initial: The input value to validate,
         which is expected to be a string representing a single letter.
-    :type x: str
-    :param as_is: If set to ``True``, the function returns the letter in its original case;
-        if set to ``False`` (default), the letter is returned in uppercase.
+    :type initial: str
+    :param as_is: If ``as_is=True``, the function returns the letter in its original case;
+        if ``as_is=False`` (default), the letter is returned in uppercase.
     :type as_is: bool
-    :return: The validated initial letter, either in uppercase or as-is.
+    :return: The validated initial letter.
     :rtype: str
+    :raises ValueError: If the input is not a single ASCII letter.
+    :raises TypeError: If the input is not a string.
 
     **Examples**::
 
@@ -128,14 +130,21 @@ def validate_initial(x, as_is=False):
         >>> validate_initial('x', as_is=True)
         'x'
         >>> validate_initial('xyz')
-        AssertionError: `x` must be a single letter.
+        Traceback (most recent call last):
+          ...
+            ...
+        ValueError: 'xyz' is invalid; it must be a single letter (A-Z, a-z).
     """
 
-    assert x in set(string.ascii_letters), "`x` must be a single letter."
+    # Type check
+    if not isinstance(initial, str):
+        raise TypeError(f"`initial` must be a string, not {type(initial).__name__}.")
 
-    valid_initial = x if as_is else x.upper()
+    # Validation check (using string.ascii_letters)
+    if initial not in set(string.ascii_letters):
+        raise ValueError(f"'{initial}' is invalid; it must be a single letter (A-Z, a-z).")
 
-    return valid_initial
+    return initial if as_is else initial.upper()
 
 
 def validate_page_name(cls_instance, page_no, valid_page_no):

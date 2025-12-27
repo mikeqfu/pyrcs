@@ -71,7 +71,7 @@ class SignalBoxes(_Base):
             update=update, verbose=verbose)
 
     def _collect_prefix_codes(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
         thead, tbody = soup.find('thead'), soup.find('tbody')
@@ -137,7 +137,7 @@ class SignalBoxes(_Base):
             [5 rows x 8 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         signal_box_prefix_codes = self._collect_data_from_source(
             data_name=self.NAME.lower(), method=self._collect_prefix_codes, initial=initial_,
