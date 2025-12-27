@@ -17,7 +17,7 @@ from .habd_wild import HabdWild
 from .telegraph import Telegraph
 from .trough import WaterTroughs
 from .._base import _Base
-from ..utils import fetch_all_verbose, is_home_connectable
+from ..utils import get_batch_fetch_verbosity, is_home_connectable
 
 
 class Features(_Base):
@@ -191,7 +191,7 @@ class Features(_Base):
             [5 rows x 5 columns]
         """
 
-        verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
+        verbose_ = get_batch_fetch_verbosity(data_dir=dump_dir, verbose=verbose)
 
         features_codes_dat = []
 

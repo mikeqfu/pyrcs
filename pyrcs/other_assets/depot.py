@@ -11,7 +11,7 @@ import pandas as pd
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import fetch_all_verbose, home_page_url
+from ..utils import get_batch_fetch_verbosity, home_page_url
 
 
 class Depots(_Base):
@@ -672,7 +672,7 @@ class Depots(_Base):
             [5 rows x 5 columns]
         """
 
-        verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
+        verbose_ = get_batch_fetch_verbosity(data_dir=dump_dir, verbose=verbose)
 
         depot_data = []
         for func in dir(self):

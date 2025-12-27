@@ -14,7 +14,7 @@ from pyhelpers.text import find_similar_str
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import fetch_all_verbose, home_page_url, print_inst_conn_err, print_void_msg
+from ..utils import get_batch_fetch_verbosity, home_page_url, print_inst_conn_err, print_void_msg
 
 
 class LOR(_Base):
@@ -614,7 +614,7 @@ class LOR(_Base):
             # prefixes_ = ['NW/NZ' if p == 'NW' else p for p in prefixes if p != 'NZ']
 
             # Set verbosity based on conditions
-            verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
+            verbose_ = get_batch_fetch_verbosity(data_dir=dump_dir, verbose=verbose)
 
             # Fetch LOR codes
             lor_codes = [

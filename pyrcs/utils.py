@@ -214,7 +214,7 @@ def get_collect_verbosity_for_fetch(data_dir, verbose):
     return 2 if verbose == 2 else True
 
 
-def fetch_all_verbose(data_dir, verbose):
+def get_batch_fetch_verbosity(data_dir, verbose):
     """
     Creates a new parameter that indicates whether to print relevant information to the console.
 
@@ -230,8 +230,8 @@ def fetch_all_verbose(data_dir, verbose):
 
     **Examples**::
 
-        >>> from pyrcs.utils import fetch_all_verbose
-        >>> fetch_all_verbose(data_dir="data", verbose=True)
+        >>> from pyrcs.utils import get_batch_fetch_verbosity
+        >>> get_batch_fetch_verbosity(data_dir="data", verbose=True)
         False
     """
 

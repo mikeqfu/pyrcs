@@ -15,7 +15,7 @@ from pyhelpers.store import load_data
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_heading_text, get_hypertext, get_page_catalogue, \
     parse_tr
-from ..utils import cd_data, fetch_all_verbose, home_page_url
+from ..utils import cd_data, get_batch_fetch_verbosity, home_page_url
 
 
 # def _parse_notes(h3):
@@ -890,7 +890,7 @@ class Electrification(_Base):
              'National network neutral sections']
         """
 
-        verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
+        verbose_ = get_batch_fetch_verbosity(data_dir=dump_dir, verbose=verbose)
 
         codes = []
         for func in dir(self):
