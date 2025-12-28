@@ -58,7 +58,7 @@ def test_get_batch_fetch_verbosity():
     assert not get_batch_fetch_verbosity(data_dir="data", verbose=True)
     assert get_batch_fetch_verbosity(data_dir="", verbose=True)
 
-    with unittest.mock.patch(f'pyrcs.utils.is_homepage_connectable') as mock_connectable:
+    with unittest.mock.patch('pyrcs.utils.is_homepage_connectable') as mock_connectable:
         mock_connectable.return_value = False
         assert not get_batch_fetch_verbosity(data_dir="data", verbose=2)
         assert not get_batch_fetch_verbosity(data_dir="", verbose=True)
