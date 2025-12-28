@@ -18,7 +18,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, home_page_url, print_conn_err, print_inst_conn_err
+from .utils import cd_data, home_page_url, print_connection_warning, print_instance_connection_error
 
 
 # == Preprocess contents ===========================================================================
@@ -106,7 +106,7 @@ def _check_row_spanned(records, row_spanned):
             for no_spans, idx, dat in to_repeat:
                 for j in range(1, no_spans):
                     k = i + j
-                    # if (dat in records[i]) and (dat != '\xa0'):  # and (idx < len(records[i]) - 1):
+                    # if (dat in records[i]) and (dat != '\xa0'): # and (idx < len(records[i]) - 1):
                     #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
                     k_len = len(records_[k])
                     if k_len < len(records_[i]):
@@ -497,7 +497,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
                 source = requests.get(url=url, headers=fake_requests_headers())
 
             except requests.exceptions.ConnectionError:
-                print_inst_conn_err(update=update, verbose=True if update else verbose)
+                print_instance_connection_error(update=update, verbose=True if update else verbose)
                 return None
 
             try:
@@ -581,7 +581,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
         source = requests.get(url=url, headers=fake_requests_headers())
 
     except requests.exceptions.ConnectionError:
-        print_conn_err(verbose=verbose)
+        print_connection_warning(verbose=verbose)
 
     else:
         # Parse the text scraped from the requested web page
@@ -687,7 +687,7 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
         if raise_error:
             raise e  # Raise the original connection error
         else:
-            print_inst_conn_err(update=update, verbose=True if update else verbose, e=e)
+            print_instance_connection_error(update=update, verbose=True if update else verbose, e=e)
             return None
 
     try:
@@ -785,7 +785,7 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
         source = requests.get(url=url, headers=fake_requests_headers())
         source.raise_for_status()
     except Exception as e:
-        print_inst_conn_err(verbose=verbose, e=e)
+        print_instance_connection_error(verbose=verbose, e=e)
         return None
 
     try:
@@ -848,7 +848,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
         try:
             source = requests.get(url=home_page_url(), headers=fake_requests_headers())
         except requests.exceptions.ConnectionError:
-            print_conn_err(verbose=verbose)
+            print_connection_warning(verbose=verbose)
             return None
 
         try:
@@ -972,7 +972,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
         source = requests.get(url=url, headers=fake_requests_headers())
 
     except requests.exceptions.ConnectionError:
-        print_inst_conn_err(verbose=verbose)
+        print_instance_connection_error(verbose=verbose)
         return None
 
     try:
