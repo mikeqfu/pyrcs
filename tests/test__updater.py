@@ -1,4 +1,6 @@
-"""Test the module :py:mod:`pyrcs._updater`."""
+"""
+Test the module :py:mod:`pyrcs._updater`.
+"""
 
 import unittest.mock
 
@@ -10,7 +12,7 @@ def test__update_prepacked_data(capfd):
 
     mod = 'pyrcs._updater'
 
-    with unittest.mock.patch(f'{mod}.is_home_connectable') as mock_connectable, \
+    with unittest.mock.patch(f'{mod}.is_homepage_connectable') as mock_connectable, \
             unittest.mock.patch(f'{mod}.confirmed') as mock_confirmed, \
             unittest.mock.patch(f'{mod}.get_site_map') as mock_gsm, \
             unittest.mock.patch(f'{mod}.LineData') as mock_ld, \
