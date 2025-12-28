@@ -1,3 +1,7 @@
+"""
+Test the module :py:mod:`pyrcs._base`.
+"""
+
 import inspect
 import typing
 
@@ -21,8 +25,8 @@ class TestBase:
         assert _b_test.catalogue is None
         assert _b_test.introduction is None
 
-    def test__setup_data_dir(self, _b):
-        data_dir, current_data_dir = _b._setup_data_dir("data", category="line-data")
+    def test__setup_data_dir(self, _b, tmp_path):
+        data_dir, current_data_dir = _b._setup_data_dir(data_dir=tmp_path, category="line-data")
         assert data_dir == _b.data_dir
 
     @pytest.mark.parametrize(
@@ -131,10 +135,6 @@ class TestBase:
         _b._save_data_to_file(data=None, data_name=data_name, verbose=True)
         out, _ = capfd.readouterr()
         assert f'No data of "{data_name.title()}" has been freshly collected.' in out
-
-        import tempfile
-        import pathlib
-        tmp_path = pathlib.Path(tempfile.TemporaryFile().name)
 
         _b._save_data_to_file(
             data=pd.DataFrame(), data_name=data_name, ext=ext, dump_dir=tmp_path, verbose=2)
