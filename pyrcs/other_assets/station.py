@@ -12,8 +12,8 @@ from pyhelpers.text import remove_punctuation
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_catalogue, parse_tr
-from ..utils import cd_data, collect_in_fetch_verbose, home_page_url, is_home_connectable, \
-    print_inst_conn_err, print_void_msg, validate_initial
+from ..utils import cd_data, get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
+    print_instance_connection_error, print_void_collection_message, validate_initial
 
 
 def _split_elr_mileage_column(dat):
@@ -233,7 +233,7 @@ class Stations(_Base):
     KEY_TO_STN: str = 'Mileages, operators and grid coordinates'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/stations/station0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/stations/station0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -514,7 +514,7 @@ class Stations(_Base):
             4   Abercynon  ABD  16m 28ch
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
             data_name=self.KEY_TO_STN.lower(), method=self._collect_locations, initial=initial_,
@@ -602,8 +602,8 @@ class Stations(_Base):
                 update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         else:
-            verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             data_sets = [
                 self.fetch_locations(initial=x, update=update, verbose=verbose_2)
@@ -611,8 +611,8 @@ class Stations(_Base):
 
             if all(d[x] is None for d, x in zip(data_sets, string.ascii_uppercase)):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY_TO_STN, verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY_TO_STN, verbose=verbose)
 
                 data_sets = [
                     self.fetch_locations(x, update=False, verbose=verbose_1)

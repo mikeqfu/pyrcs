@@ -3,12 +3,13 @@ Provides a number of helper functions.
 """
 
 import importlib.resources
+import math
 import os
 import re
 import string
 
 import pandas as pd
-from pyhelpers._cache import _format_error_message
+from pyhelpers._cache import _format_error_message, _print_failure_message
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
 
@@ -16,7 +17,7 @@ from pyhelpers.store import load_data, save_data
 # == Specify address of web pages ==================================================================
 
 
-def home_page_url():
+def homepage_url():
     """
     Returns the homepage URL of the data source.
 
@@ -25,8 +26,8 @@ def home_page_url():
 
     **Examples**::
 
-        >>> from pyrcs.utils import home_page_url
-        >>> home_page_url()
+        >>> from pyrcs.utils import homepage_url
+        >>> homepage_url()
         'http://www.railwaycodes.org.uk/'
     """
 
@@ -36,7 +37,7 @@ def home_page_url():
 # == Validate inputs ===============================================================================
 
 
-def is_home_connectable():
+def is_homepage_connectable():
     """
     Checks and returns whether the Railway Codes website is reacheable.
 
@@ -45,25 +46,32 @@ def is_home_connectable():
 
     **Examples**::
 
-        >>> from pyrcs.utils import is_home_connectable
-        >>> is_home_connectable()
+        >>> from pyrcs.utils import is_homepage_connectable
+        >>> is_homepage_connectable()
         True
     """
 
-    url = home_page_url()
+    url = homepage_url()
 
     rslt = is_url_connectable(url=url)
 
     return rslt
 
 
-def is_str_float(x):
+def is_str_float(x, finite_only=False):
     """
-    Checks and returns whether a string represents a float value.
+    Checks if a string represents and can be converted to a finite float value.
 
-    :param x: String-type data.
-    :type x: str
-    :return: Whether the string-type data represents a float value.
+    This function attempts to convert the input to a float. It returns ``False``
+    for non-numeric strings, ``None`` inputs, or special floating point
+    values like ``NaN`` or ``Infinity`` (optional).
+
+    :param x: String-type data or any object that can be converted to float.
+    :type x: str | typing.Any
+    :param finite_only: Whether to return ``False`` for special values such as
+        ``NaN`` and ``Infinity``; defaults to ``False``.
+    :type finite_only: bool
+    :return: ``True`` if the string represents a valid finite number, ``False`` otherwise.
     :rtype: bool
 
     **Examples**::
@@ -77,30 +85,42 @@ def is_str_float(x):
         True
         >>> is_str_float('1.1')
         True
+        >>> is_str_float('nan', finite_only=True)
+        False
+        >>> is_str_float('inf')
+        True
     """
+
+    # Handle NoneType or non-string inputs explicitly if needed
+    if x is None:
+        return False
 
     try:
-        float(x)  # float(re.sub('[()~]', '', text))
-        is_float = True
+        y = float(x)  # float(re.sub('[()~]', '', text))
 
-    except ValueError:
-        is_float = False
+        if finite_only:  # Reject NaN and Infinity a real number is needed
+            return math.isfinite(y)
 
-    return is_float
+        return True
+
+    except (ValueError, TypeError):
+        return False
 
 
-def validate_initial(x, as_is=False):
+def validate_initial(initial, as_is=False):
     """
-    Validates if a string is a single letter, returning it in upper case or as is.
+    Validates if a value is a single ASCII letter.
 
-    :param x: The input value to validate,
+    :param initial: The input value to validate,
         which is expected to be a string representing a single letter.
-    :type x: str
-    :param as_is: If set to ``True``, the function returns the letter in its original case;
-        if set to ``False`` (default), the letter is returned in uppercase.
+    :type initial: str
+    :param as_is: If ``as_is=True``, the function returns the letter in its original case;
+        if ``as_is=False`` (default), the letter is returned in uppercase.
     :type as_is: bool
-    :return: The validated initial letter, either in uppercase or as-is.
+    :return: The validated initial letter.
     :rtype: str
+    :raises ValueError: If the input is not a single ASCII letter.
+    :raises TypeError: If the input is not a string.
 
     **Examples**::
 
@@ -110,14 +130,21 @@ def validate_initial(x, as_is=False):
         >>> validate_initial('x', as_is=True)
         'x'
         >>> validate_initial('xyz')
-        AssertionError: `x` must be a single letter.
+        Traceback (most recent call last):
+          ...
+            ...
+        ValueError: 'xyz' is invalid; it must be a single letter (A-Z, a-z).
     """
 
-    assert x in set(string.ascii_letters), "`x` must be a single letter."
+    # Type check
+    if not isinstance(initial, str):
+        raise TypeError(f"`initial` must be a string, not {type(initial).__name__}.")
 
-    valid_initial = x if as_is else x.upper()
+    # Validation check (using string.ascii_letters)
+    if initial not in set(string.ascii_letters):
+        raise ValueError(f"'{initial}' is invalid; it must be a single letter (A-Z, a-z).")
 
-    return valid_initial
+    return initial if as_is else initial.upper()
 
 
 def validate_page_name(cls_instance, page_no, valid_page_no):
@@ -159,33 +186,35 @@ def validate_page_name(cls_instance, page_no, valid_page_no):
     return page_name
 
 
-def collect_in_fetch_verbose(data_dir, verbose):
+def get_collect_verbosity_for_fetch(data_dir, verbose):
     """
     Creates a new parameter that indicates whether to print relevant information to the console.
 
     This function is used only if it is necessary to re-collect data when trying to fetch the data.
 
-    :param data_dir: The name of the folder where the pickle file is to be saved.
+    :param data_dir: The directory path where data is saved.
     :type data_dir: str | None
-    :param verbose: Whether to print relevant information to the console.
+    :param verbose: The requested verbosity level.
     :type verbose: bool | int
-    :return: A boolean indicating whether to print relevant information to the console when
-        collecting data.
+    :return: The resolved verbosity level (boolean or integer).
     :rtype: bool | int
 
     **Examples**::
 
-        >>> from pyrcs.utils import collect_in_fetch_verbose
-        >>> collect_in_fetch_verbose(data_dir="data", verbose=True)
+        >>> from pyrcs.utils import get_collect_verbosity_for_fetch
+        >>> get_collect_verbosity_for_fetch(data_dir="data", verbose=True)
         False
     """
 
-    verbose_ = False if (data_dir or not verbose) else (2 if verbose == 2 else True)
+    # If saving to disk (data_dir) or verbose is off, return False.
+    if data_dir or not verbose:
+        return False
 
-    return verbose_
+    # Otherwise, preserve the specific integer level (e.g. 2) or default to True.
+    return 2 if verbose == 2 else True
 
 
-def fetch_all_verbose(data_dir, verbose):
+def get_batch_fetch_verbosity(data_dir, verbose):
     """
     Creates a new parameter that indicates whether to print relevant information to the console.
 
@@ -201,13 +230,13 @@ def fetch_all_verbose(data_dir, verbose):
 
     **Examples**::
 
-        >>> from pyrcs.utils import fetch_all_verbose
-        >>> fetch_all_verbose(data_dir="data", verbose=True)
+        >>> from pyrcs.utils import get_batch_fetch_verbosity
+        >>> get_batch_fetch_verbosity(data_dir="data", verbose=True)
         False
     """
 
-    if is_home_connectable():
-        verbose_ = collect_in_fetch_verbose(data_dir=data_dir, verbose=verbose)
+    if is_homepage_connectable():
+        verbose_ = get_collect_verbosity_for_fetch(data_dir=data_dir, verbose=verbose)
     else:
         verbose_ = False
 
@@ -256,8 +285,8 @@ def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     return prompt
 
 
-def print_collect_msg(data_name, initial=None, verbose=False, confirmation_required=True,
-                      end=" ... "):
+def print_collection_message(data_name, initial=None, verbose=False, confirmation_required=True,
+                             end=" ... "):
     """
     Prints a message indicating the status of data collection.
 
@@ -274,9 +303,9 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_collect_msg
-        >>> print_collect_msg("Railway Codes", verbose=True, confirmation_required=False)
-        Collecting the data of "Railway Codes" ...
+        >>> from pyrcs.utils import print_collection_message
+        >>> print_collection_message("Railway Codes", verbose=True, confirmation_required=False)
+        Collecting the data of Railway Codes ...
     """
 
     message_ = "Collecting the data"
@@ -288,7 +317,7 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
         else:
             message_ += f" of {data_name}"
             if initial:
-                if initial.lower() in string.ascii_letters:
+                if initial.lower() in set(string.ascii_letters):
                     print(f'{message_} beginning with "{initial}"', end=end)
                 else:
                     print(f'{message_} ({initial})', end=end)
@@ -296,28 +325,35 @@ def print_collect_msg(data_name, initial=None, verbose=False, confirmation_requi
                 print(message_, end=end)
 
 
-def print_conn_err(verbose=False):
+def print_connection_warning(verbose=False):
     """
-    Prints a message if an Internet connection attempt is unsuccessful.
+    Checks the Internet connection and prints a warning if the source is unreachable.
 
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``
+    This function attempts to connect to the source homepage of Railway Codes.
+    If the connection fails and ``verbose`` is ``True``, it alerts the user that the instance
+    will rely on local backup data.
+
+    :param verbose: Whether to print the warning message; defaults to ``False``.
     :type verbose: bool | int
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_conn_err
-        >>> # If Internet connection is ready, nothing would be printed
-        >>> print_conn_err(verbose=True)
+        >>> from pyrcs.utils import print_connection_warning
+        >>> # If the website is reachable, nothing is printed:
+        >>> print_connection_warning(verbose=True)
 
+        >>> # If the website is unreachable, a warning is printed:
+        >>> print_connection_warning(verbose=True)
+        Failed to establish an Internet connection. The current instance relies on local backup.
     """
 
-    if not is_home_connectable():
+    if not is_homepage_connectable():
         if verbose:
             print("Failed to establish an Internet connection. "
                   "The current instance relies on local backup.")
 
 
-def print_inst_conn_err(update=False, verbose=False, e=None):
+def print_instance_connection_error(update=False, verbose=False, e=None, raise_error=False):
     """
     Prints an error message when an instance fails to establish an Internet connection.
 
@@ -327,14 +363,23 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     :type verbose: bool | int
     :param e: An optional exception message to display.
     :type e: Exception | None
+    :param raise_error: Whether to raise the exception;
+        if ``raise_error=False`` (default), the error will be suppressed.
+    :type raise_error: bool
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_inst_conn_err
-        >>> print_inst_conn_err(verbose=True)
+        >>> from pyrcs.utils import print_instance_connection_error
+        >>> print_instance_connection_error(verbose=True)
         The Internet connection is not available.
-        >>> print_inst_conn_err(update=True, verbose=True)
+        >>> print_instance_connection_error(update=True, verbose=True)
         The Internet connection is not available. Failed to update the data.
+        >>> print_instance_connection_error(update=True, verbose=2, raise_error=True)
+        Failed. The Internet connection is not available. Failed to update the data.
+        Traceback (most recent call last):
+          ...
+            ...
+        TypeError: exceptions must derive from BaseException
     """
 
     if not verbose:
@@ -348,22 +393,24 @@ def print_inst_conn_err(update=False, verbose=False, e=None):
     if update:
         err_msg += " Failed to update the data."
 
-    print(err_msg)
+    # print(err_msg)
+    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
-def print_void_msg(data_name, verbose):
+def print_void_collection_message(data_name, verbose):
     """
-    Prints a message when the data collection process fails.
+    Prints a warning message when the data collection process fails and
+    no fresh data was collected.
 
-    :param data_name: The name of the data being collected.
+    :param data_name: Name of the data being collected.
     :type data_name: str
     :param verbose: Whether to print relevant information to the console.
     :type verbose: bool | int
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_void_msg
-        >>> print_void_msg(data_name="Railway Codes", verbose=True)
+        >>> from pyrcs.utils import print_void_collection_message
+        >>> print_void_collection_message(data_name="Railway Codes", verbose=True)
         No data of "Railway Codes" has been freshly collected.
     """
 

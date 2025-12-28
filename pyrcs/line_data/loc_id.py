@@ -17,17 +17,21 @@ from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
-from ..utils import collect_in_fetch_verbose, format_confirmation_prompt, home_page_url, \
-    is_home_connectable, print_inst_conn_err, print_void_msg, validate_initial
+from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, homepage_url, \
+    is_homepage_connectable, print_instance_connection_error, print_void_collection_message, \
+    validate_initial
 
 
 def _parse_raw_location_name(x):
     """
-    Parses the location name and extract any associated note from the raw data.
+    Parses the location name and extracts any associated note from the raw data.
+
+    This function separates the main location name from metadata/notes usually
+    found in parentheses, brackets or separated by specific markers.
 
     :param x: Location name (in raw data).
     :type x: str | None
-    :return: Location name and note (if any).
+    :return: A tuple of (Location Name, Note). Returns ``('', '')`` if input is None/Empty.
     :rtype: tuple
 
     **Examples**::
@@ -50,67 +54,40 @@ def _parse_raw_location_name(x):
     """
 
     if not x:
-        x_, note = '', ''
+        return '', ''
 
-    else:
-        # Location name
-        d = re.search(r'.*(?= \[[\"\']\()', x)
-        if d is not None:
-            x_ = d.group(0)
-        elif ' [unknown feature' in x:  # ' [unknown feature, labelled "do not use"]' in x
-            x_ = re.search(r'\w.*(?= \[unknown feature(, )?)', x).group(0)
-        elif ') [formerly' in x:
-            x_ = re.search(r'.*(?= \[formerly)', x).group(0)
-        elif '✖' in x:
-            x_ = re.search(r'.*(?=✖)', x).group(0)
-        else:
-            x_tmp = re.search(r'(?=[\[(]).*(?<=[])])|(?=\().*(?<=\) \[)', x)
-            if x_tmp is not None:
-                x_tmp = x_tmp.group(0)
-                x_pat = re.compile(r'[Oo]riginally |'
-                                   r'[Ff]ormerly |'
-                                   r'[Ll]ater |'
-                                   r'[Pp]resumed |'
-                                   r' \(was |'
-                                   r' \(in |'
-                                   r' \(at |'
-                                   r' \(also |'
-                                   r' \(second code |'
-                                   r'\?|'
-                                   r'\n|'
-                                   r' \(\[\'|'
-                                   r' \(definition unknown\)|'
-                                   r' \(reopened |'
-                                   r'( portion])$|'
-                                   r'[Ss]ee ')
-                x_ = ' '.join(x.replace(x_tmp, '').split()) if re.search(x_pat, x) else x
-            else:
-                x_ = x
+    x_ = x.strip()  # Clean leading/trailing whitespace
 
-        # Note
-        y_ = x.replace(x_, '', 1).strip()
-        if y_ == '':
-            note = ''
-        elif '✖' in y_:
-            note = re.search(r'(?<=✖).*', y_).group(0)
-        else:
-            note_ = re.search(r'(?<=[\[(])[\w ,?]+(?=[])])', y_)
-            if note_ is None:
-                note_ = re.search(
-                    r'(?<=(\[[\'\"]\()|(\([\'\"]\[)|(\) \[)).*(?=(\)[\'\"]])|(][\'\"]\))|])',
-                    y_)
-            elif '"now deleted"' in y_ and y_.startswith('(') and y_.endswith(')'):
-                note_ = re.search(r'(?<=\().*(?=\))', y_)
+    # Handle explicit special delimiters
+    if '✖' in x_:  # Check for the '✖' symbol
+        name, _, note = x_.partition('✖')
+        return name.strip(), note.strip()
 
-            note = note_.group(0) if note_ is not None else ''
-            if note.endswith('\'') or note.endswith('"'):
-                note = note[:-1]
+    if 'STANOX ' in x_:  # Check for 'STANOX'
+        # Split at the first occurrence of STANOX
+        name, sep, note = x_.partition('STANOX')
+        return name.strip(), (sep + note).strip()
 
-        if 'STANOX ' in x_ and 'STANOX ' in x and note == '':
-            x_ = x[0:x.find('STANOX')].strip()
-            note = x[x.find('STANOX'):]
+    # Regex to capture: Name (Note Content) OR Name [Note Content]
+    match = re.search(r'^(.*?)\s*[(\[](.+)[)\]]$', x_, re.DOTALL)
 
-    return x_, note
+    if match:
+        name_part, note_part = match.groups()
+
+        # Keywords that identify a bracket/parenthesis as a 'Note'
+        note_keywords = [
+            'originally', 'formerly', 'later', 'presumed', 'was', 'reopened',
+            'portion', 'see', 'unknown feature', 'definition unknown', 'now deleted', 'now'
+        ]
+        keyword_pattern = re.compile('|'.join(note_keywords), re.IGNORECASE)
+
+        # Split if it contains a keyword OR if it's the standard format from your docs
+        if keyword_pattern.search(note_part):
+            # Use regex to strip any leading/trailing non-alphanumeric noise like ["( or )"]
+            note_part = re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', note_part)
+            return name_part.strip(), note_part.strip()
+
+    return x_, ''
 
 
 def _amendment_to_location_names():
@@ -210,20 +187,12 @@ def _extra_annotations():
 def _count_sep(x):
     if '\r\n' in x:
         r_n_counts = x.count('\r\n')
-
     elif '\r' in x:
         r_n_counts = x.count('\r')
-
     else:  # Ad hoc
         if '~LO\n' in x:
             x = x.replace('~LO\n', '')
-        # elif any(all(a_ in x for a_ in a) for a in self._extra_annotations()):
-        #     temp = [
-        #         x.replace(a[0], f'{a[0][:-1]}\n') for a in self._extra_annotations()
-        #         if a[0] in x and x.endswith(a[1])]
-        #     x = temp[0]
         r_n_counts = x.count('\n')
-
     return r_n_counts
 
 
@@ -269,12 +238,12 @@ def _parse_mult_alt_codes(data):
     :rtype: pandas.DataFrame
     """
 
-    data_ = data.copy()
-    data_ = _fix_exceptional_cases(data_)
+    df = data.copy()
+    df = _fix_exceptional_cases(df)
 
-    code_col_names = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
+    code_cols = ['Location', 'CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']
 
-    r_n_counts = data_[code_col_names].map(_count_sep)
+    r_n_counts = df[code_cols].map(_count_sep)
     # # Debugging:
     # for col in code_col_names:
     #     for i, x in enumerate(data_[col]):
@@ -285,40 +254,35 @@ def _parse_mult_alt_codes(data):
     #             break
     r_n_counts_ = r_n_counts.mul(-1).add(r_n_counts.max(axis=1), axis='index')
 
-    for col in code_col_names:
-        for i in data_.index:
+    for col in code_cols:
+        for i in df.index:
             d = r_n_counts_.loc[i, col]
-            x = data_.loc[i, col]
+            val = df.loc[i, col]
             if d > 0:
-                if '\r\n' in x:
+                if '\r\n' in val:
                     if col == 'Location':
-                        data_.loc[i, col] = x + ''.join(['\r\n' + x.split('\r\n')[-1]] * d)
+                        df.loc[i, col] = val + ''.join(['\r\n' + val.split('\r\n')[-1]] * d)
                     else:
-                        data_.loc[i, col] = x + ''.join(['\r\n'] * d)
-                elif '\r' in x:
+                        df.loc[i, col] = val + ''.join(['\r\n'] * d)
+                elif '\r' in val:
                     if col == 'Location':
-                        data_.loc[i, col] = x + ''.join(['\r' + x.split('\r')[-1]] * d)
+                        df.loc[i, col] = val + ''.join(['\r' + val.split('\r')[-1]] * d)
                     else:
-                        data_.loc[i, col] = x + ''.join(['\r'] * d)
+                        df.loc[i, col] = val + ''.join(['\r'] * d)
                 else:  # e.g. '\n' in dat:
                     if col == 'Location':
-                        data_.loc[i, col] = '\n'.join([x] * (d + 1))
+                        df.loc[i, col] = '\n'.join([val] * (d + 1))
                     else:
-                        data_.loc[i, col] = x + ''.join(['\n'] * d)
-            # elif any(all(a_ in x for a_ in a) for a in self._extra_annotations()):
-            #     temp = [
-            #         x.replace(a[0], f'{a[0][:-1]}\n') for a in self._extra_annotations()
-            #         if a[0] in x and x.endswith(a[1])]
-            #     data_.loc[i, col] = temp[0]
+                        df.loc[i, col] = val + ''.join(['\n'] * d)
 
-    data_[code_col_names] = data_[code_col_names].map(_split_dat_and_note)
+    df[code_cols] = df[code_cols].map(_split_dat_and_note)
 
-    data_ = data_.explode(code_col_names, ignore_index=True)
+    df = df.explode(code_cols, ignore_index=True)
 
-    temp = data_.select_dtypes(['object'])
-    data_[temp.columns] = temp.apply(lambda x_: x_.str.strip())
+    temp = df.select_dtypes(['object'])
+    df[temp.columns] = temp.apply(lambda x_: x_.str.strip())
 
-    return data_
+    return df
 
 
 def _parse_code_note(x):
@@ -378,15 +342,14 @@ def _parse_code_notes(data):
     # for col in codes_col_names:
     #     for i, x in enumerate(data[col]):
     #         try:
-    #             lid._get_code_note(x)
+    #             _parse_code_note(x)
     #         except Exception:
     #             print(col, i, x)
     #             break
-
     return data
 
 
-def _stanox_note(x):  # Parse STANOX note
+def _stanox_note(x):
     """
     Parses STANOX note.
 
@@ -401,12 +364,10 @@ def _stanox_note(x):  # Parse STANOX note
 
     else:
         if re.match(r'\d{5}$', x):
-            stanox = x
-            note = ''
+            stanox, note = x, ''
 
         elif re.match(r'\d{5}\*$', x):
-            stanox = x.rstrip('*')
-            note = 'Pseudo STANOX'
+            stanox, note = x.rstrip('*'), 'Pseudo STANOX'
 
         elif re.match(r'\d{5} \w.*', x):
             stanox = re.search(r'\d{5}', x).group()
@@ -414,12 +375,17 @@ def _stanox_note(x):  # Parse STANOX note
 
         else:
             d = re.search(r'[\w *,]+(?= [\[(\'])', x)
-            stanox = d.group() if d is not None else x
+            stanox = d.group().strip() if d is not None else x
+
+            # Check for Pseudo STANOX marker before stripping it
             note = 'Pseudo STANOX' if '*' in stanox else ''
+            stanox = stanox.rstrip('*')
+
+            # Extract notes within brackets/quotes
             n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
 
             if n is not None:
-                note = '; '.join(x for x in [note, n.group()] if x != '')
+                note = '; '.join(item for item in [note, n.group()] if item != '')
 
             if '(' not in note and note.endswith(')'):
                 note = note.rstrip(')')
@@ -453,9 +419,35 @@ def _parse_stanox_note(data):
     return data
 
 
-def _parse_note_page_pre_span(pre_span):
+def _fill_location_names(data):
+    """
+    Fills missing or empty code values based on other rows sharing the same 'Location' name.
 
-    lines = pre_span.decode_contents().strip().split('\n')
+    :param data: Input DataFrame with station data.
+    :return: DataFrame with populated code columns.
+    """
+
+    df = data.copy()
+    code_cols = ['CRS', 'NLC', 'TIPLOC', 'STANME', 'STANOX']  # The code columns to be filled
+
+    # Standardise empty strings/None to NA so pandas recognises them as 'missing'
+    for col in code_cols:
+        df[col] = df[col].replace(r'^\s*$', pd.NA, regex=True)
+
+    # Group and fill
+    with pd.option_context('future.no_silent_downcasting', True):
+        # Group by 'Location' and apply forward then backward fill
+        df[code_cols] = df.groupby('Location', sort=False)[code_cols].transform(
+            lambda x: x.ffill().bfill())
+
+    # Replace any remaining NaNs back with empty strings (optional)
+    df[code_cols] = df[code_cols].astype(object).fillna('')
+
+    return df
+
+
+def _parse_note_page_pre_span(pre_span):
+    lines = [line.strip() for line in pre_span.decode_contents().splitlines() if line.strip()]
 
     data = []
     for line in lines:
@@ -463,28 +455,87 @@ def _parse_note_page_pre_span(pre_span):
         spans = temp.find_all('span')
         texts = [span.get_text(strip=True) for span in spans]
 
-        # Remaining text after last span (e.g., "BLU", "EBF", etc.)
+        # Remaining text after last span (e.g. "BLU", "EBF")
         remaining = temp.get_text(strip=True)
         for t in texts:
             remaining = remaining.replace(t, '', 1)
         remaining = remaining.strip()
 
-        row = texts + [remaining]
+        row = texts + ([remaining] if remaining else [])  # Build row: [Location, CRS1, CRS2, ..., ]
         data.append(row)
 
-    # Normalize rows to have equal length
+    if not data:
+        return pd.DataFrame()
+
+    # Determine dynamic column width
     max_len = max(len(row) for row in data)
-    for row in data:
-        while len(row) < max_len:
-            row.append(None)
 
-    # Create DataFrame
-    columns = ['location_name', 'CRS1', 'CRS2']
-    if max_len > 3:
-        columns += ['CRS3']
-    df = pd.DataFrame(data, columns=columns).fillna('')
+    # Header: 'location_name' followed by incrementing CRS numbers
+    columns = ['location_name'] + [f'CRS{i}' for i in range(1, max_len)]
+    # Pad rows with empty strings to match max_len
+    padded_data = [row + [''] * (max_len - len(row)) for row in data]
 
-    return df
+    return pd.DataFrame(padded_data, columns=columns)
+
+
+def _format_structured_note(text):
+    # noinspection PyShadowingNames
+    """
+    Formats a raw string of tab-separated notes into a structured DataFrame.
+
+    This helper processes text blocks where data is organised by lines and delimited by tabs
+    or multiple commas. It dynamically scales the number of 'CRS' columns based on the row
+    with the most data points.
+
+    :param text: Raw note text containing newline and tab characters.
+    :type text: str
+    :return: A structured DataFrame with columns ``['Location', 'CRS', 'CRS1', ...]``.
+        Returns an empty DataFrame if required delimiters are not present.
+    :rtype: pandas.DataFrame
+
+    **Examples**::
+
+        >>> from pyrcs.line_data.loc_id import _format_structured_note
+        >>> text = "Abbey Wood\\tABW\\nAllerton\\tALN\\tLVP\\tLSP"
+        >>> df = _format_structured_note(text)
+        >>> df.columns.tolist()
+        ['Location', 'CRS', 'CRS1']
+    """
+
+    if not text:
+        return pd.DataFrame()
+
+    # Normalise potential literal string escapes from web data
+    # This ensures consistency across Windows/Unix and different scrape sources
+    normalised_text = text.replace('\\t', '\t').replace('\\n', '\n').replace('\\r', '')
+
+    if '\t' not in normalised_text:
+        return pd.DataFrame()
+
+    # Split into lines and remove empty strings
+    lines = [line.strip() for line in normalised_text.splitlines() if line.strip()]
+
+    processed_data = []
+    max_cols = 0
+    for line in lines:
+        # Split by tabs or sequences of commas
+        parts = [p.strip() for p in re.split(r'\t+|,+', line)]
+        processed_data.append(parts)
+        max_cols = max(max_cols, len(parts))
+
+    if max_cols == 0:
+        return pd.DataFrame()
+
+    # Standardise columns: ['Location', 'CRS', 'CRS1', 'CRS2'...]
+    columns = ['Location', 'CRS1']
+    effective_max = max(2, max_cols)
+    if effective_max > 2:
+        columns += [f'CRS{i}' for i in range(2, effective_max)]
+
+    # Match data to column length
+    final_data = [row + [''] * (len(columns) - len(row)) for row in processed_data]
+
+    return pd.DataFrame(final_data, columns=columns[:max_cols])
 
 
 class LocationIdentifiers(_Base):
@@ -503,7 +554,7 @@ class LocationIdentifiers(_Base):
     KEY: str = 'Location ID'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/crs/crs0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/crs/crs0.shtm')
 
     #: The key for accessing the data of *other systems*.
     KEY_TO_OTHER_SYSTEMS: str = 'Other systems'
@@ -546,7 +597,7 @@ class LocationIdentifiers(_Base):
             data_cluster="crs-nlc-tiploc-stanox", update=update, verbose=verbose)
 
         # Adds the multiple station codes explanatory note (MSCEN) to the catalogue
-        mscen_url = urllib.parse.urljoin(home_page_url(), '/crs/crs2.shtm')
+        mscen_url = urllib.parse.urljoin(homepage_url(), '/crs/crs2.shtm')
         self.catalogue.update({self.KEY_TO_MSCEN: mscen_url})
 
         # Retrieve the catalogue for other systems' station codes
@@ -556,7 +607,7 @@ class LocationIdentifiers(_Base):
     @staticmethod
     def _parse_notes_page(source, parser='html.parser'):
         """
-        Parses the additional note page at the specified URL and extract its contents.
+        Parses the additional note page at the specified URL and extracts its contents.
 
         :param parser: The `parser`_ to use with `bs4.BeautifulSoup`_
             (e.g. ``'html.parser'``, ``'lxml'``); defaults to ``'html.parser'``.
@@ -573,83 +624,97 @@ class LocationIdentifiers(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LocationIdentifiers
+            >>> from pyhelpers.ops import fake_requests_headers
+            >>> import requests
             >>> # from pyrcs import LocationIdentifiers
             >>> lid = LocationIdentifiers()
             >>> url = 'http://www.railwaycodes.org.uk/crs/crs2.shtm'
-            >>> parsed_note_dat = lid._parse_notes_page(note_url=url)
+            >>> response = requests.get(url, headers=fake_requests_headers())
+            >>> parsed_note_dat, _ = lid._parse_notes_page(response)
             >>> parsed_note_dat[3]
-                               Location  CRS CRS_alt1 CRS_alt2
-            0           Glasgow Central  GLC      GCL
-            1      Glasgow Queen Street  GLQ      GQL
-            2                   Heworth  HEW      HEZ
-            3      Highbury & Islington  HHY      HII      XHZ
-            4    Lichfield Trent Valley  LTV      LIF
-            5     Liverpool Lime Street  LIV      LVL
-            6   Liverpool South Parkway  LPY      ALE
-            7         London St Pancras  STP      SPL      SPX
-            8                   Retford  RET      XRO
-            9   Smethwick Galton Bridge  SGB      GTI
-            10                 Tamworth  TAM      TAH
-            11       Willesden Junction  WIJ      WJH      WJL
-            12   Worcestershire Parkway  WOP      WPH
+                          location_name CRS1 CRS2 CRS3
+            0                 Bletchley  BLY  BLU
+            1   Ebbsfleet International  EBD  EBF
+            2           Glasgow Central  GLC  GCL
+            3      Glasgow Queen Street  GLQ  GQL
+            4                   Heworth  HEW  HEZ
+            5      Highbury & Islington  HHY  HII  XHZ
+            6    Lichfield Trent Valley  LTV  LIF
+            7     Liverpool Lime Street  LIV  LVL
+            8   Liverpool South Parkway  LPY  ALE
+            9         London St Pancras  STP  SPL  SPX
+            10                  Retford  RET  XRO
+            11                 Tamworth  TAM  TAH
+            12       Willesden Junction  WIJ  WJH  WJL
+            13   Worcestershire Parkway  WOP  WPH
         """
 
-        soup = bs4.BeautifulSoup(markup=source.content, features=parser)
+        if not source or not source.ok:
+            return [], None
 
-        raw_text = []
+        soup = bs4.BeautifulSoup(markup=source.content, features=parser)
+        raw_elements = []
+
+        # Extract elements from the page
         for x in soup.find_all(['p', 'pre']):
             if x.name == 'pre':
-                raw_text.append(_parse_note_page_pre_span(x))
-            elif isinstance(x.next_element, str):
-                x_ = x.get_text(strip=True)
-                if x_:
-                    raw_text.append(x_)
+                raw_elements.append(_parse_note_page_pre_span(x))
+            else:  # Check if the paragraph has direct string content
+                text = x.get_text().strip().replace('  ', ' ')
+                if text:
+                    raw_elements.append(text)
 
+        # Process elements into notes
         notes = []
-        for x in raw_text:
-            if isinstance(x, str):
-                if '\n' in x and '\t' in x:
-                    text = re.sub('\t+', ',', x).replace('\t', ' ').replace('\xa0', '').split('\n')
-                else:
-                    text = x.replace('\t', ' ').replace('\xa0', '')
+        to_remove = {'click the link', 'click your browser', 'thank you', 'shown below'}
 
-                if isinstance(text, list):
-                    text = [[x.strip() for x in t.split(',')] for t in text if t != '']
-                    text = [x + [''] if len(x) < 4 else x for x in text]
-                    temp = pd.DataFrame(text, columns=['Location', 'CRS', 'CRS_alt1', 'CRS_alt2'])
-                    notes.append(temp.fillna(''))
-                else:
-                    to_remove = ['click the link', 'click your browser', 'Thank you', 'shown below']
-                    if text.strip() != '' and not any(t in text for t in to_remove):
-                        notes.append(text)
-            elif isinstance(x, pd.DataFrame):
+        for x in raw_elements:
+            if isinstance(x, pd.DataFrame):
                 notes.append(x)
+            elif isinstance(x, str):
+                if '\t' in x or '\\t' in x:  # If it looks like structured tab data
+                    notes.append(_format_structured_note(x))
+                else:  # Filter out boilerplate strings
+                    if not any(phrase in x.lower() for phrase in to_remove):
+                        notes.append(x)
 
         return notes, soup
 
     # -- CRS, NLC, TIPLOC and STANOX ---------------------------------------------------------------
 
     def _parse_crs_notes(self, data, initial, soup):
-        if any('see note' in crs_note for crs_note in data['CRS_Note']):
-            indices = [i for i, crs_n in enumerate(data['CRS_Note']) if 'see note' in crs_n]
+        # Identify rows that actually need a note lookup
+        mask = data['CRS_Note'].str.contains('see note', case=False, na=False)
+        if not mask.any():
+            return None
 
-            notes = []
-            for x in soup.find_all('a', href=True, string='note'):
-                source = requests.get(
-                    url=urllib.parse.urljoin(self.catalogue[initial], x['href']),
-                    headers=fake_requests_headers())
+        indices = data.index[mask].tolist()
 
-                notes.append(self._parse_notes_page(source)[0])
+        # Extract the specific 'note' links from the soup
+        note_links = soup.find_all('a', href=True, string=re.compile(r'note', re.I))
 
-            loc_id_notes = dict(zip(data['CRS'].iloc[indices], notes))
+        loc_id_notes = {}
+        with requests.Session() as session:  # Using a Session is faster for multiple requests
+            session.headers.update(fake_requests_headers())
 
-        else:
-            loc_id_notes = None
+            for idx, link_tag in zip(indices, note_links):
+                crs_code = data.at[idx, 'CRS']
+                # noinspection PyBroadException
+                try:
+                    url = urllib.parse.urljoin(self.catalogue[initial], link_tag['href'])
+                    response = session.get(url, timeout=10)
+
+                    parsed_content, _ = self._parse_notes_page(response)
+                    # Get the first element if it's a list
+                    loc_id_notes[crs_code] = parsed_content[0] if parsed_content else None
+
+                except Exception:
+                    loc_id_notes[crs_code] = None
 
         return loc_id_notes
 
     def _collect_loc_id(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         # url = lid.catalogue[initial_]
         # source = requests.get(url)
@@ -669,7 +734,7 @@ class LocationIdentifiers(_Base):
         # # Debugging
         # for i, x in enumerate(data['Location']):
         #     try:
-        #         _parse_location_name(x)
+        #         _parse_raw_location_name(x)
         #     except Exception:
         #         print(i)
         #         break
@@ -683,6 +748,9 @@ class LocationIdentifiers(_Base):
 
         # Parse STANOX note
         data = _parse_stanox_note(data=data)
+
+        # Fills missing or empty code values based on other rows sharing the same 'Location' name.
+        data = _fill_location_names(data)
 
         loc_codes = {
             initial_: data,
@@ -742,7 +810,7 @@ class LocationIdentifiers(_Base):
             [5 rows x 12 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         loc_id_data = self._collect_data_from_source(
             data_name=self.NAME, method=self._collect_loc_id, initial=initial_,
@@ -812,18 +880,18 @@ class LocationIdentifiers(_Base):
                 update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
 
         else:
-            verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+            verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
 
             # Get every data table
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
             dat_list = [
                 self.fetch_loc_id(initial=x, update=update, verbose=verbose_2)
                 for x in string.ascii_lowercase]
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY, verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY, verbose=verbose)
 
                 dat_list = [
                     self.fetch_loc_id(initial=x, update=False, verbose=verbose_1)
@@ -1177,7 +1245,7 @@ class LocationIdentifiers(_Base):
             [5 rows x 12 columns]
         """
 
-        verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+        verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
 
         loc_id_data = self.fetch_loc_id(update=update, verbose=verbose_)
 
