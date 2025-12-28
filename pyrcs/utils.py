@@ -170,10 +170,8 @@ def validate_page_name(cls_instance, page_no, valid_page_no):
 
         Examples for the methods:
 
-        - :meth:`Tunnels.collect_codes_by_page()
-          <pyrcs.other_assets.tunnel.Tunnels.collect_codes_by_page>`
-        - :meth:`Tunnels.collect_codes_by_page()
-          <pyrcs.other_assets.viaduct.Viaducts.collect_codes_by_page>`
+        - :py:meth:`Tunnels.collect_codes()<pyrcs.other_assets.tunnel.Tunnels.collect_codes>`
+        - :py:meth:`Viaducts.collect_codes()<pyrcs.other_assets.viaduct.Viaducts.collect_codes>`
     """
 
     assert page_no in valid_page_no, f"Valid `page_no` must be one of {valid_page_no}."
@@ -393,8 +391,8 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     if update:
         err_msg += " Failed to update the data."
 
-    # print(err_msg)
-    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
+    _print_failure_message(
+        e if raise_error else err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
 def print_void_collection_message(data_name, verbose):
