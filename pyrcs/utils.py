@@ -17,7 +17,7 @@ from pyhelpers.store import load_data, save_data
 # == Specify address of web pages ==================================================================
 
 
-def home_page_url():
+def homepage_url():
     """
     Returns the homepage URL of the data source.
 
@@ -26,8 +26,8 @@ def home_page_url():
 
     **Examples**::
 
-        >>> from pyrcs.utils import home_page_url
-        >>> home_page_url()
+        >>> from pyrcs.utils import homepage_url
+        >>> homepage_url()
         'http://www.railwaycodes.org.uk/'
     """
 
@@ -51,7 +51,7 @@ def is_home_connectable():
         True
     """
 
-    url = home_page_url()
+    url = homepage_url()
 
     rslt = is_url_connectable(url=url)
 
