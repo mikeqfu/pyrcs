@@ -18,7 +18,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, home_page_url, print_connection_warning, print_instance_connection_error
+from .utils import cd_data, homepage_url, print_connection_warning, print_instance_connection_error
 
 
 # == Preprocess contents ===========================================================================
@@ -369,7 +369,7 @@ def _get_site_map_h3_dl_dt_dds(h3_dl_dt, next_dd=None):
         else:
             a = next_dd.find('a')
             text, href = _clean_key(a.get_text(strip=True)), a.get(key='href')
-            h3_dl_dt_dds.update({text: urllib.parse.urljoin(home_page_url(), href)})
+            h3_dl_dt_dds.update({text: urllib.parse.urljoin(homepage_url(), href)})
 
         try:
             next_dd = next_dd.find_next_sibling('dd')
@@ -392,7 +392,7 @@ def _get_site_map_sub_dl(h3_dl_dts):
         dt_text = _clean_key(dt_text_)
 
         if dt_href:
-            h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(home_page_url(), dt_href)})
+            h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(homepage_url(), dt_href)})
 
         else:
             next_dd = h3_dl_dt.find_next('dd')
@@ -434,7 +434,7 @@ def _get_site_map(source, parser='html.parser'):
             if h3_dl_dt_text == '':
                 for dd in h3_dl_dt.find_next_siblings('dd'):
                     text, href = _parse_dd_or_dt(dd)
-                    dd_dict.update({_clean_key(text): urllib.parse.urljoin(home_page_url(), href)})
+                    dd_dict.update({_clean_key(text): urllib.parse.urljoin(homepage_url(), href)})
 
         else:
             dd_dict = _get_site_map_sub_dl(h3_dl_dts=h3_dl_dts)
@@ -493,7 +493,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
                 print("Updating the package data", end=" ... ")
 
             try:
-                url = urllib.parse.urljoin(home_page_url(), '/misc/sitemap.shtm')
+                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
                 source = requests.get(url=url, headers=fake_requests_headers())
 
             except requests.exceptions.ConnectionError:
@@ -846,7 +846,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
 
     if confirmed("To collect/update category menu?", confirmation_required=confirmation_required):
         try:
-            source = requests.get(url=home_page_url(), headers=fake_requests_headers())
+            source = requests.get(url=homepage_url(), headers=fake_requests_headers())
         except requests.exceptions.ConnectionError:
             print_connection_warning(verbose=verbose)
             return None
@@ -860,7 +860,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
             a_href_list = drop_btn.find_next_sibling('div').find_all('a')
 
             cls_menu_ = [
-                (a.get_text(), urllib.parse.urljoin(home_page_url(), a['href']))
+                (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
                 for a in a_href_list]
 
             cls_menu = {name: dict(cls_menu_)}

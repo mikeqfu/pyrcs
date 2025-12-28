@@ -17,7 +17,7 @@ from pyhelpers.store import load_data, save_data
 
 from .parser import get_catalogue, get_introduction, get_last_updated_date
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
-    home_page_url, print_collection_message, print_connection_warning, \
+    homepage_url, print_collection_message, print_connection_warning, \
     print_instance_connection_error, print_void_collection_message
 
 
@@ -31,7 +31,7 @@ class _Base:
     #: The key for accessing the data.
     KEY: str = ''
     #: The URL of the main web page for the data.
-    URL: str = home_page_url()
+    URL: str = homepage_url()
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 

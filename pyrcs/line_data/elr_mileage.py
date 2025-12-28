@@ -24,7 +24,7 @@ from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, \
+from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
     is_str_float, print_instance_connection_error, print_void_collection_message, validate_initial
 
 
@@ -269,7 +269,7 @@ class ELRMileages(_Base):
     KEY: str = 'ELRs and mileages'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/elrs/elr0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -446,7 +446,7 @@ class ELRMileages(_Base):
 
         else:
             verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             dat_list = [
                 self.fetch_elr(initial=x, update=update, verbose=verbose_2)
@@ -951,7 +951,7 @@ class ELRMileages(_Base):
                     print(message_, end=" ... ")
 
                 try:
-                    url = home_page_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
+                    url = homepage_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
                     source = requests.get(url=url, headers=fake_requests_headers())
 
                 except Exception as e:

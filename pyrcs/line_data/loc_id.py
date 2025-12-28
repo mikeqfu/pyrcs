@@ -17,8 +17,8 @@ from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
-from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, home_page_url, \
-    is_home_connectable, print_instance_connection_error, print_void_collection_message, \
+from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, homepage_url, \
+    is_homepage_connectable, print_instance_connection_error, print_void_collection_message, \
     validate_initial
 
 
@@ -554,7 +554,7 @@ class LocationIdentifiers(_Base):
     KEY: str = 'Location ID'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/crs/crs0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/crs/crs0.shtm')
 
     #: The key for accessing the data of *other systems*.
     KEY_TO_OTHER_SYSTEMS: str = 'Other systems'
@@ -597,7 +597,7 @@ class LocationIdentifiers(_Base):
             data_cluster="crs-nlc-tiploc-stanox", update=update, verbose=verbose)
 
         # Adds the multiple station codes explanatory note (MSCEN) to the catalogue
-        mscen_url = urllib.parse.urljoin(home_page_url(), '/crs/crs2.shtm')
+        mscen_url = urllib.parse.urljoin(homepage_url(), '/crs/crs2.shtm')
         self.catalogue.update({self.KEY_TO_MSCEN: mscen_url})
 
         # Retrieve the catalogue for other systems' station codes
@@ -883,7 +883,7 @@ class LocationIdentifiers(_Base):
             verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
 
             # Get every data table
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
             dat_list = [
                 self.fetch_loc_id(initial=x, update=update, verbose=verbose_2)
                 for x in string.ascii_lowercase]

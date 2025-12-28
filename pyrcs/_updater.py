@@ -6,7 +6,7 @@ from pyhelpers.ops import confirmed
 
 from .collector import LineData, OtherAssets
 from .parser import get_site_map
-from .utils import is_home_connectable, print_connection_warning
+from .utils import is_homepage_connectable, print_connection_warning
 
 
 def _update_prepacked_data(verbose=False, interval=5, **kwargs):
@@ -25,7 +25,7 @@ def _update_prepacked_data(verbose=False, interval=5, **kwargs):
         >>> _update_prepacked_data(verbose=True)
     """
 
-    if not is_home_connectable():
+    if not is_homepage_connectable():
         print_connection_warning(verbose=verbose)
         print("Unable to update the data.")
 

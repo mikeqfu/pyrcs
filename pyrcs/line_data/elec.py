@@ -15,7 +15,7 @@ from pyhelpers.store import load_data
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_heading_text, get_hypertext, get_page_catalogue, \
     parse_tr
-from ..utils import cd_data, get_batch_fetch_verbosity, home_page_url
+from ..utils import cd_data, get_batch_fetch_verbosity, homepage_url
 
 
 # def _parse_notes(h3):
@@ -254,7 +254,7 @@ class Electrification(_Base):
     KEY_TO_ETZ: str = 'National network energy tariff zones'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), f'/{KEY.lower()}/mast_prefix0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), f'/{KEY.lower()}/mast_prefix0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'

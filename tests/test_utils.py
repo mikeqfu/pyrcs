@@ -9,9 +9,9 @@ import pytest
 
 
 def test_home_page_url():
-    from pyrcs.utils import home_page_url
+    from pyrcs.utils import homepage_url
 
-    assert home_page_url() == 'http://www.railwaycodes.org.uk/'
+    assert homepage_url() == 'http://www.railwaycodes.org.uk/'
 
 
 def test_is_str_float():

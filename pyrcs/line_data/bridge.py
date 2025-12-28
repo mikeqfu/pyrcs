@@ -11,7 +11,7 @@ from pyhelpers.ops import split_list_by_size
 
 from .._base import _Base
 from ..parser import _get_last_updated_date
-from ..utils import home_page_url
+from ..utils import homepage_url
 
 
 class Bridges(_Base):
@@ -25,7 +25,7 @@ class Bridges(_Base):
     #: The key for accessing the data.
     KEY: str = 'Bridges'
     #: The URL of the main webpage for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/bridges/bridges0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/bridges/bridges0.shtm')
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 

@@ -14,7 +14,7 @@ from pyhelpers.text import find_similar_str
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import get_batch_fetch_verbosity, home_page_url, print_instance_connection_error, \
+from ..utils import get_batch_fetch_verbosity, homepage_url, print_instance_connection_error, \
     print_void_collection_message
 
 
@@ -41,7 +41,7 @@ class LOR(_Base):
     KEY_ELC: str = 'ELR/LOR converter'
 
     #: The URL of the main web page for the data.
-    URL = urllib.parse.urljoin(home_page_url(), '/pride/pride0.shtm')
+    URL = urllib.parse.urljoin(homepage_url(), '/pride/pride0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
@@ -136,7 +136,7 @@ class LOR(_Base):
             AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
         """
 
-        url = urllib.parse.urljoin(home_page_url(), '/pride/pride')
+        url = urllib.parse.urljoin(homepage_url(), '/pride/pride')
 
         prefix_ = self.validate_prefix(prefix)
 
@@ -677,11 +677,11 @@ class LOR(_Base):
         #             lor_links.insert(i, lor_links[i - 1])
 
         elr_lor_dat['ELR_URL'] = [
-            urllib.parse.urljoin(home_page_url(), x.a.get('href')) if x.a else None
+            urllib.parse.urljoin(homepage_url(), x.a.get('href')) if x.a else None
             for x in elr_links]
 
         elr_lor_dat['LOR_URL'] = [
-            urllib.parse.urljoin(home_page_url(), 'pride/' + x.get('href'))
+            urllib.parse.urljoin(homepage_url(), 'pride/' + x.get('href'))
             for x in lor_links]
 
         elr_lor_converter = {

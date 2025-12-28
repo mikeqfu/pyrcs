@@ -11,7 +11,7 @@ import pandas as pd
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import get_batch_fetch_verbosity, home_page_url
+from ..utils import get_batch_fetch_verbosity, homepage_url
 
 
 class Depots(_Base):
@@ -35,7 +35,7 @@ class Depots(_Base):
     KEY_TO_GWR: str = 'GWR'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/depots/depots0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/depots/depots0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'

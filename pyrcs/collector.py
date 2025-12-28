@@ -17,7 +17,7 @@ from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, Lo
 from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
     Tunnels, Viaducts, WaterTroughs
 from .parser import get_category_menu
-from .utils import is_home_connectable, print_connection_warning, print_instance_connection_error
+from .utils import is_homepage_connectable, print_connection_warning, print_instance_connection_error
 
 
 class _Base:
@@ -25,7 +25,7 @@ class _Base:
     NAME: str = 'Railway Codes and other data'
 
     def __init__(self, update=False, verbose=True, raise_error=False):
-        if not is_home_connectable():
+        if not is_homepage_connectable():
             self.connected = False
             print_connection_warning(verbose=verbose)
 

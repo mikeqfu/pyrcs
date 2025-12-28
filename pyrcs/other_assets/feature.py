@@ -17,7 +17,7 @@ from .habd_wild import HabdWild
 from .telegraph import Telegraph
 from .trough import WaterTroughs
 from .._base import _Base
-from ..utils import get_batch_fetch_verbosity, is_home_connectable
+from ..utils import get_batch_fetch_verbosity, is_homepage_connectable
 
 
 class Features(_Base):
@@ -197,7 +197,7 @@ class Features(_Base):
 
         for (_, cls) in self._get_classes_in_module():
             dat = cls().fetch_codes(
-                update=update, verbose=verbose_ if is_home_connectable() else False, **kwargs)
+                update=update, verbose=verbose_ if is_homepage_connectable() else False, **kwargs)
             features_codes_dat.append(dat)
 
         features_codes = {

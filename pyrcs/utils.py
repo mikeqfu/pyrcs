@@ -37,7 +37,7 @@ def homepage_url():
 # == Validate inputs ===============================================================================
 
 
-def is_home_connectable():
+def is_homepage_connectable():
     """
     Checks and returns whether the Railway Codes website is reacheable.
 
@@ -46,8 +46,8 @@ def is_home_connectable():
 
     **Examples**::
 
-        >>> from pyrcs.utils import is_home_connectable
-        >>> is_home_connectable()
+        >>> from pyrcs.utils import is_homepage_connectable
+        >>> is_homepage_connectable()
         True
     """
 
@@ -235,7 +235,7 @@ def get_batch_fetch_verbosity(data_dir, verbose):
         False
     """
 
-    if is_home_connectable():
+    if is_homepage_connectable():
         verbose_ = get_collect_verbosity_for_fetch(data_dir=data_dir, verbose=verbose)
     else:
         verbose_ = False
@@ -347,7 +347,7 @@ def print_connection_warning(verbose=False):
         Failed to establish an Internet connection. The current instance relies on local backup.
     """
 
-    if not is_home_connectable():
+    if not is_homepage_connectable():
         if verbose:
             print("Failed to establish an Internet connection. "
                   "The current instance relies on local backup.")

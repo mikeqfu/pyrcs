@@ -11,7 +11,7 @@ import pandas as pd
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import get_collect_verbosity_for_fetch, home_page_url, is_home_connectable, \
+from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
     print_instance_connection_error, print_void_collection_message, validate_initial
 
 
@@ -37,7 +37,7 @@ class SignalBoxes(_Base):
     KEY_TO_BELL_CODES: str = 'Bell codes'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/signal/signal_boxes0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/signal/signal_boxes0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -205,7 +205,7 @@ class SignalBoxes(_Base):
         else:
 
             verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             # Get every data table
             data = [
