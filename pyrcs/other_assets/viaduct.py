@@ -8,8 +8,8 @@ import urllib.parse
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import home_page_url, is_home_connectable, print_inst_conn_err, print_void_msg, \
-    validate_page_name
+from ..utils import homepage_url, is_homepage_connectable, print_instance_connection_error, \
+    print_void_collection_message, validate_page_name
 
 
 class Viaducts(_Base):
@@ -24,7 +24,7 @@ class Viaducts(_Base):
     KEY: str = 'Viaducts'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/viaducts/viaducts0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/viaducts/viaducts0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -204,7 +204,7 @@ class Viaducts(_Base):
 
         else:
             verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             codes_on_pages = [
                 self.fetch_codes(page_no=page_no, update=update, verbose=verbose_2)
@@ -212,8 +212,8 @@ class Viaducts(_Base):
 
             if all(x is None for x in codes_on_pages):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY, verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY, verbose=verbose)
 
                 codes_on_pages = [
                     self.fetch_codes(page_no=page_no, update=False, verbose=verbose_1)

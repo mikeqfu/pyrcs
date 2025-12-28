@@ -6,10 +6,11 @@ from pyhelpers.ops import confirmed
 
 from .collector import LineData, OtherAssets
 from .parser import get_site_map
-from .utils import is_home_connectable, print_conn_err
+from .utils import is_homepage_connectable, print_connection_warning
 
 
 def _update_prepacked_data(verbose=False, interval=5, **kwargs):
+    # noinspection PyUnresolvedReferences
     """
     Updates pre-packed data.
 
@@ -24,8 +25,8 @@ def _update_prepacked_data(verbose=False, interval=5, **kwargs):
         >>> _update_prepacked_data(verbose=True)
     """
 
-    if not is_home_connectable():
-        print_conn_err(verbose=verbose)
+    if not is_homepage_connectable():
+        print_connection_warning(verbose=verbose)
         print("Unable to update the data.")
 
     else:

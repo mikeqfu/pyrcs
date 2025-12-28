@@ -16,12 +16,12 @@ Validate inputs
     :toctree: _generated/
     :template: function.rst
 
-    is_home_connectable
+    is_homepage_connectable
     is_str_float
     validate_initial
     validate_page_name
-    collect_in_fetch_verbose
-    fetch_all_verbose
+    get_collect_verbosity_for_fetch
+    get_batch_fetch_verbosity
 
 Print messages
 ~~~~~~~~~~~~~~
@@ -31,10 +31,10 @@ Print messages
     :template: function.rst
 
     format_confirmation_prompt
-    print_collect_msg
-    print_conn_err
-    print_inst_conn_err
-    print_void_msg
+    print_collection_message
+    print_connection_warning
+    print_instance_connection_error
+    print_void_collection_message
 
 Save and retrieve pre-packed data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
