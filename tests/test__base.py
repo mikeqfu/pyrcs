@@ -26,7 +26,7 @@ class TestBase:
         assert _b_test.introduction is None
 
     def test__setup_data_dir(self, _b, tmp_path):
-        data_dir, current_data_dir = _b._setup_data_dir(data_dir=tmp_path, category="line-data")
+        data_dir, _ = _b._setup_data_dir(data_dir=tmp_path, category="line-data")
         assert data_dir == _b.data_dir
 
     @pytest.mark.parametrize(

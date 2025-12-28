@@ -254,7 +254,7 @@ class TestLocationIdentifiers:
         </html>
         """
 
-        notes, soup = lid._parse_notes_page(mock_source)
+        notes, _ = lid._parse_notes_page(mock_source)
 
         assert isinstance(notes, list)
         assert len(notes) == 3  # 1st <p>, 3rd <p> (formatted), <pre> (df)
