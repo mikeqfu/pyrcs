@@ -90,33 +90,32 @@ class Tunnels(_Base):
         """
 
         if '✖' in x:
-            x, note_ = x.split('✖')
-            note_ = ' (' + note_ + ')'
+            x, note_suffix = x.split('✖')
+            note_suffix = f' ({note_suffix.strip()})'
         else:
-            note_ = ''
+            note_suffix = ''
 
-        if re.match(r'[Uu]nknown', x):
-            length = np.nan
-            note = 'Unknown'
+        if x == '':
+            length, note = np.nan, 'Unavailable'
 
-        elif x == '':
-            length = np.nan
-            note = 'Unavailable'
+        elif re.match(r'[Uu]nknown', x):
+            length, note = np.nan, 'Unknown'
 
         elif re.match(r'\d+m \d+yd?(- | to )?.*\d+m \d+yd?.*', x):
             miles_a, yards_a, miles_b, yards_b = re.findall(r'\d+', x)
             length_a = float(miles_a) * 1609.344 + float(yards_a) * 0.9144
-            # measurement.measures.Distance(mi=miles_a).m + measurement.measures.Distance(yd=yards_a).m
+            # from measurement.measures import Distance
+            # Distance(mi=miles_a).m + Distance(yd=yards_a).m
             length_b = float(miles_b) * 1609.344 + float(yards_b) * 0.9144
-            # measurement.measures.Distance(mi=miles_b).m + measurement.measures.Distance(yd=yards_b).m
+            # Distance(mi=miles_b).m + Distance(yd=yards_b).m
             length = (length_a + length_b) / 2
             note = '-'.join([str(round(length_a, 2)), str(round(length_b, 2))]) + ' metres'
 
         else:
-            if re.match(r'(formerly )?c?≈?\d+m ?\d+yd?|ch', x):
+            if re.match(r'(formerly )?c?≈?\d+m ?\d+(?:yd?|ch)', x):
                 miles, yards = re.findall(r'\d+', x)
                 if re.match(r'.*\d+ch$', x):  # "yards" is "chains"
-                    yards = yards * 22  # measurement.measures.Distance(chain=yards).yd
+                    yards = float(yards) * 22  # measurement.measures.Distance(chain=yards).yd
 
                 if re.match(r'^c.*|^≈', x):
                     note = 'Approximate'
@@ -124,6 +123,8 @@ class Tunnels(_Base):
                     note = re.search(r'(?<=\dy).*$', x).group(0)
                 elif re.match(r'^(formerly).*', x):
                     note = 'Formerly'
+                elif re.match(r'.*(?:yd?|ch)\s*(.+)$', x):
+                    note = re.search(r'(?:yd?|ch)\s*(.+)$', x).group(1)
                 else:
                     note = ''
 
@@ -139,7 +140,7 @@ class Tunnels(_Base):
             # measurement.measures.Distance(mi=miles).m + measurement.measures.Distance(yd=yards).m
 
             if note != '':
-                note = note + note_
+                note = note.strip() + note_suffix
 
         return length, note
 

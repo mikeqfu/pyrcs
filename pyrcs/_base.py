@@ -376,7 +376,7 @@ class _Base:
         :param ext: The file extension (including the leading dot), defaults to ``".pkl"``.
         :type ext: str
         :param data_dir: The directory where the file will be saved; defaults to ``None``.
-        :type data_dir: str | None
+        :type data_dir: str | os.PathLike | None
         :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
         :type sub_dir: str | list | None
         :return: The pathname for saving the data file.
@@ -403,7 +403,7 @@ class _Base:
             sub_dir_ = []
 
         if data_dir:
-            self.current_data_dir = validate_dir(path_to_dir=data_dir)
+            self.current_data_dir = validate_dir(path_to_dir=None if data_dir is True else data_dir)
             file_pathname = os.path.join(self.current_data_dir, *sub_dir_, filename)
 
         else:  # data_dir is None or data_dir == ""
@@ -431,7 +431,7 @@ class _Base:
         :type ext: str | bool
         :param dump_dir: The directory where the file should be saved;
             if ``None`` (default) a default directory within the class is used.
-        :type dump_dir: str | None
+        :type dump_dir: str | os.PathLike | None
         :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
         :type sub_dir: str | list | None
         :param verbose: Whether to print detailed information to the console; defaults to ``False``.

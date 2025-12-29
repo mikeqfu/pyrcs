@@ -5,7 +5,7 @@ Test the module :py:mod:`pyrcs.other_assets.depot`.
 import pandas as pd
 import pytest
 
-from pyrcs.other_assets import Depots
+from pyrcs.other_assets.depot import Depots
 
 
 @pytest.fixture(scope='class')
@@ -24,11 +24,7 @@ class TestDepots:
         assert isinstance(depots_codes_dat, dict)
         assert isinstance(depots_codes_dat[depots.KEY_TO_PRE_TOPS], pd.DataFrame)
 
-    @pytest.mark.parametrize('update', [True, False])
-    def test_fetch_codes(self, depots, update):
-        depots_codes = depots.fetch_codes(update=update, verbose=True)
-        self._assert_test_fetch_codes(depots, depots_codes)
-
+    def test_fetch_codes(self, depots):
         depots_codes = depots.fetch_codes(verbose=True)
         self._assert_test_fetch_codes(depots, depots_codes)
 

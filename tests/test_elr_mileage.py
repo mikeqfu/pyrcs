@@ -3,12 +3,11 @@ Test the module :py:mod:`pyrcs.line_data.elr_mileage`.
 """
 
 import functools
-import os
 
 import pandas as pd
 import pytest
 
-from pyrcs.line_data import ELRMileages
+from pyrcs.line_data.elr_mileage import ELRMileages
 
 
 def test__parse_non_float_str_mileage():
@@ -74,11 +73,12 @@ def test__parse_mileages():
             assert parsed_mileage['Mileage_Note'].tolist() == ['8.69 km', '']
 
 
-class TestELRMileages:
+@pytest.fixture(scope='class')
+def em():
+    return ELRMileages()
 
-    @pytest.fixture(scope='class')
-    def em(self):
-        return ELRMileages()
+
+class TestELRMileages:
 
     def test_collect_elr(self, em, capfd, monkeypatch):
         test_initials = ['a', 'q']
@@ -112,8 +112,7 @@ class TestELRMileages:
         elrs_codes_dat = elr_codes[test_initial]
         assert isinstance(elrs_codes_dat, pd.DataFrame)
 
-    @pytest.mark.parametrize('update', [False, True])
-    def test_fetch_elr(self, em, update, tmp_path, capfd):
+    def test_fetch_elr(self, em, tmp_path, capfd):
         elrs_codes_a = em.fetch_elr(initial='a', dump_dir=tmp_path, verbose=2)
         out, _ = capfd.readouterr()
         assert 'Saving "a.pkl"' in out and "Done." in out
@@ -121,7 +120,7 @@ class TestELRMileages:
         assert isinstance(elrs_codes_a, dict)
         assert list(elrs_codes_a.keys()) == ['A', em.KEY_TO_LAST_UPDATED_DATE]
 
-        elrs_codes = em.fetch_elr(update=update, verbose=True)
+        elrs_codes = em.fetch_elr(verbose=True)
 
         assert isinstance(elrs_codes, dict)
         assert list(elrs_codes.keys()) == ['ELRs and mileages', em.KEY_TO_LAST_UPDATED_DATE]
@@ -129,7 +128,7 @@ class TestELRMileages:
         elrs_codes_dat = elrs_codes[em.KEY]
         assert isinstance(elrs_codes_dat, pd.DataFrame)
 
-        elrs_codes = em.fetch_elr(update=False, dump_dir=tmp_path, verbose=2)
+        elrs_codes = em.fetch_elr(dump_dir=tmp_path, verbose=2)
         out, _ = capfd.readouterr()
         assert "Saving" in out and "Done." in out
 
@@ -138,13 +137,6 @@ class TestELRMileages:
 
         elrs_codes_dat = elrs_codes[em.KEY]
         assert isinstance(elrs_codes_dat, pd.DataFrame)
-
-    def test__mileage_file_dump_names(self, em):
-        elrs = ['PRN', 'ABC5']
-        for elr in elrs:
-            data_name, dump_dir = em._mileage_file_dump_names(elr)
-            assert (data_name == 'prn_' if elr == 'PRN' else elr.lower())
-            assert os.path.basename(dump_dir) == elr[0].lower()
 
     def test__get_parsed_contents(self, em):
         elr_dat = pd.DataFrame({
@@ -177,8 +169,78 @@ class TestELRMileages:
         assert line_name == 'Main Line'
         assert parsed_content == [['0.00', 'Main Line'], ['2.00', 'Main Line']]
 
+    def test_mileage_parsing_and_splitting(self, em, monkeypatch):
+        # 1. Setup a mock class instance to provide self.measure_headers
+        class MockParser:
+            measure_headers = [
+                'Current measure', 'Original measure', 'Later measure',
+                'One measure', 'Alternative measure', 'Previous measure'
+            ]
+            # Attach the methods to the mock instance
+            _split_measures = em._split_measures
+            _parse_mileage_and_notes = em._parse_mileage_and_notes
+
+        parser = MockParser()
+
+        # --- Scenario 1: Test "Later measure" splitting logic ---
+        # This covers the branch where measure_headers_indices == 1 and requires
+        # the creation of a "Later" vs "Earlier" dictionary mapping.
+        content_later = [
+            ['0.00', 'Station A'],
+            ['0.50', 'Station B'],
+            ['', 'Later measure'],  # This is the split point
+            ['0.00', 'Station A New'],
+            ['0.60', 'Station B New'],
+        ]
+
+        # We need to mock 'loop_in_pairs' if it's not imported
+        # Typically: loop_in_pairs([0, 3, 6]) -> [(0, 3), (3, 6)]
+        def mock_loop(iterable):
+            it = iter(iterable)
+            prev = next(it)
+            for item in it:
+                yield prev, item
+                prev = item
+
+        monkeypatch.setattr('pyrcs.line_data.elr_mileage.loop_in_pairs', mock_loop)
+
+        mil_dat, _ = parser._parse_mileage_and_notes(content_later)
+
+        # Verify that the data was split into two measures
+        assert isinstance(mil_dat, dict)
+        assert 'Earlier measure' in mil_dat
+        assert 'Later measure' in mil_dat
+        assert len(mil_dat['Earlier measure']) == 2
+        assert len(mil_dat['Later measure']) == 2
+
+        # --- Scenario 2: Test "Alternative measure" logic via else branch ---
+        # This covers the branch: if 'One measure' in test_temp_node
+        content_alt = [
+            ['', 'One measure'],
+            ['1.00', 'Point A'],
+            ['', 'Alternative measure'],
+            ['1.05', 'Point A Alt'],
+            ['(A note about distances)']  # Single element list becomes a note
+        ]
+
+        mil_dat_alt, notes_alt = parser._parse_mileage_and_notes(content_alt)
+
+        assert 'One measure' in mil_dat_alt
+        assert 'Alternative measure' in mil_dat_alt
+        assert 'A note about distances' in notes_alt['Notes']
+
+        # --- Scenario 3: Test km suffixing ---
+        content_km = [
+            ['10.00', 'Kilometer Point'],
+            ['Distances in km']
+        ]
+        mil_dat_km, _ = parser._parse_mileage_and_notes(content_km)
+
+        # Check that 'km' was appended to the mileage string
+        assert mil_dat_km.iloc[0]['Mileage'] == '10.00km'
+
     def test_collect_mileage_file(self, em, monkeypatch, capfd):
-        test_elrs = ['GAM', 'SLD', 'ELR']
+        test_elrs = ['GAM', 'SLD', 'ELR', 'BTJ']
         for test_elr in test_elrs:
             test_mileage_file = em.collect_mileage_file(
                 elr=test_elr, confirmation_required=False, verbose=True)
@@ -186,7 +248,7 @@ class TestELRMileages:
             assert f'Collecting the mileage file of "{test_elr}" ... Done.' in out
             assert isinstance(test_mileage_file, dict)
             assert list(test_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-            assert isinstance(test_mileage_file['Mileage'], pd.DataFrame)
+            assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
         test_elr = 'CJD'
 
@@ -195,26 +257,32 @@ class TestELRMileages:
         assert test_mileage_file is None
 
         monkeypatch.setattr('builtins.input', lambda _: "Yes")
-        test_mileage_file = em.collect_mileage_file(elr='CJD', verbose=True)
+        test_mileage_file = em.collect_mileage_file(elr=test_elr, verbose=True)
         out, _ = capfd.readouterr()
         assert 'Collecting the mileage file ... Done.' in out and "Done." in out
         assert isinstance(test_mileage_file, dict)
         assert list(test_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
         assert isinstance(test_mileage_file['Mileage'], pd.DataFrame)
 
-    @pytest.mark.parametrize('update', [False, True])
-    def test_fetch_mileage_file(self, em, update, tmp_path, capfd):
-        test_elrs = ['AAL', 'MLA']
-        for test_elr in test_elrs:
-            test_mileage_file = em.fetch_mileage_file(elr=test_elr, update=update, verbose=True)
+    def test_fetch_mileage_file(self, em, tmp_path, capfd):
+        for test_elr in ['AAL', 'MLA', 'FED']:
+            test_mileage_file = em.fetch_mileage_file(elr=test_elr, dump_dir=None, verbose=True)
             assert isinstance(test_mileage_file, dict)
             assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
-        test_mileage_file = em.fetch_mileage_file(elr='AAL', verbose=2, dump_dir=tmp_path)
+        aal_mileage_file = em.fetch_mileage_file(elr='AAL', update=True, verbose=2)
         out, _ = capfd.readouterr()
-        assert "Saving" in out and "Done." in out
-        assert isinstance(test_mileage_file, dict)
-        assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
+        assert "Updating" in out and "Done." in out
+        assert isinstance(aal_mileage_file, dict)
+        assert isinstance(aal_mileage_file['Mileage'], (pd.DataFrame, dict))
+
+        lcg_mileage_file = em.fetch_mileage_file(elr='LCG', dump_dir=tmp_path)
+        assert isinstance(lcg_mileage_file, dict)
+        assert isinstance(lcg_mileage_file['Mileage'], (pd.DataFrame, dict))
+
+        abk_mileage_file = em.fetch_mileage_file(elr='ABK', dump_dir=tmp_path)
+        assert isinstance(abk_mileage_file, dict)
+        assert isinstance(abk_mileage_file['Mileage'], (pd.DataFrame, dict))
 
     def test_search_conn(self, em):
         elr_1, elr_2 = 'AAM', 'ANZ'

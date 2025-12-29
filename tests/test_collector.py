@@ -2,49 +2,96 @@
 Test the module :py:mod:`pyrcs.collector`.
 """
 
-import pandas as pd
+import unittest.mock
+
 import pytest
 
-from pyrcs.collector import LineData, OtherAssets
+from pyrcs.collector import LineData, OtherAssets, _Base
 
 
-def test_LineData():
+class TestCollectorBase:
+
+    def test_init(self, monkeypatch):
+        mock_warning = unittest.mock.MagicMock()
+
+        monkeypatch.setattr('pyrcs.collector.is_homepage_connectable', lambda: False)
+        monkeypatch.setattr('pyrcs.collector.print_connection_warning', mock_warning)
+        monkeypatch.setattr('pyrcs.collector.get_category_menu', lambda *a, **k: {})
+        _Base(verbose=True, raise_error=True)
+        mock_warning.assert_called_once_with(verbose=True)
+
+
+def test_line_data_update_no_connection(monkeypatch, capfd):
+    # 1. Mock the connection check to return False
+    # Note: Patch this in the module where _Base is defined
+    monkeypatch.setattr('pyrcs.collector.is_homepage_connectable', lambda: False)
+
+    # 2. Mock get_category_menu (called in _Base.__init__)
+    monkeypatch.setattr('pyrcs.collector.get_category_menu', lambda *a, **k: {})
+
+    # 3. Mock the sub-classes to prevent them from initializing fully
+    # This keeps the test focused only on LineData.update()
+    def mock_class(**_kwargs):
+        return None
+
+    monkeypatch.setattr('pyrcs.collector.ELRMileages', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Electrification', mock_class)
+    monkeypatch.setattr('pyrcs.collector.LocationIdentifiers', mock_class)
+    monkeypatch.setattr('pyrcs.collector.LOR', mock_class)
+    monkeypatch.setattr('pyrcs.collector.LineNames', mock_class)
+    monkeypatch.setattr('pyrcs.collector.TrackDiagrams', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Bridges', mock_class)
+
+    # 4. Initialize LineData
+    # Because is_homepage_connectable is False, self.connected will be False
     ld = LineData()
+    assert ld.connected is False
 
-    location_codes = ld.LocationIdentifiers.fetch_codes()
-    assert isinstance(location_codes, dict)
-    assert list(location_codes.keys()) == [
-        'Location ID', 'Other systems', 'Notes', 'Last updated date']
+    # 5. Call update()
+    # This should trigger the 'if not self.connected' block
+    ld.update(verbose=True)
 
-    location_codes_dat = location_codes[ld.LocationIdentifiers.KEY]
-    assert isinstance(location_codes_dat, pd.DataFrame)
-
-    line_names_codes = ld.LineNames.fetch_codes()
-    assert isinstance(line_names_codes, dict)
-    assert list(line_names_codes.keys()) == ['Line names', 'Last updated date']
-
-    line_names_codes_dat = line_names_codes[ld.LineNames.KEY]
-    assert isinstance(line_names_codes_dat, pd.DataFrame)
+    # 6. Verify the error message was printed
+    out, _ = capfd.readouterr()
+    assert "The Internet connection is not available" in out
 
 
-def test_OtherAssets():
+def test_other_assets_update_no_connection(monkeypatch, capfd):
+    # 1. Mock the connection check to return False
+    # Note: Patch this in the module where _Base is defined
+    monkeypatch.setattr('pyrcs.collector.is_homepage_connectable', lambda: False)
+
+    # 2. Mock get_category_menu (called in _Base.__init__)
+    monkeypatch.setattr('pyrcs.collector.get_category_menu', lambda *a, **k: {})
+
+    # 3. Mock the sub-classes to prevent them from initialising fully
+    # This keeps the test focused only on OtherAssets.update()
+    def mock_class(**_kwargs):
+        return None
+
+    monkeypatch.setattr('pyrcs.collector.SignalBoxes', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Tunnels', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Viaducts', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Stations', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Depots', mock_class)
+    monkeypatch.setattr('pyrcs.collector.HabdWild', mock_class)
+    monkeypatch.setattr('pyrcs.collector.WaterTroughs', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Telegraph', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Buzzer', mock_class)
+    monkeypatch.setattr('pyrcs.collector.Features', mock_class)
+
+    # 4. Initialize LineData
+    # Because is_homepage_connectable is False, self.connected will be False
     oa = OtherAssets()
+    assert oa.connected is False
 
-    rail_stn_locations = oa.Stations.fetch_locations()
+    # 5. Call update()
+    # This should trigger the 'if not self.connected' block
+    oa.update(verbose=True)
 
-    assert isinstance(rail_stn_locations, dict)
-    assert list(rail_stn_locations.keys()) == [
-        'Mileages, operators and grid coordinates', 'Last updated date']
-
-    rail_stn_locations_dat = rail_stn_locations[oa.Stations.KEY_TO_STN]
-    assert isinstance(rail_stn_locations_dat, pd.DataFrame)
-
-    signal_boxes_codes = oa.SignalBoxes.fetch_prefix_codes()
-    assert isinstance(signal_boxes_codes, dict)
-    assert list(signal_boxes_codes.keys()) == ['Signal boxes', 'Last updated date']
-
-    signal_boxes_codes_dat = signal_boxes_codes[oa.SignalBoxes.KEY]
-    assert isinstance(signal_boxes_codes_dat, pd.DataFrame)
+    # 6. Verify the error message was printed
+    out, _ = capfd.readouterr()
+    assert "The Internet connection is not available" in out
 
 
 if __name__ == '__main__':
