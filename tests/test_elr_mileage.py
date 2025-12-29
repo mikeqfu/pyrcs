@@ -204,7 +204,7 @@ class TestELRMileages:
 
         monkeypatch.setattr('pyrcs.line_data.elr_mileage.loop_in_pairs', mock_loop)
 
-        mil_dat, notes = parser._parse_mileage_and_notes(content_later)
+        mil_dat, _ = parser._parse_mileage_and_notes(content_later)
 
         # Verify that the data was split into two measures
         assert isinstance(mil_dat, dict)
