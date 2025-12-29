@@ -354,6 +354,7 @@ class OtherAssets(_Base):
 
                 # Stations
                 print(f"\n{self.Stations.NAME}:")
+                _ = self.Stations.fetch_catalogue(**update_args)
                 _ = self.Stations.fetch_locations(**update_args)
 
                 time.sleep(interval)
