@@ -148,7 +148,7 @@ def test_get_introduction(update, raise_error, capfd):
         assert "Failed" in out
 
 
-def test_get_catalogue():
+def test_get_catalogue(capsys):
     from pyrcs.parser import get_catalogue
 
     url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
