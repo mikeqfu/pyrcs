@@ -1,6 +1,28 @@
 # Changelog / Release notes
 
 
+## **[1.0.4](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.4)**
+
+(*30 December 2025*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.0.3...1.0.4) since [1.0.3](https://pypi.org/project/pyrcs/1.0.3/):
+
+- **Bug fixes:**
+  - Resolved `TypeError` in `Depots.fetch_codes()` by updating stale header mappings for TOPS/GWR codes (#67).
+  - Fixed parsing bugs in `Tunnels._parse_length` and refined connection error reporting formatting.
+  - Standardised error-raising logic and file path generation in `_Base._make_file_pathname`.
+- **Test enhancements:**
+  - Significantly expanded unit test coverage across core modules: `Stations`, `Tunnels`, `Viaducts`, `ELRMileages`, `Features`, and `SigBoxes`.
+  - Refactored `TestLOR` and `test_get_keys_to_prefixes` to use dynamic validation instead of hardcoded values for improved robustness (#66).
+- **Refactoring & maintenance:**
+  - Converted `defaultdict` outputs to standard `dict` for cleaner API returns.
+  - Refined data update workflows for `OtherAssets` and `ELRMileages`.
+  - Updated project metadata, affiliation in Sphinx configuration, and `quick-start.rst`.
+  - Updated `requirements.txt` for core and documentation dependencies.
+
+**For more information and detailed specifications, check out the [PyRCS 1.0.4 documentation](https://pyrcs.readthedocs.io/en/1.0.4/).**
+
+
 ## **[1.0.3](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.3)**
 
 (*28 November 2025*)
