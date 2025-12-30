@@ -11,7 +11,7 @@ import unicodedata
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import home_page_url
+from ..utils import homepage_url
 
 
 def _decode_vulgar_fraction(x):
@@ -60,7 +60,7 @@ class WaterTroughs(_Base):
     #: The key for accessing the data.
     KEY: str = 'Water troughs'
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/features/troughs.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/features/troughs.shtm')
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 

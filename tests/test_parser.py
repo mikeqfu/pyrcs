@@ -78,20 +78,39 @@ def test_get_site_map(monkeypatch, capfd):
     assert "Cancelled." in out
     assert site_map_dat is None
 
+    monkeypatch.setattr('builtins.input', lambda _: "Yes")
+    monkeypatch.setattr('pyrcs.parser.homepage_url', lambda: 'https://test-url.abc')
+    with pytest.raises(Exception, match='Failed'):
+        site_map_dat = get_site_map(update=True, raise_error=True)
+        assert site_map_dat is None
 
-def test_get_last_updated_date():
+    site_map_dat = get_site_map(update=True, verbose=True, raise_error=False)
+    out, _ = capfd.readouterr()
+    assert "Failed" in out
+    assert site_map_dat is None
+
+
+@pytest.mark.parametrize('as_date_type', [False, True])
+def test_get_last_updated_date(as_date_type, monkeypatch, capsys):
     from pyrcs.parser import get_last_updated_date
 
-    url_a = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
-    last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=False)
-    assert isinstance(last_upd_date, str)
+    url = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+    last_updated_date = get_last_updated_date(url, parsed=True, as_date_type=as_date_type)
+    if as_date_type:
+        assert isinstance(last_updated_date, datetime.date)
+    else:
+        assert isinstance(last_updated_date, str)
 
-    last_upd_date = get_last_updated_date(url_a, parsed=True, as_date_type=True)
-    assert isinstance(last_upd_date, datetime.date)
+    url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
+    last_updated_date = get_last_updated_date(url=url)
+    assert last_updated_date is None
 
-    ldm_url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
-    last_upd_date = get_last_updated_date(url=ldm_url)
-    assert last_upd_date is None
+    with pytest.raises(Exception):
+        url = 'http://test-url.abc'
+        last_updated_date = get_last_updated_date(url=url, verbose=True, raise_error=True)
+        captured = capsys.readouterr()
+        assert "Failed" in captured.out
+        assert last_updated_date is None
 
 
 def test_get_financial_year():
@@ -116,7 +135,7 @@ def test_get_introduction(update, raise_error, capfd):
 
     url_ = url.replace('railwaycodes', '123')
     if raise_error:
-        with pytest.raises(requests.exceptions.ConnectionError):
+        with pytest.raises(Exception):
             get_introduction(url=url_, update=True, raise_error=raise_error)
 
     else:
@@ -129,35 +148,51 @@ def test_get_introduction(update, raise_error, capfd):
         assert "Failed" in out
 
 
-def test_get_catalogue():
+def test_get_catalogue(capsys):
     from pyrcs.parser import get_catalogue
 
-    elr_cat = get_catalogue(
-        url='http://www.railwaycodes.org.uk/elrs/elr0.shtm', update=True, verbose=True)
+    url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
+    elr_cat = get_catalogue(url=url, update=True, verbose=True)
     assert isinstance(elr_cat, dict)
 
-    location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
+    url = 'http://www.railwaycodes.org.uk/crs/crs0.shtm'
+    location_code_cat = get_catalogue(url=url)
     assert isinstance(location_code_cat, dict)
+
+    with pytest.raises(Exception):
+        url = 'http://test-url.abc'
+        cat_dat = get_catalogue(url=url, verbose=True, raise_error=True)
+        captured = capsys.readouterr()
+        assert "Error:" in captured.out
+        assert cat_dat is None
 
 
 def test_get_category_menu(monkeypatch, capfd):
     from pyrcs.parser import get_category_menu
 
+    name = 'Line data'
+
     monkeypatch.setattr('builtins.input', lambda _: "Yes")
-    menu = get_category_menu('Line data', update=True, verbose=True)
+    menu = get_category_menu(name=name, update=True, verbose=True)
 
     assert isinstance(menu, dict)
-    assert list(menu.keys()) == ['Line data']
+    assert list(menu.keys()) == [name]
 
-    menu = get_category_menu(name='Line data')
+    menu = get_category_menu(name=name)
 
     assert isinstance(menu, dict)
-    assert list(menu.keys()) == ['Line data']
+    assert list(menu.keys()) == [name]
 
     monkeypatch.setattr('builtins.input', lambda _: "No")
-    menu = get_category_menu('Line data', update=True, verbose=True)
+    menu = get_category_menu(name=name, update=True, verbose=True)
     out, _ = capfd.readouterr()
     assert "Cancelled." in out
+    assert menu is None
+
+    monkeypatch.setattr('pyrcs.parser.homepage_url', lambda: 'https://test-url.abc')
+    menu = get_category_menu(name=name, update=True, confirmation_required=False, verbose=True)
+    out, _ = capfd.readouterr()
+    assert "Failed" in out
     assert menu is None
 
 
@@ -178,16 +213,19 @@ def test_get_heading_text():
     assert h3_text == 'Beamish Tramway'
 
 
-def test_get_page_catalogue():
+def test_get_page_catalogue(capfd):
     from pyrcs.parser import get_page_catalogue
-    from pyhelpers.settings import pd_preferences
 
-    pd_preferences(max_columns=1)
-
-    elec_url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
-
-    elec_catalogue = get_page_catalogue(elec_url)
+    url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
+    elec_catalogue = get_page_catalogue(url=url)
     assert isinstance(elec_catalogue, pd.DataFrame)
+
+    url = 'https://test-url.abc'
+    with pytest.raises(Exception):
+        page_catalogue = get_page_catalogue(url=url, verbose=True, raise_error=True)
+        out, _ = capfd.readouterr()
+        assert "Failed" in out
+        assert page_catalogue is None
 
 
 def test_get_hypertext():

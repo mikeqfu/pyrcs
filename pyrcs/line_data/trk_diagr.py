@@ -10,7 +10,7 @@ from pyhelpers._cache import _print_failure_message
 
 from .._base import _Base
 from ..parser import _get_last_updated_date
-from ..utils import cd_data, home_page_url
+from ..utils import cd_data, homepage_url
 
 
 class TrackDiagrams(_Base):
@@ -25,7 +25,7 @@ class TrackDiagrams(_Base):
     KEY: str = 'Track diagrams'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/line/diagrams0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/line/diagrams0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'

@@ -18,7 +18,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, home_page_url, print_conn_err, print_inst_conn_err
+from .utils import cd_data, homepage_url, print_instance_connection_error
 
 
 # == Preprocess contents ===========================================================================
@@ -106,7 +106,7 @@ def _check_row_spanned(records, row_spanned):
             for no_spans, idx, dat in to_repeat:
                 for j in range(1, no_spans):
                     k = i + j
-                    # if (dat in records[i]) and (dat != '\xa0'):  # and (idx < len(records[i]) - 1):
+                    # if (dat in records[i]) and (dat != '\xa0'): # and (idx < len(records[i]) - 1):
                     #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
                     k_len = len(records_[k])
                     if k_len < len(records_[i]):
@@ -369,7 +369,7 @@ def _get_site_map_h3_dl_dt_dds(h3_dl_dt, next_dd=None):
         else:
             a = next_dd.find('a')
             text, href = _clean_key(a.get_text(strip=True)), a.get(key='href')
-            h3_dl_dt_dds.update({text: urllib.parse.urljoin(home_page_url(), href)})
+            h3_dl_dt_dds.update({text: urllib.parse.urljoin(homepage_url(), href)})
 
         try:
             next_dd = next_dd.find_next_sibling('dd')
@@ -392,7 +392,7 @@ def _get_site_map_sub_dl(h3_dl_dts):
         dt_text = _clean_key(dt_text_)
 
         if dt_href:
-            h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(home_page_url(), dt_href)})
+            h3_dl_dt_dd_dict.update({dt_text: urllib.parse.urljoin(homepage_url(), dt_href)})
 
         else:
             next_dd = h3_dl_dt.find_next('dd')
@@ -434,7 +434,7 @@ def _get_site_map(source, parser='html.parser'):
             if h3_dl_dt_text == '':
                 for dd in h3_dl_dt.find_next_siblings('dd'):
                     text, href = _parse_dd_or_dt(dd)
-                    dd_dict.update({_clean_key(text): urllib.parse.urljoin(home_page_url(), href)})
+                    dd_dict.update({_clean_key(text): urllib.parse.urljoin(homepage_url(), href)})
 
         else:
             dd_dict = _get_site_map_sub_dl(h3_dl_dts=h3_dl_dts)
@@ -493,11 +493,13 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
                 print("Updating the package data", end=" ... ")
 
             try:
-                url = urllib.parse.urljoin(home_page_url(), '/misc/sitemap.shtm')
+                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
                 source = requests.get(url=url, headers=fake_requests_headers())
-
-            except requests.exceptions.ConnectionError:
-                print_inst_conn_err(update=update, verbose=True if update else verbose)
+                source.raise_for_status()
+            except Exception as e:
+                print_instance_connection_error(
+                    update=update, verbose=True if update else verbose, e=e,
+                    raise_error=raise_error)
                 return None
 
             try:
@@ -538,7 +540,7 @@ def _get_last_updated_date(soup, parsed=True, as_date_type=False):
     return last_updated_date
 
 
-def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
+def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, raise_error=True):
     # noinspection PyShadowingNames
     """
     Gets the last update date of a specified web page.
@@ -554,8 +556,11 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
     :param as_date_type: If ``True``, the date is returned as a `datetime.date`_ object;
         if ``False`` (default), it's returned as a string.
     :type as_date_type: bool
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
-        :type verbose: bool | int
+    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :type verbose: bool | int
+    :param raise_error: Whether to raise the provided exception;
+        if ``raise_error=False``, the error will be suppressed; defaults to ``True``.
+    :type raise_error: bool
     :return: The last update date of the specified web page,
         or ``None`` if this information is not available on the web page.
     :rtype: str | datetime.date | None
@@ -579,9 +584,9 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False):
 
     try:  # Request to get connected to the given url
         source = requests.get(url=url, headers=fake_requests_headers())
-
-    except requests.exceptions.ConnectionError:
-        print_conn_err(verbose=verbose)
+        source.raise_for_status()
+    except Exception as e:
+        _print_failure_message(e, verbose=verbose, raise_error=raise_error)
 
     else:
         # Parse the text scraped from the requested web page
@@ -683,12 +688,10 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
-    except requests.exceptions.ConnectionError as e:
-        if raise_error:
-            raise e  # Raise the original connection error
-        else:
-            print_inst_conn_err(update=update, verbose=True if update else verbose, e=e)
-            return None
+    except Exception as e:
+        print_instance_connection_error(
+            update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+        return None
 
     try:
         introduction = _parse_introduction(source=source, delimiter=delimiter)
@@ -785,7 +788,7 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
         source = requests.get(url=url, headers=fake_requests_headers())
         source.raise_for_status()
     except Exception as e:
-        print_inst_conn_err(verbose=verbose, e=e)
+        _print_failure_message(e=e, verbose=verbose, raise_error=raise_error)
         return None
 
     try:
@@ -812,7 +815,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
 
     :param name: The name of the data category.
     :type name: str
-    :param update: Whether to check for updates to the package data; defaults to ``False``.
+    :param update: Whether to check for updates to the package data; defaults to ``True``.
     :type update: bool
     :param confirmation_required: Whether user confirmation is required before proceeding;
         defaults to ``True``.
@@ -838,17 +841,18 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
         7
     """
 
-    path_to_menu_json = cd_data(
-        "catalogue", f"{name.lower().replace(' ', '-')}-menu.json", mkdir=True)
+    path_to_file = cd_data("catalogue", f"{name.lower().replace(' ', '-')}-menu.json", mkdir=True)
 
-    if os.path.isfile(path_to_menu_json) and not update:
-        return load_data(path_to_menu_json)
+    if os.path.isfile(path_to_file) and not update:
+        return load_data(path_to_file)
 
     if confirmed("To collect/update category menu?", confirmation_required=confirmation_required):
         try:
-            source = requests.get(url=home_page_url(), headers=fake_requests_headers())
-        except requests.exceptions.ConnectionError:
-            print_conn_err(verbose=verbose)
+            source = requests.get(url=homepage_url(), headers=fake_requests_headers())
+            source.raise_for_status()
+        except Exception as e:
+            print_instance_connection_error(
+                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
             return None
 
         try:
@@ -860,12 +864,12 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
             a_href_list = drop_btn.find_next_sibling('div').find_all('a')
 
             cls_menu_ = [
-                (a.get_text(), urllib.parse.urljoin(home_page_url(), a['href']))
+                (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
                 for a in a_href_list]
 
             cls_menu = {name: dict(cls_menu_)}
 
-            save_data(cls_menu, path_to_menu_json, indent=4, verbose=(verbose == 2 or False))
+            save_data(cls_menu, path_to_file, indent=4, verbose=(verbose == 2 or False))
 
             return cls_menu
 
@@ -917,7 +921,7 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
     return heading_text
 
 
-def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', feature_tag_name='h3',
+def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', feature_tag_name='h3',
                        verbose=False, raise_error=False):
     """
     Gets the catalogue of features from the main page of a data cluster.
@@ -970,9 +974,9 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
-
-    except requests.exceptions.ConnectionError:
-        print_inst_conn_err(verbose=verbose)
+        source.raise_for_status()
+    except Exception as e:
+        print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
         return None
 
     try:
@@ -984,7 +988,8 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to: ', featu
             nav_text = nav.text.replace('\r\n', '').strip()
 
             if re.match(r'^({})'.format(head_tag_txt), nav_text):
-                feature_names = nav_text.replace(head_tag_txt, '').split('\xa0| ')
+                sep = '\xa0| ' if '\xa0| ' in nav_text else '\n'
+                feature_names = nav_text.replace(f'{head_tag_txt}{sep}', '').split(sep)
                 page_catalogue['Feature'] = feature_names
 
                 feature_urls = []

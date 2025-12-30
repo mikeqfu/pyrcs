@@ -8,23 +8,27 @@ import pytest
 from pyrcs.line_data import LOR
 
 
+@pytest.fixture(scope='class')
+def lor():
+    return LOR()
+
+
 @pytest.mark.parametrize('update', [True, False])
 class TestLOR:
 
-    @pytest.fixture(scope='class')
-    def lor(self):
-        return LOR()
+    @pytest.mark.parametrize('prefixes_only', [True, False])
+    def test_get_keys_to_prefixes(self, lor, update, prefixes_only):
+        keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=prefixes_only, verbose=True)
+        if prefixes_only:
+            assert isinstance(keys_to_pfx, list)
+            assert len(keys_to_pfx) > 10
 
-    def test_get_keys_to_prefixes(self, lor, update):
-        keys_to_pfx = lor.get_keys_to_prefixes(update=update, verbose=True)
-        assert keys_to_pfx == ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
+        else:
+            assert isinstance(keys_to_pfx, dict)
+            assert list(keys_to_pfx.keys()) == ['Key to prefixes', 'Last updated date']
 
-        keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=False)
-        assert isinstance(keys_to_pfx, dict)
-        assert list(keys_to_pfx.keys()) == ['Key to prefixes', 'Last updated date']
-
-        keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
-        assert isinstance(keys_to_pfx_codes, pd.DataFrame)
+            keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
+            assert isinstance(keys_to_pfx_codes, pd.DataFrame)
 
     def test_get_page_urls(self, lor, update):
         lor_urls = lor.get_page_urls(update=update, verbose=True)

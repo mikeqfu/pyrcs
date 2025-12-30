@@ -16,8 +16,9 @@ from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
 from .parser import get_catalogue, get_introduction, get_last_updated_date
-from .utils import cd_data, collect_in_fetch_verbose, format_confirmation_prompt, home_page_url, \
-    print_collect_msg, print_conn_err, print_inst_conn_err, print_void_msg
+from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
+    homepage_url, print_collection_message, print_connection_warning, \
+    print_instance_connection_error, print_void_collection_message
 
 
 class _Base:
@@ -30,7 +31,7 @@ class _Base:
     #: The key for accessing the data.
     KEY: str = ''
     #: The URL of the main web page for the data.
-    URL: str = home_page_url()
+    URL: str = homepage_url()
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
 
@@ -72,7 +73,7 @@ class _Base:
             'http://www.railwaycodes.org.uk/'
         """
 
-        print_conn_err(verbose=verbose)
+        print_connection_warning(verbose=verbose)
 
         self.catalogue, self.introduction = None, None
 
@@ -174,6 +175,7 @@ class _Base:
 
     @staticmethod
     def _format_confirmation_message(data_name, confirmation_prompt=None, initial=None, **kwargs):
+        # noinspection PyShadowingNames
         """
         Generates a confirmation prompt message.
 
@@ -185,6 +187,25 @@ class _Base:
         :type data_name: str
         :return: The generated confirmation prompt as a string.
         :rtype: str
+
+        **Examples**::
+
+            >>> from pyrcs._base import _Base
+            >>> from pyrcs.utils import format_confirmation_prompt
+            >>> _b = _Base()
+            >>> data_name = '"test_data_name"'
+            >>> prompt = _b._format_confirmation_message(data_name)
+            >>> prompt
+            'To collect data of "test_data_name"\n?'
+            >>> prompt = _b._format_confirmation_message(data_name, format_confirmation_prompt)
+            >>> prompt
+            'To collect data of "test_data_name"\n?'
+            >>> prompt = _b._format_confirmation_message(data_name, "test message")
+            >>> prompt
+            'test message'
+            >>> prompt = _b._format_confirmation_message(data_name, format_confirmation_prompt, 'a')
+            >>> prompt
+            'To collect data of "test_data_name" beginning with "a"\n?'
         """
 
         if confirmation_prompt:
@@ -224,77 +245,121 @@ class _Base:
                                   confirmation_prompt=None, verbose=False, raise_error=False,
                                   **kwargs):
         """
-        Collects data from the specified source webpage(s).
+        Collects and parses data from a specified source webpage.
 
-        :param data_name: Name of the data to be collected.
-        :type data_name: str
-        :param url: URL of the webpage from which the data will be collected.
-        :type url: str
-        :param method: A callable function or method used to parse and extract data from the
-            webpage. This function should accept the following parameters:
+        :param data_name: The descriptive name of the data being collected
+            (used for lookups and messages).
+        :type data_name: str | None
+        :param method: The parsing function to execute upon successful data retrieval.
+            The function **must** accept:
 
-            - ``source``: The response object from the HTTP request.
-            - ``verbose``: Whether to print additional information during extraction.
+            - ``source`` (*requests.Response*): The HTTP response object.
+            - ``verbose`` (*bool | int*): The verbosity flag.
+
+            The function **may** optionally accept:
+
+            - ``data_name`` (*str*): Injected automatically if present in the function signature.
+            - ``initial`` (*str*): Injected automatically if present in the function signature.
+            - Any other arguments passed via ``**kwargs``.
 
         :type method: typing.Callable
-        :param initial: The initial letter of the desired code or data; defaults to ``None``.
+        :param url: The target URL. If ``None``, the method attempts to retrieve the URL from
+            ``self.catalogue`` using ``initial`` or ``data_name`` as the key.
+        :type url: str | None
+        :param initial: The initial letter/code used to categorize the data
+            (e.g. 'A' for stations starting with A); it is used as a fallback key for URL lookup
+            if ``url`` is not provided.
         :type initial: str | None
-        :param additional_fields: Extra key-value pairs to be included in the returned dictionary
-            if data collection fails or is canceled; defaults to ``None``.
+        :param additional_fields: Key-value pairs to include in the fallback dictionary
+            if data collection fails; it is useful for ensuring consistent data structure
+            (e.g. returning ``None`` for specific columns).
         :type additional_fields: dict | str | None
         :param confirmation_required: Whether user confirmation is required;
             if ``confirmation_required=True`` (default), prompts the user for confirmation
             before proceeding with data collection.
         :type confirmation_required: bool
-        :param confirmation_prompt:
-        :type confirmation_prompt:
-        :param verbose: Whether to print relevant information in the console; defaults to ``False``.
+        :param confirmation_prompt: A custom message or a callable that generates a message
+            for the confirmation prompt.
+        :type confirmation_prompt: str | typing.Callable | None
+        :param verbose: Whether to print status messages and errors to the console;
+            defaults to ``False``.
         :type verbose: bool | int
-        :param raise_error: Whether to raise the provided exception;
-            if ``raise_error=False`` (default), the error will be suppressed.
+        :param raise_error: If ``True``, exceptions (network or parsing) are raised to the caller;
+            if ``False`` (default), exceptions are caught and fallback data is returned.
         :type raise_error: bool
-        :return: The collected data.
+        :param kwargs: [Optional] Additional keyword arguments passed directly to the ``method``.
+        :return: The data returned by ``method``, or a dictionary containing fallback values
+            (e.g. ``{key: None}``) on failure.
         :rtype: pandas.DataFrame | dict | None
+        :raises ValueError: If the URL cannot be resolved and ``raise_error=True``.
+        :raises requests.RequestException: If a network error occurs and ``raise_error=True``.
+
+        **Examples**::
+
+            >>> from pyrcs._base import _Base
+            >>> _b = _Base()
+            >>> _b.catalogue = {'A': 'https://github.com/mikeqfu/pyrcs'}
+            >>> _b._collect_data_from_source("test_data_name", method=_b._fallback_data)
         """
 
+        # Confirmation step
         prompt = self._format_confirmation_message(
             data_name=data_name, confirmation_prompt=confirmation_prompt, initial=initial)
 
         if not confirmed(prompt=prompt, confirmation_required=confirmation_required):
             return None
 
-        print_collect_msg(
+        print_collection_message(
             data_name=data_name, initial=initial, verbose=verbose,
             confirmation_required=confirmation_required)
 
+        # Prepare fallback data
         fallback_data = self._fallback_data(key=initial, additional_fields=additional_fields)
 
-        url_ = copy.copy(url or self.catalogue.get(initial or data_name))
-        if not url_:
-            if initial and verbose:
-                print(f'No data is available for codes beginning with "{initial}".')
+        # Resolve URL
+        target_url = url or self.catalogue.get(initial or data_name)
+
+        if not target_url:
+            if initial:
+                err_msg = f'No data is available for codes beginning with "{initial}".'
+            else:  # defaults to data_name context
+                err_msg = \
+                    f'"{data_name}" not found in `.catalogue`. Check `.catalogue` for valid keys.'
+
+            if raise_error:
+                raise ValueError(err_msg)
+            elif verbose:
+                print(err_msg)
             return fallback_data
 
+        # Fetch and process
         try:
-            source = requests.get(url=url_, headers=fake_requests_headers())
-            source.raise_for_status()  # Raises HTTPError for bad responses (4xx, 5xx)
-        except Exception as e:
-            print_inst_conn_err(verbose=verbose, e=e)
+            # Network request
+            source = requests.get(url=target_url, headers=fake_requests_headers(), timeout=30)
+            source.raise_for_status()  # Raises HTTPError for bad responses
+
+            # Dynamic argument injection
+            collector_kwargs = kwargs.copy()
+            collector_kwargs.update({'source': source, 'verbose': verbose})
+
+            # Inspect the collector method to see if it requires extra arguments
+            params = inspect.signature(method).parameters
+            if 'data_name' in params:
+                collector_kwargs['data_name'] = data_name
+            if 'initial' in params:
+                collector_kwargs['initial'] = initial
+
+            # Execute Parsing Method
+            data = method(**collector_kwargs)
+
+            return data
+
+        except requests.RequestException as e:  # Handle network/HTTP errors
+            print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
             return fallback_data
 
-        # Build kwargs dynamically based on method signature
-        kwargs.update({'source': source, 'verbose': verbose})
-
-        for param in ('data_name', 'initial'):
-            if param in inspect.signature(method).parameters:
-                kwargs.update({param: locals()[param]})
-
-        # Attempt method execution
-        try:
-            return method(**kwargs)
-        except Exception as e:
-            _print_failure_message(
-                e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
+        except Exception as e:  # Handle parsing/method errors
+            _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
             return fallback_data
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
@@ -311,7 +376,7 @@ class _Base:
         :param ext: The file extension (including the leading dot), defaults to ``".pkl"``.
         :type ext: str
         :param data_dir: The directory where the file will be saved; defaults to ``None``.
-        :type data_dir: str | None
+        :type data_dir: str | os.PathLike | None
         :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
         :type sub_dir: str | list | None
         :return: The pathname for saving the data file.
@@ -338,7 +403,7 @@ class _Base:
             sub_dir_ = []
 
         if data_dir:
-            self.current_data_dir = validate_dir(path_to_dir=data_dir)
+            self.current_data_dir = validate_dir(path_to_dir=None if data_dir is True else data_dir)
             file_pathname = os.path.join(self.current_data_dir, *sub_dir_, filename)
 
         else:  # data_dir is None or data_dir == ""
@@ -366,7 +431,7 @@ class _Base:
         :type ext: str | bool
         :param dump_dir: The directory where the file should be saved;
             if ``None`` (default) a default directory within the class is used.
-        :type dump_dir: str | None
+        :type dump_dir: str | os.PathLike | None
         :param sub_dir: A subdirectory name or a list of subdirectory names; defaults to ``None``.
         :type sub_dir: str | list | None
         :param verbose: Whether to print detailed information to the console; defaults to ``False``.
@@ -407,7 +472,7 @@ class _Base:
             save_data(data=data, path_to_file=path_to_file, verbose=(verbose == 2), **kwargs)
 
         else:
-            print_void_msg(data_name=data_name, verbose=verbose)
+            print_void_collection_message(data_name=data_name, verbose=verbose)
 
     def _fetch_data_from_file(self, data_name, method, ext=".pkl", update=False, dump_dir=None,
                               verbose=False, raise_error=False, data_dir=None, sub_dir=None,
@@ -482,7 +547,7 @@ class _Base:
                 data = load_data(path_to_file, verbose=(verbose == 2))
 
             else:
-                verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+                verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
 
                 kwargs.update({'confirmation_required': False, 'verbose': verbose_})
 

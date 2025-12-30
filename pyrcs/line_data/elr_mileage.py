@@ -3,7 +3,6 @@ Collects data of
 `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
 """
 
-import copy
 import functools
 import itertools
 import os
@@ -24,8 +23,8 @@ from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import collect_in_fetch_verbose, home_page_url, is_home_connectable, is_str_float, \
-    print_inst_conn_err, print_void_msg, validate_initial
+from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
+    is_str_float, print_instance_connection_error, print_void_collection_message, validate_initial
 
 
 def _parse_non_float_str_mileage(mileage):
@@ -269,7 +268,7 @@ class ELRMileages(_Base):
     KEY: str = 'ELRs and mileages'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/elrs/elr0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/elrs/elr0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -309,7 +308,7 @@ class ELRMileages(_Base):
               ('measure', 'route', 'diversion')))]
 
     def _collect_elr(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         # Create a DataFrame of the requested table
         (columns, records), soup = parse_table(source=source)
@@ -383,7 +382,7 @@ class ELRMileages(_Base):
             [5 rows x 5 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
             data_name=self.NAME, method=self._collect_elr, initial=initial_,
@@ -446,7 +445,7 @@ class ELRMileages(_Base):
 
         else:
             verbose_1 = False if (dump_dir or not verbose) else (2 if verbose == 2 else True)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             dat_list = [
                 self.fetch_elr(initial=x, update=update, verbose=verbose_2)
@@ -454,8 +453,8 @@ class ELRMileages(_Base):
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY, verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY, verbose=verbose)
                 dat_list = [
                     self.fetch_elr(initial=x, update=False, verbose=verbose_1)
                     for x in string.ascii_lowercase]
@@ -473,46 +472,57 @@ class ELRMileages(_Base):
 
             data = {self.KEY: data_, self.KEY_TO_LAST_UPDATED_DATE: latest_update_date}
 
-            if dump_dir is not None:
+            if dump_dir:
                 self._save_data_to_file(
                     data=data, data_name=self.NAME, dump_dir=dump_dir, verbose=verbose)
 
         return data
 
-    def _mileage_file_dump_names(self, elr):
-        data_name = remove_punctuation(elr).lower()
+    def _dump_mileage_file(self, mileage_file, dump_dir=None, verbose=False):
+        """
+        Dump the collected mileage file data.
 
-        if data_name == "prn":
-            data_name += "_"
+        :param mileage_file: Data of the mileage file.
+        :type mileage_file: dict
+        :param dump_dir: The path to a directory where the mileage file data is saved;
+            defaults to ``False``.
+        :type dump_dir: str | os.PathLike | bool | None
+        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :type verbose: bool | int
+        """
 
-        dump_dir = self._cdd("mileage-files", data_name[0])
+        if dump_dir is False:
+            return None
 
-        return data_name, dump_dir
+        data_name = mileage_file['ELR'].lower()
+        data_name += ("_" if data_name == "prn" else "")
 
-    def _dump_mileage_file(self, elr, mileage_file, dump_it, verbose):
-        if dump_it:
-            data_name, dump_dir = self._mileage_file_dump_names(elr)
+        if dump_dir is None:
+            sub_dir = data_name[0]
+            target_dir = self._cdd("mileage-files", sub_dir)
+        else:
+            target_dir = dump_dir
 
-            self._save_data_to_file(
-                data=mileage_file, data_name=data_name, ext=".pkl", dump_dir=dump_dir,
-                verbose=verbose)
+        self._save_data_to_file(
+            data=mileage_file, data_name=data_name, ext=".pkl", dump_dir=target_dir,
+            verbose=verbose)
 
-    def _handle_err404(self, elr, notes_dat, parsed, dump_it, verbose):
+    def _handle_err404(self, elr, notes_dat, parsed, dump_dir=False, verbose=False):
         elr_alt = re.search(r'(?<= )[A-Z]{3}(\d)?', notes_dat).group(0)
         mileage_file_alt = self.collect_mileage_file(
-            elr=elr_alt, parsed=parsed, confirmation_required=False, dump_it=False,
+            elr=elr_alt, parsed=parsed, confirmation_required=False, dump_dir=False,
             verbose=verbose)
 
         if notes_dat.startswith('Now'):
-            mileage_file_former = copy.copy(mileage_file_alt)
+            mileage_file_former = mileage_file_alt.copy()
 
             mileage_file_alt.update({'Formerly': elr})
             self._dump_mileage_file(
-                elr_alt, mileage_file=mileage_file_alt, dump_it=dump_it, verbose=verbose)
+                mileage_file=mileage_file_alt, dump_dir=dump_dir, verbose=verbose)
 
-            mileage_file_former.update(({'Now': elr_alt}))
+            mileage_file_former.update(({'ELR': elr, 'Now': elr_alt}))
             self._dump_mileage_file(
-                elr, mileage_file=mileage_file_former, dump_it=dump_it, verbose=verbose)
+                mileage_file=mileage_file_former, dump_dir=dump_dir, verbose=verbose)
 
         return mileage_file_alt
 
@@ -570,6 +580,134 @@ class ELRMileages(_Base):
 
         return line_name, parsed_content
 
+    def _split_measures(self, mileage_data, measure_headers_indices):
+        """
+        Processes data of mileage file with multiple measures.
+
+        :param mileage_data: scraped raw mileage file from source web page
+        :type: pandas.DataFrame
+        """
+
+        dat = mileage_data.copy()
+
+        if len(measure_headers_indices) >= 1:
+
+            if len(measure_headers_indices) == 1 and measure_headers_indices[0] != 0:
+                j = measure_headers_indices[0]
+                m_key, _ = dat.loc[j, 'Node'].split(maxsplit=1)
+                d = {
+                    'Earlier': 'Later',
+                    'Later': 'Earlier',
+                    'Alternative': 'One',
+                    'Alternate': 'One',
+                    'One': 'Alternative',
+                    'Original': 'Current',
+                    'Current': 'Original',
+                    'Former': 'Current',
+                    'Old': 'Current',
+                    'New': 'Old',
+                }
+                if m_key in d:
+                    measure_headers_indices = [0] + [j + 1]
+                    new_m_key = d[m_key] + ' measure'
+                    dat.loc[-1] = ['', new_m_key]  # adding a row
+                    dat.index = dat.index + 1
+                    dat.sort_index(inplace=True)
+
+            # if measure_headers_indices[-1] != dat.index[-1] - 1:
+            #     sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1]])
+            # else:
+            sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1] + 1])
+            dat_ = {dat.loc[i, 'Node']: dat.loc[i + 1:j - 1] for i, j in sep_rows_idx}
+
+        else:
+            test_temp = dat[~dat['Mileage'].astype(bool)]
+            if not test_temp.empty:
+                test_temp_node, sep_rows_idx = test_temp['Node'].tolist(), test_temp.index[-1]
+
+                if '1949 measure' in test_temp_node:
+                    dat['Node'] = dat['Node'].str.replace('1949 measure', 'Current measure')
+                    test_temp_node = [re.sub(r'1949 ', 'Current ', x) for x in test_temp_node]
+
+                if 'One measure' in test_temp_node:
+                    sep_rows_idx = dat[dat['Node'].str.contains('Alternative measure')].index[0]
+                    m_dat_1, m_dat_2 = dat.loc[:(sep_rows_idx - 1)], dat.loc[sep_rows_idx:]
+                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
+                    dat_ = {
+                        'One measure':
+                            m_dat_1[~m_dat_1['Node'].str.contains('One measure')],
+                        'Alternative measure':
+                            m_dat_2[~m_dat_2['Node'].str.contains('Alternative measure')],
+                    }
+
+                elif 'Later measure' in test_temp_node:
+                    sep_rows_idx = dat[dat['Node'].str.contains('Later measure')].index[0]
+                    m_dat_1, m_dat_2 = dat.loc[:(sep_rows_idx - 1)], dat.loc[sep_rows_idx:]
+                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
+                    dat_ = {
+                        'Original measure':
+                            m_dat_1[~m_dat_1['Node'].str.contains('Original measure')],
+                        'Later measure':
+                            m_dat_2[~m_dat_2['Node'].str.contains('Later measure')],
+                    }
+
+                elif "This line has two 'legs':" in test_temp_node:
+                    dat_ = dat.iloc[1:].drop_duplicates(ignore_index=True)
+
+                elif 'Measure sometimes used' in test_temp_node:
+                    sep_rows_idx = test_temp.index.tolist() + [dat.index[-1]]
+                    dat_ = {
+                        dat.loc[j, 'Node']: dat.loc[j + 1:k]
+                        for j, k in loop_in_pairs(sep_rows_idx)}
+
+                else:
+                    alt_sep_rows_idx = [x in test_temp_node for x in self.measure_headers]
+                    num_of_measures = sum(alt_sep_rows_idx)
+
+                    if num_of_measures == 1:  #
+                        m_name = self.measure_headers[alt_sep_rows_idx.index(True)]  # measure name
+                        sep_rows_idx = dat[dat['Node'].str.contains(m_name)].index[0]
+                        m_dat_1, m_dat_2 = dat.loc[:(sep_rows_idx - 1)], dat.loc[sep_rows_idx:]
+                        assert isinstance(m_dat_1, pd.DataFrame)
+                        assert isinstance(m_dat_2, pd.DataFrame)
+
+                        x = [x_ for x_ in test_temp_node if 'measure' in x_ or 'route' in x_][0]
+                        if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', x):
+                            measure_ = re.sub(
+                                r'(Original)|(Former)|(Alternative)|(Usual)', 'Current', x)
+                        else:
+                            measure_ = re.sub(r'(Current)|(Later)|(One)', 'Previous', x)
+
+                        dat_ = {
+                            measure_: m_dat_1.loc[0:sep_rows_idx, :],
+                            test_temp_node[0]: m_dat_2.loc[sep_rows_idx + 1:, :],
+                        }
+
+                    elif num_of_measures == 2:  # e.g. elr='BTJ'
+                        sep_rows_idx_items = [
+                            self.measure_headers[x] for x in np.where(alt_sep_rows_idx)[0]]
+                        sep_rows_idx = dat[dat['Node'].isin(sep_rows_idx_items)].index[-1]
+                        m_dat_list = dat.loc[:(sep_rows_idx - 1)], dat.loc[sep_rows_idx:]
+
+                        sep_rows_idx_items_checked = map(
+                            lambda x: x[x['Node'].isin(sep_rows_idx_items)]['Node'].iloc[0],
+                            m_dat_list)
+                        m_dat_list_ = map(
+                            lambda x: x[~x['Node'].isin(sep_rows_idx_items)],
+                            m_dat_list)
+
+                        dat_ = dict(zip(sep_rows_idx_items_checked, m_dat_list_))
+
+                    else:
+                        if dat.loc[sep_rows_idx, 'Mileage'] == '':
+                            dat.loc[sep_rows_idx, 'Mileage'] = dat.loc[sep_rows_idx - 1, 'Mileage']
+                        dat_ = dat
+
+            else:
+                dat_ = dat
+
+        return dat_
+
     def _parse_mileage_and_notes(self, content):
         # Search for notes
         notes_dat = []
@@ -625,151 +763,13 @@ class ELRMileages(_Base):
 
         return mileage_data, notes_data
 
-    def _split_measures(self, mileage_data, measure_headers_indices):
-        """
-        Process data of mileage file with multiple measures.
-
-        :param mileage_data: scraped raw mileage file from source web page
-        :type: pandas.DataFrame
-        """
-
-        dat = mileage_data.copy()
-
-        if len(measure_headers_indices) >= 1:
-
-            if len(measure_headers_indices) == 1 and measure_headers_indices[0] != 0:
-                j = measure_headers_indices[0]
-                m_key, _ = dat.loc[j, 'Node'].split(maxsplit=1)
-                d = {
-                    'Earlier': 'Later',
-                    'Later': 'Earlier',
-                    'Alternative': 'One',
-                    'Alternate': 'One',
-                    'One': 'Alternative',
-                    'Original': 'Current',
-                    'Current': 'Original',
-                    'Former': 'Current',
-                    'Old': 'Current',
-                    'New': 'Old',
-                }
-                if m_key in d:
-                    measure_headers_indices = [0] + [j + 1]
-                    new_m_key = d[m_key] + ' measure'
-                    dat.loc[-1] = ['', new_m_key]  # adding a row
-                    dat.index = dat.index + 1
-                    dat.sort_index(inplace=True)
-
-            # if measure_headers_indices[-1] != dat.index[-1] - 1:
-            #     sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1]])
-            # else:
-            sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1] + 1])
-            dat_ = {dat.loc[i, 'Node']: dat.loc[i + 1:j - 1] for i, j in sep_rows_idx}
-
-        else:
-            test_temp = dat[~dat['Mileage'].astype(bool)]
-            if not test_temp.empty:
-                test_temp_node, sep_rows_idx = test_temp['Node'].tolist(), test_temp.index[-1]
-
-                if '1949 measure' in test_temp_node:
-                    dat['Node'] = dat['Node'].str.replace('1949 measure', 'Current measure')
-                    test_temp_node = [re.sub(r'1949 ', 'Current ', x) for x in test_temp_node]
-
-                # if 'Distances in km' in test_temp_node:
-                #     dat_ = dat[~dat['Node'].str.contains('Distances in km')]
-                #     temp_mileages = dat_['Mileage'].map(
-                #         lambda x: mileage_to_mile_chain(yard_to_mileage(kilometer_to_yard(km=x))))
-                #     dat_['Mileage'] = temp_mileages.tolist()
-
-                if 'One measure' in test_temp_node:
-                    sep_rows_idx = dat[dat['Node'].str.contains('Alternative measure')].index[0]
-                    m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
-                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
-                    dat_ = {
-                        'One measure':
-                            m_dat_1[~m_dat_1['Node'].str.contains('One measure')],
-                        'Alternative measure':
-                            m_dat_2[~m_dat_2['Node'].str.contains('Alternative measure')],
-                    }
-
-                elif 'Later measure' in test_temp_node:
-                    sep_rows_idx = dat[dat['Node'].str.contains('Later measure')].index[0]
-                    m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
-                    assert isinstance(m_dat_1, pd.DataFrame) and isinstance(m_dat_2, pd.DataFrame)
-                    dat_ = {
-                        'Original measure':
-                            m_dat_1[~m_dat_1['Node'].str.contains('Original measure')],
-                        'Later measure':
-                            m_dat_2[~m_dat_2['Node'].str.contains('Later measure')],
-                    }
-
-                elif "This line has two 'legs':" in test_temp_node:
-                    dat_ = dat.iloc[1:].drop_duplicates(ignore_index=True)
-
-                elif 'Measure sometimes used' in test_temp_node:
-                    sep_rows_idx = test_temp.index.tolist() + [dat.index[-1]]
-                    dat_ = {
-                        dat.loc[j, 'Node']: dat.loc[j + 1:k]
-                        for j, k in loop_in_pairs(sep_rows_idx)}
-
-                else:
-                    alt_sep_rows_idx = [x in test_temp_node for x in self.measure_headers]
-                    num_of_measures = sum(alt_sep_rows_idx)
-
-                    if num_of_measures == 1:  #
-                        m_name = self.measure_headers[alt_sep_rows_idx.index(True)]  # measure name
-                        sep_rows_idx = dat[dat['Node'].str.contains(m_name)].index[0]
-
-                        m_dat_1, m_dat_2 = np.split(dat, [sep_rows_idx], axis=0)
-                        assert isinstance(m_dat_1, pd.DataFrame)
-                        assert isinstance(m_dat_2, pd.DataFrame)
-
-                        x = [x_ for x_ in test_temp_node if 'measure' in x_ or 'route' in x_][0]
-                        if re.match(r'(Original)|(Former)|(Alternative)|(Usual)', x):
-                            measure_ = re.sub(
-                                r'(Original)|(Former)|(Alternative)|(Usual)', 'Current', x)
-                        else:
-                            measure_ = re.sub(r'(Current)|(Later)|(One)', 'Previous', x)
-
-                        dat_ = {
-                            measure_: m_dat_1.loc[0:sep_rows_idx, :],
-                            test_temp_node[0]: m_dat_2.loc[sep_rows_idx + 1:, :],
-                        }
-
-                    elif num_of_measures == 2:  # e.g. elr='BTJ'
-                        sep_rows_idx_items = [
-                            self.measure_headers[x] for x in np.where(alt_sep_rows_idx)[0]]
-                        sep_rows_idx = dat[dat['Node'].isin(sep_rows_idx_items)].index[-1]
-
-                        m_dat_list = np.split(dat, [sep_rows_idx], axis=0)  # m_dat_1, m_dat_2
-                        sep_rows_idx_items_checked = map(
-                            lambda x: x[x['Node'].isin(sep_rows_idx_items)]['Node'].iloc[0],
-                            m_dat_list)
-                        m_dat_list_ = map(
-                            lambda x: x[~x['Node'].isin(sep_rows_idx_items)],
-                            m_dat_list)
-
-                        dat_ = dict(zip(sep_rows_idx_items_checked, m_dat_list_))
-
-                    else:
-                        if dat.loc[sep_rows_idx, 'Mileage'] == '':
-                            dat.loc[sep_rows_idx, 'Mileage'] = dat.loc[sep_rows_idx - 1, 'Mileage']
-                        dat_ = dat
-
-            else:
-                dat_ = dat
-
-        return dat_
-
-    def _collect_mileage_file(self, source, elr, parsed=True, dump_it=False, verbose=False):
+    def _collect_mileage_file(self, source, elr, parsed=True, dump_dir=False, verbose=False):
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        line_name = soup.find(name='h3').text
+        line_name = soup.find(name='h3').get_text(strip=True)
 
         sub_line_name_ = soup.find(name='h4')
-        if sub_line_name_ is not None:
-            sub_line_name = sub_line_name_.get_text()
-        else:
-            sub_line_name = ''
+        sub_line_name = sub_line_name_.get_text().strip() if sub_line_name_ is not None else ''
 
         err404 = {'"404" error: page not found', '404 error: page not found'}
         if any(x in err404 for x in {line_name, sub_line_name}):
@@ -778,7 +778,9 @@ class ELRMileages(_Base):
 
             notes_dat = elr_data['Notes'].iloc[0]
             if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes_dat):
-                return self._handle_err404(elr, notes_dat, parsed, dump_it, verbose)
+                mileage_file_alt = self._handle_err404(
+                    elr=elr, notes_dat=notes_dat, parsed=parsed, dump_dir=dump_dir, verbose=verbose)
+                return mileage_file_alt
 
             else:
                 line_name, content = self._get_parsed_contents(elr_data, notes_dat)
@@ -816,12 +818,11 @@ class ELRMileages(_Base):
         if verbose in {True, 1}:
             print("Done.")
 
-        self._dump_mileage_file(
-            elr=elr, mileage_file=mileage_file, dump_it=dump_it, verbose=verbose)
+        self._dump_mileage_file(mileage_file=mileage_file, dump_dir=dump_dir, verbose=verbose)
 
         return mileage_file
 
-    def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_it=False,
+    def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_dir=False,
                              verbose=False, raise_error=False):
         """
         Collects the mileage file for a specific ELR from the source web page.
@@ -835,8 +836,9 @@ class ELRMileages(_Base):
             if ``confirmation_required=True`` (default), prompts the user for confirmation
             before proceeding with data collection.
         :type confirmation_required: bool
-        :param dump_it: Whether to save the collected data as a pickle file; defaults to ``False``.
-        :type dump_it: bool
+        :param dump_dir: The path to a directory where the mileage file data is saved;
+            if ``False`` (default), the data will not be dumped.
+        :type dump_dir: str | os.PathLike | bool | None
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
         :param raise_error: Whether to raise the provided exception;
@@ -850,7 +852,7 @@ class ELRMileages(_Base):
             - In some cases, mileages may be unknown and thus left blank
               (e.g. ``'ANI2, Orton Junction with ROB (~3.05)'``).
             - Mileages in parentheses are not on that ELR but are included for reference
-              (e.g., ``'ANL, (8.67) NORTHOLT [London Underground]'``).
+              (e.g. ``'ANL, (8.67) NORTHOLT [London Underground]'``).
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
 
         **Examples**::
@@ -947,32 +949,32 @@ class ELRMileages(_Base):
             [4 rows x 8 columns]
         """
 
-        elr_ = remove_punctuation(elr).upper()
+        target_elr = remove_punctuation(elr).upper()
 
-        if elr_:
-            if confirmed(f"To collect mileage file of \"{elr_}\"\n?", confirmation_required):
+        if target_elr:
+            if confirmed(f'To collect mileage file of "{target_elr}"\n?', confirmation_required):
                 if verbose in {True, 1}:
                     message_ = "Collecting the mileage file"
                     if not confirmation_required:
-                        message_ += f' of "{elr_}"'
+                        message_ += f' of "{target_elr}"'
                     print(message_, end=" ... ")
 
                 try:
-                    url = home_page_url() + f'/elrs/_mileages/{elr_[0]}/{elr_}.shtm'.lower()
+                    url = urllib.parse.urljoin(
+                        homepage_url(),
+                        f'/elrs/_mileages/{target_elr[0]}/{target_elr}.shtm'.lower())
                     source = requests.get(url=url, headers=fake_requests_headers())
-
+                    source.raise_for_status()
                 except Exception as e:
-                    print_inst_conn_err(verbose=verbose, e=e)
+                    print_instance_connection_error(verbose=verbose, e=e)
                     return None
 
                 try:
                     return self._collect_mileage_file(
-                        source=source, elr=elr_, parsed=parsed, dump_it=dump_it,
+                        source=source, elr=target_elr, parsed=parsed, dump_dir=dump_dir,
                         verbose=verbose)
-
                 except Exception as e:
-                    _print_failure_message(
-                        e=e, prefix="Errors:", verbose=verbose, raise_error=raise_error)
+                    _print_failure_message(e, "Errors:", verbose=verbose, raise_error=raise_error)
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
@@ -986,7 +988,7 @@ class ELRMileages(_Base):
         :type update: bool
         :param dump_dir: Path to the directory where the data file will be saved;
             defaults to ``None``.
-        :type dump_dir: str | None
+        :type dump_dir: str | os.PathLike | None
         :param verbose: Whether to print relevant information to the console; defaults to ``False``.
         :type verbose: bool | int
         :param raise_error: Whether to raise the provided exception;
@@ -999,9 +1001,12 @@ class ELRMileages(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+            >>> import tempfile
+            >>> import pathlib
+            >>> tmp_path = pathlib.Path(tempfile.TemporaryDirectory().name)
             >>> em = ELRMileages()
             >>> # Get the mileage file of 'AAL' (Now 'NAJ3')
-            >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL')
+            >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL', dump_dir=tmp_path)
             >>> type(aal_mileage_file)
             dict
             >>> list(aal_mileage_file.keys())
@@ -1027,7 +1032,7 @@ class ELRMileages(_Base):
             12  18.0638               ...        DCL             81.12
             [13 rows x 8 columns]
             >>> # Get the mileage file of 'MLA'
-            >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA')
+            >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA', dump_dir=tmp_path)
             >>> type(mla_mileage_file)
             dict
             >>> list(mla_mileage_file.keys())
@@ -1051,25 +1056,28 @@ class ELRMileages(_Base):
             3  0.1606                      0.73  ...         None
             [4 rows x 8 columns]
             >>> # Get the mileage file of 'LCG'
-            >>> mla_mileage_file = em.fetch_mileage_file(elr='LCG')
+            >>> mla_mileage_file = em.fetch_mileage_file(elr='LCG', dump_dir=tmp_path)
         """
 
         try:
-            elr_ = remove_punctuation(elr)
-            data_name, _ = self._mileage_file_dump_names(elr_)
-            ext = ".pkl"
-            path_to_pickle = self._cdd("mileage-files", data_name[0], data_name + ext, mkdir=False)
+            target_elr = remove_punctuation(elr)
 
-            if os.path.isfile(path_to_pickle) and not update:
-                mileage_file = load_data(path_to_pickle)
+            data_name = target_elr.lower()
+            data_name += ("_" if data_name == "prn" else "")
+            sub_dir, ext = data_name[0], ".pkl"
+
+            path_to_file = self._cdd("mileage-files", sub_dir, f"{data_name}{ext}", mkdir=False)
+
+            if os.path.isfile(path_to_file) and not update:
+                mileage_file = load_data(path_to_file)
 
             else:
-                verbose_ = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
+                verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
                 mileage_file = self.collect_mileage_file(
-                    elr=elr_, parsed=True, confirmation_required=False, dump_it=True,
+                    elr=target_elr, parsed=True, confirmation_required=False, dump_dir=None,
                     verbose=verbose_)
 
-            if dump_dir is not None:
+            if dump_dir not in {False, None}:
                 self._save_data_to_file(
                     data=mileage_file, data_name=data_name, ext=ext, dump_dir=dump_dir,
                     verbose=verbose)

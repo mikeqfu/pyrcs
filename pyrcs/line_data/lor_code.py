@@ -14,7 +14,8 @@ from pyhelpers.text import find_similar_str
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import fetch_all_verbose, home_page_url, print_inst_conn_err, print_void_msg
+from ..utils import get_batch_fetch_verbosity, homepage_url, print_instance_connection_error, \
+    print_void_collection_message
 
 
 class LOR(_Base):
@@ -40,7 +41,7 @@ class LOR(_Base):
     KEY_ELC: str = 'ELR/LOR converter'
 
     #: The URL of the main web page for the data.
-    URL = urllib.parse.urljoin(home_page_url(), '/pride/pride0.shtm')
+    URL = urllib.parse.urljoin(homepage_url(), '/pride/pride0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE = 'Last updated date'
@@ -135,7 +136,7 @@ class LOR(_Base):
             AssertionError: `prefix` must be one of ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', ...
         """
 
-        url = urllib.parse.urljoin(home_page_url(), '/pride/pride')
+        url = urllib.parse.urljoin(homepage_url(), '/pride/pride')
 
         prefix_ = self.validate_prefix(prefix)
 
@@ -614,7 +615,7 @@ class LOR(_Base):
             # prefixes_ = ['NW/NZ' if p == 'NW' else p for p in prefixes if p != 'NZ']
 
             # Set verbosity based on conditions
-            verbose_ = fetch_all_verbose(data_dir=dump_dir, verbose=verbose)
+            verbose_ = get_batch_fetch_verbosity(data_dir=dump_dir, verbose=verbose)
 
             # Fetch LOR codes
             lor_codes = [
@@ -624,8 +625,8 @@ class LOR(_Base):
             # Retry if all fetches failed
             if all(x is None for x in lor_codes):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY.lower(), verbose=verbose)
 
                 lor_codes = [
                     self.fetch_codes(prefix=p, update=False, verbose=verbose_)
@@ -676,11 +677,11 @@ class LOR(_Base):
         #             lor_links.insert(i, lor_links[i - 1])
 
         elr_lor_dat['ELR_URL'] = [
-            urllib.parse.urljoin(home_page_url(), x.a.get('href')) if x.a else None
+            urllib.parse.urljoin(homepage_url(), x.a.get('href')) if x.a else None
             for x in elr_links]
 
         elr_lor_dat['LOR_URL'] = [
-            urllib.parse.urljoin(home_page_url(), 'pride/' + x.get('href'))
+            urllib.parse.urljoin(homepage_url(), 'pride/' + x.get('href'))
             for x in lor_links]
 
         elr_lor_converter = {

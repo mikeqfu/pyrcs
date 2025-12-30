@@ -11,8 +11,8 @@ import pandas as pd
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, parse_tr
-from ..utils import collect_in_fetch_verbose, home_page_url, is_home_connectable, \
-    print_inst_conn_err, print_void_msg, validate_initial
+from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
+    print_instance_connection_error, print_void_collection_message, validate_initial
 
 
 class SignalBoxes(_Base):
@@ -37,7 +37,7 @@ class SignalBoxes(_Base):
     KEY_TO_BELL_CODES: str = 'Bell codes'
 
     #: The URL of the main web page for the data.
-    URL: str = urllib.parse.urljoin(home_page_url(), '/signal/signal_boxes0.shtm')
+    URL: str = urllib.parse.urljoin(homepage_url(), '/signal/signal_boxes0.shtm')
 
     #: The key used to reference the last updated date in the data.
     KEY_TO_LAST_UPDATED_DATE: str = 'Last updated date'
@@ -71,7 +71,7 @@ class SignalBoxes(_Base):
             update=update, verbose=verbose)
 
     def _collect_prefix_codes(self, initial, source, verbose=False):
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
         thead, tbody = soup.find('thead'), soup.find('tbody')
@@ -137,7 +137,7 @@ class SignalBoxes(_Base):
             [5 rows x 8 columns]
         """
 
-        initial_ = validate_initial(x=initial)
+        initial_ = validate_initial(initial=initial)
 
         signal_box_prefix_codes = self._collect_data_from_source(
             data_name=self.NAME.lower(), method=self._collect_prefix_codes, initial=initial_,
@@ -204,8 +204,8 @@ class SignalBoxes(_Base):
 
         else:
 
-            verbose_1 = collect_in_fetch_verbose(data_dir=dump_dir, verbose=verbose)
-            verbose_2 = verbose_1 if is_home_connectable() else False
+            verbose_1 = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
+            verbose_2 = verbose_1 if is_homepage_connectable() else False
 
             # Get every data table
             data = [
@@ -214,8 +214,8 @@ class SignalBoxes(_Base):
 
             if all(d[x] is None for d, x in zip(data, string.ascii_uppercase)):
                 if update:
-                    print_inst_conn_err(verbose=verbose)
-                    print_void_msg(data_name=self.KEY.lower(), verbose=verbose)
+                    print_instance_connection_error(verbose=verbose)
+                    print_void_collection_message(data_name=self.KEY.lower(), verbose=verbose)
 
                 data = [
                     self.fetch_prefix_codes(initial=x, update=False, verbose=verbose_1)
@@ -605,7 +605,7 @@ class SignalBoxes(_Base):
                 wr_mas_dates.update({h3.text: self._parse_tbl_dat(h3, ths)})
 
         wr_mas_dates_data = {
-            self.KEY_TO_WRMASD: wr_mas_dates,
+            self.KEY_TO_WRMASD: dict(wr_mas_dates),
             self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup),
         }
 
@@ -651,8 +651,8 @@ class SignalBoxes(_Base):
             'WR MAS dates'
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
-            collections.defaultdict
-            >>> list(sb_wr_mas_dates_dat.keys())
+            dict
+            >>> list(sb_wr_mas_dates_dat.keys())[:5]
             ['Paddington-Hayes',
              'Birmingham',
              'Plymouth',
@@ -702,7 +702,7 @@ class SignalBoxes(_Base):
             'WR MAS dates'
             >>> sb_wr_mas_dates_dat = sb_wr_mas_dates[sb.KEY_TO_WRMASD]
             >>> type(sb_wr_mas_dates_dat)
-            collections.defaultdict
+            dict
             >>> list(sb_wr_mas_dates_dat.keys())[:5]
             ['Paddington-Hayes',
              'Birmingham',
@@ -782,7 +782,7 @@ class SignalBoxes(_Base):
             'Bell codes'
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
-            collections.OrderedDict
+            dict
             >>> list(sb_bell_codes_dat.keys())
             ['Network Rail codes',
              'Southern Railway codes',
@@ -840,7 +840,7 @@ class SignalBoxes(_Base):
             'Bell codes'
             >>> sb_bell_codes_dat = sb_bell_codes[sb.KEY_TO_BELL_CODES]
             >>> type(sb_bell_codes_dat)
-            collections.OrderedDict
+            dict
             >>> list(sb_bell_codes_dat.keys())
             ['Network Rail codes',
              'Southern Railway codes',
