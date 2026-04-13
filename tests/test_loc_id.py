@@ -2,8 +2,6 @@
 Test the module :py:mod:`pyrcs.line_data.loc_id`.
 """
 
-from unittest.mock import MagicMock, patch
-
 import bs4
 import pandas as pd
 import pytest
@@ -77,6 +75,24 @@ def test__split_dat_and_note():
     assert _split_dat_and_note("A\rB") == ["A", "B"]
     assert _split_dat_and_note("A\nB") == ["A", "B"]
     assert _split_dat_and_note("A") == "A"
+    assert _split_dat_and_note("~LO\nA") == ["A"]
+
+
+def test__fix_exceptional_cases():
+    from pyrcs.line_data.loc_id import _fix_exceptional_cases
+
+    dat = {
+        'Location':
+            'Ely Papworth Sidings English Welsh & Scottish Railway International\n'
+            'Ely Papworth Sidings DB Schenker International'
+    }
+    data = pd.DataFrame([dat])
+
+    data_ = _fix_exceptional_cases(data)
+    assert (data_.values[0][0] ==
+            'Ely Papworth Sidings English Welsh & Scottish Railway International\n'
+            'Ely Papworth Sidings DB Schenker International\n'
+            'Ely Papworth Sidings DB Schenker International')
 
 
 def test__parse_code_note():
@@ -103,85 +119,77 @@ def test__stanox_note():
     assert _stanox_note('-') == ('', '')
 
 
-def test__parse_mult_alt_codes():
+def test__parse_mult_alt_codes(mocker):
     from pyrcs.line_data.loc_id import _parse_mult_alt_codes
 
     # Mock _fix_exceptional_cases to avoid external dependencies during this unit test
-    with patch('pyrcs.line_data.loc_id._fix_exceptional_cases', side_effect=lambda x: x):
-        # --- 1. Test Windows Style Newlines (\r\n) ---
-        # Coverage: 'if \r\n in x' block (Lines 269-273)
-        df_win = pd.DataFrame({
-            'Location': ['London\r\nBridge'],  # 1 sep. Max is 2. d = 1.
-            'CRS': ['LBG\r\nLB2\r\nLB3'],  # 2 seps.
-            'NLC': ['1\r\n2\r\n3'],
-            'TIPLOC': ['A\r\nB\r\nC'],
-            'STANME': ['X\r\nY\r\nZ'],
-            'STANOX': ['1\r\n2\r\n3']
-        })
-        res_win = _parse_mult_alt_codes(df_win)
-        assert len(res_win) == 3
-        # Line 271: Location repeats the last split segment
-        assert res_win.loc[2, 'Location'] == 'Bridge'
-        # Line 273: Codes append empty strings via trailing newlines
+    mocker.patch('pyrcs.line_data.loc_id._fix_exceptional_cases', side_effect=lambda x: x)
 
-        # --- 2. Test Legacy Mac Style Newlines (\r) ---
-        # Coverage: 'elif \r in x' block (Lines 274-278)
-        df_mac = pd.DataFrame({
-            'Location': ['Allerton'],  # 0 seps. Max is 1. d = 1.
-            'CRS': ['ALN\rLVP'],  # 1 sep.
-            'NLC': ['1\r2'],
-            'TIPLOC': ['A\rB'],
-            'STANME': ['X\rY'],
-            'STANOX': ['1\r2']
-        })
-        res_mac = _parse_mult_alt_codes(df_mac)
-        assert len(res_mac) == 2
-        # Line 276: Location repeats if no separator originally found
-        assert res_mac.loc[1, 'Location'] == 'Allerton'
+    # Test Windows style newlines (\r\n) ---
+    df_win = pd.DataFrame({
+        'Location': ['London\r\nBridge'],  # 1 sep. Max is 2. d = 1.
+        'CRS': ['LBG\r\nLB2\r\nLB3'],  # 2 seps.
+        'NLC': ['1\r\n2\r\n3'],
+        'TIPLOC': ['A\r\nB\r\nC'],
+        'STANME': ['X\r\nY\r\nZ'],
+        'STANOX': ['1\r\n2\r\n3']
+    })
+    res_win = _parse_mult_alt_codes(df_win)
+    assert len(res_win) == 3
+    assert res_win.loc[2, 'Location'] == 'Bridge'
 
-        # --- 3. Test Standard Unix Style Newlines (\n) ---
-        # Coverage: 'else' block (Lines 279-283)
-        df_unix = pd.DataFrame({
-            'Location': ['Bletchley'],  # d = 1.
-            'CRS': ['BLY\nBLU'],  # Max seps = 1.
-            'NLC': ['1\n2'],
-            'TIPLOC': ['A\nB'],
-            'STANME': ['X\nY'],
-            'STANOX': ['1\n2']
-        })
-        res_unix = _parse_mult_alt_codes(df_unix)
-        assert len(res_unix) == 2
-        # Line 281: Location uses '\n'.join for padding
-        assert res_unix.loc[1, 'Location'] == 'Bletchley'
+    # Test legacy Mac style newlines (\r)
+    df_mac = pd.DataFrame({
+        'Location': ['Allerton'],  # 0 seps. Max is 1. d = 1.
+        'CRS': ['ALN\rLVP'],  # 1 sep.
+        'NLC': ['1\r2'],
+        'TIPLOC': ['A\rB'],
+        'STANME': ['X\rY'],
+        'STANOX': ['1\r2']
+    })
+    res_mac = _parse_mult_alt_codes(df_mac)
+    assert len(res_mac) == 2
+    assert res_mac.loc[1, 'Location'] == 'Allerton'
 
-        # --- 4. Test Code Padding (The 'else' branches inside newline checks) ---
-        # This ensures that non-Location columns get empty strings when padded
-        df_pad = pd.DataFrame({
-            'Location': ['A\nB\nC'],
-            'CRS': ['CRS_A'],  # d = 2.
-            'NLC': ['NLC_A\nNLC_B\nNLC_C'],
-            'TIPLOC': ['T_A\nT_B\nT_C'],
-            'STANME': ['S_A\nS_B\nS_C'],
-            'STANOX': ['X_A\nX_B\nX_C']
-        })
-        res_pad = _parse_mult_alt_codes(df_pad)
-        # Line 283: CRS 'x' didn't have \n, so it falls to else and appends \n * d
-        assert res_pad.loc[1, 'CRS'] == ''
-        assert res_pad.loc[2, 'CRS'] == ''
+    # Test standard Unix style newlines (\n)
+    df_unix = pd.DataFrame({
+        'Location': ['Bletchley'],  # d = 1.
+        'CRS': ['BLY\nBLU'],  # Max seps = 1.
+        'NLC': ['1\n2'],
+        'TIPLOC': ['A\nB'],
+        'STANME': ['X\nY'],
+        'STANOX': ['1\n2']
+    })
+    res_unix = _parse_mult_alt_codes(df_unix)
+    assert len(res_unix) == 2
+    assert res_unix.loc[1, 'Location'] == 'Bletchley'
 
-        # --- 5. Test Whitespace Cleaning ---
-        # Coverage: Final temp.apply(lambda x_: x_.str.strip())
-        df_dirty = pd.DataFrame({
-            'Location': ['  Paddington  '],
-            'CRS': [' PAD '],
-            'NLC': [' 308700 '],
-            'TIPLOC': [' PADTON '],
-            'STANME': [' PADDINGTN '],
-            'STANOX': [' 73000 ']
-        })
-        res_dirty = _parse_mult_alt_codes(df_dirty)
-        assert res_dirty.loc[0, 'Location'] == 'Paddington'
-        assert res_dirty.loc[0, 'CRS'] == 'PAD'
+    # Test code padding (The 'else' branches inside newline checks)
+    # This ensures that non-Location columns get empty strings when padded
+    df_pad = pd.DataFrame({
+        'Location': ['A\nB\nC'],
+        'CRS': ['CRS_A'],  # d = 2.
+        'NLC': ['NLC_A\nNLC_B\nNLC_C'],
+        'TIPLOC': ['T_A\nT_B\nT_C'],
+        'STANME': ['S_A\nS_B\nS_C'],
+        'STANOX': ['X_A\nX_B\nX_C']
+    })
+    res_pad = _parse_mult_alt_codes(df_pad)
+    assert res_pad.loc[1, 'CRS'] == ''
+    assert res_pad.loc[2, 'CRS'] == ''
+
+    # Test whitespace cleaning
+    df_dirty = pd.DataFrame({
+        'Location': ['  Paddington  '],
+        'CRS': [' PAD '],
+        'NLC': [' 308700 '],
+        'TIPLOC': [' PADTON '],
+        'STANME': [' PADDINGTN '],
+        'STANOX': [' 73000 ']
+    })
+    res_dirty = _parse_mult_alt_codes(df_dirty)
+    assert res_dirty.loc[0, 'Location'] == 'Paddington'
+    assert res_dirty.loc[0, 'CRS'] == 'PAD'
 
 
 def test__parse_stanox_note():
@@ -235,12 +243,12 @@ def lid():
 
 class TestLocationIdentifiers:
 
-    def test__parse_notes_page(self, lid):
+    def test__parse_notes_page(self, lid, mocker):
         """
         Test parsing logic for HTML responses containing <p> and <pre> tags.
         """
         # Create a mock source object
-        mock_source = MagicMock()
+        mock_source = mocker.MagicMock()
         mock_source.ok = True
         # HTML containing a narrative paragraph and a structured tab-separated paragraph
         mock_source.content = b"""
@@ -273,7 +281,7 @@ class TestLocationIdentifiers:
         assert isinstance(notes[2], pd.DataFrame)
         assert 'location_name' in notes[2].columns
 
-    def test__parse_crs_notes(self, lid):
+    def test__parse_crs_notes(self, lid, mocker):
         """
         Test the mapping of CRS codes to their respective parsed notes via network requests.
         """
@@ -293,48 +301,53 @@ class TestLocationIdentifiers:
         soup = bs4.BeautifulSoup(html_content, 'html.parser')
 
         # Mock dependencies
+        assert isinstance(lid.catalogue, dict)
         lid.catalogue.update({'AA': 'http://example.com/'})
 
-        # Mock Response objects for the network calls
-        mock_resp1 = MagicMock()
-        mock_resp2 = MagicMock()
+        # Use mocker.patch for external calls and mocker.patch.object for internal methods
+        mock_get = mocker.patch('requests.Session.get')
+        mock_get.side_effect = [mocker.MagicMock(), mocker.MagicMock()]
 
         # Mock the return value of _parse_notes_page
         # Return a list containing a dummy string or DataFrame for each call
         parsed_note_1 = "Note content for ABC"
         parsed_note_2 = pd.DataFrame([['Station', 'STN']], columns=['Location', 'CRS'])
 
-        with patch('requests.Session.get') as mock_get:
-            # Side effect to return different responses for the two 'see note' links
-            mock_get.side_effect = [mock_resp1, mock_resp2]
+        mock_parse = mocker.patch.object(lid, '_parse_notes_page')
+        # Side effect to return our mock notes
+        mock_parse.side_effect = [([parsed_note_1], None), ([parsed_note_2], None)]
 
-            with patch.object(LocationIdentifiers, '_parse_notes_page') as mock_parse:
-                # Side effect to return our mock notes
-                mock_parse.side_effect = [([parsed_note_1], None), ([parsed_note_2], None)]
+        # Execute the method
+        result = lid._parse_crs_notes(data, 'AA', soup)
 
-                # 4. Execute the method
-                result = lid._parse_crs_notes(data, 'AA', soup)
+        # Assertions
+        assert result is not None
+        assert len(result) == 2  # Only 'ABC' and 'DEF' had 'see note'
 
-                # 5. Assertions
-                assert result is not None
-                assert len(result) == 2  # Only 'ABC' and 'DEF' had 'see note'
+        # Check mapping accuracy
+        assert result['ABC'] == parsed_note_1
+        assert isinstance(result['DEF'], pd.DataFrame)
+        assert result['DEF'].iloc[0]['CRS'] == 'STN'
 
-                # Check mapping accuracy
-                assert result['ABC'] == parsed_note_1
-                assert isinstance(result['DEF'], pd.DataFrame)
-                assert result['DEF'].iloc[0]['CRS'] == 'STN'
+        # Ensure the correct URLs were constructed
+        expected_url1 = 'http://example.com/note1.shtm'
+        assert mock_get.call_args_list[0][0][0] == expected_url1
 
-                # Ensure the correct URLs were constructed
-                expected_url1 = 'http://example.com/note1.shtm'
-                assert mock_get.call_args_list[0][0][0] == expected_url1
+    def test_fetch_loc_id_fallback_condition(self, lid, mocker):
+        """
+        Test fallback logic using mocker with 'wraps' to allow selective mocking.
+        """
+        # Capture the actual original method reference before patching
+        original_method = lid.fetch_loc_id
 
-    def test_fetch_loc_id_fallback_condition(self, lid):
-        # 1. Define the side effect with a guard for initial=None
+        # Define the side effect
         def side_effect(initial=None, update=False, **kwargs):
+            # Check the condition to decide between the real logic and mocked logic
             if initial is None:
-                # This allows the 'else' block of the REAL method to run
+                # Call the captured original method to avoid recursion
                 return original_method(initial=None, update=update, **kwargs)
 
+            # Mocked behaviour for specific 'initial' values
             char = initial.upper()
             if update:
                 # Simulate failure: triggers the 'if all(... is None)' condition
@@ -344,22 +357,15 @@ class TestLocationIdentifiers:
                 df = pd.DataFrame({'Location': ['Test'], 'CRS': [char]})
                 return {char: df, lid.KEY_TO_LAST_UPDATED_DATE: '2025-12-24'}
 
-        # 2. Store the original method and swap it with our mock
-        original_method = lid.fetch_loc_id
-        lid.fetch_loc_id = MagicMock(side_effect=side_effect)
+        # Apply the patch
+        mock_fetch = mocker.patch.object(lid, 'fetch_loc_id', side_effect=side_effect)
 
-        try:
-            # 3. Execution: This now correctly handles the initial None
-            result = lid.fetch_loc_id(initial=None, update=True)
+        # Execution
+        result = lid.fetch_loc_id(initial=None, update=True)
 
-            # 4. Assertions
-            # 1 (initial) + 26 (updates) + 26 (fallbacks) = 53
-            assert lid.fetch_loc_id.call_count == 53
-            assert not result[lid.KEY].empty
-
-        finally:
-            # 5. Restore the original method so other tests aren't affected
-            lid.fetch_loc_id = original_method
+        # Assertions
+        assert mock_fetch.call_count == 53
+        assert not result[lid.KEY].empty
 
     @pytest.mark.parametrize('update', [True, False])
     def test_fetch_notes(self, lid, update):
