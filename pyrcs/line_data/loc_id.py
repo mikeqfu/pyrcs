@@ -279,7 +279,7 @@ def _parse_mult_alt_codes(data):
 
     df = df.explode(code_cols, ignore_index=True)
 
-    temp = df.select_dtypes(['object'])
+    temp = df.select_dtypes(['string', 'object'])
     df[temp.columns] = temp.apply(lambda x_: x_.str.strip())
 
     return df
@@ -434,11 +434,9 @@ def _fill_location_names(data):
     for col in code_cols:
         df[col] = df[col].replace(r'^\s*$', pd.NA, regex=True)
 
-    # Group and fill
-    with pd.option_context('future.no_silent_downcasting', True):
-        # Group by 'Location' and apply forward then backward fill
-        df[code_cols] = df.groupby('Location', sort=False)[code_cols].transform(
-            lambda x: x.ffill().bfill())
+    # Group by 'Location' and apply forward then backward fill
+    df[code_cols] = df.groupby('Location', sort=False)[code_cols].transform(
+        lambda x: x.ffill().bfill())
 
     # Replace any remaining NaNs back with empty strings (optional)
     df[code_cols] = df[code_cols].astype(object).fillna('')
@@ -601,7 +599,7 @@ class LocationIdentifiers(_Base):
         self.catalogue.update({self.KEY_TO_MSCEN: mscen_url})
 
         # Retrieve the catalogue for other systems' station codes
-        other_systems_url = self.catalogue[self.KEY_TO_OTHER_SYSTEMS]
+        other_systems_url = self.catalogue.get(self.KEY_TO_OTHER_SYSTEMS)
         self.other_systems_catalogue = get_page_catalogue(url=other_systems_url)
 
     @staticmethod
@@ -701,7 +699,7 @@ class LocationIdentifiers(_Base):
                 crs_code = data.at[idx, 'CRS']
                 # noinspection PyBroadException
                 try:
-                    url = urllib.parse.urljoin(self.catalogue[initial], link_tag['href'])
+                    url = urllib.parse.urljoin(self.catalogue.get(initial), link_tag['href'])
                     response = session.get(url, timeout=10)
 
                     parsed_content, _ = self._parse_notes_page(response)
@@ -935,7 +933,7 @@ class LocationIdentifiers(_Base):
         tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
         if 'Code' in tbl.columns:
-            if tbl.Code.str.contains('https://').sum() > 0:
+            if tbl['Code'].str.contains('https://').sum() > 0:
                 temp = tbl['Code'].map(self._parse_code)
                 tbl_ext = pd.DataFrame(zip(*temp)).T
                 tbl_ext.columns = ['Code', 'Code_extra']
@@ -1028,7 +1026,7 @@ class LocationIdentifiers(_Base):
 
         other_systems_codes = self._collect_data_from_source(
             data_name=self.KEY_TO_OTHER_SYSTEMS.lower(), method=self._collect_other_systems_codes,
-            url=self.catalogue[self.KEY_TO_OTHER_SYSTEMS],
+            url=self.catalogue.get(self.KEY_TO_OTHER_SYSTEMS),
             confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
 
         return other_systems_codes
@@ -1146,7 +1144,7 @@ class LocationIdentifiers(_Base):
 
         explanatory_notes = self._collect_data_from_source(
             data_name="additional notes", method=self._collect_notes,
-            url=self.catalogue[self.KEY_TO_MSCEN],
+            url=self.catalogue.get(self.KEY_TO_MSCEN),
             confirmation_required=confirmation_required,
             confirmation_prompt=format_confirmation_prompt(data_name="additional notes"),
             verbose=verbose, raise_error=raise_error)
