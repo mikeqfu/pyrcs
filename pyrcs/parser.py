@@ -583,7 +583,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
     """
 
     try:  # Request to get connected to the given url
-        source = requests.get(url=url, headers=fake_requests_headers())
+        source = requests.get(url=url.lower(), headers=fake_requests_headers(), timeout=5)
         source.raise_for_status()
     except Exception as e:
         _print_failure_message(e, verbose=verbose, raise_error=raise_error)
