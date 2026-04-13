@@ -716,7 +716,7 @@ class ELRMileages(_Base):
         # measure_headers = []
         measure_headers_indices = []
 
-        for i, x in enumerate(content):
+        for _, x in enumerate(content):
             if len(x) == 1:
                 x_ = f'{x[0]}.' if x[0].endswith(tuple(string.ascii_letters)) else x[0]
                 notes_dat.append(x_)
