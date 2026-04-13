@@ -75,6 +75,24 @@ def test__split_dat_and_note():
     assert _split_dat_and_note("A\rB") == ["A", "B"]
     assert _split_dat_and_note("A\nB") == ["A", "B"]
     assert _split_dat_and_note("A") == "A"
+    assert _split_dat_and_note("~LO\nA") == ["A"]
+
+
+def test__fix_exceptional_cases():
+    from pyrcs.line_data.loc_id import _fix_exceptional_cases
+
+    dat = {
+        'Location':
+            'Ely Papworth Sidings English Welsh & Scottish Railway International\n'
+            'Ely Papworth Sidings DB Schenker International'
+    }
+    data = pd.DataFrame([dat])
+
+    data_ = _fix_exceptional_cases(data)
+    assert (data_.values[0][0] ==
+            'Ely Papworth Sidings English Welsh & Scottish Railway International\n'
+            'Ely Papworth Sidings DB Schenker International\n'
+            'Ely Papworth Sidings DB Schenker International')
 
 
 def test__parse_code_note():
