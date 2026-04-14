@@ -1,3 +1,7 @@
+.. raw:: latex
+
+    \setcounter{secnumdepth}{-1}
+
 ===============
 Acknowledgement
 ===============
@@ -6,3 +10,8 @@ PyRCS uses data available from the `Railway Codes`_ website. The time and effort
 
 .. _`Railway Codes`: http://www.railwaycodes.org.uk/index.shtml
 .. _`all contributors`: http://www.railwaycodes.org.uk/misc/acknowledgements.shtm
+
+
+.. raw:: latex
+
+    \setcounter{secnumdepth}{2}
