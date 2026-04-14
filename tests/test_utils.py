@@ -103,18 +103,20 @@ def test_print_instance_connection_error(capfd):
 
     assert print_instance_connection_error(verbose=False) is None
 
+    msg = "The Internet connection is not available."
+
     print_instance_connection_error(verbose=2)
     out, _ = capfd.readouterr()
-    assert out == 'Failed. The Internet connection is not available.\n'
+    assert out == f'Failed. {msg}\n'
 
     print_instance_connection_error(update=True, verbose=True)
     out, _ = capfd.readouterr()
-    assert out == 'The Internet connection is not available. Failed to update the data.\n'
+    assert out == f'{msg} Failed to update the data.\n'
 
-    with pytest.raises(TypeError, match="exceptions"):
+    with pytest.raises(Exception, match=msg):
         print_instance_connection_error(verbose=True, raise_error=True)
         out, _ = capfd.readouterr()
-        assert out == 'The Internet connection is not available.\n'
+        assert out == f'{msg}\n'
 
 
 def test_print_void_collection_message(capfd):
