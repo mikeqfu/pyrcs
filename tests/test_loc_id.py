@@ -107,16 +107,30 @@ def test__parse_code_note():
 def test__stanox_note():
     from pyrcs.line_data.loc_id import _stanox_note
 
-    # Standard 5-digit
+    # Standard and pseudo cases
     assert _stanox_note('12345') == ('12345', '')
-    # Pseudo STANOX with asterisk
     assert _stanox_note('12345*') == ('12345', 'Pseudo STANOX')
-    # STANOX with trailing note
+
+    # Trailing text and different brackets
     assert _stanox_note('12345 Main Line') == ('12345', 'Main Line')
-    # Complex case with brackets
+    assert _stanox_note('12345* Pseudo with Text') == ('12345', 'Pseudo STANOX; Pseudo with Text')
+    assert _stanox_note("12345 'Quoted Note'") == ('12345', 'Quoted Note')
+
+    # Complex combination (Asterisk + Brackets)
+    assert _stanox_note('12345* [Ref Case]') == ('12345', 'Pseudo STANOX; Ref Case')
     assert _stanox_note('12345* (formerly 54321)') == ('12345', 'Pseudo STANOX; formerly 54321')
-    # Empty cases
+
+    # Empty and Null cases (Critical for robustness)
     assert _stanox_note('-') == ('', '')
+    assert _stanox_note('') == ('', '')
+    assert _stanox_note(None) == ('', '')
+    assert _stanox_note(pd.NA) == ('', '')  # Ensuring pandas compatibility
+
+    # Edge case: The "Hanging Parenthesis" logic, testing the 'note.endswith(")")' cleanup
+    assert _stanox_note('12345 Extra Text)') == ('12345', 'Extra Text')
+
+    # Fallback: No 5-digit code found, testing the 'else: stanox = x' logic
+    assert _stanox_note('ABCDE') == ('ABCDE', '')
 
 
 def test__parse_mult_alt_codes(mocker):
