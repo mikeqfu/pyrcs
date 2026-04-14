@@ -11,7 +11,7 @@ import os
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.dirs import cd, validate_dir
+from pyhelpers.dirs import cd, resolve_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
@@ -75,24 +75,32 @@ class _Base:
 
         print_connection_warning(verbose=verbose)
 
-        self.catalogue, self.introduction = None, None
+        # Set internal verbosity (matching your 0, 1, 2 level logic)
+        #   verbose=2 (detailed), verbose=True/1 (standard), verbose=False/0 (silent)
+        _verbose_inner = (verbose == 2)
 
-        verbose_ = True if verbose == 2 else False
+        # Initialize all attributes to prevent AttributeError
+        self.catalogue = None
+        self.introduction = None
 
+        # Explicit content handling
         if isinstance(content_type, str):
             content_type_ = content_type.lower()
 
-            if content_type_.startswith('cat'):  # Get the catalogue of the data
-                self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+            if any(content_type_.startswith(s) for s in ('cat', 'catalogue')):
+                # Get the catalogue of the data
+                self.catalogue = get_catalogue(url=self.URL, update=update, verbose=_verbose_inner)
 
-            elif content_type_.startswith('intro'):  # Get the introductory text of the data
-                self.introduction = get_introduction(url=self.URL, verbose=verbose_)
+            elif any(content_type_.startswith(s) for s in ('intro', 'introduction')):
+                # Get the introductory text of the data
+                self.introduction = get_introduction(url=self.URL, verbose=_verbose_inner)
 
-        elif content_type:  # Get both the catalogue and introductory text of the data
-            self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+        elif content_type is not None:
+            # Get both the catalogue and introductory text of the data
+            self.catalogue = get_catalogue(url=self.URL, update=update, verbose=_verbose_inner)
+            self.introduction = get_introduction(url=self.URL, verbose=_verbose_inner)
 
-            self.introduction = get_introduction(url=self.URL, verbose=verbose_)
-
+        # Last update date
         self.last_updated_date = get_last_updated_date(url=self.URL)
 
         # Initialise the data directory for storing or retrieving data
@@ -130,7 +138,7 @@ class _Base:
         """
 
         if data_dir:
-            self.data_dir = validate_dir(data_dir)
+            self.data_dir = resolve_dir(data_dir)
 
         else:
             cluster_ = self.KEY if cluster is None else copy.copy(cluster)
@@ -316,8 +324,8 @@ class _Base:
         # Prepare fallback data
         fallback_data = self._fallback_data(key=initial, additional_fields=additional_fields)
 
-        # Resolve URL
-        target_url = url or self.catalogue.get(initial or data_name)
+        # noinspection PyUnresolvedReferences
+        target_url = url or self.catalogue.get(initial or data_name)  # Resolve URL
 
         if not target_url:
             if initial:
@@ -403,7 +411,7 @@ class _Base:
             sub_dir_ = []
 
         if data_dir:
-            self.current_data_dir = validate_dir(path_to_dir=None if data_dir is True else data_dir)
+            self.current_data_dir = resolve_dir(path_to_dir=None if data_dir is True else data_dir)
             file_pathname = os.path.join(self.current_data_dir, *sub_dir_, filename)
 
         else:  # data_dir is None or data_dir == ""

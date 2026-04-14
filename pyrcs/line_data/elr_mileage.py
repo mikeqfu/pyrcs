@@ -137,11 +137,11 @@ def _parse_node(node):
     return node_name + conn_node
 
 
-def _parse_node_connection(nodes, col_name='Connection'):
+def _parse_node_connection(prep_nodes, col_name='Connection'):
     conn_node_lst = []
 
-    for n in nodes[col_name]:
-        if not n:
+    for n in prep_nodes[col_name].values:
+        if not n or pd.isna(n):
             conn_node_lst.append([None])
             continue
 
@@ -171,7 +171,7 @@ def _parse_node_connection(nodes, col_name='Connection'):
 
 def _uncouple_elr_mileage(node_x):
     # e.g. x = 'ECM5 (44.64)' or x = 'DNT'
-    if node_x is None:
+    if not node_x or pd.isna(node_x):
         y = ['', '']
     else:
         # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
@@ -216,19 +216,20 @@ def _parse_nodes(nodes):
     :rtype: pandas.DataFrame
     """
 
-    prep_node = pd.DataFrame((_parse_node(node) for node in nodes), columns=['Node', 'Connection'])
+    prep_nodes = pd.DataFrame((_parse_node(node) for node in nodes), columns=['Node', 'Connection'])
 
-    conn_nodes = _parse_node_connection(prep_node, col_name='Connection')
+    conn_nodes = _parse_node_connection(prep_nodes=prep_nodes, col_name='Connection')
 
     link_cols = [x for x in conn_nodes.columns if re.match(r'^(Link_\d)', x)]
     link_nodes = conn_nodes[link_cols].map(_uncouple_elr_mileage)
 
     dat = [
-        pd.DataFrame(link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
+        pd.DataFrame(
+            link_nodes[col].values.tolist(), columns=[col + '_ELR', col + '_Mile_Chain'])
         for col in link_cols]
     link_elr_mileage = pd.concat(dat, axis=1, sort=False)
 
-    parsed_node_and_conn = pd.concat([prep_node, conn_nodes, link_elr_mileage], axis=1)
+    parsed_node_and_conn = pd.concat([prep_nodes, conn_nodes, link_elr_mileage], axis=1).fillna('')
 
     return parsed_node_and_conn
 
@@ -717,7 +718,7 @@ class ELRMileages(_Base):
 
         for _, x in enumerate(content):
             if len(x) == 1:
-                x_ = x[0] + '.' if x[0].endswith(tuple(string.ascii_letters)) else x[0]
+                x_ = f'{x[0]}.' if x[0].endswith(tuple(string.ascii_letters)) else x[0]
                 notes_dat.append(x_)
                 parsed_content.remove(x)
             else:
@@ -739,8 +740,8 @@ class ELRMileages(_Base):
                         parsed_content[j] = [mil_dat, txt_dat]
                         measure_headers_indices.append(j)
                     elif 'Distances in km' in txt_dat or \
-                            'measured from accurate mapping systems' in txt_dat or \
-                            len(txt_dat) >= 25:
+                            'measured from accurate mapping systems' in txt_dat \
+                            or len(txt_dat) >= 50:
                         notes_dat.append(txt_dat)
                         parsed_content.remove(x)
                     elif re.search(r'\b[Mm]easure\b', txt_dat):
@@ -791,7 +792,7 @@ class ELRMileages(_Base):
 
             temp = [x.strip().split('\t', 1) for x in soup.find('pre').text.splitlines() if x != '']
             temp = [[y.replace('  ', ' ').replace('\t', ' ') for y in x] for x in temp]
-            content = [[''] + x if (len(x) == 1) & ('Note that' not in x[0]) else x for x in temp]
+            content = [[''] + x if (len(x) == 1) and ('Note that' not in x[0]) else x for x in temp]
 
         # assert sub_headers[0] == elr
         if sub_line_name and (sub_line_name not in err404):
@@ -903,24 +904,24 @@ class ELRMileages(_Base):
             >>> mor_mileage_file['Mileage']['Original measure']
               Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  SWA (215.18)        SWA            215.18
-            1  0.0792                      0.36  ...          None
-            2  0.1716                      0.78  ...          None
-            3  1.1166                      1.53  ...          None
-            4  2.0066                      2.03  ...          None
-            5  2.0836                      2.38  ...          None
-            6                                    ...          None
+            1  0.0792                      0.36  ...
+            2  0.1716                      0.78  ...
+            3  1.1166                      1.53  ...
+            4  2.0066                      2.03  ...
+            5  2.0836                      2.38  ...
+            6                                    ...
             7  3.0462                      3.21  ...   SDI2 (2.79)       SDI2              2.79
             [8 rows x 8 columns]
             >>> mor_mileage_file['Mileage']['Later measure']
               Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  SWA (215.26)        SWA            215.26
             1  0.0176                      0.08  ...  SWA (215.18)        SWA            215.18
-            2  0.0968                      0.44  ...          None
-            3  1.0132                      1.06  ...          None
-            4  1.1342                      1.61  ...          None
-            5  2.0242                      2.11  ...          None
-            6  2.1012                      2.46  ...          None
-            7                                    ...          None
+            2  0.0968                      0.44  ...
+            3  1.0132                      1.06  ...
+            4  1.1342                      1.61  ...
+            5  2.0242                      2.11  ...
+            6  2.1012                      2.46  ...
+            7                                    ...
             8  3.0638                      3.29  ...   SDI2 (2.79)       SDI2              2.79
             [9 rows x 8 columns]
             >>> fed_mileage_file = em.collect_mileage_file(elr='FED')
@@ -929,8 +930,8 @@ class ELRMileages(_Base):
             >>> type(fed_mileage_file['Mileage'])
             dict
             >>> list(fed_mileage_file['Mileage'].keys())
-            ['Current route', 'Original route']
-            >>> fed_mileage_file['Mileage']['Current route']
+            ['Current measure', 'Original route']
+            >>> fed_mileage_file['Mileage']['Current measure']
                Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0  83.1254               ...        FEL
             1  84.0198               ...
@@ -943,10 +944,11 @@ class ELRMileages(_Base):
             >>> fed_mileage_file['Mileage']['Original route']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  FEL (84.22)        FEL             84.22
-            1  1.0176                      1.08  ...         None
-            2  1.1540                      1.70  ...         None
-            3  1.1694                      1.77  ...         None
-            [4 rows x 8 columns]
+            1  1.0176                      1.08  ...
+            2  1.1540                      1.70  ...
+            3  1.1694                      1.77  ...
+            4                                    ...
+            [5 rows x 8 columns]
         """
 
         target_elr = remove_punctuation(elr).upper()
