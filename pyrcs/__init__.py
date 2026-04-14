@@ -3,8 +3,8 @@ Package initialisation.
 """
 
 import datetime
+import importlib.resources
 import json
-import pkgutil
 
 from . import collector, converter, line_data, other_assets, parser, utils
 from .collector import LineData, OtherAssets
@@ -13,7 +13,8 @@ from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, Lo
 from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
     Tunnels, Viaducts, WaterTroughs
 
-metadata = json.loads(pkgutil.get_data(__name__, "data/.metadata").decode())
+metadata = json.loads(
+    importlib.resources.files(__name__).joinpath("data/.metadata").read_text(encoding="utf-8"))
 
 __project__ = metadata['Project']
 __pkgname__ = metadata['Package']
@@ -25,7 +26,7 @@ __email__ = metadata['Email']
 
 __version__ = metadata['Version']
 __license__ = metadata['License']
-__copyright__ = f'2019-{datetime.datetime.now().year}, {__author__}'
+__copyright__ = f'2019-{datetime.datetime.now().year} {__author__}'
 
 __first_release__ = metadata['First release']
 
