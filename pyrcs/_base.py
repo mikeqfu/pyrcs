@@ -75,22 +75,32 @@ class _Base:
 
         print_connection_warning(verbose=verbose)
 
-        verbose_ = True if verbose == 2 else False
+        # Set internal verbosity (matching your 0, 1, 2 level logic)
+        #   verbose=2 (detailed), verbose=True/1 (standard), verbose=False/0 (silent)
+        _verbose_inner = (verbose == 2)
 
+        # Initialize all attributes to prevent AttributeError
+        self.catalogue = None
+        self.introduction = None
+
+        # Explicit content handling
         if isinstance(content_type, str):
             content_type_ = content_type.lower()
 
-            if content_type_.startswith('cat'):  # Get the catalogue of the data
-                self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+            if any(content_type_.startswith(s) for s in ('cat', 'catalogue')):
+                # Get the catalogue of the data
+                self.catalogue = get_catalogue(url=self.URL, update=update, verbose=_verbose_inner)
 
-            elif content_type_.startswith('intro'):  # Get the introductory text of the data
-                self.introduction = get_introduction(url=self.URL, verbose=verbose_)
+            elif any(content_type_.startswith(s) for s in ('intro', 'introduction')):
+                # Get the introductory text of the data
+                self.introduction = get_introduction(url=self.URL, verbose=_verbose_inner)
 
-        elif content_type:  # Get both the catalogue and introductory text of the data
-            self.catalogue = get_catalogue(url=self.URL, update=update, verbose=verbose_)
+        elif content_type is not None:
+            # Get both the catalogue and introductory text of the data
+            self.catalogue = get_catalogue(url=self.URL, update=update, verbose=_verbose_inner)
+            self.introduction = get_introduction(url=self.URL, verbose=_verbose_inner)
 
-            self.introduction = get_introduction(url=self.URL, verbose=verbose_)
-
+        # Last update date
         self.last_updated_date = get_last_updated_date(url=self.URL)
 
         # Initialise the data directory for storing or retrieving data
