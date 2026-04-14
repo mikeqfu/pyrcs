@@ -12,7 +12,7 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.dirs import validate_dir
+from pyhelpers.dirs import resolve_dir
 from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
@@ -351,46 +351,62 @@ def _parse_code_notes(data):
 
 def _stanox_note(x):
     """
-    Parses STANOX note.
+    Parse a STANOX code and its associated note from a given string.
 
-    :param x: STANOX note.
+    This function extracts a 5-digit STANOX code (stripping asterisk markers)
+    and identifies additional context such as 'Pseudo STANOX' or supplementary
+    notes contained within brackets, parentheses, or quotes.
+
+    :param x: The raw STANOX string to be parsed.
     :type x: str | None
-    :return: STANOX and its corresponding note.
-    :rtype: tuple
+    :return: A tuple containing the cleaned 5-digit STANOX and the parsed note.
+    :rtype: tuple[str, str]
+
+    **Examples**:
+
+        >>> _stanox_note("12345* [Ref Case]")
+        ('12345', 'Pseudo STANOX; Ref Case')
+        >>> _stanox_note("87654 (Secondary)")
+        ('87654', 'Secondary')
     """
 
-    if x in ('-', '') or x is None:
-        stanox, note = '', ''
+    # Handle null/empty cases efficiently
+    if str(x).strip() in {'-', '', 'None'} or pd.isna(x):
+        return '', ''
 
+    x = str(x).strip()
+
+    # Extract the primary 5-digit STANOX and check for Pseudo marker
+    match = re.search(r'(\d{5})(\*?)', x)
+    if match:
+        stanox = match.group(1)
+        # Note starts as 'Pseudo STANOX' if asterisk was present
+        notes = ['Pseudo STANOX'] if match.group(2) == '*' else []
     else:
-        if re.match(r'\d{5}$', x):
-            stanox, note = x, ''
+        # Fallback if no 5-digit code is found
+        stanox = x
+        notes = []
 
-        elif re.match(r'\d{5}\*$', x):
-            stanox, note = x.rstrip('*'), 'Pseudo STANOX'
+    # Extract bracketed/quoted content: [note], (note), or 'note'
+    extra_note = re.search(r'[\[(\'](.+?)[])\']', x)
+    if extra_note:
+        notes.append(extra_note.group(1).strip())
 
-        elif re.match(r'\d{5} \w.*', x):
-            stanox = re.search(r'\d{5}', x).group()
-            note = re.search(r'(?<= )\w.*', x).group()
+    # Handle trailing text (e.g., '12345 Main Line' or '12345 Extra Text)')
+    elif match:  # Only run if no bracketed note was found to avoid duplication
+        # Look for text following the digits that isn't just an asterisk
+        trailing = re.search(r'\d{5}\*?\s+(.+)', x)
+        if trailing:
+            t_note = trailing.group(1).strip()
+            # Clean up orphaned closing parenthesis: "Extra Text)" -> "Extra Text"
+            if '(' not in t_note and t_note.endswith(')'):
+                t_note = t_note.rstrip(')')
+            notes.append(t_note)
 
-        else:
-            d = re.search(r'[\w *,]+(?= [\[(\'])', x)
-            stanox = d.group().strip() if d is not None else x
+    # Join and deduplicate notes
+    final_note = "; ".join(dict.fromkeys(notes))
 
-            # Check for Pseudo STANOX marker before stripping it
-            note = 'Pseudo STANOX' if '*' in stanox else ''
-            stanox = stanox.rstrip('*')
-
-            # Extract notes within brackets/quotes
-            n = re.search(r'(?<=[\[(\'])[\w, ]+.(?=[)\]\'])', x)
-
-            if n is not None:
-                note = '; '.join(item for item in [note, n.group()] if item != '')
-
-            if '(' not in note and note.endswith(')'):
-                note = note.rstrip(')')
-
-    return stanox, note
+    return stanox, final_note
 
 
 def _parse_stanox_note(data):
@@ -719,9 +735,11 @@ class LocationIdentifiers(_Base):
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
         thead, tbody = soup.find('thead'), soup.find('tbody')
-        ths, trs = [th.get_text(strip=True) for th in thead.find_all('th')], tbody.find_all('tr')
+        ths = [th.get_text(strip=True) for th in thead.find_all('th')]
+        trs = tbody.find_all('tr')
 
         dat = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
+
         dat = dat.replace({'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
 
         data = dat.replace({'\xa0': ''}, regex=True)
@@ -980,6 +998,7 @@ class LocationIdentifiers(_Base):
 
     def collect_other_systems_codes(self, confirmation_required=True, verbose=False,
                                     raise_error=False):
+        # noinspection PyUnresolvedReferences
         """
         Collects data of `other systems' station codes`_ from the source web page.
 
@@ -1098,7 +1117,7 @@ class LocationIdentifiers(_Base):
         return notes
 
     def collect_notes(self, confirmation_required=True, verbose=False, raise_error=False):
-        # noinspection PyShadowingNames
+        # noinspection PyShadowingNames,PyUnresolvedReferences
         """
         Collects the explanatory note related to multiple station codes (CRS codes)
         from the source web page.
@@ -1317,6 +1336,7 @@ class LocationIdentifiers(_Base):
 
     def make_xref_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False,
                        main_key=None, update=False, dump_it=False, dump_dir=None, verbose=False):
+        # noinspection PyUnresolvedReferences
         """
         Creates a dictionary or dataframe containing location code data for the specified ``keys``.
 
@@ -1431,7 +1451,7 @@ class LocationIdentifiers(_Base):
                     data=location_codes_dict,
                     data_name="-".join(keys) + (f"-{''.join(initials)}" if initials else ""),
                     ext=".json" if as_dict and len(keys) == 1 else ".pkl",
-                    dump_dir=validate_dir(dump_dir) if dump_dir else self._cdd("xref-dicts"),
+                    dump_dir=resolve_dir(dump_dir) if dump_dir else self._cdd("xref-dicts"),
                     verbose=verbose)
 
             return location_codes_dict
