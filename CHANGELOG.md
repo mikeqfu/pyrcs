@@ -1,6 +1,28 @@
 # Changelog / Release notes
 
 
+## **[1.1.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.1.0)**
+
+(*14 April 2026*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.0.4...1.1.0) since [1.0.4](https://pypi.org/project/pyrcs/1.0.4/):
+
+- **Refactoring & maintenance:**
+  - **Pandas 4.0 compatibility:** Updated `select_dtypes` to include the `'string'` extension type and removed deprecated silent downcasting option contexts (#79).
+  - **PyHelpers alignment:** Upgraded dependency to `pyhelpers >=2.4.0, <2.5.0` (#83).
+  - Changed metadata loading by replacing `pkgutil` with `importlib.resources`.
+  - Optimised `_stanox_note()` logic for parsing of Pseudo STANOX markers and complex bracketed notes.
+- **Bug fixes:**
+  - Fixed a failure in `get_last_updated_date()` by normalising request URLs to lowercase (#77).
+  - Resolved `TypeError` in `_parse_node_connection` and `_uncouple_elr_mileage` by implementing `pd.isna()` checks for missing node data (#78).
+  - Adjusted text length heuristics in the ELR-Mileage parser to reduce false-positive data extraction.
+- **Test & CI enhancements:**
+  - Migrated from `unittest.mock` to `pytest-mocker` for more idiomatic and readable unit tests.
+  - Updated `requirements.txt` to include `pytest-mock`, resolving CI fixture errors.
+
+**For more information and detailed specifications, check out the [PyRCS 1.1.0 documentation](https://pyrcs.readthedocs.io/en/1.1.0/).**
+
+
 ## **[1.0.4](https://github.com/mikeqfu/pyrcs/releases/tag/1.0.4)**
 
 (*30 December 2025*)
