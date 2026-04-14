@@ -11,7 +11,7 @@ import os
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.dirs import cd, validate_dir
+from pyhelpers.dirs import cd, resolve_dir
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
@@ -75,8 +75,6 @@ class _Base:
 
         print_connection_warning(verbose=verbose)
 
-        self.catalogue, self.introduction = None, None
-
         verbose_ = True if verbose == 2 else False
 
         if isinstance(content_type, str):
@@ -130,7 +128,7 @@ class _Base:
         """
 
         if data_dir:
-            self.data_dir = validate_dir(data_dir)
+            self.data_dir = resolve_dir(data_dir)
 
         else:
             cluster_ = self.KEY if cluster is None else copy.copy(cluster)
@@ -316,8 +314,8 @@ class _Base:
         # Prepare fallback data
         fallback_data = self._fallback_data(key=initial, additional_fields=additional_fields)
 
-        # Resolve URL
-        target_url = url or self.catalogue.get(initial or data_name)
+        # noinspection PyUnresolvedReferences
+        target_url = url or self.catalogue.get(initial or data_name)  # Resolve URL
 
         if not target_url:
             if initial:
@@ -403,7 +401,7 @@ class _Base:
             sub_dir_ = []
 
         if data_dir:
-            self.current_data_dir = validate_dir(path_to_dir=None if data_dir is True else data_dir)
+            self.current_data_dir = resolve_dir(path_to_dir=None if data_dir is True else data_dir)
             file_pathname = os.path.join(self.current_data_dir, *sub_dir_, filename)
 
         else:  # data_dir is None or data_dir == ""
