@@ -9,7 +9,7 @@ import re
 import string
 
 import pandas as pd
-from pyhelpers._cache import _format_error_message, _print_failure_message
+from pyhelpers._cache import _format_exception_message, _print_failure_message
 from pyhelpers.ops import confirmed, is_url_connectable
 from pyhelpers.store import load_data, save_data
 
@@ -386,13 +386,12 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     if verbose == 2:
         print("Failed.", end=" ")
 
-    err_msg = _format_error_message(e) if e else "The Internet connection is not available."
+    err_msg = _format_exception_message(e) if e else "The Internet connection is not available."
 
     if update:
         err_msg += " Failed to update the data."
 
-    _print_failure_message(
-        e if raise_error else err_msg, prefix="", verbose=True, raise_error=raise_error)
+    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
 def print_void_collection_message(data_name, verbose):
@@ -460,6 +459,7 @@ def cd_data(*sub_dir, data_dir="data", mkdir=False, **kwargs):
 
 
 def fetch_location_names_errata(k=None, regex=False, as_dataframe=False, column_name=None):
+    # noinspection PyUnresolvedReferences
     """
     Fetches a dictionary or dataframe to rectify location names.
 
