@@ -391,8 +391,7 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     if update:
         err_msg += " Failed to update the data."
 
-    _print_failure_message(
-        e if raise_error else err_msg, prefix="", verbose=True, raise_error=raise_error)
+    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
 
 
 def print_void_collection_message(data_name, verbose):
