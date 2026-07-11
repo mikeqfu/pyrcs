@@ -7,11 +7,12 @@ import pytest
 from pyrcs.other_assets.viaduct import Viaducts
 
 
-class TestViaducts:
+@pytest.fixture(scope='class')
+def vdct():
+    return Viaducts()
 
-    @pytest.fixture(scope='class')
-    def vdct(self):
-        return Viaducts()
+
+class TestViaducts:
 
     def test_collect_codes_by_page(self, vdct):
         vdct_1_codes = vdct.collect_codes(page_no=1, confirmation_required=False, verbose=True)

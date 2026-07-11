@@ -39,9 +39,9 @@ def homepage_url():
 
 def is_homepage_connectable():
     """
-    Checks and returns whether the Railway Codes website is reacheable.
+    Checks and returns whether the Railway Codes website is reachable.
 
-    :return: Whether the Railway Codes website is reacheable.
+    :return: Whether the Railway Codes website is reachable.
     :rtype: bool
 
     **Examples**::
@@ -247,7 +247,7 @@ def get_batch_fetch_verbosity(data_dir, verbose):
 def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     # noinspection PyShadowingNames
     """
-    Returns a message for comfirming whether to proceed to collect a certain cluster of data.
+    Returns a message for confirming whether to proceed to collect a certain cluster of data.
 
     :param data_name: The name of the dataset to be collected, e.g. ``"Railway Codes"``.
     :type data_name: str
@@ -353,25 +353,36 @@ def print_connection_warning(verbose=False):
 
 def print_instance_connection_error(update=False, verbose=False, e=None, raise_error=False):
     """
-    Prints an error message when an instance fails to establish an Internet connection.
+    Handles connection errors during data retrieval or update processes.
 
-    :param update: Indicates whether the error occurred during a data update; defaults to ``False``.
+    This function processes connection failures by printing targeted feedback based on the
+    verbosity configuration, while offering options to suppress or propagate errors.
+
+    :param update: Indicates whether the error occurred during a data update. Defaults to ``False``.
     :type update: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
-    :param e: An optional exception message to display.
+    :param e: An optional exception instance to display or raise.
     :type e: Exception | None
     :param raise_error: Whether to raise the exception;
-        if ``raise_error=False`` (default), the error will be suppressed.
+        if ``False`` (default), the error is suppressed.
     :type raise_error: bool
+    :return: None if the exception is suppressed.
+    :rtype: None
+
+    :raises ConnectionError: If ``raise_error`` is ``True`` and no exception ``e`` is provided.
+    :raises Exception: Re-raises ``e`` if ``raise_error`` is ``True``.
 
     **Examples**::
 
         >>> from pyrcs.utils import print_instance_connection_error
+
         >>> print_instance_connection_error(verbose=True)
         The Internet connection is not available.
+
         >>> print_instance_connection_error(update=True, verbose=True)
         The Internet connection is not available. Failed to update the data.
+
         >>> print_instance_connection_error(update=True, verbose=2, raise_error=True)
         Failed. The Internet connection is not available. Failed to update the data.
         Traceback (most recent call last):
@@ -381,17 +392,22 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     """
 
     if not verbose:
-        return None  # No need to print anything if verbosity is off
+        return None  # Nothing to print when verbosity is disabled
 
     if verbose == 2:
         print("Failed.", end=" ")
 
-    err_msg = _format_exception_message(e) if e else "The Internet connection is not available."
+    # Use `e is not None` rather than a truthy check,
+    #   as some exception instances may not reliably evaluate to `True`
+    if e is not None:
+        err_msg = _format_exception_message(e)
+    else:
+        err_msg = "The Internet connection is not available."
 
     if update:
         err_msg += " Failed to update the data."
 
-    _print_failure_message(err_msg, prefix="", verbose=True, raise_error=raise_error)
+    _print_failure_message(err_msg, "", verbose=True, raise_error=raise_error)
 
 
 def print_void_collection_message(data_name, verbose):

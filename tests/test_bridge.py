@@ -7,11 +7,12 @@ import pytest
 from pyrcs.line_data import Bridges
 
 
-class TestBridges:
+@pytest.fixture(scope='class')
+def bdg():
+    return Bridges()
 
-    @pytest.fixture(scope='class')
-    def bdg(self):
-        return Bridges()
+
+class TestBridges:
 
     def test_collect_codes(self, bdg):
         bdg_codes = bdg.collect_codes(confirmation_required=False, verbose=True)

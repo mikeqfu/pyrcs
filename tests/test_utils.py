@@ -6,6 +6,9 @@ import unittest.mock
 
 import pandas as pd
 import pytest
+from pyhelpers.dirs import get_relative_path, normalize_path
+
+from pyrcs.utils import cd_data
 
 
 def test_home_page_url():
@@ -128,12 +131,9 @@ def test_print_void_collection_message(capfd):
 
 
 def test_cd_data():
-    from pyrcs.utils import cd_data
-    from pyhelpers.dirs import normalize_pathname
-    import os
-
     path_to_dat_dir = cd_data(data_dir="data")
-    assert normalize_pathname(os.path.relpath(path_to_dat_dir)) == normalize_pathname('pyrcs\\data')
+    rel_dat_dir_path = get_relative_path(path_to_dat_dir, as_str=True)
+    assert rel_dat_dir_path == normalize_path('pyrcs\\data')
 
 
 def test_fetch_location_names_errata():

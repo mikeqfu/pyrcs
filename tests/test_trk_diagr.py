@@ -7,11 +7,12 @@ import pytest
 from pyrcs.line_data import TrackDiagrams
 
 
-class TestTrackDiagrams:
+@pytest.fixture(scope='class')
+def td():
+    return TrackDiagrams()
 
-    @pytest.fixture(scope='class')
-    def td(self):
-        return TrackDiagrams()
+
+class TestTrackDiagrams:
 
     def test_collect_catalogue(self, td):
         track_diagrams_catalog = td.collect_catalogue(confirmation_required=False, verbose=True)

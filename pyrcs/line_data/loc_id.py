@@ -12,7 +12,7 @@ import bs4
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.dirs import resolve_dir
+from pyhelpers.dirs import resolve_dir_path
 from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
@@ -1451,7 +1451,7 @@ class LocationIdentifiers(_Base):
                     data=location_codes_dict,
                     data_name="-".join(keys) + (f"-{''.join(initials)}" if initials else ""),
                     ext=".json" if as_dict and len(keys) == 1 else ".pkl",
-                    dump_dir=resolve_dir(dump_dir) if dump_dir else self._cdd("xref-dicts"),
+                    dump_dir=resolve_dir_path(dump_dir) if dump_dir else self._cdd("xref-dicts"),
                     verbose=verbose)
 
             return location_codes_dict

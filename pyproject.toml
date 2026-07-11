@@ -44,7 +44,7 @@ keywords = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "pyhelpers >=2.4.0, <2.5.0",
+    "pyhelpers ~= 2.5.0",
     "beautifulsoup4"
 ]
 classifiers = [
