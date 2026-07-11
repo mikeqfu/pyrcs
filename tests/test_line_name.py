@@ -8,11 +8,12 @@ import pytest
 from pyrcs.line_data import LineNames
 
 
-class TestLineNames:
+@pytest.fixture(scope='class')
+def ln():
+    return LineNames()
 
-    @pytest.fixture(scope='class')
-    def ln(self):
-        return LineNames()
+
+class TestLineNames:
 
     @staticmethod
     def _assert_line_names_codes(ln, line_names_codes):

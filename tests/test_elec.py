@@ -8,11 +8,12 @@ import pytest
 from pyrcs.line_data import Electrification
 
 
-class TestElectrification:
+@pytest.fixture(scope='class')
+def elec():
+    return Electrification()
 
-    @pytest.fixture(scope='class')
-    def elec(self):
-        return Electrification()
+
+class TestElectrification:
 
     def test_collect_national_network_codes(self, elec):
         nn_codes = elec.collect_national_network_codes(confirmation_required=False, verbose=True)

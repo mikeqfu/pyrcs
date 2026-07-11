@@ -11,11 +11,12 @@ import pytest
 from pyrcs.other_assets.tunnel import Tunnels
 
 
-class TestTunnels:
+@pytest.fixture(scope='class')
+def tunl():
+    return Tunnels()
 
-    @pytest.fixture(scope='class')
-    def tunl(self):
-        return Tunnels()
+
+class TestTunnels:
 
     def test__parse_length(self, tunl):
         assert tunl._parse_length('') == (np.nan, 'Unavailable')
@@ -73,7 +74,6 @@ class TestTunnels:
                 'pyrcs.other_assets.tunnel.validate_page_name', return_value='Page 1'), \
                 unittest.mock.patch.object(
                     tunl, '_save_data_to_file', side_effect=side_effect_save) as mock_save_data:
-
             # Run the method
             result = tunl._collect_codes(page_no=1, source=mock_source)
 
