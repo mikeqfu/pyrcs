@@ -604,13 +604,17 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
     **Examples**::
 
         >>> from pyrcs.parser import get_last_updated_date
+
         >>> url = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+
         >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=False)
         >>> type(last_upd_date)
         str
+
         >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=True)
         >>> type(last_upd_date)
         datetime.date
+
         >>> url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
         >>> last_upd_date = get_last_updated_date(url=url, verbose=True)
         Information of the last update date not available.
@@ -1117,20 +1121,20 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
 
 
 def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
+    # noinspection PyShadowingNames
     """
-    Gets hyperlinked text from a specified HTML tag.
+    Extract text content from an HTML tag while preserving and formatting hyperlinks.
 
-    This function scrapes hypertext content, optionally returning it in Markdown format if
-    requested.
+    This function iterates through the child nodes of a BeautifulSoup tag element, converting
+    hyperlink tags into standardised Markdown format or plain-text web link references.
 
-    :param hypertext_tag: The tag containing hyperlinked text.
+    :param hypertext_tag: The tag containing text and hyperlinked element targets.
     :type hypertext_tag: bs4.element.Tag | bs4.element.PageElement
-    :param hyperlink_tag_name: The tag name of the hyperlink within the hypertext;
-        defaults to ``'a'``.
+    :param hyperlink_tag_name: The target tag name of the hyperlink. Defaults to ``'a'``.
     :type hyperlink_tag_name: str
-    :param md_style: Whether to return the hypertext in Markdown style, defaults to ``True``.
+    :param md_style: Whether to return the hyperlinks in Markdown style. Defaults to ``True``.
     :type md_style: bool
-    :return: The hypertext.
+    :return: The fully combined text string with formatted hyperlink references.
     :rtype: str
 
     **Examples**::
@@ -1139,31 +1143,50 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
         >>> from pyrcs.line_data import Electrification
         >>> import bs4
         >>> import requests
+
         >>> elec = Electrification()
+
+        >>> assert isinstance(elec.catalogue, dict)
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
+
         >>> source = requests.get(url)
         >>> soup = bs4.BeautifulSoup(source.content, 'html.parser')
         >>> h3 = soup.find('h3')
-        >>> p = h3.find_all_next('p')[8]
-        >>> p
-        <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-traml...
-        >>> hyper_txt = get_hypertext(hypertext_tag=p, md_style=True)
-        >>> hyper_txt
-        'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site](...
+
+        >>> assert isinstance(h3, bs4.Tag)
+        >>> hypertext_tag = h3.find_all_next('p')[9]
+        <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-tra...
+
+        >>> result_text = get_hypertext(hypertext_tag, md_style=True)
+        >>> result_text
+        'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site...
     """
 
-    hypertext_x = []
+    if not isinstance(hypertext_tag, bs4.element.Tag):
+        return hypertext_tag.get_text() if hasattr(hypertext_tag, 'get_text') else ""
 
-    for x in hypertext_tag.contents:
-        # noinspection PyUnresolvedReferences
-        if x.name == hyperlink_tag_name:
-            # noinspection PyUnresolvedReferences
-            href = x.get('href')
-            x_text = '[' + x.text + ']' + f'({href})' if md_style else x.text + f' ({href})'
-            hypertext_x.append(x_text)
-        else:
-            hypertext_x.append(x.text)
+    hypertext_parts = []
 
-    hypertext_tag = ''.join(hypertext_x).replace('\xa0', '').replace('  ', ' ')
+    # Handle text fragments vs elements gracefully without throwing attribute errors
+    for node in hypertext_tag.contents:
+        if isinstance(node, bs4.element.Tag) and node.name == hyperlink_tag_name:
+            href = node.get('href')
+            node_text = node.get_text()
 
-    return hypertext_tag
+            if href:
+                formatted_link = f"[{node_text}]({href})" if md_style else f"{node_text} ({href})"
+                hypertext_parts.append(formatted_link)
+            else:
+                hypertext_parts.append(node_text)
+
+        else:  # Use native soup text extraction methods to satisfy type checks completely
+            if hasattr(node, 'get_text'):
+                hypertext_parts.append(node.get_text())
+            elif isinstance(node, bs4.element.NavigableString):
+                hypertext_parts.append(node.string or '')
+            else:
+                hypertext_parts.append('')
+
+    result_text = "".join(hypertext_parts).replace("\xa0", "").replace("  ", " ")
+
+    return result_text
