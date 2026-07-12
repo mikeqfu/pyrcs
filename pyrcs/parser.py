@@ -266,6 +266,7 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
 
 def parse_date(str_date, as_date_type=False):
+    # noinspection PyShadowingNames
     """
     Parses a string representation of a date into a formatted date.
 
@@ -286,30 +287,41 @@ def parse_date(str_date, as_date_type=False):
     **Examples**::
 
         >>> from pyrcs.parser import parse_date
-        >>> str_date_dat = '2020-01-01'
-        >>> parse_date(str_date_dat)
+
+        >>> str_date = '2020-01-01'
+        >>> parse_date(str_date)
         '2020-01-01'
-        >>> str_date_dat = '2020-jan-01'
-        >>> parse_date(str_date_dat)
+
+        >>> str_date = '2020-jan-01'
+        >>> parse_date(str_date)
         '2020-01-01'
-        >>> parse_date(str_date_dat, as_date_type=True)
+
+        >>> parse_date(str_date, as_date_type=True)
         datetime.date(2020, 1, 1)
     """
 
     try:
-        temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
-        # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
+        parsed_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
+        # or, parsed_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
 
-    except (TypeError, calendar.IllegalMonthError):
-        month_name = find_similar_str(str_date, lookup_list=calendar.month_name)
-        err_month_ = find_similar_str(month_name, lookup_list=str_date.split(' '))
+    except (TypeError, ValueError, calendar.IllegalMonthError):
+        # noinspection PyBroadException
+        try:
+            month_name = find_similar_str(str_date, lookup_list=calendar.month_name)
+            if not month_name:
+                return None
 
-        temp_date = dateutil.parser.parse(
-            timestr=str_date.replace(err_month_, month_name), fuzzy=True)
+            err_month_ = find_similar_str(month_name, lookup_list=str_date.split(' '))
+            if not err_month_:
+                return None
 
-    parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
+            parsed_date = dateutil.parser.parse(
+                timestr=str_date.replace(err_month_, month_name), fuzzy=True)
 
-    return parsed_date
+        except Exception:
+            return None
+
+    return parsed_date.date() if as_date_type else parsed_date.date().isoformat()
 
 
 # == Extract information ===========================================================================
@@ -550,7 +562,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
 
     :param url: The URL of the web page for which the last update date is requested.
     :type url: str
-    :param parsed: Whether to reformat the date into a standardized format (``YYYY-MM-DD``);
+    :param parsed: Whether to reformat the date into a standardised format (``YYYY-MM-DD``);
         defaults to ``True``.
     :type parsed: bool
     :param as_date_type: If ``True``, the date is returned as a `datetime.date`_ object;
