@@ -425,17 +425,33 @@ def _get_site_map_sub_dl(h3_dl_dts):
 
 def _get_site_map(source, parser='html.parser'):
     """
-    Parses the site map from the given HTML source and returns a structured dictionary.
+    Parse the site map from the given HTML source and return a structured dictionary.
+
+    This internal utility extracts section categories, links, and sub-lists from the structure of
+    the primary railway codes site layout page.
+
+    :param source: HTTP response context containing the sitemap configuration file.
+    :type source: requests.Response
+    :param parser: Soup parsing feature engine to use. Defaults to ``'html.parser'``.
+    :type parser: str
+    :return: A structured map containing clean keys linked to absolute domain targets.
+    :rtype: dict
     """
 
     soup = bs4.BeautifulSoup(markup=source.content, features=parser)
     site_map = {}
 
-    h3s = soup.find_all('h3', attrs={"class": "site"})
+    h3s = soup.find_all('h3', attrs={'class': 'site'})
 
     for h3 in h3s:
-        h3_title = h3.get_text(strip=True)
-        h3_dl_dts = h3.find_next('dl').find_all('dt')  # h3 > dl > dt
+        h3_title = h3.get_text(strip=True)  # h3 > dl > dt
+        dl_element = h3.find_next('dl')
+        if not dl_element:
+            continue
+
+        h3_dl_dts = dl_element.find_all('dt')
+        if not h3_dl_dts:
+            continue
 
         if len(h3_dl_dts) == 1:
             dd_dict = {}  # h3 > dl > dt > dd
@@ -463,25 +479,31 @@ def _get_site_map(source, parser='html.parser'):
 def get_site_map(update=False, confirmation_required=True, verbose=False, raise_error=True):
     # noinspection PyShadowingNames
     """
-    Gets the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_.
+    Get the railway codes project `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
+    representation data.
 
-    :param update: Whether to check for updates to the package data; defaults to ``False``.
+    Retrieves database structure configuration values from a cached copy if available, or shifts to
+    live web extraction streams depending on user parameter profiles.
+
+    :param update: Whether to check for updates to the package data. Defaults to ``False``.
     :type update: bool
-    :param confirmation_required: Whether user confirmation is required before proceeding;
-        defaults to ``True``.
+    :param confirmation_required: Whether user confirmation is required before proceeding.
+        Defaults to ``True``.
     :type confirmation_required: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False``, the error will be suppressed; defaults to ``True``.
+        if ``raise_error=False``, the error will be suppressed. Defaults to ``True``.
     :type raise_error: bool
-    :return: A dictionary containing the data of site map.
+    :return: A dictionary containing the data of site map, or ``None`` if retrieval failed.
     :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_site_map
+
         >>> site_map = get_site_map()
+
         >>> type(site_map)
         dict
         >>> list(site_map.keys())
@@ -490,6 +512,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
          'Other assets',
          '"Legal/financial" lists',
          'Miscellaneous']
+
         >>> site_map['Home']
         {'index': 'http://www.railwaycodes.org.uk/index.shtml'}
     """
@@ -500,39 +523,38 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
         return load_data(path_to_file)
 
     else:
-        if confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
+        if not confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
             if verbose in {True, 1}:
-                print("Updating the package data", end=" ... ")
+                print("Cancelled.")
+            return None
 
-            try:
-                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
-                source = requests.get(url=url, headers=fake_requests_headers())
-                source.raise_for_status()
-            except Exception as e:
-                handle_connection_error(
-                    update=update, verbose=True if update else verbose, e=e,
-                    raise_error=raise_error)
-                return None
+        if verbose in {True, 1}:
+            print("Updating the package data", end=" ... ")
 
-            try:
-                site_map = _get_site_map(source=source)
+        try:
+            url = urllib.parse.urljoin(homepage_url(), "/misc/sitemap.shtm")
+            source = requests.get(url=url, headers=fake_requests_headers())
+            source.raise_for_status()
+        except Exception as e:
+            handle_connection_error(
+                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+            return None
 
-                if verbose in {True, 1}:
-                    print("Done.")
+        try:
+            site_map = _get_site_map(source=source)
 
-                if site_map:
-                    save_data(site_map, path_to_file, indent=4, verbose=(verbose == 2 or False))
-
-                return site_map
-
-            except Exception as e:
-                _print_failure_message(
-                    e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
-
-        else:
             if verbose in {True, 1}:
-                print("Cancelled. ")
-            # site_map = load_data(path_to_file)
+                print("Done.")
+
+            if site_map:
+                save_data(site_map, path_to_file, indent=4, verbose=(verbose == 2 or False))
+
+            return site_map
+
+        except Exception as e:
+            _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
+
+        return None
 
 
 def _get_last_updated_date(soup, parsed=True, as_date_type=False):
