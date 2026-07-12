@@ -662,20 +662,51 @@ def get_financial_year(date):
 
 
 def _parse_introduction(source, delimiter='\n'):
+    """
+    Parse the introduction section paragraphs from the provided HTML source content.
+
+    This internal helper extracts sequential paragraphs following the introductory header element
+    until a new header breakdown boundary is encountered.
+
+    :param source: HTTP response context containing the target webpage text.
+    :type source: requests.Response
+    :param delimiter: The structural character separator used to join paragraphs.
+        Defaults to ``'\\n'``.
+    :type delimiter: str
+    :return: A single text string combining all sequential introductory paragraphs.
+    :rtype: str
+    """
+
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-    intro_h3 = [h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
+    # Seek the target introduction header element
+    h3_elements = soup.find_all('h3')
+    intro_h3 = None
+    for h3 in h3_elements:
+        if h3.get_text(strip=True).startswith('Intro'):
+            intro_h3 = h3
+            break
+
+    if not intro_h3:
+        return ''
 
     p = intro_h3.find_next(name='p')
-    prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
-
     intro_paras = []
-    while prev_h3 == intro_h3 and prev_h4 is None:
+
+    # Cycle through siblings while validating paragraph layout boundaries
+    while p is not None:
+        prev_h3 = p.find_previous(name='h3')
+        prev_h4 = p.find_previous(name='h4')
+
+        # Terminate traversal if we drift outside the introductory header segment context
+        if prev_h3 != intro_h3 or prev_h4 is not None:
+            break
+
         para_text = p.text.replace('  ', ' ')
-        intro_paras.append(para_text)
+        if para_text.strip():
+            intro_paras.append(para_text)
 
         p = p.find_next(name='p')
-        prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
     introduction = delimiter.join(intro_paras)
 
@@ -707,7 +738,9 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
     **Examples**::
 
         >>> from pyrcs.parser import get_introduction
+
         >>> bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
+
         >>> intro_text = get_introduction(url=bridges_url)
         >>> intro_text
         "There are thousands of bridges over and under the railway system. These pages attempt to...
@@ -767,6 +800,7 @@ def _parse_catalogue(source, url):
 
 
 def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=False):
+    # noinspection PyShadowingNames
     """
     Gets the catalogue of items from the main page of a data cluster.
 
@@ -791,9 +825,10 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
     **Examples**::
 
         >>> from pyrcs.parser import get_catalogue
-        >>> elr_cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
-        >>> type(elr_cat)
-        dict
+
+        >>> url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
+        >>> elr_cat: dict = get_catalogue(url)
+
         >>> list(elr_cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
         >>> list(elr_cat.keys())[-5:]
@@ -802,9 +837,10 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
          'LUL system',
          'DLR system',
          'Canals']
-        >>> location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
-        >>> type(location_code_cat)
-        dict
+
+        >>> url = 'http://www.railwaycodes.org.uk/crs/crs0.shtm'
+        >>> location_code_cat: dict = get_catalogue(url)
+
         >>> list(location_code_cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
         >>> list(location_code_cat.keys())[-5:]
