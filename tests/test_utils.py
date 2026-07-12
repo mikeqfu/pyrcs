@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from pyhelpers.dirs import get_relative_path, normalize_path
 
-from pyrcs.utils import cd_data
+from pyrcs.utils import cd_data, handle_connection_error
 
 
 def test_home_page_url():
@@ -101,26 +101,41 @@ def test_print_collection_message(capfd, initial, confirmation_required):
         assert out.startswith(f'Collecting the data of {data_name} ... ')
 
 
-def test_print_instance_connection_error(capfd):
-    from pyrcs.utils import print_instance_connection_error
+def test_handle_connection_error(capfd):
+    """
+    Test connection error handling, terminal messaging, and escalation flows.
+    """
 
-    assert print_instance_connection_error(verbose=False) is None
-
+    # Base message used for standard assertions
     msg = "The Internet connection is not available."
 
-    print_instance_connection_error(verbose=2)
+    # 1. Test silent suppression when verbose is False
+    handle_connection_error(verbose=False)
     out, _ = capfd.readouterr()
-    assert out == f'Failed. {msg}\n'
+    assert out == ""
 
-    print_instance_connection_error(update=True, verbose=True)
+    # 2. Test detailed level-2 verbosity prefixing
+    handle_connection_error(verbose=2)
     out, _ = capfd.readouterr()
-    assert out == f'{msg} Failed to update the data.\n'
+    assert out == f"Failed. {msg}\n"
 
-    with pytest.raises(Exception, match=msg):
-        print_instance_connection_error(verbose=True, raise_error=True)
-        out, _ = capfd.readouterr()
-        assert out == f'{msg}\n'
+    # 3. Test update context suffix addition
+    handle_connection_error(update=True, verbose=True)
+    out, _ = capfd.readouterr()
+    assert out == f"{msg} Failed to update the data.\n"
 
+    # 4. Test error escalation when raise_error is True (e=None raises ConnectionError)
+    with pytest.raises(ConnectionError, match=msg):
+        handle_connection_error(verbose=True, raise_error=True)
+
+    # Read output *after* the context manager exits to verify print statements executed before the crash
+    out, _ = capfd.readouterr()
+    assert out == f"{msg}\n"
+
+    # 5. Test passing an explicit custom exception instance
+    custom_error = ValueError("Custom failure.")
+    with pytest.raises(ValueError, match="Custom failure."):
+        handle_connection_error(e=custom_error, raise_error=True)
 
 def test_print_void_collection_message(capfd):
     from pyrcs.utils import print_void_collection_message
