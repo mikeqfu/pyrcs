@@ -877,34 +877,33 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
 def get_category_menu(name, update=False, confirmation_required=True, verbose=False,
                       raise_error=False):
     """
-    Gets a menu of the available classes from the specified URL.
+    Get a menu of the available data classes from the specified site home URL.
 
-    This function scrapes a web page for available classes (typically categorised hyperlinks) and
-    returns them as a dictionary. It also provides options to update the catalogue and
-    save it as a JSON file.
+    This function scrapes the home web page for available dropdown classes (typically categorised
+    hyperlinks) and returns them as a dictionary. It provides configurations to update the local
+    catalogue file copy.
 
-    :param name: The name of the data category.
+    :param name: The name of the target data category.
     :type name: str
-    :param update: Whether to check for updates to the package data; defaults to ``True``.
+    :param update: Whether to check for updates to the package data. Defaults to ``False``.
     :type update: bool
-    :param confirmation_required: Whether user confirmation is required before proceeding;
-        defaults to ``True``.
+    :param confirmation_required: Whether user confirmation is required before proceeding.
+        Defaults to ``True``.
     :type confirmation_required: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False`` (default), the error will be suppressed.
+        if ``raise_error=False`` (default), the error is suppressed.
     :type raise_error: bool
-    :return: A category menu in dictionary form,
-        where keys are data cluster names and values are URLs.
+    :return: A category menu in dictionary form, or ``None`` if retrieval failed.
     :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_category_menu
-        >>> menu = get_category_menu(name='Line data')
-        >>> type(menu)
-        dict
+
+        >>> menu: dict = get_category_menu(name='Line data')
+
         >>> list(menu.keys())
         ['Line data']
         >>> len(menu['Line data'])
@@ -916,43 +915,62 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
     if os.path.isfile(path_to_file) and not update:
         return load_data(path_to_file)
 
-    if confirmed("To collect/update category menu?", confirmation_required=confirmation_required):
-        try:
-            source = requests.get(url=homepage_url(), headers=fake_requests_headers())
-            source.raise_for_status()
-        except Exception as e:
-            handle_connection_error(
-                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
-            return None
-
-        try:
-            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-            drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
-            drop_btn = drop_btn_[0]
-
-            a_href_list = drop_btn.find_next_sibling('div').find_all('a')
-
-            cls_menu_ = [
-                (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
-                for a in a_href_list]
-
-            cls_menu = {name: dict(cls_menu_)}
-
-            save_data(cls_menu, path_to_file, indent=4, verbose=(verbose == 2 or False))
-
-            return cls_menu
-
-        except Exception as e:
-            _print_failure_message(
-                e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
-
-    else:
+    if not confirmed("To collect/update category menu?\n", confirmation_required):
         if verbose in {True, 1}:
             print("Cancelled.")
+        return None
+
+    if verbose:
+        print(f"Collecting category menu for \"{name.title()}\"", end=" ... ")
+
+    try:
+        source = requests.get(url=homepage_url(), headers=fake_requests_headers())
+        source.raise_for_status()
+    except Exception as e:
+        handle_connection_error(
+            update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+        return None
+
+    try:
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        # Find the designated category button
+        drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
+        if not drop_btn_:
+            return None
+
+        drop_btn = drop_btn_[0]
+
+        # Extract targeted sub-links from sibling container
+        sibling_div = drop_btn.find_next_sibling('div')
+        if not sibling_div:
+            return None
+
+        a_href_list = sibling_div.find_all('a')
+
+        cls_menu_ = [
+            (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
+            for a in a_href_list if 'href' in a.attrs
+        ]
+
+        # Process and write file strictly when data elements exist
+        if cls_menu_:
+            cls_menu = {name: dict(cls_menu_)}
+
+            if verbose:
+                print("Done.")
+
+            save_data(cls_menu, path_to_file, indent=4, verbose=(verbose == 2 or False))
+            return cls_menu
+
+    except Exception as e:
+        _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
+
+    return None
 
 
 def get_heading_text(heading_tag, elem_tag_name='em'):
+    # noinspection PyShadowingNames,PyUnresolvedReferences
     """
     Gets the text from a given HTML heading tag.
 
@@ -967,12 +985,16 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 
         >>> from pyrcs.parser import get_heading_text
         >>> from pyrcs.line_data import Electrification
+
         >>> elec = Electrification()
+
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
-        >>> source = requests.get(url=url, headers=fake_requests_headers())
+        >>> source = requests.get(url, headers=fake_requests_headers())
+
         >>> soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-        >>> h3 = soup.find('h3')
-        >>> h3_text = get_heading_text(heading_tag=h3, elem_tag_name='em')
+        >>> heading_tag = soup.find('h3')
+
+        >>> h3_text = get_heading_text(heading_tag, elem_tag_name='em')
         >>> h3_text
         'Beamish Tramway'
     """
