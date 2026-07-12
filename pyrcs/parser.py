@@ -18,7 +18,7 @@ from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, homepage_url, print_instance_connection_error
+from .utils import cd_data, handle_connection_error, homepage_url
 
 
 # == Preprocess contents ===========================================================================
@@ -497,7 +497,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
                 source = requests.get(url=url, headers=fake_requests_headers())
                 source.raise_for_status()
             except Exception as e:
-                print_instance_connection_error(
+                handle_connection_error(
                     update=update, verbose=True if update else verbose, e=e,
                     raise_error=raise_error)
                 return None
@@ -689,7 +689,7 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
     except Exception as e:
-        print_instance_connection_error(
+        handle_connection_error(
             update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
         return None
 
@@ -851,7 +851,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
             source = requests.get(url=homepage_url(), headers=fake_requests_headers())
             source.raise_for_status()
         except Exception as e:
-            print_instance_connection_error(
+            handle_connection_error(
                 update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
             return None
 
@@ -976,7 +976,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
         source = requests.get(url=url, headers=fake_requests_headers())
         source.raise_for_status()
     except Exception as e:
-        print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
+        handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
         return None
 
     try:

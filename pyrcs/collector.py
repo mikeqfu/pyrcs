@@ -17,7 +17,7 @@ from .line_data import Bridges, ELRMileages, Electrification, LOR, LineNames, Lo
 from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stations, Telegraph, \
     Tunnels, Viaducts, WaterTroughs
 from .parser import get_category_menu
-from .utils import is_homepage_connectable, print_connection_warning, print_instance_connection_error
+from .utils import handle_connection_error, is_homepage_connectable, print_connection_warning
 
 
 class _Base:
@@ -150,7 +150,7 @@ class LineData(_Base):
         """
 
         if not self.connected:
-            print_instance_connection_error(verbose=verbose)
+            handle_connection_error(verbose=verbose)
 
         else:
             if confirmed("To update line data\n?", confirmation_required=confirmation_required):
@@ -320,7 +320,7 @@ class OtherAssets(_Base):
         """
 
         if not self.connected:
-            print_instance_connection_error(verbose=verbose)
+            handle_connection_error(verbose=verbose)
 
         else:
             if confirmed("To update data of other assets\n?", confirmation_required):

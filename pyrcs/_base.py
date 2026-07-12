@@ -17,8 +17,8 @@ from pyhelpers.store import load_data, save_data
 
 from .parser import get_catalogue, get_introduction, get_last_updated_date
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
-    homepage_url, print_collection_message, print_connection_warning, \
-    print_instance_connection_error, print_void_collection_message
+    handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
+    print_void_collection_message
 
 
 class _Base:
@@ -363,7 +363,7 @@ class _Base:
             return data
 
         except requests.RequestException as e:  # Handle network/HTTP errors
-            print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
+            handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
             return fallback_data
 
         except Exception as e:  # Handle parsing/method errors

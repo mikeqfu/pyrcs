@@ -23,8 +23,8 @@ from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
-    is_str_float, print_instance_connection_error, print_void_collection_message, validate_initial
+from ..utils import get_collect_verbosity_for_fetch, handle_connection_error, homepage_url, \
+    is_homepage_connectable, is_str_float, print_void_collection_message, validate_initial
 
 
 def _parse_non_float_str_mileage(mileage):
@@ -454,7 +454,7 @@ class ELRMileages(_Base):
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_instance_connection_error(verbose=verbose)
+                    handle_connection_error(verbose=verbose)
                     print_void_collection_message(data_name=self.KEY, verbose=verbose)
                 dat_list = [
                     self.fetch_elr(initial=x, update=False, verbose=verbose_1)
@@ -968,7 +968,7 @@ class ELRMileages(_Base):
                     source = requests.get(url=url, headers=fake_requests_headers())
                     source.raise_for_status()
                 except Exception as e:
-                    print_instance_connection_error(verbose=verbose, e=e)
+                    handle_connection_error(verbose=verbose, e=e)
                     return None
 
                 try:
