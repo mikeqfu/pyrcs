@@ -148,29 +148,60 @@ class LOR(_Base):
         return url
 
     def _parse_keys_to_prefixes(self, source, verbose=False):
+        """
+        Parse and collect PRIDE/LOR code prefixes from the web page source.
+
+        This method extracts spans representing regional prefix identifiers and aligns them
+        with their corresponding territorial names before saving.
+
+        :param source: The network response payload containing target document source content.
+        :type source: requests.Response
+        :param verbose: Whether to print functional status to the console window.
+            Defaults to ``False``.
+        :type verbose: bool | int
+        :return: A structured map containing the data frame of prefixes and update metadata.
+        :rtype: dict
+        """
+
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
         span_tags = soup.find_all(name='span', attrs={'class': 'tab2'})
 
-        data = [
-            (x.get_text(strip=True), str(x.next_sibling).strip().replace('=  ', ''))
-            for x in span_tags]
+        data = []
+        for x in span_tags:
+            prefix = x.get_text(strip=True)
 
-        lor_pref = pd.DataFrame(data=data, columns=['Prefixes', 'Name'])
+            sibling = x.next_sibling
+            if hasattr(sibling, 'get_text'):
+                name = sibling.get_text(strip=True)
+            elif isinstance(sibling, bs4.element.NavigableString):
+                name = sibling.string.strip() or ''
+            else:
+                name = ''
+
+            data.append((prefix, re.sub(r'(\s+)?=\s+', ' ', name)))
+
+        lor_pref = pd.DataFrame(data=data, columns=['prefixes', 'name'])
 
         keys_to_prefixes = {
-            self.KEY_P: lor_pref, self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date}
+            self.KEY_P: lor_pref,
+            self.KEY_TO_LAST_UPDATED_DATE: self.last_updated_date,
+        }
 
         if verbose in {True, 1}:
             print("Done.")
 
-        self._save_data_to_file(
-            data=keys_to_prefixes, data_name="keys-to-prefixes", verbose=verbose)
+        if not lor_pref.empty:
+            self._save_data_to_file(
+                data=keys_to_prefixes,
+                data_name="keys-to-prefixes",
+                verbose=verbose
+            )
 
         return keys_to_prefixes
 
     def collect_keys_to_prefixes(self, confirmation_required=True, verbose=False,
                                  raise_error=False):
-        # noinspection PyShadowingNames
+        # noinspection PyShadowingNames,PyUnresolvedReferences
         """
         Collects the keys to PRIDE/LOR code prefixes from the source web page.
 
@@ -190,35 +221,56 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
-            >>> lor_page_urls = lor.collect_keys_to_prefixes()
+
+            >>> keys_to_prefixes = lor.collect_keys_to_prefixes()
             To collect data of URLs to LOR codes web pages
             ? [No]|Yes: yes
             Collecting the data ... Done.
-            >>> lor_page_urls[0]
-            'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
+
+            >>> assert isinstance(keys_to_prefixes, dict)
+            >>> list(keys_to_prefixes.keys())
+            ['Key to prefixes', 'Last updated date']
+
+            >>> keys_to_prefixes_data = keys_to_prefixes['Key to prefixes']
+            >>> keys_to_prefixes_data.head()
+              prefixes                                    name
+            0       CY                                   Wales
+            1       EA         South Eastern: East Anglia area
+            2       EX                         generic/example
+            3       GW  Great Western (later known as Western)
+            4       LN                  London & North Eastern
         """
 
         keys_to_prefixes = self._collect_data_from_source(
-            data_name='keys to LOR prefixes', method=self._parse_keys_to_prefixes, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name='keys to LOR prefixes',
+            method=self._parse_keys_to_prefixes,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return keys_to_prefixes
 
     def get_keys_to_prefixes(self, prefixes_only=True, update=False, dump_dir=None, verbose=False,
                              **kwargs):
+        # noinspection PyUnresolvedReferences,PyShadowingNames
         """
-        Gets the keys to PRIDE/LOR code prefixes.
+        Extract the keys to PRIDE/LOR code prefixes.
 
-        :param prefixes_only: If ``True`` (default), returns only the prefixes;
-            otherwise, additional information, including the last updated date.
+        This method retrieves regional prefix information from a local cache or a live platform
+        endpoint, with an option to filter and return only the prefix strings.
+
+        :param prefixes_only: Whether to return only the list of prefixes. Defaults to ``True``.
         :type prefixes_only: bool
-        :param update: Whether to check for updates to the package data; defaults to ``False``.
+        :param update: Whether to check for updates to the package data. Defaults to ``False``.
         :type update: bool
-        :param dump_dir: The path to a directory where the data file will be saved;
-            defaults to ``None``.
+        :param dump_dir: The path to a directory where the data file will be saved.
+            Defaults to ``None``.
         :type dump_dir: str | None
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
         :type verbose: bool | int
         :return: A list of the keys to LOR code prefixes if ``prefixes_only=True``,
             otherwise a dictionary containing code prefixes and the last updated date,
@@ -228,34 +280,53 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
-            >>> keys_to_pfx = lor.get_keys_to_prefixes()
-            >>> keys_to_pfx
+
+            >>> keys_to_prefixes = lor.get_keys_to_prefixes()
+            >>> keys_to_prefixes
             ['CY', 'EA', 'GW', 'LN', 'MD', 'NW', 'NZ', 'SC', 'SO', 'SW', 'XR']
-            >>> keys_to_pfx = lor.get_keys_to_prefixes(prefixes_only=False)
-            >>> type(keys_to_pfx)
-            dict
-            >>> list(keys_to_pfx.keys())
+
+            >>> keys_to_prefixes = lor.get_keys_to_prefixes(prefixes_only=False)
+            >>> list(keys_to_prefixes.keys())
             ['Key to prefixes', 'Last updated date']
-            >>> keys_to_pfx_codes = keys_to_pfx['Key to prefixes']
-            >>> type(keys_to_pfx_codes)
-            pandas.core.frame.DataFrame
-            >>> keys_to_pfx_codes.head()
-              Prefixes                                    Name
-            0       CY                                   Wales
-            1       EA         South Eastern: East Anglia area
-            2       GW  Great Western (later known as Western)
-            3       LN                  London & North Eastern
-            4       MD       North West: former Midlands lines
+
+            >>> keys_to_prefixes_data = keys_to_prefixes['Key to prefixes']
+            >>> type(keys_to_prefixes_data)
+            pandas.DataFrame
+
+            >>> keys_to_prefixes_data.head()
+              prefixes                                     name
+            0       CY                                    Wales
+            1       EA          South Eastern: East Anglia area
+            2       EX                          generic/example
+            3       GW   Great Western (later known as Western)
+            4       LN                   London & North Eastern
         """
 
-        kwargs.update({'data_name': "keys-to-prefixes", 'method': self.collect_keys_to_prefixes})
+        default_args = {
+            'data_name': "keys-to-prefixes",
+            'method': self.collect_keys_to_prefixes,
+        }
+        merged_kwargs = default_args | kwargs
 
         keys_to_prefixes = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update,
+            dump_dir=dump_dir,
+            verbose=verbose,
+            **merged_kwargs
+        )
+
+        if not keys_to_prefixes:
+            return None
 
         if prefixes_only:
-            keys_to_prefixes = keys_to_prefixes[self.KEY_P]['Prefixes'].to_list()
+            prefix_target: pd.DataFrame = keys_to_prefixes.get(self.KEY_P)
+
+            if prefix_target is not None and 'prefixes' in prefix_target.columns:
+                keys_to_prefixes = prefix_target['prefixes'].to_list()
+            else:
+                keys_to_prefixes = []
 
             if update and len(keys_to_prefixes) > 0:
                 self.valid_prefixes = keys_to_prefixes
@@ -301,18 +372,27 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
+
             >>> lor_page_urls = lor.collect_page_urls()
             To collect data of URLs to LOR codes web pages
             ? [No]|Yes: yes
             Collecting the data ... Done.
+
+            >>> assert isinstance(lor_page_urls, list)
             >>> lor_page_urls[0]
             'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
         """
 
         lor_page_urls = self._collect_data_from_source(
-            data_name='URLs to LOR codes web pages', method=self._parse_page_urls, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name='URLs to LOR codes web pages',
+            method=self._parse_page_urls,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return lor_page_urls
 
@@ -334,10 +414,12 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
+
             >>> lor_urls = lor.get_page_urls()
-            >>> type(lor_urls)
-            list
+
+            >>> assert isinstance(lor_urls, list)
             >>> lor_urls[0]
             'http://www.railwaycodes.org.uk/pride/pridecy.shtm'
         """
@@ -446,8 +528,9 @@ class LOR(_Base):
         return lor_codes_by_initials
 
     def collect_codes(self, prefix, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection PyUnresolvedReferences
         """
-        Collects data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
+        Collect data of `PRIDE/LOR codes <http://www.railwaycodes.org.uk/pride/pride0.shtm>`_
         for the given prefix.
 
         :param prefix: The prefix of LOR codes to collect.
@@ -468,50 +551,71 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
-            >>> lor_codes_cy = lor.collect_codes(prefix='CY')
-            >>> type(lor_codes_cy)
-            dict
+
+            >>> lor_codes_cy = lor.collect_codes(prefix='CY', verbose=True)
+            Proceed with collecting data of "LOR (CY)"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
+            >>> assert isinstance(lor_codes_cy, dict)
             >>> list(lor_codes_cy.keys())
             ['CY', 'Notes', 'Last updated date']
+
             >>> cy_codes = lor_codes_cy['CY']
             >>> type(cy_codes)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> cy_codes.head()
                  Code  ...                       RA Note
             0   CY240  ...           Caerwent branch RA4
             1  CY1540  ...  Pembroke - Pembroke Dock RA6
             [2 rows x 5 columns]
-            >>> lor_codes_nw = lor.collect_codes(prefix='NW')
-            >>> type(lor_codes_nw)
-            dict
+
+            >>> lor_codes_nw = lor.collect_codes(prefix='NW', verbose=True)
+            Proceed with collecting data of "LOR (NW)"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
+            >>> assert isinstance(lor_codes_nw, dict)
             >>> list(lor_codes_nw.keys())
-            ['NW/NZ', 'Notes', 'Last updated date']
-            >>> nw_codes = lor_codes_nw['NW/NZ']
+            ['NW', 'Notes', 'Last updated date']
+
+            >>> nw_codes = lor_codes_nw['NW']
+            >>> type(nw_codes)
+            pandas.DataFrame
             >>> nw_codes.head()
                  Code  ... RA Note
-            0  NW1001  ...
-            1  NW1002  ...
-            2  NW1003  ...
-            3  NW1004  ...
-            4  NW1005  ...
+            0  NW0001  ...
+            1  NW1001  ...
+            2  NW1002  ...
+            3  NW1003  ...
+            4  NW1004  ...
             [5 rows x 5 columns]
+
             >>> lor_codes_xr = lor.collect_codes(prefix='XR')
+            Proceed with collecting data of "LOR (XR)"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(lor_codes_xr)
             dict
             >>> list(lor_codes_xr.keys())
             ['XR', 'Last updated date']
+
             >>> xr_codes = lor_codes_xr['XR']
             >>> type(xr_codes)
             dict
             >>> list(xr_codes.keys())
             ['Current codes', 'Current codes note', 'Past codes', 'Past codes note']
-            >>> xr_codes['Past codes'].head()
+
+            >>> xr_codes['Past codes']
                 Code  ... RA Note
             0  XR001  ...
             1  XR002  ...
             [2 rows x 5 columns]
-            >>> xr_codes['Current codes'].head()
+
+            >>> xr_codes['Current codes']
                 Code  ...                     RA Note
             0  XR001  ...  Originally reported as RA4
             1  XR002  ...  Originally reported as RA4
@@ -523,8 +627,15 @@ class LOR(_Base):
         url = self.get_url(prefix=prefix_)
 
         lor_codes = self._collect_data_from_source(
-            data_name=self.KEY, method=self._parse_codes, url=url, initial=prefix_, prefix=prefix_,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.KEY,
+            method=self._parse_codes,
+            url=url,
+            initial=prefix_,
+            prefix=prefix_,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return lor_codes
 
@@ -698,6 +809,7 @@ class LOR(_Base):
 
     def collect_elr_lor_converter(self, confirmation_required=True, verbose=False,
                                   raise_error=False):
+        # noinspection PyUnresolvedReferences
         """
         Collects data of
         `ELR/LOR converter <http://www.railwaycodes.org.uk/pride/elrmapping.shtm>`_
@@ -719,17 +831,21 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
+
             >>> elr_lor_conv = lor.collect_elr_lor_converter()
             To collect data of ELR/LOR converter
             ? [No]|Yes: yes
+
             >>> type(elr_lor_conv)
             dict
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
+
             >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
             >>> type(elr_loc_conv_data)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> elr_loc_conv_data.head()
                 ELR  ...                                            LOR_URL
             0   AAV  ...  http://www.railwaycodes.org.uk/pride/pridesw.s...
@@ -741,8 +857,12 @@ class LOR(_Base):
         """
 
         elr_lor_converter = self._collect_data_from_source(
-            data_name=self.KEY_ELC, method=self._collect_elr_lor_converter,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.KEY_ELC,
+            method=self._collect_elr_lor_converter,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return elr_lor_converter
 
@@ -765,12 +885,15 @@ class LOR(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LOR  # from pyrcs import LOR
+
             >>> lor = LOR()
+
             >>> elr_lor_conv = lor.fetch_elr_lor_converter()
             >>> type(elr_lor_conv)
             dict
             >>> list(elr_lor_conv.keys())
             ['ELR/LOR converter', 'Last updated date']
+
             >>> elr_loc_conv_data = elr_lor_conv['ELR/LOR converter']
             >>> type(elr_loc_conv_data)
             pandas.core.frame.DataFrame
