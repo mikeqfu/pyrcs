@@ -1015,36 +1015,38 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 
 def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', feature_tag_name='h3',
                        verbose=False, raise_error=False):
+    # noinspection PyUnresolvedReferences
     """
-    Gets the catalogue of features from the main page of a data cluster.
+    Get the catalogue of features from the main page of a data cluster.
 
     This function extracts structured data (features) from a web page by parsing specific tags,
     typically used for features like headings and links in railway-related databases.
 
     :param url: The URL of the main page of a data cluster.
     :type url: str
-    :param head_tag_name: The tag name of the feature list at the top of the page;
-        defaults to ``'nav'``.
+    :param head_tag_name: The tag name of the feature list at the top. Defaults to ``'nav'``.
     :type head_tag_name: str
-    :param head_tag_txt: Text contained in the head tag; defaults to ``'Jump to: '``.
+    :param head_tag_txt: Text contained in the head tag. Defaults to ``'Jump to:'``.
     :type head_tag_txt: str
-    :param feature_tag_name: The tag name of the headings of each feature; defaults to ``'h3'``.
+    :param feature_tag_name: The tag name of the feature headings. Defaults to ``'h3'``.
     :type feature_tag_name: str
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False`` (default), the error will be suppressed.
+        if ``raise_error=False``, the error will be suppressed. Defaults to ``False``.
     :type raise_error: bool
-    :return: A dataframe containing the page's feature catalogue with columns for feature, URL and
-        heading.
-    :rtype: pandas.DataFrame
+    :return: A dataframe containing the feature catalogue, or ``None`` if parsing fails.
+    :rtype: pandas.DataFrame | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_page_catalogue
         >>> from pyhelpers.settings import pd_preferences
+
         >>> pd_preferences(max_columns=1)
+
         >>> elec_url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
+
         >>> elec_catalogue = get_page_catalogue(elec_url)
         >>> elec_catalogue
                                                       Feature  ...
@@ -1060,8 +1062,9 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
         20  Summerlee, Museum of Scottish Industrial Life ...  ...
         21                                  Tyne & Wear Metro  ...
         [22 rows x 3 columns]
+
         >>> elec_catalogue.columns.to_list()
-        ['Feature', 'URL', 'Heading']
+        ['feature', 'url', 'heading']
     """
 
     try:
@@ -1073,37 +1076,44 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
 
     try:
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        feature_records = []
 
-        page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
-
-        for nav in soup.find_all(head_tag_name):
-            nav_text = nav.text.replace('\r\n', '').strip()
-
-            if re.match(r'^({})'.format(head_tag_txt), nav_text):
-                sep = '\xa0| ' if '\xa0| ' in nav_text else '\n'
-                feature_names = nav_text.replace(f'{head_tag_txt}{sep}', '').split(sep)
-                page_catalogue['Feature'] = feature_names
-
-                feature_urls = []
-                for item_name in feature_names:
-                    text_pat = re.compile(r'.*{}.*'.format(item_name), re.IGNORECASE)
-                    a = nav.find('a', string=text_pat)
-
-                    feature_urls.append(urllib.parse.urljoin(url, a.get('href')))
-
-                page_catalogue['URL'] = feature_urls
-
+        # Parse categorical headings up front
         feature_headings = []
         for h3 in soup.find_all(feature_tag_name):
             sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
             feature_headings.append(sub_heading)
 
-        page_catalogue['Heading'] = feature_headings
+        for nav in soup.find_all(head_tag_name):
+            nav_text = nav.text.replace('\r\n', '').strip()
 
-        return page_catalogue
+            if re.match(r'^({})'.format(re.escape(head_tag_txt)), nav_text):
+                sep = '\xa0| ' if '\xa0| ' in nav_text else '\n'
+                feature_names = nav_text.replace(f'{head_tag_txt}{sep}', '').split(sep)
+
+                for idx, item_name in enumerate(feature_names):
+                    text_pat = re.compile(r'.*{}.*'.format(re.escape(item_name)), re.IGNORECASE)
+                    a = nav.find('a', string=text_pat)
+
+                    # Safe fallbacks if tag matches are missing
+                    feature_url = urllib.parse.urljoin(url, a.get('href')) if a else None
+                    heading_val = feature_headings[idx] if idx < len(feature_headings) else None
+
+                    feature_records.append({
+                        'feature': item_name,
+                        'url': feature_url,
+                        'heading': heading_val
+                    })
+
+        if not feature_records:
+            return pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
+
+        return pd.DataFrame(feature_records)
 
     except Exception as e:
         _print_failure_message(e, verbose=verbose, raise_error=raise_error)
+
+    return None
 
 
 def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
