@@ -244,16 +244,19 @@ def get_batch_fetch_verbosity(data_dir, verbose):
 # == Print messages ================================================================================
 
 
-def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
+def format_confirmation_prompt(data_name, initial=None, ending="?\n"):
     # noinspection PyShadowingNames
     """
-    Returns a message for confirming whether to proceed to collect a certain cluster of data.
+    Format a message confirming whether to proceed with collecting a dataset.
+
+    This function pieces together user-facing terminal prompts, customizing output layouts
+    depending on alphabetical index constraints.
 
     :param data_name: The name of the dataset to be collected, e.g. ``"Railway Codes"``.
     :type data_name: str
-    :param initial: The initial letter for the code; defaults to ``None``.
+    :param initial: The initial letter for the code. Defaults to ``None``.
     :type initial: str | None
-    :param ending: The ending of the confirmation message; defaults to ``"\\n?"``.
+    :param ending: The ending of the confirmation message. Defaults to ``"?\\n"``.
     :type ending: str
     :return: A confirmation message asking whether to proceed with the dataset collection.
     :rtype: str
@@ -261,24 +264,28 @@ def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     **Examples**::
 
         >>> from pyrcs.utils import format_confirmation_prompt
+
         >>> prompt = format_confirmation_prompt(data_name="Railway Codes")
         >>> print(prompt)
-        To collect data of Railway Codes
-        ?
+        Proceed with collecting data of "Railway Codes"?
+        <BLANK_LINE>
+
         >>> prompt = format_confirmation_prompt(data_name="location codes", initial="A")
         >>> print(prompt)
-        To collect data of location codes beginning with "A"
-        ?
+        Proceed with collecting data of "location codes" beginning with "A"?
+        <BLANK_LINE>
     """
 
-    prompt = f"To collect data of {data_name}"
+    prompt = "Proceed with collecting data"
+    data_name_str = f'"{data_name}"'
+
     if initial:
         if initial.lower() in string.ascii_letters:
-            prompt += f' beginning with "{initial}"{ending}'
+            data_name_str += f' beginning with "{initial}"'
         else:
-            prompt += f' ({initial})'
-    else:
-        prompt += ending
+            data_name_str = f'"{data_name} ({initial})"'
+
+    prompt += f" of {data_name_str}{ending}"
 
     return prompt
 
