@@ -100,43 +100,54 @@ class Bridges(_Base):
 
         return {h4_txt: h4_dat}
 
-    def _parse_source(self, source, verbose=False):
+    def _parse_and_save_source(self, source, verbose=False):
         """
-        Scrapes codes of `railway bridges`_ from its source webpage.
+        Extract and save `railway bridges`_ data from the source webpage response.
 
         .. _`railway bridges`: http://www.railwaycodes.org.uk/bridges/bridges0.shtm
 
+        Detailed parsing routine that extracts bridge identification codes from HTML headers,
+        parses formatting text conventions, and dumps the structured dataset to a JSON file.
+
         :param source: HTTP response containing the webpage content.
         :type source: requests.Response
-        :param verbose: Whether to print relevant information in the console; defaults to ``False``.
+        :param verbose: Whether to print progress to the console. Defaults to ``False``.
         :type verbose: bool | int
-        :return: A dictionary containing railway bridge data and the date of the last update.
+        :return: A dictionary containing structural bridge data and its last updated date.
         :rtype: dict
         """
 
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
         h4_list = soup.find_all(name='h4')
 
-        data = {k: v for h4 in h4_list for k, v in self._parse_h4(h4).items()}
+        if not h4_list:
+            return {}
 
-        # Key to text presentation conventions
+        # Safely parse bridge data records from h4 elements
+        data = {}
+        for h4 in h4_list:
+            parsed_h4 = self._parse_h4(h4)
+            if parsed_h4:
+                data.update(parsed_h4)
+
+        # Parse the text presentation metadata legend blocks
         keys_h3 = h4_list[-1].find_next(name='h3')
-        keys_p_contents = keys_h3.find_next('p').contents
+        if keys_h3:
+            keys_p = keys_h3.find_next(name='p')
+            if keys_p:
+                keys_p_contents_ = []
+                for x in keys_p.contents:
+                    if isinstance(x, str):
+                        y = re.sub(r'( = +)|\n', '', x).capitalize()
+                    else:
+                        y = x.get_text(strip=True)
+                    keys_p_contents_.append(y)
 
-        keys_p_contents_ = []
-        for x in keys_p_contents:
-            if isinstance(x, str):
-                y = re.sub(r'( = +)|\n', '', x).capitalize()
-            else:
-                y = x.get_text(strip=True)
-            keys_p_contents_.append(y)
+                sub_dict = split_list_by_size(keys_p_contents_, sub_len=2)
+                keys_dict = {keys_h3.text: {k: v for k, v in sub_dict}}
+                data.update(keys_dict)
 
-        sub_dict = split_list_by_size(keys_p_contents_, sub_len=2)
-        keys_dict = {keys_h3.text: {k: v for k, v in sub_dict}}
-
-        data.update(keys_dict)
-
+        # Append last updated tracking metadata
         last_updated_date = _get_last_updated_date(soup=soup, parsed=True)
         data = {self.KEY: data, self.KEY_TO_LAST_UPDATED_DATE: last_updated_date}
 
@@ -169,13 +180,18 @@ class Bridges(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
+
             >>> bdg = Bridges()
-            >>> bdg_codes = bdg.collect_codes(verbose=True)
+
+            >>> bdg_codes: dict = bdg.collect_codes(verbose=True)
             To collect data of railway bridges
             ? [No]|Yes: yes
-            >>> type(bdg_codes)
-            dict
+
             >>> list(bdg_codes.keys())
+            ['Bridges', 'Last updated date']
+
+            >>> bdg_data: dict = bdg_codes['Bridges']
+            >>> list(bdg_data.keys())
             ['East Coast Main Line',
              'Midland Main Line',
              'West Coast Main Line',
@@ -185,7 +201,8 @@ class Bridges(_Base):
              'Anglia',
              'London Underground',
              'Key to text presentation conventions']
-            >>> bdg_codes['Key to text presentation conventions']
+
+            >>> bdg_data['Key to text presentation conventions']
             {'Bold': 'Existing bridges',
              'Bold italic': 'Existing locations',
              'Light italic': 'Former/historical locations',
@@ -200,8 +217,13 @@ class Bridges(_Base):
         """
 
         data = self._collect_data_from_source(
-            data_name=self.NAME.lower(), method=self._parse_source, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.NAME.lower(),
+            method=self._parse_and_save_source,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return data
 
@@ -225,21 +247,26 @@ class Bridges(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import Bridges  # from pyrcs import Bridges
+
             >>> bdg = Bridges()
-            >>> bdg_codes = bdg.fetch_codes()
-            >>> type(bdg_codes)
-            dict
+            >>> bdg_codes: dict = bdg.fetch_codes()
+
             >>> list(bdg_codes.keys())
+            ['Bridges', 'Last updated date']
+
+            >>> bdg_data = bdg_codes['Bridges']
+            >>> list(bdg_data.keys())
             ['East Coast Main Line',
+             'Midland Main Line',
              'West Coast Main Line',
              'Scotland',
              'Elizabeth Line',
              'London Overground',
              'Anglia',
              'London Underground',
-             'Addendum',
              'Key to text presentation conventions']
-            >>> bdg_codes['Key to text presentation conventions']
+
+            >>> bdg_data['Key to text presentation conventions']
             {'Bold': 'Existing bridges',
              'Bold italic': 'Existing locations',
              'Light italic': 'Former/historical locations',
