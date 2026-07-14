@@ -1,5 +1,5 @@
 """
-Collects data of `section codes for overhead line electrification (OLE) installations
+Collect data of `section codes for overhead line electrification (OLE) installations
 <http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm>`_.
 """
 
@@ -113,68 +113,94 @@ def _parse_data_without_lists(h3):
 
 def _parse_codes_and_notes(h3):
     """
-    from pyrcs import Electrification
-    import bs4
-    import requests
-    from pyhelpers.ops import fake_requests_headers
+    Parse and compile code registers and associated footnotes under an H3 section.
 
-    elec = Electrification()
+    This function coordinates parsing subroutines depending on whether the target section's
+    structure contains unordered lists, tables, or generic paragraphs.
 
-    url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
-    source = requests.get(url=url, headers=fake_requests_headers())
-    soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+    :param h3: The header tag defining the current parsing section boundary.
+    :type h3: bs4.element.Tag
+    :return: A dictionary containing structural subheadings, tables of codes, and notes;
+        otherwise ``None``.
+    :rtype: dict | None
 
-    h3 = soup.find('h3')
+    **Examples**::
 
-    h3 = h3.find_next('h3')
+        from pyrcs import Electrification
+        import bs4
+        import requests
+        from pyhelpers.ops import fake_requests_headers
+
+        elec = Electrification()
+
+        url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
+        source = requests.get(url=url, headers=fake_requests_headers())
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        h3 = soup.find('h3')
+
+        h3 = h3.find_next('h3')
     """
 
     codes_and_notes = None
 
-    # p = h3.find_next(name='p')
-    ul, table = h3.find_next(name='ul'), h3.find_next(name='table')
+    ul = h3.find_next(name='ul')
+    table = h3.find_next(name='table')
 
-    # Case 1: If there's a <ul> list
-    if ul is not None:
-        if ul.find_previous('h3') == h3:
-            if table is not None:
-                codes_and_notes = _parse_data_with_lists(h3=h3, ul=ul)
-            else:
-                codes_and_notes = _parse_lists_only(h3=h3, ul=ul)
+    # Case 1: If there is an unordered list (<ul>)
+    if isinstance(ul, bs4.element.Tag) and ul.find_previous(name='h3') == h3:
+        if isinstance(table, bs4.element.Tag) and table.find_previous(name='h3') == h3:
+            codes_and_notes = _parse_data_with_lists(h3=h3, ul=ul)
+        else:
+            codes_and_notes = _parse_lists_only(h3=h3, ul=ul)
 
-    # Case 2: If there's a <table> but no <ul>
-    if table is not None and codes_and_notes is None:
-        if table.find_previous(name='h3') == h3:
-            codes = None
-            h3_ = table.find_previous(name='h3')
-            thead, tbody = table.find_next(name='thead'), table.find_next(name='tbody')
+    # Case 2: If there is a table (<table>) but no unordered list resolved yet
+    if isinstance(table, bs4.element.Tag) and table.find_previous(
+            name='h3') == h3 and codes_and_notes is None:
+        codes_list = []
+        curr_table = table
 
-            while h3_ == h3:
-                ths, trs = [x.text for x in thead.find_all('th')], tbody.find_all('tr')
+        # Using isinstance acts as a strict type guard to completely satisfy PyCharm's inspector
+        while isinstance(curr_table, bs4.element.Tag) and curr_table.find_previous(name='h3') == h3:
 
-                # Parse table data
+            thead = curr_table.find(name='thead')
+            tbody = curr_table.find(name='tbody')
+
+            # Ensure header and body exist before attempting to extract their children
+            if isinstance(thead, bs4.element.Tag) and isinstance(tbody, bs4.element.Tag):
+                ths = [x.get_text(strip=True) for x in thead.find_all(name='th')]
+                trs = tbody.find_all(name='tr')
+
+                # Parse table data safely using the external subroutine
                 dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
-                codes_ = dat.map(
-                    lambda x: re.sub(
-                        pattern=r'\']\)?', repl=']',
-                        string=re.sub(r'\(?\[\'', '[', x)).replace(
-                        '\\xa0', '').replace('\r ', ' ').strip())
 
-                codes = codes_ if codes is None else [codes, codes_]
+                # Sanitise dataframe elements using safe string validation checks
+                if isinstance(dat, pd.DataFrame):
+                    codes_ = dat.map(
+                        lambda x: re.sub(
+                            pattern=r"']\)?", repl=']',
+                            string=re.sub(pattern=r"\(?\['", repl='[', string=str(x))
+                        ).replace('\xa0', '').replace('\r ', ' ').strip() if pd.notna(x) else x
+                    )
+                    codes_list.append(codes_)
 
-                # Move to the next (if any)
-                thead, tbody = thead.find_next(name='thead'), tbody.find_next(name='tbody')
+            # Step to the next table in the DOM hierarchy
+            curr_table = curr_table.find_next(name='table')
 
-                if tbody is None:
-                    break
-                else:
-                    h3_ = tbody.find_previous(name='h3')
+        # Replicate expected output layout safely (single DataFrame vs. List of DataFrames)
+        if len(codes_list) == 1:
+            codes = codes_list[0]
+        elif len(codes_list) > 1:
+            codes = codes_list
+        else:
+            codes = None
 
-            notes = _parse_notes(h3=h3)
+        notes = _parse_notes(h3=h3)
+        sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
 
-            sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
-            codes_and_notes = {sub_heading: {'Codes': codes, 'Notes': notes}}
+        codes_and_notes = {sub_heading: {'Codes': codes, 'Notes': notes}}
 
+    # Case 3: Paragraph data fallback only
     if codes_and_notes is None:
         codes_and_notes = _parse_data_without_lists(h3=h3)
 
@@ -201,7 +227,7 @@ def _parse_ohns_codes(soup):
     trs = tbody.find_all(name='tr')
     tbl = parse_tr(trs=trs, ths=ths)
 
-    # Define cleanup rules
+    # Define clean-up rules
     sep = ',\t'
     records = [[x.replace('\r (', sep).replace(" (['", sep).replace(
         "'])", '').replace('\r', sep).replace("', '", sep).replace(
@@ -289,7 +315,7 @@ class Electrification(_Base):
 
     @staticmethod
     def _confirm_to_collect(data_name):
-        return f"To collect section codes for OLE installations: {data_name}\n?"
+        return f"Proceed with collecting section codes for OLE installations: {data_name}?\n"
 
     def _collect_elec_codes(self, source, data_name, parser_func=None, verbose=False):
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
@@ -316,8 +342,9 @@ class Electrification(_Base):
 
     def collect_national_network_codes(self, confirmation_required=True, verbose=False,
                                        raise_error=False):
+        # noinspection PyUnresolvedReferences
         """
-        Collects the section codes for Overhead Line Electrification (OLE) installations for the
+        Collect the section codes for Overhead Line Electrification (OLE) installations for the
         `national network <http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm>`_
         from the source web page.
 
@@ -337,18 +364,20 @@ class Electrification(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import Electrification  # from pyrcs import Electrification
+
             >>> elec = Electrification()
+
             >>> nn_codes = elec.collect_national_network_codes(verbose=True)
-            To collect section codes for OLE installations: National network
-            ? [No]|Yes: yes
+            Proceed with collecting section codes for OLE installations: National network?
+             [No]|Yes: yes
             Collecting the data ... Done.
+
             >>> type(nn_codes)
             dict
             >>> list(nn_codes.keys())
             ['National network', 'Last updated date']
-            >>> elec.KEY_TO_NATIONAL_NETWORK
-            'National network'
-            >>> nn_codes_dat = nn_codes[elec.KEY_TO_NATIONAL_NETWORK]
+
+            >>> nn_codes_dat = nn_codes['National network']  # elec.KEY_TO_NATIONAL_NETWORK
             >>> type(nn_codes_dat)
             dict
             >>> list(nn_codes_dat.keys())
@@ -359,34 +388,52 @@ class Electrification(_Base):
              'An odd one to complete the record',
              'LBSC/Southern Railway overhead system',
              'Codes not known']
+
             >>> tns_codes = nn_codes_dat['Traditional numbering system [distance and sequence]']
             >>> type(tns_codes)
             dict
             >>> list(tns_codes.keys())
             ['Codes', 'Notes']
+
             >>> tns_codes_dat = tns_codes['Codes']
+            >>> tns_codes_dat.shape
+            (577, 5)
             >>> tns_codes_dat.head()
-              Code  ...                          Datum
-            0    A  ...               Fenchurch Street
-            1    A  ...             Newbridge Junction
-            2    A  ...               Fenchurch Street
-            3    A  ...  Guide Bridge Station Junction
-            4   AB  ...
-            [5 rows x 4 columns]
+              Code  ...                                               Note
+            0    A  ...
+            1    A  ...  Only a short length at Newbridge Junction wire...
+            2    A  ...
+            3    A  ...  Former DC system, now closed; it appears that ...
+            4   AB  ...              Reported, probably never used.  See F
+            [5 rows x 5 columns]
         """
 
+        # Extract the target URL to prevent runtime exceptions if catalogue is uninitialized
+        target_url = None
+        if isinstance(self.catalogue, dict):
+            target_url = self.catalogue.get(self.KEY_TO_NATIONAL_NETWORK)
+
+        if not target_url:
+            if raise_error:
+                raise ValueError("The catalogue is unavailable or missing the target URL key.")
+            return None
+
         national_network_ole = self._collect_data_from_source(
-            data_name=self.KEY_TO_NATIONAL_NETWORK, method=self._collect_elec_codes,
-            url=self.catalogue[self.KEY_TO_NATIONAL_NETWORK],
+            data_name=self.KEY_TO_NATIONAL_NETWORK,
+            method=self._collect_elec_codes,
+            url=target_url,
             confirmation_required=confirmation_required,
             confirmation_prompt=self._confirm_to_collect(self.KEY_TO_NATIONAL_NETWORK),
-            verbose=verbose, raise_error=raise_error)
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return national_network_ole
 
     def fetch_national_network_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
+        # noinspection PyUnresolvedReferences
         """
-        Fetches section codes for Overhead Line Electrification (OLE) installations on the
+        Fetch section codes for Overhead Line Electrification (OLE) installations on the
         `national network`_.
 
         .. _`national network`: http://www.railwaycodes.org.uk/electrification/mast_prefix1.shtm
@@ -447,7 +494,11 @@ class Electrification(_Base):
         kwargs.update(args)
 
         national_network_ole = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update,
+            dump_dir=dump_dir,
+            verbose=verbose,
+            **kwargs
+        )
 
         return national_network_ole
 
@@ -502,7 +553,7 @@ class Electrification(_Base):
     def collect_independent_lines_codes(self, confirmation_required=True, verbose=False,
                                         raise_error=False):
         """
-        Collects OLE section codes for `independent lines`_ from the source web page.
+        Collect OLE section codes for `independent lines`_ from the source web page.
 
         .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
@@ -558,7 +609,7 @@ class Electrification(_Base):
 
     def fetch_independent_lines_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches OLE section codes for `independent lines`_.
+        Fetch OLE section codes for `independent lines`_.
 
         .. _`independent lines`: http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm
 
@@ -628,7 +679,7 @@ class Electrification(_Base):
 
     def collect_ohns_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects codes for
+        Collect codes for
         `overhead line electrification neutral sections
         <http://www.railwaycodes.org.uk/electrification/neutral.shtm>`_ (OHNS)
         from the source web page.
@@ -683,7 +734,7 @@ class Electrification(_Base):
 
     def fetch_ohns_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches the `overhead line electrification neutral sections`_ (OHNS) codes.
+        Fetch the `overhead line electrification neutral sections`_ (OHNS) codes.
 
         .. _`overhead line electrification neutral sections`:
             http://www.railwaycodes.org.uk/electrification/neutral.shtm
@@ -733,7 +784,7 @@ class Electrification(_Base):
 
     def collect_etz_codes(self, confirmation_required=True, verbose=False, raise_error=False):
         """
-        Collects OLE section codes for `national network energy tariff zones
+        Collect OLE section codes for `national network energy tariff zones
         <http://www.railwaycodes.org.uk/electrification/tariff.shtm>`_
         from the source web page.
 
@@ -796,7 +847,7 @@ class Electrification(_Base):
 
     def fetch_etz_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches OLE section codes for `national network energy tariff zones`_.
+        Fetch OLE section codes for `national network energy tariff zones`_.
 
         .. _`national network energy tariff zones`:
             http://www.railwaycodes.org.uk/electrification/tariff.shtm
@@ -855,7 +906,7 @@ class Electrification(_Base):
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches OLE section codes listed in the `Electrification`_ catalogue.
+        Fetch OLE section codes listed in the `Electrification`_ catalogue.
 
         .. _`Electrification`: http://www.railwaycodes.org.uk/electrification/mast_prefix0.shtm
 
