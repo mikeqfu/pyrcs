@@ -1080,13 +1080,14 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
 
     try:
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-        feature_records = []
 
         # Parse categorical headings up front
         feature_headings = []
         for h3 in soup.find_all(feature_tag_name):
             sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
             feature_headings.append(sub_heading)
+
+        feature_records = []
 
         for nav in soup.find_all(head_tag_name):
             nav_text = nav.text.replace('\r\n', '').strip()
@@ -1110,7 +1111,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
                     })
 
         if not feature_records:
-            return pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
+            return pd.DataFrame({'feature': [], 'url': [], 'heading': []})
 
         return pd.DataFrame(feature_records)
 
