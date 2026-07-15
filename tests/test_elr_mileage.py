@@ -138,14 +138,14 @@ class TestELRMileages:
         elrs_codes_dat = elrs_codes[em.KEY]
         assert isinstance(elrs_codes_dat, pd.DataFrame)
 
-    def test__get_parsed_contents(self, em):
+    def test__parse_line_details(self, em):
         elr_dat = pd.DataFrame({
             'Line name': ['Main Line'],
             'Mileages': ['0.00 - 1.00'],
             'Datum': ['']
         })
         notes = 'loc_a and loc_b'
-        line_name, parsed_content = em._get_parsed_contents(elr_dat, notes)
+        line_name, parsed_content = em._parse_line_details(elr_dat, notes)
         assert line_name == 'Main Line'
         assert parsed_content == [['0.00', 'loc_a'], ['1.00', 'loc_b']]
 
@@ -155,7 +155,7 @@ class TestELRMileages:
             'Datum': ['Datum A']
         })
         notes = ''
-        line_name, parsed_content = em._get_parsed_contents(elr_dat, notes)
+        line_name, parsed_content = em._parse_line_details(elr_dat, notes)
         assert line_name == 'Main Line'
         assert parsed_content == [['0.00', 'Datum A'], ['2.00', 'Main Line']]
 
@@ -165,12 +165,12 @@ class TestELRMileages:
             'Datum': ['']
         })
         notes = ''
-        line_name, parsed_content = em._get_parsed_contents(elr_dat, notes)
+        line_name, parsed_content = em._parse_line_details(elr_dat, notes)
         assert line_name == 'Main Line'
         assert parsed_content == [['0.00', 'Main Line'], ['2.00', 'Main Line']]
 
     def test_mileage_parsing_and_splitting(self, em, monkeypatch):
-        # 1. Setup a mock class instance to provide self.measure_headers
+        # Setup a mock class instance to provide self.measure_headers
         class MockParser:
             measure_headers = [
                 'Current measure', 'Original measure', 'Later measure',
