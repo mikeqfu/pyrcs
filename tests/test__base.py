@@ -39,14 +39,14 @@ class TestBase:
 
         if initial is None:
             if confirmation_prompt is None:
-                assert f'To collect data of {data_name}' in prompt
+                assert f'Proceed with collecting data of "{data_name}"?\n' in prompt
             elif isinstance(confirmation_prompt, str):
                 assert prompt == 'To collect data'
             elif isinstance(confirmation_prompt, typing.Callable):
                 if 'x' in inspect.signature(confirmation_prompt).parameters:
                     assert prompt == 1
                 else:
-                    assert f'To collect data of {data_name}' in prompt
+                    assert f'Proceed with collecting data of "{data_name}"?\n' in prompt
 
         elif initial == 'a' and confirmation_prompt is None:
             assert f'beginning with "{initial}"' in prompt

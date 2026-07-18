@@ -75,7 +75,7 @@ class TestTunnels:
                 unittest.mock.patch.object(
                     tunl, '_save_data_to_file', side_effect=side_effect_save) as mock_save_data:
             # Run the method
-            result = tunl._collect_codes(page_no=1, source=mock_source)
+            result = tunl._parse_and_save_page(page_no=1, source=mock_source)
 
             df = result['Page 1']
 

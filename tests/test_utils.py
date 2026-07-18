@@ -71,7 +71,7 @@ def test_format_confirmation_prompt():
     from pyrcs.utils import format_confirmation_prompt
 
     msg = format_confirmation_prompt(data_name="Railway Codes")
-    assert msg == 'To collect data of Railway Codes\n?'
+    assert msg == 'Proceed with collecting data of "Railway Codes"?\n'
 
 
 @pytest.mark.parametrize('initial', [None, 'abc'])

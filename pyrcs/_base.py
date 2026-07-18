@@ -18,7 +18,7 @@ from pyhelpers.store import load_data, save_data
 from .parser import get_catalogue, get_introduction, get_last_updated_date
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
     handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
-    print_void_collection_message
+    print_void_collection_message, validate_page_name
 
 
 class _Base:
@@ -79,9 +79,10 @@ class _Base:
         #   verbose=2 (detailed), verbose=True/1 (standard), verbose=False/0 (silent)
         _verbose_inner = (verbose == 2)
 
-        # Initialize all attributes to prevent AttributeError
+        # Initialise all attributes to prevent AttributeError
         self.catalogue = None
         self.introduction = None
+        self.page_range = None
 
         # Explicit content handling
         if isinstance(content_type, str):
@@ -274,7 +275,7 @@ class _Base:
         :param url: The target URL. If ``None``, the method attempts to retrieve the URL from
             ``self.catalogue`` using ``initial`` or ``data_name`` as the key.
         :type url: str | None
-        :param initial: The initial letter/code used to categorize the data
+        :param initial: The initial letter/code used to categorise the data
             (e.g. 'A' for stations starting with A); it is used as a fallback key for URL lookup
             if ``url`` is not provided.
         :type initial: str | None
@@ -369,6 +370,57 @@ class _Base:
         except Exception as e:  # Handle parsing/method errors
             _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
             return fallback_data
+
+    def _collect_data_from_source_by_page(self, page_no, method, confirmation_required=True,
+                                          verbose=True, raise_error=True):
+        """
+        Collect data from source web page labelled as page number.
+
+        This method validates the requested page, retrieves the corresponding URL from the
+        catalogue and delegates the extraction process to ``_collect_data_from_source``.
+
+        :param page_no: The page number or identifier to collect data from.
+        :type page_no: int | str
+        :param method: The specific method or function used to parse the page content.
+        :type method: callable
+        :param confirmation_required: Whether to prompt for user confirmation before proceeding.
+            Defaults to ``True``.
+        :type confirmation_required: bool
+        :param verbose: Whether to print relevant information to the console. Defaults to ``True``.
+        :type verbose: bool | int
+        :param raise_error: Whether to raise an exception if the URL is missing from the
+            catalogue. Defaults to ``True``.
+        :type raise_error: bool
+        :return: The collected data from the specified page, or ``None`` if the URL is missing
+            and ``raise_error`` is ``False``.
+        :rtype: Any | None
+        :raises ValueError: If the target URL cannot be found in the catalogue and
+            ``raise_error`` is ``True``.
+        """
+
+        page_name = validate_page_name(self, page_no, valid_page_no=self.page_range)
+
+        # Condense the catalogue type check and URL lookup into a single expression
+        url = self.catalogue.get(page_name) if isinstance(self.catalogue, dict) else None
+
+        if not url:
+            if raise_error:
+                raise ValueError("The catalogue is unavailable or missing the target URL key.")
+            return None
+
+        data_name = self.NAME.lower()
+
+        return self._collect_data_from_source(
+            data_name=data_name,
+            method=method,
+            url=url,
+            initial=page_name,
+            page_no=page_no,
+            confirmation_required=confirmation_required,
+            confirmation_prompt=f"Proceed with collecting data of {data_name} ({page_name})?\n",
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
         """
