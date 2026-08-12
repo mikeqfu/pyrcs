@@ -23,69 +23,169 @@ from .utils import cd_data, handle_connection_error, homepage_url
 
 # == Preprocess contents ===========================================================================
 
+def _parse_details_tag(details_tag, sep=' / '):
+    """
+    Parse a station owner or operator HTML details element into a single string.
 
-def _parse_other_tags_in_td_contents(x):
-    if isinstance(x, str):
-        td_text = x.strip(' ')
+    This function extracts the summary and sibling history nodes from a ``<details>``
+    HTML tag, formatting emphasis nodes into parenthesised text and joining entries
+    with a designated separator.
 
-    else:
-        tag_name, td_text = x.name, x.text
+    :param details_tag: The HTML details element or string fragment.
+    :type details_tag: bs4.element.Tag | str
+    :param sep: The separator used to join extracted lines; defaults to ``' / '``.
+    :type sep: str
+    :return: Formatted ownership string joined by the separator.
+    :rtype: str
 
-        if tag_name == 'em':
-            td_text = f'[{td_text}]'
+    **Examples**::
 
-        elif tag_name == 'q':
-            td_text = f'"{td_text}"'
+        >>> html_str = '''
+        ...     <details><summary>Transport for Wales <em>from 28 March 2020</em></summary>
+        ...     Network Rail Infrastructure <em>from 3 February 2003 to 27 March 2020</em>
+        ...     Railtrack <em>from 1 April 1994 to 2 February 2003</em></details>
+        ...     '''
+        >>> _parse_details_tag(html_str)
+        'Transport for Wales (from 28 March 2020); Network Rail Infrastructure (from 3 February...
+    """
 
-        elif tag_name in {'span', 'a'}:
-            td_class, td_class_child = x.get('class'), x.find('span')
+    if isinstance(details_tag, str):
+        soup = bs4.BeautifulSoup(details_tag, 'html.parser')
+        details_tag = soup.find('details')
 
-            if td_class == ['r']:
-                if td_text == 'no CRS?':
-                    td_text = f'\t\t / [{td_text}]'
-                elif '\n ' in td_text:
-                    td_text = ' '.join(
-                        [f'\t\t{y}' if y.startswith('(') and y.endswith(')') else f' / [{y}]'
-                         for y in td_text.split('\n ')])
-                elif '(' not in td_text and ')' not in td_text:
-                    td_text = f'\t\t / [{td_text}]'
-                else:
-                    td_text = f'\t\t{td_text}'
+    if not details_tag:
+        return ''
 
-            elif not td_class and td_class_child:
-                td_text = f'\t\t{td_text}'
+    # Replace all <em> elements with parenthesised text directly in the DOM
+    for em in details_tag.find_all('em'):
+        em_text = em.get_text(strip=True)
+        em.replace_with(f' ({em_text})')
+
+    entries = []
+
+    # Process <summary> as the first entry
+    summary = details_tag.find('summary')
+    if summary:
+        summary_text = re.sub(r'\s+', ' ', summary.get_text()).strip()
+        if summary_text:
+            entries.append(summary_text)
+        summary.decompose()  # Remove summary so remaining text nodes can be processed
+
+    # Extract remaining text lines (historical entries)
+    remaining_text = details_tag.get_text()
+    for line in remaining_text.splitlines():
+        line_clean = re.sub(r'\s+', ' ', line).strip()
+        if line_clean:
+            entries.append(line_clean)
+
+    return sep.join(entries)
+
+
+def _parse_td_content_element(element):
+    """
+    Parse a single HTML element from a table cell's contents.
+
+    This function converts specific HTML elements (like ``<em>``, ``<q>``, ``<span>``
+    and ``<details>``) into formatted text representations, handling standard layout
+    classes natively.
+
+    :param element: The BeautifulSoup element or string extracted from the table cell.
+    :type element: bs4.element.Tag | bs4.element.NavigableString | str
+    :return: Parsed and formatted string.
+    :rtype: str
+    """
+
+    if isinstance(element, str) or isinstance(element, bs4.NavigableString):
+        return str(element).strip(' ')
+
+    tag_name = element.name
+    td_text = element.get_text(separator=' ', strip=True)
+
+    if tag_name == 'em':
+        return f'[{td_text}]'
+
+    if tag_name == 'q':
+        return f'"{td_text}"'
+
+    if tag_name in {'span', 'a'}:
+        td_class = element.get('class', [])
+        has_span_child = element.find('span') is not None
+
+        if td_class == ['r']:
+            if td_text == 'no CRS?':
+                return f'\t\t / [{td_text}]'
+            if '\n ' in td_text:
+                parts = [
+                    f'\t\t{y}' if y.startswith('(') and y.endswith(')') else f' / [{y}]'
+                    for y in td_text.split('\n ')
+                ]
+                return ' '.join(parts)
+            if '(' not in td_text and ')' not in td_text:
+                return f'\t\t / [{td_text}]'
+            return f'\t\t{td_text}'
+
+        if td_class == ['popup']:
+            clean_text = td_text.replace('✖', '').strip()
+            return f'({clean_text})'
+
+        if not td_class and has_span_child:
+            return f'\t\t{td_text}'
+
+    if tag_name == 'details':
+        return _parse_details_tag(element)
 
     return td_text
 
 
 def _prep_records(trs, ths, sep=' / '):
-    ths_len = len(ths)
+    """
+    Prepare raw row records and track row-spanned cells from table rows.
 
+    :param trs: A list or result set of ``<tr>`` tags.
+    :type trs: bs4.element.ResultSet | list[bs4.element.Tag]
+    :param ths: The table headers to determine the correct number of columns.
+    :type ths: list | bs4.element.Tag
+    :param sep: The separator to replace newlines; defaults to ``' / '``.
+    :type sep: str
+    :return: A tuple containing the raw string records and a list of rowspan metadata.
+    :rtype: tuple[list[list[str]], list[tuple[int, int, int, str]]]
+    """
+
+    ths_len = len(ths)
     records = []
     row_spanned = []
+    newline_pattern = re.compile(r'/?\r?\n')
 
-    for no, tr in enumerate(trs):
+    for row_idx, tr in enumerate(trs):
         data = []
-        tds = tr.find_all(name='td')
+        tds = tr.find_all('td')
 
         if len(tds) != ths_len:
             tds = tds[:ths_len]
 
-        for td_no, td in enumerate(tds):
+        for col_idx, td in enumerate(tds):
             if td.find('td'):
-                text_ = [''] if td.find('a') is None else td.find('a').contents + ["\t\t / "]
+                # Handle nested tables
+                a_tag = td.find('a')
+                # noinspection string-conversion-without-dunder-method
+                text_parts = [str(x) for x in a_tag.contents] + ['\t\t / '] if a_tag else ['']
             else:
-                text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
-            # _move_element_to_end(text_, char='\t\t')
-            text = ' '.join(sorted([x for x in text_ if x.strip(' ')], key=lambda x: '\t\t' in x))
+                text_parts = [_parse_td_content_element(x) for x in td.contents]
+
+            # Sort elements containing '\t\t' to the end of the text
+            valid_parts = [str(x) for x in text_parts if str(x).strip(' ')]
+            valid_parts.sort(key=lambda x: '\t\t' in x)
+            text = ' '.join(valid_parts)
 
             if sep:
-                old_sep = re.compile(r'/?\r?\n')
-                if len(re.findall(old_sep, text)) > 0:
-                    text = re.sub(r'/?\r?\n', sep, text)
+                text = newline_pattern.sub(sep, text)
 
             if td.has_attr('rowspan'):
-                row_spanned.append((no, int(td['rowspan']), td_no, text))
+                try:
+                    span_val = int(td['rowspan'])
+                    row_spanned.append((row_idx, span_val, col_idx, text))
+                except ValueError:
+                    pass
 
             data.append(text)
 
@@ -94,32 +194,46 @@ def _prep_records(trs, ths, sep=' / '):
     return records, row_spanned
 
 
-def _check_row_spanned(records, row_spanned):
-    if row_spanned:
-        records_ = records.copy()
+def _apply_row_spans(records, row_spanned):
+    """
+    Apply rowspan values to subsequent rows to standardise the data grid.
 
-        row_spanned_dict = collections.defaultdict(list)
-        for i, *to_repeat in row_spanned:
-            row_spanned_dict[i].append(to_repeat)
+    :param records: The parsed list of row data.
+    :type records: list[list[str]]
+    :param row_spanned: Metadata detailing row indices, span counts, column indices,
+        and cell text.
+    :type row_spanned: list[tuple[int, int, int, str]]
+    :return: Standardised records with rowspans duplicated.
+    :rtype: list[list[str]]
+    """
 
-        for i, to_repeat in row_spanned_dict.items():
-            for no_spans, idx, dat in to_repeat:
-                for j in range(1, no_spans):
-                    k = i + j
-                    # if (dat in records[i]) and (dat != '\xa0'): # and (idx < len(records[i]) - 1):
-                    #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
-                    k_len = len(records_[k])
-                    if k_len < len(records_[i]):
-                        if k_len == idx:
-                            records_[k].insert(idx, dat)
-                        elif k_len > idx:
-                            if records_[k][idx] != '':
-                                records_[k].insert(idx, dat)
-                            else:  # records[k][idx] == '':
-                                records_[k][idx] = dat
+    if not row_spanned:
+        return records
 
-    else:
-        records_ = records
+    records_ = copy.deepcopy(records)
+    row_spanned_dict = collections.defaultdict(list)
+
+    for row_idx, span_count, col_idx, text_val in row_spanned:
+        row_spanned_dict[row_idx].append((span_count, col_idx, text_val))
+
+    for row_idx, spans in row_spanned_dict.items():
+        for span_count, col_idx, text_val in spans:
+            for j in range(1, span_count):
+                target_row = row_idx + j
+
+                # Defend against malformed HTML spanning past table bounds
+                if target_row >= len(records_):
+                    continue
+
+                row_len = len(records_[target_row])
+                if row_len < len(records_[row_idx]):
+                    if row_len == col_idx:
+                        records_[target_row].insert(col_idx, text_val)
+                    elif row_len > col_idx:
+                        if records_[target_row][col_idx] != '':
+                            records_[target_row].insert(col_idx, text_val)
+                        else:
+                            records_[target_row][col_idx] = text_val
 
     return records_
 
@@ -127,42 +241,46 @@ def _check_row_spanned(records, row_spanned):
 def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     # noinspection PyUnresolvedReferences
     """
-    Parses a list of HTML ``<tr>`` elements and extracts data from a table.
+    Parse a list of HTML ``<tr>`` elements and extract data matching column headers.
 
-    This function processes the rows from a table (``<tr>`` tags) and assigns them to corresponding
-    column headers (``<th>`` tags). It can return the data either as a list of lists or as a
-    dataframe.
+    This function processes the rows from a table (``<tr>`` tags) and aligns them to the
+    corresponding column headers (``<th>`` tags). It correctly manages HTML ``rowspan``
+    attributes and resolves missing items.
 
     See also [`PT-1 <https://stackoverflow.com/questions/28763891/>`_].
 
     :param trs: The content of ``<tr>`` tags from a web page table.
-    :type trs: bs4.ResultSet | list
-    :param ths: A list of column names (typically from ``<th>`` tags) for the table.
+    :type trs: bs4.element.ResultSet | list[bs4.element.Tag]
+    :param ths: A list of column names or ``<th>`` tags for the table.
     :type ths: list | bs4.element.Tag
-    :param sep: The separator to replace any separators found in the raw data;
-        defaults to ``' / '``.
+    :param sep: The separator to replace line breaks. Defaults to ``' / '``.
     :type sep: str | None
-    :param as_dataframe: If ``True``, returns the data as a Pandas DataFrame; defaults to ``False``.
+    :param as_dataframe: If ``True``, returns the data as a Pandas DataFrame. Defaults to ``False``.
     :type as_dataframe: bool
-    :return: A list of lists representing rows of the table,
-        or a dataframe if ``as_dataframe`` is ``True``.
-    :rtype: pandas.DataFrame | list[list]
+    :return: A list of lists representing rows of the table, or a dataframe if requested.
+    :rtype: pandas.DataFrame | list[list[str]]
 
     **Examples**::
 
         >>> from pyrcs.parser import parse_tr
         >>> import requests
         >>> import bs4
+
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
+
         >>> source = requests.get(example_url)
         >>> parsed_text = bs4.BeautifulSoup(source.content, 'html.parser')
+
         >>> ths_dat = [th.text for th in parsed_text.find_all('th')]
         >>> trs_dat = parsed_text.find_all(name='tr')
+
         >>> tables_list = parse_tr(trs=trs_dat, ths=ths_dat)  # returns a list of lists
         >>> type(tables_list)
         list
+
         >>> len(tables_list) // 100
         1
+
         >>> tables_list[0]
         ['AAL',
          'Ashendon and Aynho Line',
@@ -173,11 +291,11 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
 
     records, row_spanned = _prep_records(trs=trs, ths=ths, sep=sep)
 
-    records = _check_row_spanned(records, row_spanned)
+    records = _apply_row_spans(records, row_spanned)
 
-    if isinstance(ths, bs4.Tag):
+    if isinstance(ths, bs4.element.Tag):
         column_names = [th.get_text(strip=True) for th in ths.find_all('th')]
-    elif all(isinstance(x, bs4.Tag) for x in ths):
+    elif ths and all(isinstance(x, bs4.element.Tag) for x in ths):
         column_names = [th.get_text(strip=True) for th in ths]
     else:
         column_names = copy.copy(ths)
@@ -186,20 +304,20 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     empty_rows = []
 
     for k, record in enumerate(records):
-        n = n_columns - len(record)
-        if n == n_columns:
+        diff = n_columns - len(record)
+        if diff == n_columns:
             empty_rows.append(k)
-        elif n > 0:
-            record.extend(['\xa0'] * n)
-        elif n < 0 and record[2] == '\xa0':
+        elif diff > 0:
+            record.extend(['\xa0'] * diff)
+        elif diff < 0 and len(record) > 2 and record[2] == '\xa0':
             del record[2]
 
-    if len(empty_rows) > 0:
-        for k in empty_rows:
-            del records[k]
+    # Iterate in reverse to avoid index shifting when elements are removed
+    for k in reversed(empty_rows):
+        del records[k]
 
     if as_dataframe:
-        records = pd.DataFrame(data=records, columns=column_names)
+        return pd.DataFrame(data=records, columns=column_names)
 
     return records
 
@@ -245,11 +363,11 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
     soup = bs4.BeautifulSoup(markup=source.content, features=parser)
 
-    theads, tbodies = soup.find_all(name='thead'), soup.find_all(name='tbody')
+    theads, tbodies = soup.find_all('thead'), soup.find_all('tbody')
 
     tables = []
     for thead, tbody in zip(theads, tbodies):
-        ths = [th.get_text(strip=True) for th in thead.find_all(name='th')]
+        ths = [th.get_text(strip=True).replace('\n', '') for th in thead.find_all('th')]
         trs = tbody.find_all(name='tr')
 
         if as_dataframe:
@@ -678,7 +796,7 @@ def _parse_introduction(source, delimiter='\n'):
         Defaults to ``'\\n'``.
     :type delimiter: str
     :return: A single text string combining all sequential introductory paragraphs.
-    :rtype: str
+    :rtype: str | None
     """
 
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
@@ -692,7 +810,7 @@ def _parse_introduction(source, delimiter='\n'):
             break
 
     if not intro_h3:
-        return ''
+        return None
 
     p = intro_h3.find_next(name='p')
     intro_paras = []
