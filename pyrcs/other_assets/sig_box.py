@@ -43,38 +43,6 @@ def _get_h3_table_data(h3):
     return None
 
 
-def _get_url(catalogue, key, raise_error):
-    """
-    Extract target URL from catalogue dictionary safely.
-
-    This function retrieves the specified key from a catalogue dictionary and validates
-    its presence, optionally raising a ``ValueError`` if the URL is unavailable.
-
-    :param catalogue: Dictionary containing catalogue keys and corresponding URLs.
-    :type catalogue: dict | None
-    :param key: Key corresponding to target URL in catalogue.
-    :type key: str
-    :param raise_error: Whether to raise an exception if URL is missing.
-    :type raise_error: bool
-    :return: Target URL string, or ``None`` if unavailable and ``raise_error`` is ``False``.
-    :rtype: str | None
-    :raises ValueError: If catalogue is invalid or missing target key
-        when ``raise_error`` is ``True``.
-    """
-
-    url = catalogue.get(key) if isinstance(catalogue, dict) else None
-
-    if not url:
-        if raise_error:
-            raise ValueError(
-                "Data catalogue for signal box prefix codes is missing. "
-                "Unable to determine the target URL."
-            )
-        return None
-
-    return url
-
-
 def _parse_tbl_dat(h3_or_h4, ths):
     """
     Parse HTML table rows following a header element into a DataFrame.
@@ -570,7 +538,7 @@ class SignalBoxes(_Base):
             [5 rows x 5 columns]
         """
 
-        url = _get_url(self.catalogue, key=self.KEY_TO_NON_NATIONAL_RAIL, raise_error=raise_error)
+        url = self._get_url(key=self.KEY_TO_NON_NATIONAL_RAIL, raise_error=raise_error)
 
         data_name = f"{self.KEY_TO_NON_NATIONAL_RAIL.lower()} signal box prefix codes"
 
@@ -774,7 +742,7 @@ class SignalBoxes(_Base):
             4    XG               Level crossing signals
         """
 
-        url = _get_url(self.catalogue, key=self.KEY_TO_IRELAND, raise_error=raise_error)
+        url = self._get_url(key=self.KEY_TO_IRELAND, raise_error=raise_error)
 
         data_name = f"signal box prefix codes of {self.KEY_TO_IRELAND}"
 

@@ -182,6 +182,52 @@ class _Base:
 
         return path
 
+    def _get_url(self, key, initial=None, data_name=None, raise_error=True):
+        """
+        Extract a target URL from the instance's catalogue dictionary.
+
+        This method retrieves a URL associated with the specified ``key``. If the value
+        is a nested dictionary and ``initial`` is provided, it performs a secondary
+        lookup. It optionally raises a ``ValueError`` if the URL cannot be resolved.
+
+        :param key: The primary key corresponding to the target URL in the catalogue.
+        :type key: str
+        :param initial: A secondary key used if the primary catalogue entry is a
+            nested dictionary. Defaults to ``None``.
+        :type initial: str | None
+        :param data_name: An optional descriptive name for the dataset used in error
+            messages. Defaults to ``None``.
+        :type data_name: str | None
+        :param raise_error: Whether to raise an exception if the URL is missing.
+            Defaults to ``True``.
+        :type raise_error: bool
+        :return: The target URL string, or ``None`` if unavailable and
+            ``raise_error`` is ``False``.
+        :rtype: str | None
+        :raises ValueError: If the catalogue is invalid or missing the requested
+            keys when ``raise_error`` is ``True``.
+        """
+
+        url = None
+        catalogue = getattr(self, 'catalogue', None)
+
+        if isinstance(catalogue, dict):
+            url = catalogue.get(key)
+            if isinstance(url, dict) and initial is not None:
+                url = url.get(initial)
+
+        if not url:
+            if raise_error:
+                name = data_name or getattr(self, 'NAME', 'the dataset')
+                target = f"'{key}'" + (f" -> '{initial}'" if initial is not None else "")
+                raise ValueError(
+                    f"Unable to determine the target URL for {name}: "
+                    f"the key {target} is missing or invalid in the catalogue."
+                )
+            return None
+
+        return url
+
     @staticmethod
     def _format_confirmation_message(data_name, confirmation_prompt=None, initial=None, **kwargs):
         # noinspection PyShadowingNames
