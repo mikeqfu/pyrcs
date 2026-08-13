@@ -81,7 +81,7 @@ def _parse_details_tag(details_tag, sep=' / '):
     return sep.join(entries)
 
 
-def _parse_td_content_element(element):
+def _parse_td_content_element(x):
     """
     Parse a single HTML element from a table cell's contents.
 
@@ -89,17 +89,17 @@ def _parse_td_content_element(element):
     and ``<details>``) into formatted text representations, handling standard layout
     classes natively.
 
-    :param element: The BeautifulSoup element or string extracted from the table cell.
-    :type element: bs4.element.Tag | bs4.element.NavigableString | str
+    :param x: The BeautifulSoup element or string extracted from the table cell.
+    :type x: bs4.element.Tag | bs4.element.NavigableString | str
     :return: Parsed and formatted string.
     :rtype: str
     """
 
-    if isinstance(element, str) or isinstance(element, bs4.NavigableString):
-        return str(element).strip(' ')
+    if isinstance(x, str) or isinstance(x, bs4.NavigableString):
+        return str(x).strip(' ')
 
-    tag_name = element.name
-    td_text = element.get_text(separator=' ', strip=True)
+    tag_name = x.name
+    td_text = x.get_text(separator=' ', strip=True)
 
     if tag_name == 'em':
         return f'[{td_text}]'
@@ -108,8 +108,8 @@ def _parse_td_content_element(element):
         return f'"{td_text}"'
 
     if tag_name in {'span', 'a'}:
-        td_class = element.get('class', [])
-        has_span_child = element.find('span') is not None
+        td_class = x.get('class', [])
+        has_span_child = x.find('span') is not None
 
         if td_class == ['r']:
             if td_text == 'no CRS?':
@@ -131,8 +131,11 @@ def _parse_td_content_element(element):
         if not td_class and has_span_child:
             return f'\t\t{td_text}'
 
+    if tag_name == 'div':
+        return ''
+
     if tag_name == 'details':
-        return _parse_details_tag(element)
+        return _parse_details_tag(x)
 
     return td_text
 
