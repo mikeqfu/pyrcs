@@ -5,7 +5,7 @@ Collects `driver/guard buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.
 import urllib.parse
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_table
+from ..parser import parse_table
 from ..utils import homepage_url
 
 
@@ -50,35 +50,56 @@ class Buzzer(_Base):
             data_dir=data_dir, data_category="other-assets", update=update, verbose=verbose)
 
     def _collect_codes(self, source, verbose=False):
+        """
+        Collect and parse buzzer codes from the provided HTML source.
+
+        This method extracts tabular buzzer code data from the HTML content, cleans
+        and standardises multi-line column headers, and persists the resulting
+        dataset.
+
+        :param source: The HTTP response object or raw HTML content string.
+        :type source: requests.Response | bs4.BeautifulSoup | str
+        :param verbose: Whether to print progress logs. Defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the parsed buzzer codes and metadata.
+        :rtype: dict
+
+        **Examples**::
+
+            >>> from pyrcs.other_assets import Buzzer
+            >>> buzzer = Buzzer()
+            >>> # # Internal collection call
+            >>> # data = buzzer._collect_codes(source=source, verbose=True)
+        """
+
         codes_dat, soup = parse_table(source=source, parser='html.parser', as_dataframe=True)
 
         column_names = []
         for col in codes_dat.columns:
-            col_name = col.split('\r\n')
-            if len(col_name) > 1:
-                column_names.append(col_name[0] + ' [' + ''.join(col_name[1:]) + ']')
+            lines = [line.strip() for line in str(col).splitlines() if line.strip()]
+            if len(lines) > 1:
+                header = f"{lines[0]} [{' '.join(lines[1:])}]"
+            elif lines:
+                header = lines[0]
             else:
-                column_names.append(col_name[0])
+                header = str(col)
+            column_names.append(header)
 
         codes_dat.columns = column_names
 
-        buzzer_codes = {
-            self.KEY: codes_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=buzzer_codes, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        buzzer_codes = self._pack_and_save_data(
+            data=codes_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return buzzer_codes
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects data of `buzzer codes`_ from the source web page.
+        Collect data of `buzzer codes`_ from the source web page.
 
         .. _`buzzer codes`: http://www.railwaycodes.org.uk/misc/buzzer.shtm
 
@@ -98,39 +119,46 @@ class Buzzer(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import Buzzer  # from pyrcs import Buzzer
+
             >>> buz = Buzzer()
-            >>> buz_codes = buz.collect_codes()
-            To collect data of Buzzer codes
-            ? [No]|Yes: yes
+
+            >>> buz_codes = buz.collect_codes(verbose=True)
+            To collect data of buzzer codes?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(buz_codes)
             dict
-            >>> list(buz_codes.keys())
+            >>> list(buz_codes)
             ['Buzzer codes', 'Last updated date']
-            >>> buz.KEY
-            'Buzzer codes'
-            >>> buz_codes_dat = buz_codes[buz.KEY]
+
+            >>> buz_codes_dat = buz_codes['Buzzer codes']
             >>> type(buz_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> buz_codes_dat.head()
-              Code [number of buzzes or groups separated by pauses]            Meaning
-            0                                                  1                  Stop
-            1                                                1-2           Close doors
-            2                                                  2        Ready to start
-            3                                                2-2     Do not open doors
-            4                                                  3              Set back
+              Code (number of buzzes or groups separate...                                 Meaning
+            0                                            1                                    Stop
+            1                                          1-2                             Close doors
+            2                                            2                          Ready to start
+            3                                          2-2     Create vacuum [used in early 1960s]
+            4                                          2-2                       Do not open doors
         """
 
         buzzer_codes = self._collect_data_from_source(
-            data_name=self.KEY.lower(), method=self._collect_codes, url=self.URL,
+            data_name=self.KEY.lower(),
+            method=self._collect_codes,
+            url=self.URL,
             confirmation_required=confirmation_required,
-            confirmation_prompt=f"To collect data of {self.KEY.lower()}\n?",
-            verbose=verbose, raise_error=raise_error)
+            confirmation_prompt=f"To collect data of {self.KEY.lower()}?\n",
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return buzzer_codes
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches data of `buzzer codes`_.
+        Fetch data of `buzzer codes`_.
 
         .. _`buzzer codes`: http://www.railwaycodes.org.uk/misc/buzzer.shtm
 
@@ -148,24 +176,30 @@ class Buzzer(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import Buzzer  # from pyrcs import Buzzer
+
             >>> buz = Buzzer()
+
             >>> buz_codes = buz.fetch_codes()
+
             >>> type(buz_codes)
             dict
             >>> list(buz_codes.keys())
             ['Buzzer codes', 'Last updated date']
+
             >>> buz.KEY
             'Buzzer codes'
+
             >>> buz_codes_dat = buz_codes[buz.KEY]
+
             >>> type(buz_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> buz_codes_dat.head()
-              Code [number of buzzes or groups separated by pauses]            Meaning
-            0                                                  1                  Stop
-            1                                                1-2           Close doors
-            2                                                  2        Ready to start
-            3                                                2-2     Do not open doors
-            4                                                  3              Set back
+              Code (number of buzzes or groups separate...                                 Meaning
+            0                                            1                                    Stop
+            1                                          1-2                             Close doors
+            2                                            2                          Ready to start
+            3                                          2-2     Create vacuum [used in early 1960s]
+            4                                          2-2                       Do not open doors
         """
 
         args = {
@@ -173,9 +207,9 @@ class Buzzer(_Base):
             'method': self.collect_codes,
             'data_dir': self._cdd("..", "features"),
         }
-        kwargs.update(args)
 
         buzzer_codes = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update, dump_dir=dump_dir, verbose=verbose, **(args | kwargs)
+        )
 
         return buzzer_codes

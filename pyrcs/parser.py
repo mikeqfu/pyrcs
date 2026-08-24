@@ -18,74 +18,177 @@ from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
-from .utils import cd_data, homepage_url, print_instance_connection_error
+from .utils import cd_data, handle_connection_error, homepage_url
 
 
 # == Preprocess contents ===========================================================================
 
+def _parse_details_tag(details_tag, sep=' / '):
+    """
+    Parse a station owner or operator HTML details element into a single string.
 
-def _parse_other_tags_in_td_contents(x):
-    if isinstance(x, str):
-        td_text = x.strip(' ')
+    This function extracts the summary and sibling history nodes from a ``<details>``
+    HTML tag, formatting emphasis nodes into parenthesised text and joining entries
+    with a designated separator.
 
-    else:
-        tag_name, td_text = x.name, x.text
+    :param details_tag: The HTML details element or string fragment.
+    :type details_tag: bs4.element.Tag | str
+    :param sep: The separator used to join extracted lines; defaults to ``' / '``.
+    :type sep: str
+    :return: Formatted ownership string joined by the separator.
+    :rtype: str
 
-        if tag_name == 'em':
-            td_text = f'[{td_text}]'
+    **Examples**::
 
-        elif tag_name == 'q':
-            td_text = f'"{td_text}"'
+        >>> html_str = '''
+        ...     <details><summary>Transport for Wales <em>from 28 March 2020</em></summary>
+        ...     Network Rail Infrastructure <em>from 3 February 2003 to 27 March 2020</em>
+        ...     Railtrack <em>from 1 April 1994 to 2 February 2003</em></details>
+        ...     '''
+        >>> _parse_details_tag(html_str)
+        'Transport for Wales (from 28 March 2020); Network Rail Infrastructure (from 3 February...
+    """
 
-        elif tag_name in {'span', 'a'}:
-            td_class, td_class_child = x.get('class'), x.find('span')
+    if isinstance(details_tag, str):
+        soup = bs4.BeautifulSoup(details_tag, 'html.parser')
+        details_tag = soup.find('details')
 
-            if td_class == ['r']:
-                if td_text == 'no CRS?':
-                    td_text = f'\t\t / [{td_text}]'
-                elif '\n ' in td_text:
-                    td_text = ' '.join(
-                        [f'\t\t{y}' if y.startswith('(') and y.endswith(')') else f' / [{y}]'
-                         for y in td_text.split('\n ')])
-                elif '(' not in td_text and ')' not in td_text:
-                    td_text = f'\t\t / [{td_text}]'
-                else:
-                    td_text = f'\t\t{td_text}'
+    if not details_tag:
+        return ''
 
-            elif not td_class and td_class_child:
-                td_text = f'\t\t{td_text}'
+    # Replace all <em> elements with parenthesised text directly in the DOM
+    for em in details_tag.find_all('em'):
+        em_text = em.get_text(strip=True)
+        em.replace_with(f' ({em_text})')
+
+    entries = []
+
+    # Process <summary> as the first entry
+    summary = details_tag.find('summary')
+    if summary:
+        summary_text = re.sub(r'\s+', ' ', summary.get_text()).strip()
+        if summary_text:
+            entries.append(summary_text)
+        summary.decompose()  # Remove summary so remaining text nodes can be processed
+
+    # Extract remaining text lines (historical entries)
+    remaining_text = details_tag.get_text()
+    for line in remaining_text.splitlines():
+        line_clean = re.sub(r'\s+', ' ', line).strip()
+        if line_clean:
+            entries.append(line_clean)
+
+    return sep.join(entries)
+
+
+def _parse_td_content_element(x):
+    """
+    Parse a single HTML element from a table cell's contents.
+
+    This function converts specific HTML elements (like ``<em>``, ``<q>``, ``<span>``
+    and ``<details>``) into formatted text representations, handling standard layout
+    classes natively.
+
+    :param x: The BeautifulSoup element or string extracted from the table cell.
+    :type x: bs4.element.Tag | bs4.element.NavigableString | str
+    :return: Parsed and formatted string.
+    :rtype: str
+    """
+
+    if isinstance(x, str) or isinstance(x, bs4.NavigableString):
+        return str(x).strip(' ')
+
+    tag_name = x.name
+    td_text = x.get_text(separator=' ', strip=True)
+
+    if tag_name == 'em':
+        return f'[{td_text}]'
+
+    if tag_name == 'q':
+        return f'"{td_text}"'
+
+    if tag_name in {'span', 'a'}:
+        td_class = x.get('class', [])
+        has_span_child = x.find('span') is not None
+
+        if td_class == ['r']:
+            if td_text == 'no CRS?':
+                return f'\t\t / [{td_text}]'
+            if '\n ' in td_text:
+                parts = [
+                    f'\t\t{y}' if y.startswith('(') and y.endswith(')') else f' / [{y}]'
+                    for y in td_text.split('\n ')
+                ]
+                return ' '.join(parts)
+            if '(' not in td_text and ')' not in td_text:
+                return f'\t\t / [{td_text}]'
+            return f'\t\t{td_text}'
+
+        if td_class == ['popup']:
+            clean_text = td_text.replace('✖', '').strip()
+            return f'({clean_text})'
+
+        if not td_class and has_span_child:
+            return f'\t\t{td_text}'
+
+    if tag_name == 'div':
+        return ''
+
+    if tag_name == 'details':
+        return _parse_details_tag(x)
 
     return td_text
 
 
 def _prep_records(trs, ths, sep=' / '):
-    ths_len = len(ths)
+    """
+    Prepare raw row records and track row-spanned cells from table rows.
 
+    :param trs: A list or result set of ``<tr>`` tags.
+    :type trs: bs4.element.ResultSet | list[bs4.element.Tag]
+    :param ths: The table headers to determine the correct number of columns.
+    :type ths: list | bs4.element.Tag
+    :param sep: The separator to replace newlines; defaults to ``' / '``.
+    :type sep: str
+    :return: A tuple containing the raw string records and a list of rowspan metadata.
+    :rtype: tuple[list[list[str]], list[tuple[int, int, int, str]]]
+    """
+
+    ths_len = len(ths)
     records = []
     row_spanned = []
+    newline_pattern = re.compile(r'/?\r?\n')
 
-    for no, tr in enumerate(trs):
+    for row_idx, tr in enumerate(trs):
         data = []
-        tds = tr.find_all(name='td')
+        tds = tr.find_all('td')
 
         if len(tds) != ths_len:
             tds = tds[:ths_len]
 
-        for td_no, td in enumerate(tds):
+        for col_idx, td in enumerate(tds):
             if td.find('td'):
-                text_ = [''] if td.find('a') is None else td.find('a').contents + ["\t\t / "]
+                # Handle nested tables
+                a_tag = td.find('a')
+                # noinspection string-conversion-without-dunder-method
+                text_parts = [str(x) for x in a_tag.contents] + ['\t\t / '] if a_tag else ['']
             else:
-                text_ = [_parse_other_tags_in_td_contents(x) for x in td.contents]
-            # _move_element_to_end(text_, char='\t\t')
-            text = ' '.join(sorted([x for x in text_ if x.strip(' ')], key=lambda x: '\t\t' in x))
+                text_parts = [_parse_td_content_element(x) for x in td.contents]
+
+            # Sort elements containing '\t\t' to the end of the text
+            valid_parts = [str(x) for x in text_parts if str(x).strip(' ')]
+            valid_parts.sort(key=lambda x: '\t\t' in x)
+            text = ' '.join(valid_parts)
 
             if sep:
-                old_sep = re.compile(r'/?\r?\n')
-                if len(re.findall(old_sep, text)) > 0:
-                    text = re.sub(r'/?\r?\n', sep, text)
+                text = newline_pattern.sub(sep, text)
 
             if td.has_attr('rowspan'):
-                row_spanned.append((no, int(td['rowspan']), td_no, text))
+                try:
+                    span_val = int(td['rowspan'])
+                    row_spanned.append((row_idx, span_val, col_idx, text))
+                except ValueError:
+                    pass
 
             data.append(text)
 
@@ -94,32 +197,46 @@ def _prep_records(trs, ths, sep=' / '):
     return records, row_spanned
 
 
-def _check_row_spanned(records, row_spanned):
-    if row_spanned:
-        records_ = records.copy()
+def _apply_row_spans(records, row_spanned):
+    """
+    Apply rowspan values to subsequent rows to standardise the data grid.
 
-        row_spanned_dict = collections.defaultdict(list)
-        for i, *to_repeat in row_spanned:
-            row_spanned_dict[i].append(to_repeat)
+    :param records: The parsed list of row data.
+    :type records: list[list[str]]
+    :param row_spanned: Metadata detailing row indices, span counts, column indices,
+        and cell text.
+    :type row_spanned: list[tuple[int, int, int, str]]
+    :return: Standardised records with rowspans duplicated.
+    :rtype: list[list[str]]
+    """
 
-        for i, to_repeat in row_spanned_dict.items():
-            for no_spans, idx, dat in to_repeat:
-                for j in range(1, no_spans):
-                    k = i + j
-                    # if (dat in records[i]) and (dat != '\xa0'): # and (idx < len(records[i]) - 1):
-                    #     idx += np.abs(records[i].index(dat) - idx, dtype='int64')
-                    k_len = len(records_[k])
-                    if k_len < len(records_[i]):
-                        if k_len == idx:
-                            records_[k].insert(idx, dat)
-                        elif k_len > idx:
-                            if records_[k][idx] != '':
-                                records_[k].insert(idx, dat)
-                            else:  # records[k][idx] == '':
-                                records_[k][idx] = dat
+    if not row_spanned:
+        return records
 
-    else:
-        records_ = records
+    records_ = copy.deepcopy(records)
+    row_spanned_dict = collections.defaultdict(list)
+
+    for row_idx, span_count, col_idx, text_val in row_spanned:
+        row_spanned_dict[row_idx].append((span_count, col_idx, text_val))
+
+    for row_idx, spans in row_spanned_dict.items():
+        for span_count, col_idx, text_val in spans:
+            for j in range(1, span_count):
+                target_row = row_idx + j
+
+                # Defend against malformed HTML spanning past table bounds
+                if target_row >= len(records_):
+                    continue
+
+                row_len = len(records_[target_row])
+                if row_len < len(records_[row_idx]):
+                    if row_len == col_idx:
+                        records_[target_row].insert(col_idx, text_val)
+                    elif row_len > col_idx:
+                        if records_[target_row][col_idx] != '':
+                            records_[target_row].insert(col_idx, text_val)
+                        else:
+                            records_[target_row][col_idx] = text_val
 
     return records_
 
@@ -127,42 +244,46 @@ def _check_row_spanned(records, row_spanned):
 def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     # noinspection PyUnresolvedReferences
     """
-    Parses a list of HTML ``<tr>`` elements and extracts data from a table.
+    Parse a list of HTML ``<tr>`` elements and extract data matching column headers.
 
-    This function processes the rows from a table (``<tr>`` tags) and assigns them to corresponding
-    column headers (``<th>`` tags). It can return the data either as a list of lists or as a
-    dataframe.
+    This function processes the rows from a table (``<tr>`` tags) and aligns them to the
+    corresponding column headers (``<th>`` tags). It correctly manages HTML ``rowspan``
+    attributes and resolves missing items.
 
     See also [`PT-1 <https://stackoverflow.com/questions/28763891/>`_].
 
     :param trs: The content of ``<tr>`` tags from a web page table.
-    :type trs: bs4.ResultSet | list
-    :param ths: A list of column names (typically from ``<th>`` tags) for the table.
+    :type trs: bs4.element.ResultSet | list[bs4.element.Tag]
+    :param ths: A list of column names or ``<th>`` tags for the table.
     :type ths: list | bs4.element.Tag
-    :param sep: The separator to replace any separators found in the raw data;
-        defaults to ``' / '``.
+    :param sep: The separator to replace line breaks. Defaults to ``' / '``.
     :type sep: str | None
-    :param as_dataframe: If ``True``, returns the data as a Pandas DataFrame; defaults to ``False``.
+    :param as_dataframe: If ``True``, returns the data as a Pandas DataFrame. Defaults to ``False``.
     :type as_dataframe: bool
-    :return: A list of lists representing rows of the table,
-        or a dataframe if ``as_dataframe`` is ``True``.
-    :rtype: pandas.DataFrame | list[list]
+    :return: A list of lists representing rows of the table, or a dataframe if requested.
+    :rtype: pandas.DataFrame | list[list[str]]
 
     **Examples**::
 
         >>> from pyrcs.parser import parse_tr
         >>> import requests
         >>> import bs4
+
         >>> example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
+
         >>> source = requests.get(example_url)
         >>> parsed_text = bs4.BeautifulSoup(source.content, 'html.parser')
+
         >>> ths_dat = [th.text for th in parsed_text.find_all('th')]
         >>> trs_dat = parsed_text.find_all(name='tr')
+
         >>> tables_list = parse_tr(trs=trs_dat, ths=ths_dat)  # returns a list of lists
         >>> type(tables_list)
         list
+
         >>> len(tables_list) // 100
         1
+
         >>> tables_list[0]
         ['AAL',
          'Ashendon and Aynho Line',
@@ -173,11 +294,11 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
 
     records, row_spanned = _prep_records(trs=trs, ths=ths, sep=sep)
 
-    records = _check_row_spanned(records, row_spanned)
+    records = _apply_row_spans(records, row_spanned)
 
-    if isinstance(ths, bs4.Tag):
+    if isinstance(ths, bs4.element.Tag):
         column_names = [th.get_text(strip=True) for th in ths.find_all('th')]
-    elif all(isinstance(x, bs4.Tag) for x in ths):
+    elif ths and all(isinstance(x, bs4.element.Tag) for x in ths):
         column_names = [th.get_text(strip=True) for th in ths]
     else:
         column_names = copy.copy(ths)
@@ -186,22 +307,62 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     empty_rows = []
 
     for k, record in enumerate(records):
-        n = n_columns - len(record)
-        if n == n_columns:
+        diff = n_columns - len(record)
+        if diff == n_columns:
             empty_rows.append(k)
-        elif n > 0:
-            record.extend(['\xa0'] * n)
-        elif n < 0 and record[2] == '\xa0':
+        elif diff > 0:
+            record.extend(['\xa0'] * diff)
+        elif diff < 0 and len(record) > 2 and record[2] == '\xa0':
             del record[2]
 
-    if len(empty_rows) > 0:
-        for k in empty_rows:
-            del records[k]
+    # Iterate in reverse to avoid index shifting when elements are removed
+    for k in reversed(empty_rows):
+        del records[k]
 
     if as_dataframe:
-        records = pd.DataFrame(data=records, columns=column_names)
+        return pd.DataFrame(data=records, columns=column_names)
 
     return records
+
+
+def _parse_th_tag(th_tag):
+    """
+    Parse a table header tag and format emphasis elements for column names.
+
+    This function extracts text from a ``<th>`` tag, converting any nested ``<em>``
+    tags into parenthesised text and standardising internal whitespace to produce
+    clean DataFrame column headers.
+
+    :param th_tag: The table header element or HTML string fragment.
+    :type th_tag: bs4.element.Tag | str
+    :return: Formatted column header string suitable for a DataFrame.
+    :rtype: str
+
+    **Examples**::
+
+        >>> raw_html = '<th>Code <em>number of buzzes or groups separated by pauses</em></th>'
+        >>> _parse_th_tag(raw_html)
+        'Code (number of buzzes or groups separated by pauses)'
+        >>> _parse_th_tag('<th>Location</th>')
+        'Location'
+    """
+
+    if isinstance(th_tag, str):
+        soup = bs4.BeautifulSoup(th_tag, 'html.parser')
+        th_tag = soup.find('th') or soup
+
+    if not th_tag:
+        return ''
+
+    # Copy tag to prevent mutating the caller's parsed BeautifulSoup DOM tree
+    tag_copy = copy.copy(th_tag)
+
+    for em in tag_copy.find_all('em'):
+        em_text = em.get_text(strip=True)
+        em.replace_with(f' ({em_text})' if em_text else '')
+
+    header_text = tag_copy.get_text(separator=' ')
+    return re.sub(r'\s+', ' ', header_text).strip()
 
 
 def parse_table(source, parser='html.parser', as_dataframe=False):
@@ -245,11 +406,11 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
     soup = bs4.BeautifulSoup(markup=source.content, features=parser)
 
-    theads, tbodies = soup.find_all(name='thead'), soup.find_all(name='tbody')
+    theads, tbodies = soup.find_all('thead'), soup.find_all('tbody')
 
     tables = []
     for thead, tbody in zip(theads, tbodies):
-        ths = [th.get_text(strip=True) for th in thead.find_all(name='th')]
+        ths = [_parse_th_tag(th) for th in thead.find_all('th')]
         trs = tbody.find_all(name='tr')
 
         if as_dataframe:
@@ -266,6 +427,7 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
 
 def parse_date(str_date, as_date_type=False):
+    # noinspection PyShadowingNames
     """
     Parses a string representation of a date into a formatted date.
 
@@ -286,30 +448,111 @@ def parse_date(str_date, as_date_type=False):
     **Examples**::
 
         >>> from pyrcs.parser import parse_date
-        >>> str_date_dat = '2020-01-01'
-        >>> parse_date(str_date_dat)
+
+        >>> str_date = '2020-01-01'
+        >>> parse_date(str_date)
         '2020-01-01'
-        >>> str_date_dat = '2020-jan-01'
-        >>> parse_date(str_date_dat)
+
+        >>> str_date = '2020-jan-01'
+        >>> parse_date(str_date)
         '2020-01-01'
-        >>> parse_date(str_date_dat, as_date_type=True)
+
+        >>> parse_date(str_date, as_date_type=True)
         datetime.date(2020, 1, 1)
     """
 
     try:
-        temp_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
-        # or, temp_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
+        parsed_date = dateutil.parser.parse(timestr=str_date, fuzzy=True)
+        # or, parsed_date = datetime.datetime.strptime(str_date[12:], '%d %B %Y')
 
-    except (TypeError, calendar.IllegalMonthError):
-        month_name = find_similar_str(str_date, lookup_list=calendar.month_name)
-        err_month_ = find_similar_str(month_name, lookup_list=str_date.split(' '))
+    except (TypeError, ValueError, calendar.IllegalMonthError):
+        # noinspection PyBroadException
+        try:
+            month_name = find_similar_str(str_date, lookup_list=calendar.month_name)
+            if not month_name:
+                return None
 
-        temp_date = dateutil.parser.parse(
-            timestr=str_date.replace(err_month_, month_name), fuzzy=True)
+            err_month_ = find_similar_str(month_name, lookup_list=str_date.split(' '))
+            if not err_month_:
+                return None
 
-    parsed_date = temp_date.date() if as_date_type else str(temp_date.date())
+            parsed_date = dateutil.parser.parse(
+                timestr=str_date.replace(err_month_, month_name), fuzzy=True)
 
-    return parsed_date
+        except Exception:
+            return None
+
+    return parsed_date.date() if as_date_type else parsed_date.date().isoformat()
+
+
+def _align_column_list_lengths(df, target_cols, fill_value='', repeat_single=True):
+    # noinspection shadowing-names
+    """
+    Equalise list lengths across target columns for each row in a DataFrame.
+
+    This function ensures all specified target columns contain lists of identical
+    length for every row. Non-list entries are wrapped into single-element lists,
+    single-element lists are optionally repeated and shorter lists are padded with
+    a custom fill value prior to multi-column explosion.
+
+    :param df: Target DataFrame containing list or scalar elements.
+    :type df: pandas.DataFrame
+    :param target_cols: Column names whose list lengths should be equalised.
+    :type target_cols: list[str]
+    :param fill_value: Value used to pad lists shorter than the maximum list length
+        in a given row. Defaults to ``''``.
+    :type fill_value: Any
+    :param repeat_single: Whether single-element lists should be repeated to match
+        the maximum list length. If ``False``, they are padded with ``fill_value``.
+        Defaults to ``True``.
+    :type repeat_single: bool
+    :return: A copy of the DataFrame with aligned list lengths across target columns.
+    :rtype: pandas.DataFrame
+
+    **Examples**::
+
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'A': [['x', 'y']],
+        ...     'B': ['z'],
+        ...     'C': [[1]]
+        ... })
+
+        >>> _align_column_list_lengths(df, ['A', 'B', 'C'], fill_value=None, repeat_single=True)
+               A       B       C
+        0  [x, y]  [z, z]  [1, 1]
+
+        >>> _align_column_list_lengths(df, ['A', 'B', 'C'], fill_value=None, repeat_single=False)
+               A          B          C
+        0  [x, y]  [z, None]  [1, None]
+    """
+
+    cols = [c for c in target_cols if c in df.columns]
+    if not cols or df.empty:
+        return df
+
+    res_df = df.copy()
+
+    for col in cols:
+        res_df[col] = res_df[col].map(lambda x: x if isinstance(x, list) else [x])
+
+    def _align_row(row):
+        lengths = [len(row[c]) for c in cols]
+        max_len = max(lengths) if lengths else 1
+
+        if max_len <= 1 or all(length == max_len for length in lengths):
+            return row
+
+        for c in cols:
+            curr_len = len(row[c])
+            if curr_len < max_len:
+                if curr_len == 1 and repeat_single:
+                    row[c] = row[c] * max_len
+                else:
+                    row[c] = row[c] + [fill_value] * (max_len - curr_len)
+        return row
+
+    return res_df.apply(_align_row, axis=1)
 
 
 # == Extract information ===========================================================================
@@ -413,17 +656,33 @@ def _get_site_map_sub_dl(h3_dl_dts):
 
 def _get_site_map(source, parser='html.parser'):
     """
-    Parses the site map from the given HTML source and returns a structured dictionary.
+    Parse the site map from the given HTML source and return a structured dictionary.
+
+    This internal utility extracts section categories, links, and sub-lists from the structure of
+    the primary railway codes site layout page.
+
+    :param source: HTTP response context containing the sitemap configuration file.
+    :type source: requests.Response
+    :param parser: Soup parsing feature engine to use. Defaults to ``'html.parser'``.
+    :type parser: str
+    :return: A structured map containing clean keys linked to absolute domain targets.
+    :rtype: dict
     """
 
     soup = bs4.BeautifulSoup(markup=source.content, features=parser)
     site_map = {}
 
-    h3s = soup.find_all('h3', attrs={"class": "site"})
+    h3s = soup.find_all('h3', attrs={'class': 'site'})
 
     for h3 in h3s:
-        h3_title = h3.get_text(strip=True)
-        h3_dl_dts = h3.find_next('dl').find_all('dt')  # h3 > dl > dt
+        h3_title = h3.get_text(strip=True)  # h3 > dl > dt
+        dl_element = h3.find_next('dl')
+        if not dl_element:
+            continue
+
+        h3_dl_dts = dl_element.find_all('dt')
+        if not h3_dl_dts:
+            continue
 
         if len(h3_dl_dts) == 1:
             dd_dict = {}  # h3 > dl > dt > dd
@@ -451,25 +710,31 @@ def _get_site_map(source, parser='html.parser'):
 def get_site_map(update=False, confirmation_required=True, verbose=False, raise_error=True):
     # noinspection PyShadowingNames
     """
-    Gets the `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_.
+    Get the railway codes project `site map <http://www.railwaycodes.org.uk/misc/sitemap.shtm>`_
+    representation data.
 
-    :param update: Whether to check for updates to the package data; defaults to ``False``.
+    Retrieves database structure configuration values from a cached copy if available, or shifts to
+    live web extraction streams depending on user parameter profiles.
+
+    :param update: Whether to check for updates to the package data. Defaults to ``False``.
     :type update: bool
-    :param confirmation_required: Whether user confirmation is required before proceeding;
-        defaults to ``True``.
+    :param confirmation_required: Whether user confirmation is required before proceeding.
+        Defaults to ``True``.
     :type confirmation_required: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False``, the error will be suppressed; defaults to ``True``.
+        if ``raise_error=False``, the error will be suppressed. Defaults to ``True``.
     :type raise_error: bool
-    :return: A dictionary containing the data of site map.
+    :return: A dictionary containing the data of site map, or ``None`` if retrieval failed.
     :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_site_map
+
         >>> site_map = get_site_map()
+
         >>> type(site_map)
         dict
         >>> list(site_map.keys())
@@ -478,6 +743,7 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
          'Other assets',
          '"Legal/financial" lists',
          'Miscellaneous']
+
         >>> site_map['Home']
         {'index': 'http://www.railwaycodes.org.uk/index.shtml'}
     """
@@ -488,39 +754,38 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
         return load_data(path_to_file)
 
     else:
-        if confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
+        if not confirmed("To collect the site map\n?", confirmation_required=confirmation_required):
             if verbose in {True, 1}:
-                print("Updating the package data", end=" ... ")
+                print("Cancelled.")
+            return None
 
-            try:
-                url = urllib.parse.urljoin(homepage_url(), '/misc/sitemap.shtm')
-                source = requests.get(url=url, headers=fake_requests_headers())
-                source.raise_for_status()
-            except Exception as e:
-                print_instance_connection_error(
-                    update=update, verbose=True if update else verbose, e=e,
-                    raise_error=raise_error)
-                return None
+        if verbose in {True, 1}:
+            print("Updating the package data", end=" ... ")
 
-            try:
-                site_map = _get_site_map(source=source)
+        try:
+            url = urllib.parse.urljoin(homepage_url(), "/misc/sitemap.shtm")
+            source = requests.get(url=url, headers=fake_requests_headers())
+            source.raise_for_status()
+        except Exception as e:
+            handle_connection_error(
+                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+            return None
 
-                if verbose in {True, 1}:
-                    print("Done.")
+        try:
+            site_map = _get_site_map(source=source)
 
-                if site_map:
-                    save_data(site_map, path_to_file, indent=4, verbose=(verbose == 2 or False))
-
-                return site_map
-
-            except Exception as e:
-                _print_failure_message(
-                    e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
-
-        else:
             if verbose in {True, 1}:
-                print("Cancelled. ")
-            # site_map = load_data(path_to_file)
+                print("Done.")
+
+            if site_map:
+                save_data(site_map, path_to_file, indent=4, verbose=(verbose == 2 or False))
+
+            return site_map
+
+        except Exception as e:
+            _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
+
+        return None
 
 
 def _get_last_updated_date(soup, parsed=True, as_date_type=False):
@@ -550,7 +815,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
 
     :param url: The URL of the web page for which the last update date is requested.
     :type url: str
-    :param parsed: Whether to reformat the date into a standardized format (``YYYY-MM-DD``);
+    :param parsed: Whether to reformat the date into a standardised format (``YYYY-MM-DD``);
         defaults to ``True``.
     :type parsed: bool
     :param as_date_type: If ``True``, the date is returned as a `datetime.date`_ object;
@@ -570,13 +835,17 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
     **Examples**::
 
         >>> from pyrcs.parser import get_last_updated_date
+
         >>> url = 'http://www.railwaycodes.org.uk/crs/CRSa.shtm'
+
         >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=False)
         >>> type(last_upd_date)
         str
+
         >>> last_upd_date = get_last_updated_date(url=url, parsed=True, as_date_type=True)
         >>> type(last_upd_date)
         datetime.date
+
         >>> url = 'http://www.railwaycodes.org.uk/linedatamenu.shtm'
         >>> last_upd_date = get_last_updated_date(url=url, verbose=True)
         Information of the last update date not available.
@@ -628,20 +897,51 @@ def get_financial_year(date):
 
 
 def _parse_introduction(source, delimiter='\n'):
+    """
+    Parse the introduction section paragraphs from the provided HTML source content.
+
+    This internal helper extracts sequential paragraphs following the introductory header element
+    until a new header breakdown boundary is encountered.
+
+    :param source: HTTP response context containing the target webpage text.
+    :type source: requests.Response
+    :param delimiter: The structural character separator used to join paragraphs.
+        Defaults to ``'\\n'``.
+    :type delimiter: str
+    :return: A single text string combining all sequential introductory paragraphs.
+    :rtype: str | None
+    """
+
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-    intro_h3 = [h3 for h3 in soup.find_all('h3') if h3.get_text(strip=True).startswith('Intro')][0]
+    # Seek the target introduction header element
+    h3_elements = soup.find_all('h3')
+    intro_h3 = None
+    for h3 in h3_elements:
+        if h3.get_text(strip=True).startswith('Intro'):
+            intro_h3 = h3
+            break
+
+    if not intro_h3:
+        return None
 
     p = intro_h3.find_next(name='p')
-    prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
-
     intro_paras = []
-    while prev_h3 == intro_h3 and prev_h4 is None:
+
+    # Cycle through siblings while validating paragraph layout boundaries
+    while p is not None:
+        prev_h3 = p.find_previous(name='h3')
+        prev_h4 = p.find_previous(name='h4')
+
+        # Terminate traversal if we drift outside the introductory header segment context
+        if prev_h3 != intro_h3 or prev_h4 is not None:
+            break
+
         para_text = p.text.replace('  ', ' ')
-        intro_paras.append(para_text)
+        if para_text.strip():
+            intro_paras.append(para_text)
 
         p = p.find_next(name='p')
-        prev_h3, prev_h4 = p.find_previous(name='h3'), p.find_previous(name='h4')
 
     introduction = delimiter.join(intro_paras)
 
@@ -673,7 +973,9 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
     **Examples**::
 
         >>> from pyrcs.parser import get_introduction
+
         >>> bridges_url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
+
         >>> intro_text = get_introduction(url=bridges_url)
         >>> intro_text
         "There are thousands of bridges over and under the railway system. These pages attempt to...
@@ -689,7 +991,7 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
     except Exception as e:
-        print_instance_connection_error(
+        handle_connection_error(
             update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
         return None
 
@@ -733,6 +1035,7 @@ def _parse_catalogue(source, url):
 
 
 def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=False):
+    # noinspection PyShadowingNames
     """
     Gets the catalogue of items from the main page of a data cluster.
 
@@ -757,9 +1060,10 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
     **Examples**::
 
         >>> from pyrcs.parser import get_catalogue
-        >>> elr_cat = get_catalogue(url='http://www.railwaycodes.org.uk/elrs/elr0.shtm')
-        >>> type(elr_cat)
-        dict
+
+        >>> url = 'http://www.railwaycodes.org.uk/elrs/elr0.shtm'
+        >>> elr_cat: dict = get_catalogue(url)
+
         >>> list(elr_cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
         >>> list(elr_cat.keys())[-5:]
@@ -768,9 +1072,10 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
          'LUL system',
          'DLR system',
          'Canals']
-        >>> location_code_cat = get_catalogue(url='http://www.railwaycodes.org.uk/crs/crs0.shtm')
-        >>> type(location_code_cat)
-        dict
+
+        >>> url = 'http://www.railwaycodes.org.uk/crs/crs0.shtm'
+        >>> location_code_cat: dict = get_catalogue(url)
+
         >>> list(location_code_cat.keys())[:5]
         ['Introduction', 'A', 'B', 'C', 'D']
         >>> list(location_code_cat.keys())[-5:]
@@ -807,34 +1112,33 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
 def get_category_menu(name, update=False, confirmation_required=True, verbose=False,
                       raise_error=False):
     """
-    Gets a menu of the available classes from the specified URL.
+    Get a menu of the available data classes from the specified site home URL.
 
-    This function scrapes a web page for available classes (typically categorised hyperlinks) and
-    returns them as a dictionary. It also provides options to update the catalogue and
-    save it as a JSON file.
+    This function scrapes the home web page for available dropdown classes (typically categorised
+    hyperlinks) and returns them as a dictionary. It provides configurations to update the local
+    catalogue file copy.
 
-    :param name: The name of the data category.
+    :param name: The name of the target data category.
     :type name: str
-    :param update: Whether to check for updates to the package data; defaults to ``True``.
+    :param update: Whether to check for updates to the package data. Defaults to ``False``.
     :type update: bool
-    :param confirmation_required: Whether user confirmation is required before proceeding;
-        defaults to ``True``.
+    :param confirmation_required: Whether user confirmation is required before proceeding.
+        Defaults to ``True``.
     :type confirmation_required: bool
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False`` (default), the error will be suppressed.
+        if ``raise_error=False`` (default), the error is suppressed.
     :type raise_error: bool
-    :return: A category menu in dictionary form,
-        where keys are data cluster names and values are URLs.
+    :return: A category menu in dictionary form, or ``None`` if retrieval failed.
     :rtype: dict | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_category_menu
-        >>> menu = get_category_menu(name='Line data')
-        >>> type(menu)
-        dict
+
+        >>> menu: dict = get_category_menu(name='Line data')
+
         >>> list(menu.keys())
         ['Line data']
         >>> len(menu['Line data'])
@@ -846,43 +1150,62 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
     if os.path.isfile(path_to_file) and not update:
         return load_data(path_to_file)
 
-    if confirmed("To collect/update category menu?", confirmation_required=confirmation_required):
-        try:
-            source = requests.get(url=homepage_url(), headers=fake_requests_headers())
-            source.raise_for_status()
-        except Exception as e:
-            print_instance_connection_error(
-                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
-            return None
-
-        try:
-            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-
-            drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
-            drop_btn = drop_btn_[0]
-
-            a_href_list = drop_btn.find_next_sibling('div').find_all('a')
-
-            cls_menu_ = [
-                (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
-                for a in a_href_list]
-
-            cls_menu = {name: dict(cls_menu_)}
-
-            save_data(cls_menu, path_to_file, indent=4, verbose=(verbose == 2 or False))
-
-            return cls_menu
-
-        except Exception as e:
-            _print_failure_message(
-                e, prefix="Failed. Error:", verbose=verbose, raise_error=raise_error)
-
-    else:
+    if not confirmed("To collect/update category menu?\n", confirmation_required):
         if verbose in {True, 1}:
             print("Cancelled.")
+        return None
+
+    if verbose:
+        print(f"Collecting category menu for \"{name.title()}\"", end=" ... ")
+
+    try:
+        source = requests.get(url=homepage_url(), headers=fake_requests_headers())
+        source.raise_for_status()
+    except Exception as e:
+        handle_connection_error(
+            update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+        return None
+
+    try:
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        # Find the designated category button
+        drop_btn_ = soup.select(f'button:-soup-contains("{name}")')
+        if not drop_btn_:
+            return None
+
+        drop_btn = drop_btn_[0]
+
+        # Extract targeted sub-links from sibling container
+        sibling_div = drop_btn.find_next_sibling('div')
+        if not sibling_div:
+            return None
+
+        a_href_list = sibling_div.find_all('a')
+
+        cls_menu_ = [
+            (a.get_text(), urllib.parse.urljoin(homepage_url(), a['href']))
+            for a in a_href_list if 'href' in a.attrs
+        ]
+
+        # Process and write file strictly when data elements exist
+        if cls_menu_:
+            cls_menu = {name: dict(cls_menu_)}
+
+            if verbose:
+                print("Done.")
+
+            save_data(cls_menu, path_to_file, indent=4, verbose=(verbose == 2 or False))
+            return cls_menu
+
+    except Exception as e:
+        _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
+
+    return None
 
 
 def get_heading_text(heading_tag, elem_tag_name='em'):
+    # noinspection PyShadowingNames,PyUnresolvedReferences
     """
     Gets the text from a given HTML heading tag.
 
@@ -897,12 +1220,16 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 
         >>> from pyrcs.parser import get_heading_text
         >>> from pyrcs.line_data import Electrification
+
         >>> elec = Electrification()
+
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
-        >>> source = requests.get(url=url, headers=fake_requests_headers())
+        >>> source = requests.get(url, headers=fake_requests_headers())
+
         >>> soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
-        >>> h3 = soup.find('h3')
-        >>> h3_text = get_heading_text(heading_tag=h3, elem_tag_name='em')
+        >>> heading_tag = soup.find('h3')
+
+        >>> h3_text = get_heading_text(heading_tag, elem_tag_name='em')
         >>> h3_text
         'Beamish Tramway'
     """
@@ -923,36 +1250,38 @@ def get_heading_text(heading_tag, elem_tag_name='em'):
 
 def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', feature_tag_name='h3',
                        verbose=False, raise_error=False):
+    # noinspection PyUnresolvedReferences
     """
-    Gets the catalogue of features from the main page of a data cluster.
+    Get the catalogue of features from the main page of a data cluster.
 
     This function extracts structured data (features) from a web page by parsing specific tags,
     typically used for features like headings and links in railway-related databases.
 
     :param url: The URL of the main page of a data cluster.
     :type url: str
-    :param head_tag_name: The tag name of the feature list at the top of the page;
-        defaults to ``'nav'``.
+    :param head_tag_name: The tag name of the feature list at the top. Defaults to ``'nav'``.
     :type head_tag_name: str
-    :param head_tag_txt: Text contained in the head tag; defaults to ``'Jump to: '``.
+    :param head_tag_txt: Text contained in the head tag. Defaults to ``'Jump to:'``.
     :type head_tag_txt: str
-    :param feature_tag_name: The tag name of the headings of each feature; defaults to ``'h3'``.
+    :param feature_tag_name: The tag name of the feature headings. Defaults to ``'h3'``.
     :type feature_tag_name: str
-    :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
     :type verbose: bool | int
     :param raise_error: Whether to raise the provided exception;
-        if ``raise_error=False`` (default), the error will be suppressed.
+        if ``raise_error=False``, the error will be suppressed. Defaults to ``False``.
     :type raise_error: bool
-    :return: A dataframe containing the page's feature catalogue with columns for feature, URL and
-        heading.
-    :rtype: pandas.DataFrame
+    :return: A dataframe containing the feature catalogue, or ``None`` if parsing fails.
+    :rtype: pandas.DataFrame | None
 
     **Examples**::
 
         >>> from pyrcs.parser import get_page_catalogue
         >>> from pyhelpers.settings import pd_preferences
+
         >>> pd_preferences(max_columns=1)
+
         >>> elec_url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
+
         >>> elec_catalogue = get_page_catalogue(elec_url)
         >>> elec_catalogue
                                                       Feature  ...
@@ -968,67 +1297,76 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
         20  Summerlee, Museum of Scottish Industrial Life ...  ...
         21                                  Tyne & Wear Metro  ...
         [22 rows x 3 columns]
+
         >>> elec_catalogue.columns.to_list()
-        ['Feature', 'URL', 'Heading']
+        ['feature', 'url', 'heading']
     """
 
     try:
         source = requests.get(url=url, headers=fake_requests_headers())
         source.raise_for_status()
     except Exception as e:
-        print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
+        handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
         return None
 
     try:
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        page_catalogue = pd.DataFrame({'Feature': [], 'URL': [], 'Heading': []})
-
-        for nav in soup.find_all(head_tag_name):
-            nav_text = nav.text.replace('\r\n', '').strip()
-
-            if re.match(r'^({})'.format(head_tag_txt), nav_text):
-                sep = '\xa0| ' if '\xa0| ' in nav_text else '\n'
-                feature_names = nav_text.replace(f'{head_tag_txt}{sep}', '').split(sep)
-                page_catalogue['Feature'] = feature_names
-
-                feature_urls = []
-                for item_name in feature_names:
-                    text_pat = re.compile(r'.*{}.*'.format(item_name), re.IGNORECASE)
-                    a = nav.find('a', string=text_pat)
-
-                    feature_urls.append(urllib.parse.urljoin(url, a.get('href')))
-
-                page_catalogue['URL'] = feature_urls
-
+        # Parse categorical headings up front
         feature_headings = []
         for h3 in soup.find_all(feature_tag_name):
             sub_heading = get_heading_text(heading_tag=h3, elem_tag_name='em')
             feature_headings.append(sub_heading)
 
-        page_catalogue['Heading'] = feature_headings
+        feature_records = []
 
-        return page_catalogue
+        for nav in soup.find_all(head_tag_name):
+            nav_text = nav.text.replace('\r\n', '').strip()
+
+            if re.match(r'^({})'.format(re.escape(head_tag_txt)), nav_text):
+                sep = '\xa0| ' if '\xa0| ' in nav_text else '\n'
+                feature_names = nav_text.replace(f'{head_tag_txt}{sep}', '').split(sep)
+
+                for idx, item_name in enumerate(feature_names):
+                    text_pat = re.compile(r'.*{}.*'.format(re.escape(item_name)), re.IGNORECASE)
+                    a = nav.find('a', string=text_pat)
+
+                    # Safe fallbacks if tag matches are missing
+                    feature_url = urllib.parse.urljoin(url, a.get('href')) if a else None
+                    heading_val = feature_headings[idx] if idx < len(feature_headings) else None
+
+                    feature_records.append({
+                        'feature': item_name,
+                        'url': feature_url,
+                        'heading': heading_val
+                    })
+
+        if not feature_records:
+            return pd.DataFrame({'feature': [], 'url': [], 'heading': []})
+
+        return pd.DataFrame(feature_records)
 
     except Exception as e:
         _print_failure_message(e, verbose=verbose, raise_error=raise_error)
 
+    return None
+
 
 def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
+    # noinspection PyShadowingNames
     """
-    Gets hyperlinked text from a specified HTML tag.
+    Extract text content from an HTML tag while preserving and formatting hyperlinks.
 
-    This function scrapes hypertext content, optionally returning it in Markdown format if
-    requested.
+    This function iterates through the child nodes of a BeautifulSoup tag element, converting
+    hyperlink tags into standardised Markdown format or plain-text web link references.
 
-    :param hypertext_tag: The tag containing hyperlinked text.
+    :param hypertext_tag: The tag containing text and hyperlinked element targets.
     :type hypertext_tag: bs4.element.Tag | bs4.element.PageElement
-    :param hyperlink_tag_name: The tag name of the hyperlink within the hypertext;
-        defaults to ``'a'``.
+    :param hyperlink_tag_name: The target tag name of the hyperlink. Defaults to ``'a'``.
     :type hyperlink_tag_name: str
-    :param md_style: Whether to return the hypertext in Markdown style, defaults to ``True``.
+    :param md_style: Whether to return the hyperlinks in Markdown style. Defaults to ``True``.
     :type md_style: bool
-    :return: The hypertext.
+    :return: The fully combined text string with formatted hyperlink references.
     :rtype: str
 
     **Examples**::
@@ -1037,31 +1375,50 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
         >>> from pyrcs.line_data import Electrification
         >>> import bs4
         >>> import requests
+
         >>> elec = Electrification()
+
+        >>> assert isinstance(elec.catalogue, dict)
         >>> url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
+
         >>> source = requests.get(url)
         >>> soup = bs4.BeautifulSoup(source.content, 'html.parser')
         >>> h3 = soup.find('h3')
-        >>> p = h3.find_all_next('p')[8]
-        >>> p
-        <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-traml...
-        >>> hyper_txt = get_hypertext(hypertext_tag=p, md_style=True)
-        >>> hyper_txt
-        'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site](...
+
+        >>> assert isinstance(h3, bs4.Tag)
+        >>> hypertext_tag = h3.find_all_next('p')[9]
+        <p>Croydon Tramlink mast references can be found on the <a href="http://www.croydon-tra...
+
+        >>> result_text = get_hypertext(hypertext_tag, md_style=True)
+        >>> result_text
+        'Croydon Tramlink mast references can be found on the [Croydon Tramlink Unofficial Site...
     """
 
-    hypertext_x = []
+    if not isinstance(hypertext_tag, bs4.element.Tag):
+        return hypertext_tag.get_text() if hasattr(hypertext_tag, 'get_text') else ""
 
-    for x in hypertext_tag.contents:
-        # noinspection PyUnresolvedReferences
-        if x.name == hyperlink_tag_name:
-            # noinspection PyUnresolvedReferences
-            href = x.get('href')
-            x_text = '[' + x.text + ']' + f'({href})' if md_style else x.text + f' ({href})'
-            hypertext_x.append(x_text)
-        else:
-            hypertext_x.append(x.text)
+    hypertext_parts = []
 
-    hypertext_tag = ''.join(hypertext_x).replace('\xa0', '').replace('  ', ' ')
+    # Handle text fragments vs elements gracefully without throwing attribute errors
+    for node in hypertext_tag.contents:
+        if isinstance(node, bs4.element.Tag) and node.name == hyperlink_tag_name:
+            href = node.get('href')
+            node_text = node.get_text()
 
-    return hypertext_tag
+            if href:
+                formatted_link = f"[{node_text}]({href})" if md_style else f"{node_text} ({href})"
+                hypertext_parts.append(formatted_link)
+            else:
+                hypertext_parts.append(node_text)
+
+        else:  # Use native soup text extraction methods to satisfy type checks completely
+            if hasattr(node, 'get_text'):
+                hypertext_parts.append(node.get_text())
+            elif isinstance(node, bs4.element.NavigableString):
+                hypertext_parts.append(node.string or '')
+            else:
+                hypertext_parts.append('')
+
+    result_text = "".join(hypertext_parts).replace("\xa0", "").replace("  ", " ")
+
+    return result_text

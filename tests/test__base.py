@@ -39,14 +39,14 @@ class TestBase:
 
         if initial is None:
             if confirmation_prompt is None:
-                assert f'To collect data of {data_name}' in prompt
+                assert f'Proceed with collecting data of "{data_name}"?\n' in prompt
             elif isinstance(confirmation_prompt, str):
                 assert prompt == 'To collect data'
             elif isinstance(confirmation_prompt, typing.Callable):
                 if 'x' in inspect.signature(confirmation_prompt).parameters:
                     assert prompt == 1
                 else:
-                    assert f'To collect data of {data_name}' in prompt
+                    assert f'Proceed with collecting data of "{data_name}"?\n' in prompt
 
         elif initial == 'a' and confirmation_prompt is None:
             assert f'beginning with "{initial}"' in prompt
@@ -134,7 +134,7 @@ class TestBase:
         data_name = "test_data_name"
         _b._save_data_to_file(data=None, data_name=data_name, verbose=True)
         out, _ = capfd.readouterr()
-        assert f'No data of "{data_name.title()}" has been freshly collected.' in out
+        assert f'No data of "{data_name}" has been freshly collected.' in out
 
         _b._save_data_to_file(
             data=pd.DataFrame(), data_name=data_name, ext=ext, dump_dir=tmp_path, verbose=2)

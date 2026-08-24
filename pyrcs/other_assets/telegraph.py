@@ -5,9 +5,10 @@ Collects `telegraph codes <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
 import urllib.parse
 
 import bs4
+import pandas as pd
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_tr
+from ..parser import _parse_th_tag, parse_tr
 from ..utils import homepage_url
 
 
@@ -65,43 +66,73 @@ class Telegraph(_Base):
             data_dir=data_dir, data_category="other-assets", update=update, verbose=verbose)
 
     def _collect_codes(self, source, verbose=False):
-        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        """
+        Collect and parse telegraph code words from the provided HTML source.
 
-        h3s = soup.find_all('h3')
+        This method extracts telegraph code words grouped by section headings, parses
+        associated tables, normalises status fields and persists the resulting
+        dataset.
 
-        sub_keys, codes_list = [], []
-        for h3 in h3s:
-            sub_keys.append(h3.text.strip())
+        :param source: The HTTP response object, raw HTML content or parsed soup.
+        :type source: requests.Response | bs4.BeautifulSoup | str
+        :param verbose: Whether to print progress logs; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing parsed telegraph code words and metadata.
+        :rtype: dict
 
-            ths = [th.text.strip() for th in h3.find_next('thead').find_all('th')]
-            trs = h3.find_next('tbody').find_all('tr')
+        **Examples**::
 
-            dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+            >>> from pyrcs.other_assets import Telegraph
+            >>> telegraph = Telegraph()
+            >>> # # Internal collection call
+            >>> # data = telegraph._collect_codes(source=source, verbose=True)
+        """
 
-            if 'In use' in dat.columns:
-                dat['In use'] = dat['In use'].map(_parse_telegraph_in_use_term)
+        content = source.content if hasattr(source, 'content') else source
+        soup = bs4.BeautifulSoup(markup=content, features='html.parser')
 
-            codes_list.append(dat)
+        sub_keys = []
+        codes_list = []
+
+        for h3 in soup.find_all('h3'):
+            table = h3.find_next('table')
+            if not table:
+                continue
+
+            thead = table.find('thead')
+            tbody = table.find('tbody')
+
+            if tbody is None:
+                tbody = table.find_next('tbody')
+
+            if thead and tbody:
+                sub_keys.append(h3.get_text(strip=True))
+
+                ths = [_parse_th_tag(th) for th in thead.find_all('th')]
+                trs = tbody.find_all('tr')
+
+                dat: pd.DataFrame = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+                if 'In use' in dat.columns:
+                    dat['In use'] = dat['In use'].map(_parse_telegraph_in_use_term)
+
+                codes_list.append(dat)
 
         telegraph_code_words_dat = dict(zip(sub_keys, codes_list))
 
-        telegraph_code_words = {
-            self.KEY: telegraph_code_words_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=telegraph_code_words, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        telegraph_code_words = self._pack_and_save_data(
+            data=telegraph_code_words_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return telegraph_code_words
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects data of `telegraph code words`_ from the source web page.
+        Collect data of `telegraph code words`_ from the source web page.
 
         .. _`telegraph code words`: http://www.railwaycodes.org.uk/misc/telegraph.shtm
 
@@ -121,24 +152,30 @@ class Telegraph(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import Telegraph  # from pyrcs import Telegraph
+
             >>> tel = Telegraph()
-            >>> tel_codes = tel.collect_codes()
-            To collect data of telegraphic codes
-            ? [No]|Yes: yes
+
+            >>> tel_codes = tel.collect_codes(verbose=True)
+            To collect data of telegraphic codes?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(tel_codes)
             dict
-            >>> list(tel_codes.keys())
+            >>> list(tel_codes)
             ['Telegraphic codes', 'Last updated date']
-            >>> tel.KEY
-            'Telegraphic codes'
-            >>> tel_codes_dat = tel_codes[tel.KEY]
+
+            >>> tel_codes_dat = tel_codes['Telegraphic codes']
             >>> type(tel_codes_dat)
             dict
-            >>> list(tel_codes_dat.keys())
+            >>> list(tel_codes_dat)
             ['Official codes', 'Unofficial codes']
+
             >>> tel_official_codes = tel_codes_dat['Official codes']
             >>> type(tel_official_codes)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> tel_official_codes.shape
+            (1286, 3)
             >>> tel_official_codes.head()
                   Code  ...                               In use
             0    ABACK  ...     cross industry term used in 1939
@@ -147,29 +184,36 @@ class Telegraph(_Base):
             3  ABREAST  ...   British Transport Commission, 1958
             4   ABSENT  ...                            GWR, 1939
             [5 rows x 3 columns]
+
             >>> tel_unofficial_codes = tel_codes_dat['Unofficial codes']
             >>> type(tel_unofficial_codes)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> tel_unofficial_codes.shape
+            (9, 2)
             >>> tel_unofficial_codes.head()
                   Code                             Unofficial description
             0  CRANKEX                                      [See KRANKEX]
             1  DRUNKEX  Saturday night special train (usually a DMU) t...
-            2     GYFO    Strongly urge all speed ('Get your finger out')
-            3  KRANKEX  Special train with interesting routing or trac...
-            4   MYSTEX  Special excursion going somewhere no one reall...
+            2    GAFMO  Expedite a matter long overdue attention ('Get...
+            3     GYFO    Strongly urge all speed ('Get your finger out')
+            4  KRANKEX  Special train with interesting routing or trac...
         """
 
         telegraph_code_words = self._collect_data_from_source(
-            data_name=self.KEY.lower(), method=self._collect_codes, url=self.URL,
+            data_name=self.KEY.lower(),
+            method=self._collect_codes,
+            url=self.URL,
             confirmation_required=confirmation_required,
-            confirmation_prompt=f"To collect data of {self.KEY.lower()}\n?",
-            verbose=verbose, raise_error=raise_error)
+            confirmation_prompt=f"To collect data of {self.KEY.lower()}?\n",
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return telegraph_code_words
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches data of `telegraph code words`_.
+        Fetch data of `telegraph code words`_.
 
         .. _`telegraph code words`: http://www.railwaycodes.org.uk/misc/telegraph.shtm
 
@@ -187,22 +231,29 @@ class Telegraph(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import Telegraph  # from pyrcs import Telegraph
+
             >>> tel = Telegraph()
+
             >>> tel_codes = tel.fetch_codes()
             >>> type(tel_codes)
             dict
             >>> list(tel_codes.keys())
             ['Telegraphic codes', 'Last updated date']
+
             >>> tel.KEY
             'Telegraphic codes'
+
             >>> tel_codes_dat = tel_codes[tel.KEY]
             >>> type(tel_codes_dat)
             dict
             >>> list(tel_codes_dat.keys())
             ['Official codes', 'Unofficial codes']
+
             >>> tel_official_codes = tel_codes_dat['Official codes']
             >>> type(tel_official_codes)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> tel_official_codes.shape
+            (1286, 3)
             >>> tel_official_codes.head()
                   Code  ...                               In use
             0    ABACK  ...     cross industry term used in 1939
@@ -211,16 +262,19 @@ class Telegraph(_Base):
             3  ABREAST  ...   British Transport Commission, 1958
             4   ABSENT  ...                            GWR, 1939
             [5 rows x 3 columns]
+
             >>> tel_unofficial_codes = tel_codes_dat['Unofficial codes']
             >>> type(tel_unofficial_codes)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> tel_unofficial_codes.shape
+            (9, 2)
             >>> tel_unofficial_codes.head()
                   Code                             Unofficial description
             0  CRANKEX                                      [See KRANKEX]
             1  DRUNKEX  Saturday night special train (usually a DMU) t...
-            2     GYFO    Strongly urge all speed ('Get your finger out')
-            3  KRANKEX  Special train with interesting routing or trac...
-            4   MYSTEX  Special excursion going somewhere no one reall...
+            2    GAFMO  Expedite a matter long overdue attention ('Get...
+            3     GYFO    Strongly urge all speed ('Get your finger out')
+            4  KRANKEX  Special train with interesting routing or trac...
         """
 
         args = {
@@ -228,9 +282,9 @@ class Telegraph(_Base):
             'method': self.collect_codes,
             'data_dir': self._cdd("..", "features"),
         }
-        kwargs.update(args)
 
         telegraph_code_words = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update, dump_dir=dump_dir, verbose=verbose, **(args | kwargs)
+        )
 
         return telegraph_code_words

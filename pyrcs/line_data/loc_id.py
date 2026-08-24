@@ -17,9 +17,8 @@ from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
 from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
-from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, homepage_url, \
-    is_homepage_connectable, print_instance_connection_error, print_void_collection_message, \
-    validate_initial
+from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, handle_connection_error, \
+    homepage_url, is_homepage_connectable, print_void_collection_message, validate_initial
 
 
 def _parse_raw_location_name(x):
@@ -598,7 +597,9 @@ class LocationIdentifiers(_Base):
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
+
             >>> lid = LocationIdentifiers()
+
             >>> lid.NAME
             'CRS, NLC, TIPLOC and STANOX codes'
             >>> lid.URL
@@ -607,8 +608,16 @@ class LocationIdentifiers(_Base):
 
         # data_cluster = re.sub(r",| codes| and", "", self.NAME.lower()).replace(" ", "-")
         super().__init__(
-            data_dir=data_dir, content_type='catalogue', data_category="line-data",
-            data_cluster="crs-nlc-tiploc-stanox", update=update, verbose=verbose)
+            data_dir=data_dir,
+            content_type='catalogue',
+            data_category="line-data",
+            data_cluster="crs-nlc-tiploc-stanox",
+            update=update,
+            verbose=verbose
+        )
+
+        if not isinstance(self.catalogue, dict):
+            raise ValueError("The catalogue is unavailable.")
 
         # Adds the multiple station codes explanatory note (MSCEN) to the catalogue
         mscen_url = urllib.parse.urljoin(homepage_url(), '/crs/crs2.shtm')
@@ -616,7 +625,11 @@ class LocationIdentifiers(_Base):
 
         # Retrieve the catalogue for other systems' station codes
         other_systems_url = self.catalogue.get(self.KEY_TO_OTHER_SYSTEMS)
-        self.other_systems_catalogue = get_page_catalogue(url=other_systems_url)
+
+        if not other_systems_url:
+            raise ValueError(f"Missing URL key: \"{self.KEY_TO_OTHER_SYSTEMS}\"")
+
+        self.other_systems_catalogue = get_page_catalogue(other_systems_url)
 
     @staticmethod
     def _parse_notes_page(source, parser='html.parser'):
@@ -697,6 +710,25 @@ class LocationIdentifiers(_Base):
     # -- CRS, NLC, TIPLOC and STANOX ---------------------------------------------------------------
 
     def _parse_crs_notes(self, data, initial, soup):
+        """
+        Parse and retrieve CRS explanatory notes for specific location codes.
+
+        This method identifies locations requiring additional notes, fetches the
+        corresponding web resource, and parses the descriptive content.
+
+        :param data: The parsed dataset.
+        :type data: pandas.DataFrame
+        :param initial: The regional index letter (e.g. ``"A"``) of the codes.
+        :type initial: str
+        :param soup: The parsed HTML document representing the index catalogue.
+        :type soup: bs4.BeautifulSoup
+        :return: A dictionary mapping CRS codes to their respective notes, or ``None``.
+        :rtype: dict | None
+        """
+
+        if not isinstance(self.catalogue, dict):
+            raise ValueError("The catalogue is unavailable.")
+
         # Identify rows that actually need a note lookup
         mask = data['CRS_Note'].str.contains('see note', case=False, na=False)
         if not mask.any():
@@ -707,6 +739,11 @@ class LocationIdentifiers(_Base):
         # Extract the specific 'note' links from the soup
         note_links = soup.find_all('a', href=True, string=re.compile(r'note', re.I))
 
+        # Safely retrieve base URL from catalogue dictionary
+        base_url = self.catalogue.get(initial)
+        if not base_url:
+            return None
+
         loc_id_notes = {}
         with requests.Session() as session:  # Using a Session is faster for multiple requests
             session.headers.update(fake_requests_headers())
@@ -715,7 +752,7 @@ class LocationIdentifiers(_Base):
                 crs_code = data.at[idx, 'CRS']
                 # noinspection PyBroadException
                 try:
-                    url = urllib.parse.urljoin(self.catalogue.get(initial), link_tag['href'])
+                    url = urllib.parse.urljoin(base_url, link_tag['href'])
                     response = session.get(url, timeout=10)
 
                     parsed_content, _ = self._parse_notes_page(response)
@@ -728,25 +765,46 @@ class LocationIdentifiers(_Base):
         return loc_id_notes
 
     def _collect_loc_id(self, initial, source, verbose=False):
-        initial_ = validate_initial(initial=initial)
+        """
+        Collect and parse location codes for a specific initial letter.
 
-        # url = lid.catalogue[initial_]
-        # source = requests.get(url)
+        This helper method parses raw HTML content for an alphabet-indexed station category
+        to extract locations, station codes, custom notes, and last updated timestamps.
+
+        :param initial: The regional index letter (e.g. ``"A"``) of the codes.
+        :type initial: str
+        :param source: The raw HTTP response containing the source markup.
+        :type source: requests.Response
+        :param verbose: Whether to print relevant status information to the console;
+            defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing compiled location dataframes, structural footnotes,
+            and the last updated date.
+        :rtype: dict
+        """
+
+        initial_ = validate_initial(initial)
+        # url = lid.catalogue[initial_]; source = requests.get(url)
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        thead, tbody = soup.find('thead'), soup.find('tbody')
+        thead = soup.find('thead')
+        tbody = soup.find('tbody')
+
+        if not isinstance(thead, bs4.element.Tag) or not isinstance(tbody, bs4.element.Tag):
+            raise ValueError("The source document does not contain a valid tabular structure.")
+
         ths = [th.get_text(strip=True) for th in thead.find_all('th')]
         trs = tbody.find_all('tr')
 
-        dat = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
+        # Convert raw HTML table rows into a structured Pandas DataFrame
+        dat: pd.DataFrame = parse_tr(trs=trs, ths=ths, sep=None, as_dataframe=True)
 
         dat = dat.replace({'\b-\b': '', '\xa0\xa0': ' ', '&half;': ' and 1/2'}, regex=True)
-
         data = dat.replace({'\xa0': ''}, regex=True)
 
-        # Parse location names and their corresponding notes
-        data[['Location', 'Location_Note']] = pd.DataFrame(  # Collect additional info as note
-            data['Location'].map(_parse_raw_location_name).to_list())
+        # Parse location names and separate any inline trailing comments/notes
+        location_mapping = data['Location'].map(_parse_raw_location_name).to_list()
+        data[['Location', 'Location_Note']] = pd.DataFrame(location_mapping, index=data.index)
         # # Debugging
         # for i, x in enumerate(data['Location']):
         #     try:
@@ -756,15 +814,10 @@ class LocationIdentifiers(_Base):
         #         break
         data.replace(_amendment_to_location_names(), regex=True, inplace=True)
 
-        # Cleanse multiple alternatives for every code column
-        data = _parse_mult_alt_codes(data=data)
-
-        # Parse note for every code column
-        data = _parse_code_notes(data=data)
-
-        # Parse STANOX note
-        data = _parse_stanox_note(data=data)
-
+        # Apply structural code parsing and clean-up functions
+        data = _parse_mult_alt_codes(data=data)  # Cleanse multiple alternatives for every column
+        data = _parse_code_notes(data=data)  # Parse note for every code column
+        data = _parse_stanox_note(data=data)  # Parse STANOX note
         # Fills missing or empty code values based on other rows sharing the same 'Location' name.
         data = _fill_location_names(data)
 
@@ -906,7 +959,7 @@ class LocationIdentifiers(_Base):
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_instance_connection_error(verbose=verbose)
+                    handle_connection_error(verbose=verbose)
                     print_void_collection_message(data_name=self.KEY, verbose=verbose)
 
                 dat_list = [
@@ -944,13 +997,28 @@ class LocationIdentifiers(_Base):
         return x_
 
     def _parse_tbl_dat(self, h3_or_h4):
-        tbl_dat = h3_or_h4.find_next('thead'), h3_or_h4.find_next('tbody')
-        thead, tbody = tbl_dat
+        """
+        Parse tabular data immediately following a header element.
+
+        :param h3_or_h4: The header tag object identifying the target table section.
+        :type h3_or_h4: bs4.element.Tag
+        :return: A parsed DataFrame representing the tabular contents, or ``None``
+            if a valid structure is missing.
+        :rtype: pandas.DataFrame | None
+        """
+
+        thead = h3_or_h4.find_next('thead')
+        tbody = h3_or_h4.find_next('tbody')
+
+        # Structural type guard to assure the IDE the tags exist
+        if not isinstance(thead, bs4.element.Tag) or not isinstance(tbody, bs4.element.Tag):
+            return None
+
         ths = [x.text for x in thead.find_all('th')]
         trs = tbody.find_all('tr')
-        tbl = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+        tbl: pd.DataFrame = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
-        if 'Code' in tbl.columns:
+        if isinstance(tbl, pd.DataFrame) and 'Code' in tbl.columns:
             if tbl['Code'].str.contains('https://').sum() > 0:
                 temp = tbl['Code'].map(self._parse_code)
                 tbl_ext = pd.DataFrame(zip(*temp)).T
@@ -961,27 +1029,51 @@ class LocationIdentifiers(_Base):
         return tbl
 
     def _collect_other_systems_codes(self, source, verbose=False):
-        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        """
+        Extract code datasets for alternative rail systems from the source content.
 
+        :param source: The raw HTTP response containing the target page markup.
+        :type source: requests.Response
+        :param verbose: Whether to print status details to the console; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A structured dictionary mapping individual other systems to their data.
+        :rtype: dict
+        """
+
+        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
         other_systems_codes = collections.defaultdict(dict)
 
         for h3 in soup.find_all('h3'):
             h4 = h3.find_next('h4')
 
-            if h4 is not None:
-                while h4:
-                    prev_h3 = h4.find_previous('h3')
-                    if prev_h3.text == h3.text:
-                        other_systems_codes[h3.text].update(
-                            {h4.text: self._parse_tbl_dat(h4)})
-                        h4 = h4.find_next('h4')
-                    elif h3.text not in other_systems_codes.keys():
-                        other_systems_codes.update({h3.text: self._parse_tbl_dat(h3)})
+            if isinstance(h4, bs4.element.Tag):
+                curr_h4 = h4  # Current h4
+
+                while isinstance(curr_h4, bs4.element.Tag):
+                    prev_h3 = curr_h4.find_previous('h3')
+
+                    # Ensure the previous H3 exists and matches the current boundary H3
+                    if isinstance(prev_h3, bs4.element.Tag) and prev_h3.text == h3.text:
+                        parsed_tbl = self._parse_tbl_dat(curr_h4)
+                        if parsed_tbl is not None:
+                            other_systems_codes[h3.text].update({curr_h4.text: parsed_tbl})
+
+                        # Move to the next h4 safely to satisfy the loop condition
+                        next_h4 = curr_h4.find_next('h4')
+                        curr_h4 = next_h4 if isinstance(next_h4, bs4.element.Tag) else None
+
+                    elif h3.text not in other_systems_codes:
+                        parsed_tbl = self._parse_tbl_dat(h3)
+                        if parsed_tbl is not None:
+                            other_systems_codes.update({h3.text: parsed_tbl})
                         break
+
                     else:
                         break
             else:
-                other_systems_codes.update({h3.text: self._parse_tbl_dat(h3)})
+                parsed_tbl = self._parse_tbl_dat(h3)
+                if parsed_tbl is not None:
+                    other_systems_codes.update({h3.text: parsed_tbl})
 
         other_systems_codes = {
             self.KEY_TO_OTHER_SYSTEMS: dict(other_systems_codes),
@@ -992,7 +1084,10 @@ class LocationIdentifiers(_Base):
             print("Done.")
 
         self._save_data_to_file(
-            data=other_systems_codes, data_name=self.KEY_TO_OTHER_SYSTEMS, verbose=verbose)
+            data=other_systems_codes,
+            data_name=self.KEY_TO_OTHER_SYSTEMS,
+            verbose=verbose
+        )
 
         return other_systems_codes
 
@@ -1020,20 +1115,26 @@ class LocationIdentifiers(_Base):
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
+
             >>> lid = LocationIdentifiers()
-            >>> os_codes = lid.collect_other_systems_codes()
-            To collect data of Other systems
-            ? [No]|Yes: yes
+
+            >>> os_codes = lid.collect_other_systems_codes(verbose=True)
+            Proceed with collecting data of "other systems"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(os_codes)
             dict
-            >>> list(os_codes.keys())
+            >>> list(os_codes)
             ['Other systems', 'Last updated date']
+
             >>> lid.KEY_TO_OTHER_SYSTEMS
             'Other systems'
             >>> os_codes_dat = os_codes[lid.KEY_TO_OTHER_SYSTEMS]
+
             >>> type(os_codes_dat)
             dict
-            >>> list(os_codes_dat.keys())
+            >>> list(os_codes_dat)
             ['Córas Iompair Éireann (Republic of Ireland)',
              'Crossrail',
              'Croydon Tramlink',
@@ -1043,10 +1144,24 @@ class LocationIdentifiers(_Base):
              'Tyne & Wear Metro']
         """
 
+        # Extract the target URL to prevent runtime exceptions if catalogue is uninitialized
+        target_url = None
+        if isinstance(self.catalogue, dict):
+            target_url = self.catalogue.get(self.KEY_TO_OTHER_SYSTEMS)
+
+        if not target_url:
+            if raise_error:
+                raise ValueError("The catalogue is unavailable or missing the target URL key.")
+            return None
+
         other_systems_codes = self._collect_data_from_source(
-            data_name=self.KEY_TO_OTHER_SYSTEMS.lower(), method=self._collect_other_systems_codes,
-            url=self.catalogue.get(self.KEY_TO_OTHER_SYSTEMS),
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.KEY_TO_OTHER_SYSTEMS.lower(),
+            method=self._collect_other_systems_codes,
+            url=target_url,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return other_systems_codes
 
@@ -1091,11 +1206,17 @@ class LocationIdentifiers(_Base):
              'Tyne & Wear Metro']
         """
 
-        kwargs.update(
-            {'data_name': self.KEY_TO_OTHER_SYSTEMS, 'method': self.collect_other_systems_codes})
+        meth_kwargs = {
+            'data_name': self.KEY_TO_OTHER_SYSTEMS,
+            'method': self.collect_other_systems_codes
+        } | kwargs
 
         other_systems_codes = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update,
+            dump_dir=dump_dir,
+            verbose=verbose,
+            **meth_kwargs
+        )
 
         return other_systems_codes
 
@@ -1139,17 +1260,23 @@ class LocationIdentifiers(_Base):
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
+
             >>> lid = LocationIdentifiers()
-            >>> notes = lid.collect_notes()
-            To collect data of multiple station codes explanatory note
-            ? [No]|Yes: yes
+
+            >>> notes = lid.collect_notes(verbose=True)
+            Proceed with collecting data of "additional notes"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(notes)
             dict
-            >>> list(notes.keys())
+            >>> list(notes)
             ['Notes', 'Last updated date']
+
             >>> lid.KEY_TO_NOTES
             'Notes'
             >>> notes_ = notes[lid.KEY_TO_NOTES]
+
             >>> type(notes_)
             dict
             >>> notes_[lid.KEY_TO_MSCEN][2].head()
@@ -1161,12 +1288,25 @@ class LocationIdentifiers(_Base):
             4                  Heworth  HEW  HEZ
         """
 
+        # Extract the target URL to prevent runtime exceptions if catalogue is uninitialized
+        target_url = None
+        if isinstance(self.catalogue, dict):
+            target_url = self.catalogue.get(self.KEY_TO_MSCEN)
+
+        if not target_url:
+            if raise_error:
+                raise ValueError("The catalogue is unavailable or missing the target URL key.")
+            return None
+
         explanatory_notes = self._collect_data_from_source(
-            data_name="additional notes", method=self._collect_notes,
-            url=self.catalogue.get(self.KEY_TO_MSCEN),
+            data_name="additional notes",
+            method=self._collect_notes,
+            url=target_url,
             confirmation_required=confirmation_required,
             confirmation_prompt=format_confirmation_prompt(data_name="additional notes"),
-            verbose=verbose, raise_error=raise_error)
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return explanatory_notes
 
@@ -1277,12 +1417,9 @@ class LocationIdentifiers(_Base):
 
         location_codes = {}
         for dat, key in zip(data_list, keys):
-            if dat is None:
-                location_codes.update({key: None})
-            else:
-                for k, v in dat.items():
-                    if k != self.KEY_TO_LAST_UPDATED_DATE:
-                        location_codes.update({k: v})
+            for k, v in dat.items():
+                if k != self.KEY_TO_LAST_UPDATED_DATE:
+                    location_codes.update({k: v})
 
         # Get the latest updated date
         latest_update_date = max(d[self.KEY_TO_LAST_UPDATED_DATE] for d in filter(None, data_list))
@@ -1298,45 +1435,76 @@ class LocationIdentifiers(_Base):
 
     @staticmethod
     def _make_xref_dict(location_codes, keys, drop_duplicates=False, as_dict=False, main_key=None):
-        # Extract relevant columns and remove empty rows
-        key_locid = location_codes[['Location'] + keys].query(
-            ' | '.join([f"{k} != ''" for k in keys]))
+        """
+        Generate a cross-reference mapping of location codes to their respective location names.
+
+        This method extracts specified code columns, filters out rows with empty keys, and
+        constructs either a pandas DataFrame or a nested dictionary. It cleanly handles
+        duplicates by either dropping them or aggregating differing location names into tuples.
+
+        :param location_codes: The dataset containing location codes and names.
+        :type location_codes: pandas.DataFrame
+        :param keys: A list of column names representing the codes to cross-reference
+            (e.g. ``['CRS']``).
+        :type keys: list
+        :param drop_duplicates: Whether to drop duplicate keys, retaining only the first occurrence;
+            defaults to ``False``.
+        :type drop_duplicates: bool
+        :param as_dict: Whether to return the output as a dictionary instead of a DataFrame;
+            defaults to ``False``.
+        :type as_dict: bool
+        :param main_key: An optional root key for the dictionary if ``as_dict`` is ``True``;
+            defaults to ``None``.
+        :type main_key: str | None
+        :return: A cross-reference mapping of codes to locations.
+        :rtype: dict | pandas.DataFrame
+        """
+
+        # Create a boolean mask to keep rows where at least one key column is not an empty string
+        valid_rows_mask = location_codes[keys].ne('').any(axis=1)
+        key_locid = location_codes.loc[valid_rows_mask, ['Location'] + keys]
 
         # Further clean location_code
         if drop_duplicates:
-            location_codes_ref = key_locid.drop_duplicates(keys, keep='first').set_index(keys)
+            location_codes_ref = (
+                key_locid
+                .drop_duplicates(subset=keys, keep='first')
+                .set_index(keys)
+            )
 
         else:  # drop_duplicates is False or None
-            locid_unique = key_locid.drop_duplicates(subset=keys, keep=False)
+            # 1. Isolate completely unique rows (vectorised, extremely fast)
+            locid_unique = key_locid.drop_duplicates(subset=keys, keep=False).set_index(keys)
 
-            dupl_temp_1 = key_locid[key_locid.duplicated(['Location'] + keys, keep=False)]
-            dupl_temp_2 = key_locid[key_locid.duplicated(keys, keep=False)]
-            duplicated_1 = dupl_temp_2[dupl_temp_1.eq(dupl_temp_2)].dropna().drop_duplicates()
-            duplicated_2 = dupl_temp_2[~dupl_temp_1.eq(dupl_temp_2)].dropna()
-            duplicated_entries = pd.concat([duplicated_1, duplicated_2], axis=0)
+            # 2. Isolate rows that share identical keys
+            dup_mask = key_locid.duplicated(subset=keys, keep=False)
+            dup_rows = key_locid[dup_mask]
 
-            grouped_duplicates = duplicated_entries.groupby(keys).agg(tuple)
-            grouped_duplicates['Location'] = grouped_duplicates['Location'].map(
-                lambda x: x[0] if len(set(x)) == 1 else x)
+            if not dup_rows.empty:
+                # Instantly drop completely identical rows (same keys AND same location)
+                dup_rows = dup_rows.drop_duplicates()
 
-            locid_unique.set_index(keys, inplace=True)
-            location_codes_ref = pd.concat([locid_unique, grouped_duplicates])
+                # Group the remaining duplicates. Because exact matches were dropped,
+                # any group with len == 1 naturally resolves to a string, else a tuple.
+                grouped_duplicates = dup_rows.groupby(keys, dropna=False)['Location'].agg(
+                    lambda x: x.iloc[0] if len(x) == 1 else tuple(x)
+                ).to_frame()
+
+                # Recombine the datasets
+                location_codes_ref = pd.concat([locid_unique, grouped_duplicates])
+
+            else:
+                location_codes_ref = locid_unique
 
         if as_dict:
-            location_codes_dict = location_codes_ref.to_dict()
-            if main_key:
-                location_codes_dict = {main_key: location_codes_dict.pop('Location')}
-            else:
-                location_codes_dict = location_codes_dict['Location']
+            location_codes_dict = location_codes_ref['Location'].to_dict()
+            return {main_key: location_codes_dict} if main_key else location_codes_dict
 
-        else:
-            location_codes_dict = location_codes_ref
-
-        return location_codes_dict
+        return location_codes_ref
 
     def make_xref_dict(self, keys, initials=None, drop_duplicates=False, as_dict=False,
                        main_key=None, update=False, dump_it=False, dump_dir=None, verbose=False):
-        # noinspection PyUnresolvedReferences
+        # noinspection PyUnresolvedReferences,PyShadowingNames
         """
         Creates a dictionary or dataframe containing location code data for the specified ``keys``.
 
@@ -1372,22 +1540,25 @@ class LocationIdentifiers(_Base):
 
             >>> from pyrcs.line_data import LocationIdentifiers
             >>> # from pyrcs import LocationIdentifiers
+
             >>> lid = LocationIdentifiers()
+
             >>> stanox_dict = lid.make_xref_dict(keys='STANOX')
             >>> type(stanox_dict)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> stanox_dict.head()
-                                      Location
+                                           Location
             STANOX
-            00005                       Aachen
-            04309           Abbeyhill Junction
-            04311        Abbeyhill Signal E811
-            04308   Abbeyhill Turnback Sidings
-            88601                   Abbey Wood
-            >>> s_t_dictionary = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
-            >>> type(s_t_dictionary)
-            pandas.core.frame.DataFrame
-            >>> s_t_dictionary.head()
+            00005                            Aachen
+            04309                Abbeyhill Junction
+            04311             Abbeyhill Signal E811
+            04308        Abbeyhill Turnback Sidings
+            88606   Abbey Wood Alsike Road Junction
+
+            >>> s_t_dict = lid.make_xref_dict(keys=['STANOX', 'TIPLOC'], initials='a')
+            >>> type(s_t_dict)
+            pandas.DataFrame
+            >>> s_t_dict.head()
                                               Location
             STANOX TIPLOC
             00005  AACHEN                       Aachen
@@ -1395,15 +1566,17 @@ class LocationIdentifiers(_Base):
             04311  ABHL811       Abbeyhill Signal E811
             04308  ABHLTB   Abbeyhill Turnback Sidings
             88601  ABWD                     Abbey Wood
-            >>> ks = ['STANOX', 'TIPLOC']
-            >>> ini = 'b'
-            >>> main_k = 'Data'
-            >>> s_t_dictionary = lid.make_xref_dict(ks, ini, main_k, as_dict=True)
-            >>> type(s_t_dictionary)
+
+            >>> keys = ['STANOX', 'TIPLOC']
+            >>> initials = 'b'
+            >>> main_key = 'Data'
+
+            >>> s_t_dict = lid.make_xref_dict(keys, initials, main_key=main_key, as_dict=True)
+            >>> type(s_t_dict)
             dict
-            >>> list(s_t_dictionary.keys())
+            >>> list(s_t_dict.keys())
             ['Data']
-            >>> list(s_t_dictionary['Data'].keys())[:5]
+            >>> list(s_t_dict['Data'].keys())[:5]
             [('55115', ''),
              ('23490', 'BABWTHL'),
              ('38306', 'BACHE'),
@@ -1429,7 +1602,8 @@ class LocationIdentifiers(_Base):
 
             dat_list = [
                 self.fetch_loc_id(x, update=update, verbose=verbose).get(x.upper())
-                for x in initials]
+                for x in initials
+            ]
             location_codes = pd.concat(dat_list, ignore_index=True)
 
         else:
@@ -1440,8 +1614,12 @@ class LocationIdentifiers(_Base):
 
         try:
             location_codes_dict = self._make_xref_dict(
-                location_codes, keys=keys, drop_duplicates=drop_duplicates, as_dict=as_dict,
-                main_key=main_key)
+                location_codes,
+                keys=keys,
+                drop_duplicates=drop_duplicates,
+                as_dict=as_dict,
+                main_key=main_key
+            )
 
             if verbose == 2:
                 print("Done.")
@@ -1452,7 +1630,8 @@ class LocationIdentifiers(_Base):
                     data_name="-".join(keys) + (f"-{''.join(initials)}" if initials else ""),
                     ext=".json" if as_dict and len(keys) == 1 else ".pkl",
                     dump_dir=resolve_dir_path(dump_dir) if dump_dir else self._cdd("xref-dicts"),
-                    verbose=verbose)
+                    verbose=verbose
+                )
 
             return location_codes_dict
 

@@ -8,6 +8,7 @@ import copy
 import inspect
 import os
 
+import bs4
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
@@ -15,10 +16,11 @@ from pyhelpers.dirs import cd, resolve_dir_path
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
-from .parser import get_catalogue, get_introduction, get_last_updated_date
+from .parser import _get_last_updated_date, _parse_th_tag, get_catalogue, get_introduction, \
+    get_last_updated_date, parse_tr
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
-    homepage_url, print_collection_message, print_connection_warning, \
-    print_instance_connection_error, print_void_collection_message
+    handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
+    print_void_collection_message, validate_page_name
 
 
 class _Base:
@@ -37,6 +39,7 @@ class _Base:
 
     def __init__(self, data_dir=None, content_type=None, data_category="", data_cluster=None,
                  update=False, verbose=True):
+        # noinspection unresolved-references
         """
         :param data_dir: Path to the directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
@@ -79,9 +82,10 @@ class _Base:
         #   verbose=2 (detailed), verbose=True/1 (standard), verbose=False/0 (silent)
         _verbose_inner = (verbose == 2)
 
-        # Initialize all attributes to prevent AttributeError
+        # Initialise all attributes to prevent AttributeError
         self.catalogue = None
         self.introduction = None
+        self.page_range = None
 
         # Explicit content handling
         if isinstance(content_type, str):
@@ -108,7 +112,7 @@ class _Base:
             data_dir=data_dir, category=data_category, cluster=data_cluster)
 
     def _setup_data_dir(self, data_dir, category, cluster=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Specifies the initial data directory for a class instance to manage a specific data cluster.
 
@@ -149,6 +153,7 @@ class _Base:
         return self.data_dir, self.current_data_dir
 
     def _cdd(self, *sub_dir, mkdir=True, **kwargs):
+        # noinspection unresolved-references
         """
         Changes the current directory to the package's data directory,
         or its specified subdirectories (or file).
@@ -181,9 +186,55 @@ class _Base:
 
         return path
 
+    def _get_url(self, key, initial=None, data_name=None, raise_error=True):
+        """
+        Extract a target URL from the instance's catalogue dictionary.
+
+        This method retrieves a URL associated with the specified ``key``. If the value
+        is a nested dictionary and ``initial`` is provided, it performs a secondary
+        lookup. It optionally raises a ``ValueError`` if the URL cannot be resolved.
+
+        :param key: The primary key corresponding to the target URL in the catalogue.
+        :type key: str
+        :param initial: A secondary key used if the primary catalogue entry is a
+            nested dictionary. Defaults to ``None``.
+        :type initial: str | None
+        :param data_name: An optional descriptive name for the dataset used in error
+            messages. Defaults to ``None``.
+        :type data_name: str | None
+        :param raise_error: Whether to raise an exception if the URL is missing.
+            Defaults to ``True``.
+        :type raise_error: bool
+        :return: The target URL string, or ``None`` if unavailable and
+            ``raise_error`` is ``False``.
+        :rtype: str | None
+        :raises ValueError: If the catalogue is invalid or missing the requested
+            keys when ``raise_error`` is ``True``.
+        """
+
+        url = None
+        catalogue = getattr(self, 'catalogue', None)
+
+        if isinstance(catalogue, dict):
+            url = catalogue.get(key)
+            if isinstance(url, dict) and initial is not None:
+                url = url.get(initial)
+
+        if not url:
+            if raise_error:
+                name = data_name or getattr(self, 'NAME', 'the dataset')
+                target = f"'{key}'" + (f" -> '{initial}'" if initial is not None else "")
+                raise ValueError(
+                    f"Unable to determine the target URL for {name}: "
+                    f"the key {target} is missing or invalid in the catalogue."
+                )
+            return None
+
+        return url
+
     @staticmethod
     def _format_confirmation_message(data_name, confirmation_prompt=None, initial=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Generates a confirmation prompt message.
 
@@ -248,10 +299,46 @@ class _Base:
 
         return data
 
+    @staticmethod
+    def _parse_table_source(source, dataset_label):
+        """
+        Parse HTML source to extract table data as a DataFrame along with the soup.
+
+        Parses the HTML markup, verifies the existence of required ``thead`` and ``tbody``
+        tags, extracts header text and rows and returns a DataFrame along with the BeautifulSoup
+        instance.
+
+        :param source: HTML response object or BeautifulSoup instance containing table markup.
+        :type source: requests.Response | bs4.BeautifulSoup
+        :param dataset_label: Name of the dataset being processed for error context.
+        :type dataset_label: str
+        :return: Tuple containing the parsed DataFrame and the BeautifulSoup instance.
+        :rtype: tuple[pandas.DataFrame, bs4.BeautifulSoup]
+        :raises ValueError: If the required ``thead`` or ``tbody`` elements are missing.
+        """
+
+        if isinstance(source, bs4.BeautifulSoup):
+            soup = source
+        else:
+            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        thead, tbody = soup.find('thead'), soup.find('tbody')
+        if not thead or not tbody:
+            raise ValueError(
+                f"HTML source is missing mandatory 'thead' or 'tbody' elements for {dataset_label}."
+            )
+
+        ths = [_parse_th_tag(th) for th in thead.find_all(name='th')]
+        trs = tbody.find_all(name='tr')
+        df = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        return df, soup
+
     def _collect_data_from_source(self, data_name, method, url=None, initial=None,
                                   additional_fields=None, confirmation_required=True,
                                   confirmation_prompt=None, verbose=False, raise_error=False,
                                   **kwargs):
+        # noinspection unresolved-references
         """
         Collects and parses data from a specified source webpage.
 
@@ -274,7 +361,7 @@ class _Base:
         :param url: The target URL. If ``None``, the method attempts to retrieve the URL from
             ``self.catalogue`` using ``initial`` or ``data_name`` as the key.
         :type url: str | None
-        :param initial: The initial letter/code used to categorize the data
+        :param initial: The initial letter/code used to categorise the data
             (e.g. 'A' for stations starting with A); it is used as a fallback key for URL lookup
             if ``url`` is not provided.
         :type initial: str | None
@@ -363,14 +450,66 @@ class _Base:
             return data
 
         except requests.RequestException as e:  # Handle network/HTTP errors
-            print_instance_connection_error(verbose=verbose, e=e, raise_error=raise_error)
+            handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
             return fallback_data
 
         except Exception as e:  # Handle parsing/method errors
             _print_failure_message(e, "Failed. Error:", verbose=verbose, raise_error=raise_error)
             return fallback_data
 
+    def _collect_data_from_source_by_page(self, page_no, method, confirmation_required=True,
+                                          verbose=True, raise_error=True):
+        """
+        Collect data from source web page labelled as page number.
+
+        This method validates the requested page, retrieves the corresponding URL from the
+        catalogue and delegates the extraction process to ``_collect_data_from_source``.
+
+        :param page_no: The page number or identifier to collect data from.
+        :type page_no: int | str
+        :param method: The specific method or function used to parse the page content.
+        :type method: callable
+        :param confirmation_required: Whether to prompt for user confirmation before proceeding.
+            Defaults to ``True``.
+        :type confirmation_required: bool
+        :param verbose: Whether to print relevant information to the console. Defaults to ``True``.
+        :type verbose: bool | int
+        :param raise_error: Whether to raise an exception if the URL is missing from the
+            catalogue. Defaults to ``True``.
+        :type raise_error: bool
+        :return: The collected data from the specified page, or ``None`` if the URL is missing
+            and ``raise_error`` is ``False``.
+        :rtype: Any | None
+        :raises ValueError: If the target URL cannot be found in the catalogue and
+            ``raise_error`` is ``True``.
+        """
+
+        page_name = validate_page_name(self, page_no, valid_page_no=self.page_range)
+
+        # Condense the catalogue type check and URL lookup into a single expression
+        url = self.catalogue.get(page_name) if isinstance(self.catalogue, dict) else None
+
+        if not url:
+            if raise_error:
+                raise ValueError("The catalogue is unavailable or missing the target URL key.")
+            return None
+
+        data_name = self.NAME.lower()
+
+        return self._collect_data_from_source(
+            data_name=data_name,
+            method=method,
+            url=url,
+            initial=page_name,
+            page_no=page_no,
+            confirmation_required=confirmation_required,
+            confirmation_prompt=f"Proceed with collecting data of {data_name} ({page_name})?\n",
+            verbose=verbose,
+            raise_error=raise_error
+        )
+
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
+        # noinspection unresolved-references
         """
         Generates a standardised file pathname for saving data.
 
@@ -421,7 +560,7 @@ class _Base:
 
     def _save_data_to_file(self, data, data_name, ext=".pkl", dump_dir=None, sub_dir=None,
                            verbose=False, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Saves the provided ``data`` to a file using the specified format and location.
 
@@ -482,10 +621,47 @@ class _Base:
         else:
             print_void_collection_message(data_name=data_name, verbose=verbose)
 
+    def _pack_and_save_data(self, data, soup, dump_dir, verbose=False):
+        """
+        Format asset data with metadata, print completion status and save to disk.
+
+        This helper encapsulates the boilerplate logic shared across asset classes for
+        constructing the final dataset dictionary, printing progress logs and persisting
+        the results to disk.
+
+        :param data: Extracted asset data payload.
+        :type data: dict | list
+        :param soup: BeautifulSoup instance used to extract the last updated date.
+        :type soup: bs4.element.Tag | bs4.BeautifulSoup
+        :param dump_dir: Target output directory path.
+        :type dump_dir: str | None
+        :param verbose: Level of logging detail. Defaults to ``False``.
+        :type verbose: bool | int
+        :return: Formatted dictionary containing the asset data payload and metadata.
+        :rtype: dict
+        """
+
+        formatted_data = {
+            self.KEY: data,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=formatted_data,
+            data_name=self.KEY,
+            dump_dir=dump_dir,
+            verbose=verbose
+        )
+
+        return formatted_data
+
     def _fetch_data_from_file(self, data_name, method, ext=".pkl", update=False, dump_dir=None,
                               verbose=False, raise_error=False, data_dir=None, sub_dir=None,
                               save_data_kwargs=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection shadowing-names,unresolved-references
         """
         Fetches data from a stored file or generates it using the specified ``method``.
 

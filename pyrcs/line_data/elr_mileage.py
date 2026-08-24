@@ -1,5 +1,5 @@
 """
-Collects data of
+Collect data of
 `Engineer's Line References (ELRs) <http://www.railwaycodes.org.uk/elrs/elr0.shtm>`_.
 """
 
@@ -23,17 +23,43 @@ from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
 from ..parser import _get_last_updated_date, parse_table
-from ..utils import get_collect_verbosity_for_fetch, homepage_url, is_homepage_connectable, \
-    is_str_float, print_instance_connection_error, print_void_collection_message, validate_initial
+from ..utils import get_collect_verbosity_for_fetch, handle_connection_error, homepage_url, \
+    is_homepage_connectable, is_str_float, print_void_collection_message, validate_initial
+
+_LOCATION_SEP_PAT = re.compile(r' (?:and|&|to|-) ')
+_PAREN_PAT = re.compile(r'^(.*?)\s*\(([^)]+)\)')
+
+
+def _split_locations(text):
+    """
+    Split a string into two location names around standard separators.
+
+    :param text: The text string to evaluate and split.
+    :type text: str
+    :return: A tuple of two cleaned location strings, or ``None`` if splitting fails.
+    :rtype: tuple[str, str] | None
+    """
+    if not text:
+        return None
+
+    parts = _LOCATION_SEP_PAT.split(text)
+    if len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
+
+    return None
 
 
 def _parse_non_float_str_mileage(mileage):
     """
-    Parses non-float mileage strings into structured mileage and notes.
+    Parse non-float mileage strings into structured numeric values and associated notes.
 
-    :param mileage: List of mileage strings.
+    This function processes abnormal or heavily annotated railway mileage strings (typically
+    representing miles and chains) into a standardised format alongside descriptive footnotes.
+
+    :param mileage: A collection of raw, unformatted mileage strings.
     :type mileage: pandas.Series | list | tuple
-    :return: A tuple containing lists of ``miles_chains`` and ``mileage_note``.
+    :return: A tuple containing two lists: the cleaned ``miles_chains`` values and
+        the parsed ``mileage_note`` annotations.
     :rtype: tuple[list, list]
     """
 
@@ -47,11 +73,12 @@ def _parse_non_float_str_mileage(mileage):
             mileage_note.append('')
 
         elif m.startswith('(') and m.endswith(')'):
-            miles_chains.append(re.search(r'\d+\.\d+', m).group(0))
+            match = re.search(r'\d+\.\d+', m)
+            miles_chains.append(match.group(0) if match else m)
             mileage_note.append('Not on this route but given for reference')
 
         elif m.startswith('≈') or m.endswith('?'):
-            miles_chains.append(m.strip('≈').strip('?'))
+            miles_chains.append(m.strip('≈?'))
             mileage_note.append('Approximate')
 
         elif re.match(r'\d+\.\d+/\s?\d+\.\d+', m):
@@ -60,9 +87,14 @@ def _parse_non_float_str_mileage(mileage):
             mileage_note.append(f'{m2} (Alternative)')
 
         elif ' + ' in m or 'private portion' in m:
-            m1 = re.search(r'\d+\.\d+', m).group(0)
-            miles_chains.append(m1)
-            mileage_note.append(m.replace(m1, '').strip())
+            match = re.search(r'\d+\.\d+', m)
+            if match:
+                m1 = match.group(0)
+                miles_chains.append(m1)
+                mileage_note.append(m.replace(m1, '').strip())
+            else:
+                miles_chains.append(m)
+                mileage_note.append('')
 
         elif '†' in m:
             miles_chains.append(m.replace('†', '').strip())
@@ -170,40 +202,70 @@ def _parse_node_connection(prep_nodes, col_name='Connection'):
 
 
 def _uncouple_elr_mileage(node_x):
+    """
+    Split a raw node string into its ELR and numeric mileage components.
+
+    This function parses composite identifiers such as ``"ECM5 (44.64)"`` or ``"DNT"`` into a
+    two-element list containing the isolated Engineer's Line Reference (ELR) and the mileage.
+    If the mileage is in kilometres, it is automatically converted to miles and chains.
+
+    :param node_x: The raw node string containing ELR and/or mileage info.
+    :type node_x: str | float | None
+    :return: A list of two elements where the first is the ELR (up to 4 characters)
+        and the second is the mileage.
+    :rtype: list[str]
+    """
+
     # e.g. x = 'ECM5 (44.64)' or x = 'DNT'
     if not node_x or pd.isna(node_x):
-        y = ['', '']
-    else:
-        # pat0 = re.compile(r'\w+.*(( lines)|( terminal))$')
-        pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
-        pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+\.\d+\))?$)')
-        # pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?\]$')
-        pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?]$')
-        pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
-        # if re.match(pat0, node_x):
-        #     y = ['', '']
-        if re.match(pat1, node_x):
-            y = [node_x, '']
-        elif re.match(pat2, node_x):
-            y = [z[:-1] if re.match(r'\d+.\d+\)', z) else z.strip() for z in node_x.split('(')]
-            y[0] = '' if len(y[0]) > 4 else y[0]
-        elif re.match(pat3, node_x):
-            try:
-                y = [
-                    re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
-                    re.search(r'\d+\.\d+', node_x).group(0)]
-            except AttributeError:
-                y = [re.search(r'[A-Z]{3}(\d)?', node_x).group(0), '']
-        elif re.match(pat4, node_x):
-            y = [
-                re.search(r'[A-Z]{3}(\d)?', node_x).group(0),
-                mileage_to_mile_chain(yard_to_mileage(
-                    kilometer_to_yard(km=re.search(r'\d+\.\d+', node_x).group(0))))]
-        else:
-            y = [node_x, ''] if len(node_x) <= 4 else ['', '']
-        y[0] = y[0] if len(y[0]) <= 4 else ''
+        return ['', '']
 
-    return y
+    node_str = str(node_x).strip()
+
+    # Compile regex patterns
+    pat1 = re.compile(r'([A-Z]{3}(\d)?$)|((\w\s?)*\w$)')
+    pat2 = re.compile(r'([A-Z]{3}(\d)?$)|(([\w\s&]?)*(\s\(\d+\.\d+\))?$)')
+    pat3 = re.compile(r'[A-Z]{3}(\d)?(\s\(\d+.\d+\))?\s\[.*?]$')
+    pat4 = re.compile(r'[A-Z]{3}(\d)?\s\(\d+\.\d+km\)')
+
+    if pat1.match(node_str):
+        result = [node_x, '']
+
+    elif pat2.match(node_str):
+        parts = node_str.split('(')
+        y = [part[:-1] if part.endswith(')') else part.strip() for part in parts]
+        if len(y) < 2:
+            y.append('')
+        y[0] = '' if len(y[0]) > 4 else y[0]
+        result = y[:2]
+
+    elif pat3.match(node_str):
+        elr_match = re.search(r'[A-Z]{3}(\d)?', node_str)
+        mileage_match = re.search(r'\d+\.\d+', node_str)
+
+        elr = elr_match.group(0) if elr_match else ''
+        mileage = mileage_match.group(0) if mileage_match else ''
+        result = [elr, mileage]
+
+    elif pat4.match(node_str):
+        elr_match = re.search(r'[A-Z]{3}(\d)?', node_str)
+        km_match = re.search(r'\d+\.\d+', node_str)
+
+        elr = elr_match.group(0) if elr_match else ''
+        if km_match:
+            miles_chains = mileage_to_mile_chain(
+                yard_to_mileage(kilometer_to_yard(km=km_match.group(0)))
+            )
+        else:
+            miles_chains = ''
+        result = [elr, miles_chains]
+    else:
+        result = [node_str, ''] if len(node_str) <= 4 else ['', '']
+
+    # Safeguard: ensure the ELR code does not exceed 4 characters
+    result[0] = result[0] if len(result[0]) <= 4 else ''
+
+    return result
 
 
 def _parse_nodes(nodes):
@@ -332,8 +394,9 @@ class ELRMileages(_Base):
         return data
 
     def collect_elr(self, initial, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects Engineer's Line References (ELRs) that begin with a specified initial letter
+        Collect Engineer's Line References (ELRs) that begin with a specified initial letter
         from the source web page.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR.
@@ -349,20 +412,29 @@ class ELRMileages(_Base):
         :type raise_error: bool
         :return: A dictionary containing ELR data whose names start with the given initial letter,
             along with the date of the last update.
-        :rtype: dict
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+
             >>> em = ELRMileages()
-            >>> elrs_a_codes = em.collect_elr(initial='a')
+
+            >>> elrs_a_codes = em.collect_elr(initial='a', verbose=True)
+            Proceed with collecting data of "Engineer's Line References (ELRs)" beginning with "A"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(elrs_a_codes)
             dict
-            >>> list(elrs_a_codes.keys())
+            >>> list(elrs_a_codes)
             ['A', 'Last updated date']
+
             >>> elrs_a_codes_dat = elrs_a_codes['A']
             >>> type(elrs_a_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> elrs_a_codes_dat.shape
+            (193, 5)
             >>> elrs_a_codes_dat.head()
                ELR  ...         Notes
             0  AAL  ...      Now NAJ3
@@ -371,11 +443,18 @@ class ELRMileages(_Base):
             3  ABB  ...       Now AHB
             4  ABB  ...
             [5 rows x 5 columns]
-            >>> elrs_q_codes = em.collect_elr(initial='Q')
+
+            >>> elrs_q_codes = em.collect_elr(initial='Q', verbose=True)
+            Proceed with collecting data of "Engineer's Line References (ELRs)" beginning with "Q"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> elrs_q_codes_dat = elrs_q_codes['Q']
+            >>> elrs_q_codes_dat.shape
+            (10, 5)
             >>> elrs_q_codes_dat.head()
-                ELR  ...            Notes
-            0   QAB  ...  Duplicates ALB?
+                ELR  ...             Notes
+            0   QAB  ...  Duplicates ALB ?
             1   QBL  ...
             2   QDS  ...
             3   QLT  ...
@@ -386,14 +465,19 @@ class ELRMileages(_Base):
         initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
-            data_name=self.NAME, method=self._collect_elr, initial=initial_,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.NAME,
+            method=self._collect_elr,
+            initial=initial_,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return data
 
     def fetch_elr(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches data of ELRs and their associated mileages.
+        Fetch data of ELRs and their associated mileages.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR; defaults to ``None``.
         :type initial: str | None
@@ -411,17 +495,23 @@ class ELRMileages(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+
             >>> em = ELRMileages()
+
             >>> elrs_codes = em.fetch_elr()
             >>> type(elrs_codes)
             dict
-            >>> list(elrs_codes.keys())
+            >>> list(elrs_codes)
             ['ELRs and mileages', 'Last updated date']
+
             >>> em.KEY
             'ELRs and mileages'
+
             >>> elrs_codes_dat = elrs_codes[em.KEY]
             >>> type(elrs_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> elrs_codes_dat.shape
+            (4579, 5)
             >>> elrs_codes_dat.head()
                ELR  ...         Notes
             0  AAL  ...      Now NAJ3
@@ -454,7 +544,7 @@ class ELRMileages(_Base):
 
             if all(d[x] is None for d, x in zip(dat_list, string.ascii_uppercase)):
                 if update:
-                    print_instance_connection_error(verbose=verbose)
+                    handle_connection_error(verbose=verbose)
                     print_void_collection_message(data_name=self.KEY, verbose=verbose)
                 dat_list = [
                     self.fetch_elr(initial=x, update=False, verbose=verbose_1)
@@ -479,17 +569,21 @@ class ELRMileages(_Base):
 
         return data
 
-    def _dump_mileage_file(self, mileage_file, dump_dir=None, verbose=False):
+    def _save_mileage_file(self, mileage_file, dump_dir=None, verbose=False):
         """
-        Dump the collected mileage file data.
+        Save the collected mileage file data to a persistent file.
 
-        :param mileage_file: Data of the mileage file.
+        This method serialises and writes railway mileage data into a picklable format.
+
+        :param mileage_file: Data of the mileage file containing an ``"ELR"`` key.
         :type mileage_file: dict
-        :param dump_dir: The path to a directory where the mileage file data is saved;
-            defaults to ``False``.
+        :param dump_dir: The directory path where the mileage file is saved.
+            If ``False``, the saving process is bypassed. Defaults to ``None``.
         :type dump_dir: str | os.PathLike | bool | None
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :param verbose: Whether to print progress details to the console. Defaults to ``False``.
         :type verbose: bool | int
+        :return: ``None`` if saving is bypassed or completed successfully.
+        :rtype: None
         """
 
         if dump_dir is False:
@@ -505,78 +599,156 @@ class ELRMileages(_Base):
             target_dir = dump_dir
 
         self._save_data_to_file(
-            data=mileage_file, data_name=data_name, ext=".pkl", dump_dir=target_dir,
-            verbose=verbose)
+            data=mileage_file,
+            data_name=data_name.upper(),
+            ext=".pkl",
+            dump_dir=target_dir,
+            verbose=verbose
+        )
+
+        return None
 
     def _handle_err404(self, elr, notes_dat, parsed, dump_dir=False, verbose=False):
-        elr_alt = re.search(r'(?<= )[A-Z]{3}(\d)?', notes_dat).group(0)
-        mileage_file_alt = self.collect_mileage_file(
-            elr=elr_alt, parsed=parsed, confirmation_required=False, dump_dir=False,
-            verbose=verbose)
+        """
+        Handle 404 resource errors by attempting to resolve alternative ELR codes.
 
-        if notes_dat.startswith('Now'):
+        When a mileage page cannot be located directly, this method parses the error or
+        index notes to identify alternative (formerly or currently active) ELR codes,
+        fetches their datasets, and serialises the cross-referenced mappings.
+
+        :param elr: The original Engineer's Line Reference (ELR) code that triggered the 404.
+        :type elr: str
+        :param notes_dat: The raw text string containing redirected or historical notes.
+        :type notes_dat: str
+        :param parsed: The pre-compiled dictionary or cache of parsed HTML documents.
+        :type parsed: dict
+        :param dump_dir: The directory path where resolved mileage files are saved.
+            Defaults to ``False``.
+        :type dump_dir: str | os.PathLike | bool
+        :param verbose: Whether to print status information to the console. Defaults to ``False``.
+        :type verbose: bool | int
+        :return: The resolved alternative mileage file data dictionary, or ``None`` if
+            the alternative ELR could not be extracted.
+        :rtype: dict | None
+        """
+
+        match = re.search(r'(?<= )[A-Z]{3}(\d)?', notes_dat)
+        if not match:
+            if verbose in {True, 1}:
+                print(f"Warning: Could not extract an alternative ELR from note: '{notes_dat}'")
+            return None
+
+        elr_alt = match.group(0)
+
+        mileage_file_alt = self.collect_mileage_file(
+            elr=elr_alt,
+            parsed=parsed,
+            confirmation_required=False,
+            dump_dir=False,
+            verbose=verbose
+        )
+
+        if notes_dat.startswith('Now') and isinstance(mileage_file_alt, dict):
             mileage_file_former = mileage_file_alt.copy()
 
             mileage_file_alt.update({'Formerly': elr})
-            self._dump_mileage_file(
-                mileage_file=mileage_file_alt, dump_dir=dump_dir, verbose=verbose)
+            self._save_mileage_file(
+                mileage_file=mileage_file_alt,
+                dump_dir=dump_dir,
+                verbose=verbose
+            )
 
-            mileage_file_former.update(({'ELR': elr, 'Now': elr_alt}))
-            self._dump_mileage_file(
-                mileage_file=mileage_file_former, dump_dir=dump_dir, verbose=verbose)
+            mileage_file_former.update({'ELR': elr, 'Now': elr_alt})
+            self._save_mileage_file(
+                mileage_file=mileage_file_former,
+                dump_dir=dump_dir,
+                verbose=verbose
+            )
 
         return mileage_file_alt
 
     @staticmethod
-    def _get_parsed_contents(elr_dat, notes):
+    def _resolve_locations(line_name, mileages, datum, notes_str):
+        """
+        Determine the line name and terminal location names from record fields.
+
+        Evaluates parenthetical line names, datum mileages and notes sequentially to extract
+        the terminal locations.
+
+        :param line_name: The raw line name string.
+        :type line_name: str
+        :param mileages: The mileage range string.
+        :type mileages: str
+        :param datum: The datum location string.
+        :type datum: str
+        :param notes_str: Cleaned explanatory notes string.
+        :type notes_str: str
+        :return: A tuple containing the resolved line name, start location and end location.
+        :rtype: tuple[str, str, str]
+        """
+
+        paren_match = _PAREN_PAT.search(line_name)
+        if paren_match:
+            outer = paren_match.group(1).strip()
+            inner = paren_match.group(2).strip()
+
+            locs = _split_locations(inner)
+            if locs:
+                return outer, locs[0], locs[1]
+
+            locs = _split_locations(notes_str)
+            if locs:
+                return inner, locs[0], locs[1]
+
+            return line_name, '', ''
+
+        if mileages.startswith('0.00') and datum:
+            loc_a = datum
+            if loc_a in line_name:
+                parts = _LOCATION_SEP_PAT.split(line_name)
+                loc_b = parts[1].strip() if len(parts) >= 2 else line_name
+            else:
+                loc_b = line_name
+            return line_name, loc_a, loc_b
+
+        locs = _split_locations(notes_str) or _split_locations(line_name)
+        if locs:
+            return line_name, locs[0], locs[1]
+
+        if line_name:
+            return line_name, line_name, line_name
+
+        return line_name, '', ''
+
+    def _parse_line_details(self, elr_dat, notes):
+        """
+        Parse ELR record details to extract the line name and mileage locations.
+
+        This method processes string descriptions using regular expressions to extract
+        geographic termini and map them to their corresponding mileage bounds.
+
+        :param elr_dat: A single-row DataFrame containing ``'Line name'``, ``'Mileages'``
+            and ``'Datum'`` columns.
+        :type elr_dat: pandas.DataFrame
+        :param notes: Explanatory notes that may detail route variations or boundaries.
+        :type notes: str
+        :return: A tuple of the cleaned line name and a list mapping mileages to locations.
+        :rtype: tuple[str, list[list[str]]]
+        """
+
         val_cols = ['Line name', 'Mileages', 'Datum']
-        line_name, mileages, _ = elr_dat[val_cols].values[0]
+        row_values = elr_dat[val_cols].values[0]
 
-        pat = re.compile(r' (and|&|to|-) ')
+        line_name = str(row_values[0]).strip()
+        mileages = str(row_values[1]).strip()
+        datum = str(row_values[2]).strip()
+        notes_str = str(notes).strip() if notes else ''
 
-        if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
-            line_name_ = re.search(r'(?<=\w \()(\w ?)+.(?=\))', line_name).group(0)
-
-            try:
-                loc_a, _, loc_b = re.split(pat, line_name_)
-                line_name = re.search(r'(\w ?)+.(?= \((\w ?)+\))', line_name).group(0)
-            except ValueError:
-                try:
-                    loc_a, _, loc_b = re.split(pat, notes)
-                    line_name = line_name_
-                except ValueError:
-                    loc_a, loc_b = '', ''
-
-        elif elr_dat['Mileages'].values[0].startswith('0.00') and elr_dat['Datum'].values[0] != '':
-            loc_a = elr_dat['Datum'].values[0]
-            loc_b = re.split(pat, line_name)[2] if loc_a in line_name else line_name
-
-        elif re.match(r'(\w ?)+ (and|&|to) (\w ?)+', notes):
-            loc_a, _, loc_b = re.split(pat, notes)
-
-        else:
-            loc_a, loc_b = '', ''
-
-            try:
-                loc_a, _, loc_b = re.split(pat, notes)
-            except (ValueError, TypeError):
-                pass
-
-            try:
-                loc_a, _, loc_b = re.split(pat, line_name)
-            except (ValueError, TypeError):
-                pass
-
-            if line_name:
-                loc_a, loc_b = line_name, line_name
-
-        # if re.match(r'.*( Branch| Curve)$', loc_b):
-        #     loc_b = re.sub(r' Branch| Curve', '', loc_b)
-        # else:
-        #     loc_b = loc_b
+        line_name, loc_a, loc_b = self._resolve_locations(line_name, mileages, datum, notes_str)
 
         miles_chains = mileages.split(' - ')
         locations = [loc_a, loc_b]
+
         parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
 
         return line_name, parsed_content
@@ -765,43 +937,96 @@ class ELRMileages(_Base):
         return mileage_data, notes_data
 
     def _collect_mileage_file(self, source, elr, parsed=True, dump_dir=False, verbose=False):
+        """
+        Parse the HTML response of an ELR mileage page and construct a structured dataset.
+
+        This method extracts the line name, sub-line, and mileage data from the raw HTML.
+        If a 404 error is detected, it falls back to querying the local ELR database to
+        resolve redirects or parse alternative line details.
+
+        :param source: The HTTP response object containing the raw HTML content.
+        :type source: requests.Response | Any
+        :param elr: The target Engineer's Line Reference (ELR) code.
+        :type elr: str
+        :param parsed: Whether to deeply parse the raw mileage data into structured formats.
+            Defaults to ``True``.
+        :type parsed: bool
+        :param dump_dir: The directory path where the mileage file should be saved.
+            Defaults to ``False``.
+        :type dump_dir: str | os.PathLike | bool | None
+        :param verbose: Whether to print progress details to the console. Defaults to ``False``.
+        :type verbose: bool | int
+        :return: A compiled dictionary containing line info, mileage data, and notes.
+        :rtype: dict | None
+        """
+
+        if source.status_code == 300:
+            if verbose in {True, 1}:
+                print("Not available.")
+            return None
+
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
-        line_name = soup.find(name='h3').get_text(strip=True)
+        # Safely extract headers
+        h3_tag = soup.find('h3')
+        if h3_tag:
+            if h3_tag.em:  # Check if an <em> tag exists inside it, and destroy it if it does
+                h3_tag.em.decompose()
+            line_name = h3_tag.get_text(strip=True)
+        else:
+            line_name = ''
 
-        sub_line_name_ = soup.find(name='h4')
-        sub_line_name = sub_line_name_.get_text().strip() if sub_line_name_ is not None else ''
+        h4_tag = soup.find('h4')
+        sub_line_name = h4_tag.get_text().strip() if h4_tag else ''
 
-        err404 = {'"404" error: page not found', '404 error: page not found'}
-        if any(x in err404 for x in {line_name, sub_line_name}):
-            elr_data = self.fetch_elr(initial=elr[0])[elr[0]]
-            elr_data = elr_data[elr_data['ELR'] == elr]
+        err_msgs = {'"404" error: page not found', '404 error: page not found'}
+        is_404 = (line_name.lower() in err_msgs) or (sub_line_name.lower() in err_msgs)
 
-            notes_dat = elr_data['Notes'].iloc[0]
-            if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes_dat):
-                mileage_file_alt = self._handle_err404(
-                    elr=elr, notes_dat=notes_dat, parsed=parsed, dump_dir=dump_dir, verbose=verbose)
-                return mileage_file_alt
+        if is_404:
+            elr_data_all = self.fetch_elr(initial=elr[0])[elr[0]]
+            elr_data = elr_data_all[elr_data_all['ELR'] == elr]
 
+            if not elr_data.empty:
+                notes_dat = str(elr_data['Notes'].iloc[0])
+
+                if re.match(r'(Now( part of)? |= |See )[A-Z]{3}(\d)?$', notes_dat):
+                    return self._handle_err404(
+                        elr=elr,
+                        notes_dat=notes_dat,
+                        parsed=parsed,
+                        dump_dir=dump_dir,
+                        verbose=verbose
+                    )
+                else:
+                    line_name, content = self._parse_line_details(elr_data, notes_dat)
             else:
-                line_name, content = self._get_parsed_contents(elr_data, notes_dat)
+                line_name, content = '', []
 
         else:
             ln_temp = line_name.split('\t')
             line_name = ln_temp[0] if len(ln_temp) == 1 else ln_temp[1]
 
-            temp = [x.strip().split('\t', 1) for x in soup.find('pre').text.splitlines() if x != '']
-            temp = [[y.replace('  ', ' ').replace('\t', ' ') for y in x] for x in temp]
-            content = [[''] + x if (len(x) == 1) and ('Note that' not in x[0]) else x for x in temp]
+            pre_tag = soup.find('pre')
+            if pre_tag:
+                temp = [
+                    x.strip().split('\t', 1)
+                    for x in pre_tag.text.splitlines() if x.strip() != ''
+                ]
+                temp = [[y.replace('  ', ' ').replace('\t', ' ') for y in x] for x in temp]
+                content = [
+                    [''] + x if (len(x) == 1) and ('Note that' not in x[0]) else x
+                    for x in temp
+                ]
+            else:
+                content = []
 
-        # assert sub_headers[0] == elr
-        if sub_line_name and (sub_line_name not in err404):
+        if sub_line_name and (sub_line_name.lower() not in err_msgs):
             sub_ln_temp = sub_line_name.split('\t')
             sub_headers = sub_ln_temp[0] if len(sub_ln_temp) == 1 else sub_ln_temp[1]
         else:
             sub_headers = ''
 
-        # Make a dict of line information
+        # Consolidate line information
         line_info = {'ELR': elr, 'Line': line_name, 'Sub-Line': sub_headers}
 
         mileage_data, notes_data = self._parse_mileage_and_notes(content=content)
@@ -809,25 +1034,27 @@ class ELRMileages(_Base):
         if parsed:
             if isinstance(mileage_data, dict) and len(mileage_data) > 1:
                 mileage_data = {
-                    h: _parse_mileage_data(mileage_data=dat) for h, dat in mileage_data.items()}
+                    h: _parse_mileage_data(mileage_data=dat) for h, dat in mileage_data.items()
+                }
             else:  # isinstance(dat, pd.DataFrame)
                 mileage_data = _parse_mileage_data(mileage_data=mileage_data)
 
-        mileage_file = dict(
-            pair for x in [line_info, {'Mileage': mileage_data}, notes_data] for pair in x.items())
+        # Efficiently combine all dictionaries via unpacking
+        mileage_file = {**line_info, 'Mileage': mileage_data, **notes_data}
 
         if verbose in {True, 1}:
             print("Done.")
 
-        self._dump_mileage_file(mileage_file=mileage_file, dump_dir=dump_dir, verbose=verbose)
+        self._save_mileage_file(mileage_file=mileage_file, dump_dir=dump_dir, verbose=verbose)
 
         return mileage_file
 
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_dir=False,
                              verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects the mileage file for a specific ELR from the source web page.
-
+        Collect the mileage file for a specific ELR from the source web page.
+    
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
         :type elr: str
@@ -846,44 +1073,44 @@ class ELRMileages(_Base):
             if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing the mileage file for the specified ELR.
-        :rtype: dict
-
+        :rtype: dict | None
+    
         .. note::
-
+    
             - In some cases, mileages may be unknown and thus left blank
               (e.g. ``'ANI2, Orton Junction with ROB (~3.05)'``).
             - Mileages in parentheses are not on that ELR but are included for reference
               (e.g. ``'ANL, (8.67) NORTHOLT [London Underground]'``).
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
-
+    
         **Examples**::
-
+    
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+    
             >>> em = ELRMileages()
-            >>> gam_mileage_file = em.collect_mileage_file(elr='GAM')
-            To collect mileage file of "GAM"
-            ? [No]|Yes: yes
-            >>> type(gam_mileage_file)
-            dict
-            >>> list(gam_mileage_file.keys())
-            ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-            >>> gam_mileage_file['Mileage']
-               Mileage Mileage_Note Miles_Chains  ... Link_1 Link_1_ELR Link_1_Mile_Chain
-            0   8.1518                      8.69  ...   None
-            1  10.0264                     10.12  ...   None
-            [2 rows x 8 columns]
-            >>> xrc2_mileage_file = em.collect_mileage_file(elr='XRC2')
-            To collect mileage file of "XRC2"
-            ? [No]|Yes: yes
+    
+            >>> gam_mileage_file = em.collect_mileage_file(elr='GAM', verbose=True)
+            Proceed with collecting the mileage file of "GAM"?
+             [No]|Yes: yes
+            Collecting the mileage file ... Not available.
+
+            >>> xrc2_mileage_file = em.collect_mileage_file(elr='XRC2', verbose=True)
+            Proceed with collecting the mileage file of "XRC2"?
+             [No]|Yes: yes
+            Collecting the mileage file ... Done.
+    
             >>> xrc2_mileage_file['Mileage']
               Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0  9.0158     14.629km  ...
             1  9.0447     14.893km  ...
             2  9.0557     14.994km  ...
             [3 rows x 8 columns]
-            >>> xre_mileage_file = em.collect_mileage_file(elr='XRE')
-            To collect mileage file of "XRE"
-            ? [No]|Yes: yes
+    
+            >>> xre_mileage_file = em.collect_mileage_file(elr='XRE', verbose=True)
+            Proceed with collecting the mileage file of "XRE"?
+             [No]|Yes: yes
+            Collecting the mileage file ... Done.
+    
             >>> xre_mileage_file['Mileage']
               Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
             0  7.0073     11.333km  ...
@@ -894,44 +1121,57 @@ class ELRMileages(_Base):
             5  9.0439   (14.886)km  ...
             6  9.0540   (14.978)km  ...
             [7 rows x 11 columns]
-            >>> mor_mileage_file = em.collect_mileage_file(elr='MOR')
-            To collect mileage file of "MOR"
-            ? [No]|Yes: yes
-            >>> type(mor_mileage_file['Mileage'])
-            dict
-            >>> list(mor_mileage_file['Mileage'].keys())
+    
+            >>> mor_mileage_file = em.collect_mileage_file(elr='MOR', verbose=True)
+            Proceed with collecting the mileage file of "MOR"?
+             [No]|Yes: yes
+            Collecting the mileage file ... Done.
+    
+            >>> mor_mileage_file_data = mor_mileage_file['Mileage']
+            >>> list(mor_mileage_file_data)
             ['Original measure', 'Later measure']
-            >>> mor_mileage_file['Mileage']['Original measure']
-              Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
-            0  0.0000                      0.00  ...  SWA (215.18)        SWA            215.18
-            1  0.0792                      0.36  ...
-            2  0.1716                      0.78  ...
-            3  1.1166                      1.53  ...
-            4  2.0066                      2.03  ...
-            5  2.0836                      2.38  ...
-            6                                    ...
-            7  3.0462                      3.21  ...   SDI2 (2.79)       SDI2              2.79
-            [8 rows x 8 columns]
-            >>> mor_mileage_file['Mileage']['Later measure']
-              Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
-            0  0.0000                      0.00  ...  SWA (215.26)        SWA            215.26
-            1  0.0176                      0.08  ...  SWA (215.18)        SWA            215.18
-            2  0.0968                      0.44  ...
-            3  1.0132                      1.06  ...
-            4  1.1342                      1.61  ...
-            5  2.0242                      2.11  ...
-            6  2.1012                      2.46  ...
-            7                                    ...
-            8  3.0638                      3.29  ...   SDI2 (2.79)       SDI2              2.79
-            [9 rows x 8 columns]
-            >>> fed_mileage_file = em.collect_mileage_file(elr='FED')
-            To collect mileage file of "FED"
-            ? [No]|Yes: yes
-            >>> type(fed_mileage_file['Mileage'])
-            dict
-            >>> list(fed_mileage_file['Mileage'].keys())
+
+            >>> mor_mileage_file_data['Original measure']
+               Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
+            0   0.0000                      0.00  ...  SWA (215.18)        SWA            215.18
+            1   0.0242                      0.11  ...
+            2   0.0572                      0.26  ...
+            3   0.0792                      0.36  ...
+            4   0.1078                      0.49  ...
+            5   0.1716                      0.78  ...
+            6   1.1166                      1.53  ...
+            7   2.0066                      2.03  ...
+            8   2.0836                      2.38  ...
+            9                                     ...
+            10  3.0462                      3.21  ...   SDI2 (2.79)       SDI2              2.79
+            [11 rows x 8 columns]
+    
+            >>> mor_mileage_file_data['Later measure']
+               Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
+            0   0.0000                      0.00  ...  SWA (215.26)        SWA            215.26
+            1   0.0176                      0.08  ...  SWA (215.18)        SWA            215.18
+            2   0.0418                      0.19  ...
+            3   0.0748                      0.34  ...
+            4   0.0968                      0.44  ...
+            5   0.1254                      0.57  ...
+            6   1.0132                      1.06  ...
+            7   1.1342                      1.61  ...
+            8   2.0242                      2.11  ...
+            9   2.1012                      2.46  ...
+            10                                    ...
+            11  3.0638                      3.29  ...   SDI2 (2.79)       SDI2              2.79
+            [12 rows x 8 columns]
+    
+            >>> fed_mileage_file = em.collect_mileage_file(elr='FED', verbose=True)
+            Proceed with collecting the mileage file of "FED"?
+             [No]|Yes: yes
+            Collecting the mileage file ... Done.
+    
+            >>> fed_mileage_file_data = fed_mileage_file['Mileage']
+            >>> list(fed_mileage_file_data)
             ['Current measure', 'Original route']
-            >>> fed_mileage_file['Mileage']['Current measure']
+    
+            >>> fed_mileage_file_data['Current measure']
                Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0  83.1254               ...        FEL
             1  84.0198               ...
@@ -941,47 +1181,55 @@ class ELRMileages(_Base):
             5  85.1122               ...
             6  85.1188               ...        TFN              2.13
             [7 rows x 8 columns]
-            >>> fed_mileage_file['Mileage']['Original route']
+    
+            >>> fed_mileage_file_data['Original route']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  FEL (84.22)        FEL             84.22
             1  1.0176                      1.08  ...
             2  1.1540                      1.70  ...
             3  1.1694                      1.77  ...
-            4                                    ...
-            [5 rows x 8 columns]
+            [4 rows x 8 columns]
         """
 
         target_elr = remove_punctuation(elr).upper()
 
-        if target_elr:
-            if confirmed(f'To collect mileage file of "{target_elr}"\n?', confirmation_required):
-                if verbose in {True, 1}:
-                    message_ = "Collecting the mileage file"
-                    if not confirmation_required:
-                        message_ += f' of "{target_elr}"'
-                    print(message_, end=" ... ")
+        if not target_elr:
+            return None
 
-                try:
-                    url = urllib.parse.urljoin(
-                        homepage_url(),
-                        f'/elrs/_mileages/{target_elr[0]}/{target_elr}.shtm'.lower())
-                    source = requests.get(url=url, headers=fake_requests_headers())
-                    source.raise_for_status()
-                except Exception as e:
-                    print_instance_connection_error(verbose=verbose, e=e)
-                    return None
+        target_elr = target_elr.upper()
+        confirm_prompt = f'Proceed with collecting the mileage file of "{target_elr}"?\n'
 
-                try:
-                    return self._collect_mileage_file(
-                        source=source, elr=target_elr, parsed=parsed, dump_dir=dump_dir,
-                        verbose=verbose)
-                except Exception as e:
-                    _print_failure_message(e, "Errors:", verbose=verbose, raise_error=raise_error)
+        if confirmed(confirm_prompt, confirmation_required=confirmation_required):
+            if verbose in {True, 1}:
+                message_ = "Collecting the mileage file"
+                if not confirmation_required:
+                    message_ += f' of "{target_elr}"'
+                print(message_, end=" ... ")
+
+            try:
+                url = urllib.parse.urljoin(
+                    homepage_url(),
+                    f'/elrs/_mileages/{target_elr[0]}/{target_elr}.shtm'.lower())
+                source = requests.get(url=url, headers=fake_requests_headers())
+                source.raise_for_status()
+            except Exception as e:
+                handle_connection_error(verbose=verbose, e=e)
+                return None
+
+            try:
+                return self._collect_mileage_file(
+                    source=source, elr=target_elr, parsed=parsed, dump_dir=dump_dir,
+                    verbose=verbose)
+            except Exception as e:
+                _print_failure_message(e, "Errors:", verbose=verbose, raise_error=raise_error)
+
+        return None
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
+        # noinspection unresolved-references
         """
-        Fetches the mileage file for a specific ELR.
+        Fetch the mileage file for a specific ELR.
 
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
@@ -998,25 +1246,32 @@ class ELRMileages(_Base):
         :type raise_error: bool
         :return: A dictionary containing the mileage file (codes), line name and
             any additional information or notes.
-        :rtype: dict
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
             >>> import tempfile
             >>> import pathlib
+
             >>> tmp_path = pathlib.Path(tempfile.TemporaryDirectory().name)
+
             >>> em = ELRMileages()
+
             >>> # Get the mileage file of 'AAL' (Now 'NAJ3')
             >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL', dump_dir=tmp_path)
+
             >>> type(aal_mileage_file)
             dict
-            >>> list(aal_mileage_file.keys())
+            >>> list(aal_mileage_file)
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes', 'Formerly']
+
             >>> aal_mileage_file['ELR']
             'NAJ3'
+
             >>> aal_mileage_file['Notes']
             'Note that Ashendon Junction up line junction is on NAJ2'
+
             >>> aal_mileage_file['Mileage']
                 Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0    0.0000               ...       NAJ2             33.69
@@ -1033,23 +1288,27 @@ class ELRMileages(_Base):
             11  18.0572               ...        DCL             81.10
             12  18.0638               ...        DCL             81.12
             [13 rows x 8 columns]
+
             >>> # Get the mileage file of 'MLA'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA', dump_dir=tmp_path)
             >>> type(mla_mileage_file)
             dict
             >>> list(mla_mileage_file.keys())
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
+
             >>> mla_mileage_file_mileages = mla_mileage_file['Mileage']
             >>> type(mla_mileage_file_mileages)
             dict
             >>> list(mla_mileage_file_mileages.keys())
             ['Current measure', 'Original measure']
+
             >>> mla_mileage_file_mileages['Original measure']
               Mileage Mileage_Note  ... Link_3_ELR Link_3_Mile_Chain
             0  4.1386               ...       NEM4              0.00
             1  5.0616               ...
             2  5.1122               ...
             [3 rows x 14 columns]
+
             >>> mla_mileage_file_mileages['Current measure']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  MRL2 (4.44)       MRL2              4.44
@@ -1057,6 +1316,7 @@ class ELRMileages(_Base):
             2  0.1540                      0.70  ...         None
             3  0.1606                      0.73  ...         None
             [4 rows x 8 columns]
+
             >>> # Get the mileage file of 'LCG'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='LCG', dump_dir=tmp_path)
         """
@@ -1076,13 +1336,26 @@ class ELRMileages(_Base):
             else:
                 verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
                 mileage_file = self.collect_mileage_file(
-                    elr=target_elr, parsed=True, confirmation_required=False, dump_dir=None,
-                    verbose=verbose_)
+                    elr=target_elr,
+                    parsed=True,
+                    confirmation_required=False,
+                    dump_dir=None,
+                    verbose=verbose_
+                )
+
+                if mileage_file is None:
+                    if verbose:
+                        print(f"The mileage file of \"{data_name.upper()}\" is not available.")
+                    return None
 
             if dump_dir not in {False, None}:
                 self._save_data_to_file(
-                    data=mileage_file, data_name=data_name, ext=ext, dump_dir=dump_dir,
-                    verbose=verbose)
+                    data=mileage_file,
+                    data_name=data_name.upper(),
+                    ext=ext,
+                    dump_dir=dump_dir,
+                    verbose=verbose
+                )
 
             return mileage_file
 
@@ -1091,6 +1364,7 @@ class ELRMileages(_Base):
 
     @staticmethod
     def search_conn(start_elr, start_em, end_elr, end_em):
+        # noinspection unresolved-references
         """
         Searches for connections between two pairs of ELRs and their associated mileages.
 
@@ -1145,8 +1419,10 @@ class ELRMileages(_Base):
             key_idx = start_temp.index[0]
             mile_chain_col = [x for x in start_temp.columns if re.match(r'.*_Mile_Chain', x)][0]
 
-            start_dest_mileage = start_em.loc[key_idx, 'Mileage']  # Mileage of the Start ELR
-            end_orig_mile_chain = start_temp.loc[key_idx, mile_chain_col]  # Mileage of the End ELR
+            # Mileage of the Start ELR
+            start_dest_mileage = start_em.loc[key_idx, 'Mileage']
+            # Mileage of the End ELR
+            end_orig_mile_chain: str | None = start_temp.loc[key_idx, mile_chain_col]
 
             if end_orig_mile_chain and end_orig_mile_chain != 'Unknown':
                 end_orig_mileage = mile_chain_to_mileage(end_orig_mile_chain)

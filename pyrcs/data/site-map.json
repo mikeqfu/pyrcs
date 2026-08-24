@@ -76,7 +76,8 @@
             "crs/crsy": "http://www.railwaycodes.org.uk/crs/crsy.shtm",
             "crs/crsz": "http://www.railwaycodes.org.uk/crs/crsz.shtm",
             "crs/crs1": "http://www.railwaycodes.org.uk/crs/crs1.shtm",
-            "crs/crs2": "http://www.railwaycodes.org.uk/crs/crs2.shtm"
+            "crs/crs2": "http://www.railwaycodes.org.uk/crs/crs2.shtm",
+            "crs/crs_group": "http://www.railwaycodes.org.uk/crs/crs_group.shtm"
         },
         "Line of Route (LOR/PRIDE) codes": {
             "pride/pride0": "http://www.railwaycodes.org.uk/pride/pride0.shtm",
@@ -216,7 +217,9 @@
                 "stations/stationu": "http://www.railwaycodes.org.uk/stations/stationu.shtm",
                 "stations/stationv": "http://www.railwaycodes.org.uk/stations/stationv.shtm",
                 "stations/stationw": "http://www.railwaycodes.org.uk/stations/stationw.shtm",
-                "stations/stationy": "http://www.railwaycodes.org.uk/stations/stationy.shtm"
+                "stations/stationy": "http://www.railwaycodes.org.uk/stations/stationy.shtm",
+                "stations/stationheritage": "http://www.railwaycodes.org.uk/stations/stationheritage.shtm",
+                "stations/stationother": "http://www.railwaycodes.org.uk/stations/stationother.shtm"
             },
             "Bilingual station signs": {
                 "stations/bilingual0": "http://www.railwaycodes.org.uk/stations/bilingual0.shtm",
@@ -258,7 +261,10 @@
             "international stations": "http://www.railwaycodes.org.uk/stations/international.shtm",
             "'listed' UK stations": "http://www.railwaycodes.org.uk/stations/listed.shtm",
             "stations not served by their SFO": "http://www.railwaycodes.org.uk/stations/notserved.shtm",
+            "stations not served by their SFO: industrial action": "http://www.railwaycodes.org.uk/stations/notservedstrike.shtm",
+            "stations with novelty name signs": "http://www.railwaycodes.org.uk/stations/novelty.shtm",
             "post boxes on stations": "http://www.railwaycodes.org.uk/stations/post.shtm",
+            "Railnet stations": "http://www.railwaycodes.org.uk/stations/railnet.shtm",
             "facts and figures that do not fit neatly elsewhere": "http://www.railwaycodes.org.uk/stations/trivia.shtm",
             "London Underground": {
                 "underground/underground0": "http://www.railwaycodes.org.uk/underground/underground0.shtm",
@@ -292,7 +298,9 @@
             "stations/stationu": "http://www.railwaycodes.org.uk/stations/stationu.shtm",
             "stations/stationv": "http://www.railwaycodes.org.uk/stations/stationv.shtm",
             "stations/stationw": "http://www.railwaycodes.org.uk/stations/stationw.shtm",
-            "stations/stationy": "http://www.railwaycodes.org.uk/stations/stationy.shtm"
+            "stations/stationy": "http://www.railwaycodes.org.uk/stations/stationy.shtm",
+            "stations/stationheritage": "http://www.railwaycodes.org.uk/stations/stationheritage.shtm",
+            "stations/stationother": "http://www.railwaycodes.org.uk/stations/stationother.shtm"
         },
         "Bilingual station signs": {
             "stations/bilingual0": "http://www.railwaycodes.org.uk/stations/bilingual0.shtm",
@@ -334,7 +342,10 @@
         "international stations": "http://www.railwaycodes.org.uk/stations/international.shtm",
         "'listed' UK stations": "http://www.railwaycodes.org.uk/stations/listed.shtm",
         "stations not served by their SFO": "http://www.railwaycodes.org.uk/stations/notserved.shtm",
+        "stations not served by their SFO: industrial action": "http://www.railwaycodes.org.uk/stations/notservedstrike.shtm",
+        "stations with novelty name signs": "http://www.railwaycodes.org.uk/stations/novelty.shtm",
         "post boxes on stations": "http://www.railwaycodes.org.uk/stations/post.shtm",
+        "Railnet stations": "http://www.railwaycodes.org.uk/stations/railnet.shtm",
         "facts and figures that do not fit neatly elsewhere": "http://www.railwaycodes.org.uk/stations/trivia.shtm",
         "London Underground": {
             "underground/underground0": "http://www.railwaycodes.org.uk/underground/underground0.shtm",
@@ -344,14 +355,17 @@
         },
         "Depots": {
             "depots/depots0": "http://www.railwaycodes.org.uk/depots/depots0.shtm",
-            "depots/depots1": "http://www.railwaycodes.org.uk/depots/depots1.shtm",
-            "depots/depots2": "http://www.railwaycodes.org.uk/depots/depots2.shtm",
-            "depots/depots3": "http://www.railwaycodes.org.uk/depots/depots3.shtm",
-            "depots/depots4": "http://www.railwaycodes.org.uk/depots/depots4.shtm"
+            "depots/depotstops": "http://www.railwaycodes.org.uk/depots/depotstops.shtm",
+            "depots/depotspretops": "http://www.railwaycodes.org.uk/depots/depotspretops.shtm",
+            "depots/depots1950": "http://www.railwaycodes.org.uk/depots/depots1950.shtm",
+            "depots/depotsgwr": "http://www.railwaycodes.org.uk/depots/depotsgwr.shtm",
+            "depots/depotslms1935": "http://www.railwaycodes.org.uk/depots/depotslms1935.shtm",
+            "depots/depotslner": "http://www.railwaycodes.org.uk/depots/depotslner.shtm",
+            "depots/depotssr": "http://www.railwaycodes.org.uk/depots/depotssr.shtm"
         },
         "Features": {
-            "features/buzzer": "http://www.railwaycodes.org.uk/features/buzzer.shtm",
             "features/brstationery": "http://www.railwaycodes.org.uk/features/brstationery.shtm",
+            "features/buzzer": "http://www.railwaycodes.org.uk/features/buzzer.shtm",
             "features/habdwild": "http://www.railwaycodes.org.uk/features/habdwild.shtm",
             "features/stamper": "http://www.railwaycodes.org.uk/features/stamper.shtm",
             "features/telegraph": "http://www.railwaycodes.org.uk/features/telegraph.shtm",
@@ -415,6 +429,7 @@
                 "c2c Railway": "http://www.railwaycodes.org.uk/operators/access/access_c2cr.shtm",
                 "CrossCountry Trains": "http://www.railwaycodes.org.uk/operators/access/access_cct.shtm",
                 "The Chiltern Railway Company": "http://www.railwaycodes.org.uk/operators/access/access_cr.shtm",
+                "Chiltern Rail": "http://www.railwaycodes.org.uk/operators/access/access_crail.shtm",
                 "Cardiff Railway Company": "http://www.railwaycodes.org.uk/operators/access/access_crc.shtm",
                 "Caledonian Sleeper": "http://www.railwaycodes.org.uk/operators/access/access_cs.shtm",
                 "Connex South Central": "http://www.railwaycodes.org.uk/operators/access/access_csc.shtm",
@@ -432,6 +447,7 @@
                 "First/Keolis Transpennine": "http://www.railwaycodes.org.uk/operators/access/access_fkt.shtm",
                 "First MTR South Western Trains": "http://www.railwaycodes.org.uk/operators/access/access_fmtrswt.shtm",
                 "First Rail London": "http://www.railwaycodes.org.uk/operators/access/access_frl.shtm",
+                "First Rail Stirling": "http://www.railwaycodes.org.uk/operators/access/access_frs.shtm",
                 "First Scotrail": "http://www.railwaycodes.org.uk/operators/access/access_fsr.shtm",
                 "First Transpennine Express": "http://www.railwaycodes.org.uk/operators/access/access_ftpe.shtm",
                 "First Great Western Link (First Thames Trains": "http://www.railwaycodes.org.uk/operators/access/access_ftt.shtm",
@@ -487,6 +503,7 @@
                 "Trenitalia c2c": "http://www.railwaycodes.org.uk/operators/access/access_tic2c.shtm",
                 "Thameslink Rail": "http://www.railwaycodes.org.uk/operators/access/access_tlr.shtm",
                 "Transpennine Trains": "http://www.railwaycodes.org.uk/operators/access/access_tpt.shtm",
+                "Thameslink Southern Great Northern": "http://www.railwaycodes.org.uk/operators/access/access_tsgn.shtm",
                 "Thames Trains": "http://www.railwaycodes.org.uk/operators/access/access_tt.shtm",
                 "Transport UK East Anglia": "http://www.railwaycodes.org.uk/operators/access/access_tukea.shtm",
                 "Transport UK East Midlands": "http://www.railwaycodes.org.uk/operators/access/access_tukem.shtm",
@@ -516,6 +533,7 @@
             "operators/access/access_c2cr": "http://www.railwaycodes.org.uk/operators/access/access_c2cr.shtm",
             "operators/access/access_cct": "http://www.railwaycodes.org.uk/operators/access/access_cct.shtm",
             "operators/access/access_cr": "http://www.railwaycodes.org.uk/operators/access/access_cr.shtm",
+            "operators/access/access_crail": "http://www.railwaycodes.org.uk/operators/access/access_crail.shtm",
             "operators/access/access_crc": "http://www.railwaycodes.org.uk/operators/access/access_crc.shtm",
             "operators/access/access_cs": "http://www.railwaycodes.org.uk/operators/access/access_cs.shtm",
             "operators/access/access_csc": "http://www.railwaycodes.org.uk/operators/access/access_csc.shtm",
@@ -588,6 +606,7 @@
             "operators/access/access_tic2c": "http://www.railwaycodes.org.uk/operators/access/access_tic2c.shtm",
             "operators/access/access_tlr": "http://www.railwaycodes.org.uk/operators/access/access_tlr.shtm",
             "operators/access/access_tpt": "http://www.railwaycodes.org.uk/operators/access/access_tpt.shtm",
+            "operators/access/access_tsgn": "http://www.railwaycodes.org.uk/operators/access/access_tsgn.shtm",
             "operators/access/access_tt": "http://www.railwaycodes.org.uk/operators/access/access_tt.shtm",
             "operators/access/access_tukea": "http://www.railwaycodes.org.uk/operators/access/access_tukea.shtm",
             "operators/access/access_tukem": "http://www.railwaycodes.org.uk/operators/access/access_tukem.shtm",

@@ -244,16 +244,19 @@ def get_batch_fetch_verbosity(data_dir, verbose):
 # == Print messages ================================================================================
 
 
-def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
+def format_confirmation_prompt(data_name, initial=None, ending="?\n"):
     # noinspection PyShadowingNames
     """
-    Returns a message for confirming whether to proceed to collect a certain cluster of data.
+    Format a message confirming whether to proceed with collecting a dataset.
+
+    This function pieces together user-facing terminal prompts, customising output layouts
+    depending on alphabetical index constraints.
 
     :param data_name: The name of the dataset to be collected, e.g. ``"Railway Codes"``.
     :type data_name: str
-    :param initial: The initial letter for the code; defaults to ``None``.
+    :param initial: The initial letter for the code. Defaults to ``None``.
     :type initial: str | None
-    :param ending: The ending of the confirmation message; defaults to ``"\\n?"``.
+    :param ending: The ending of the confirmation message. Defaults to ``"?\\n"``.
     :type ending: str
     :return: A confirmation message asking whether to proceed with the dataset collection.
     :rtype: str
@@ -261,24 +264,28 @@ def format_confirmation_prompt(data_name, initial=None, ending="\n?"):
     **Examples**::
 
         >>> from pyrcs.utils import format_confirmation_prompt
+
         >>> prompt = format_confirmation_prompt(data_name="Railway Codes")
         >>> print(prompt)
-        To collect data of Railway Codes
-        ?
+        Proceed with collecting data of "Railway Codes"?
+        <BLANK_LINE>
+
         >>> prompt = format_confirmation_prompt(data_name="location codes", initial="A")
         >>> print(prompt)
-        To collect data of location codes beginning with "A"
-        ?
+        Proceed with collecting data of "location codes" beginning with "A"?
+        <BLANK_LINE>
     """
 
-    prompt = f"To collect data of {data_name}"
+    prompt = "Proceed with collecting data"
+    data_name_str = f'"{data_name}"'
+
     if initial:
         if initial.lower() in string.ascii_letters:
-            prompt += f' beginning with "{initial}"{ending}'
+            data_name_str += f' beginning with "{initial}"'
         else:
-            prompt += f' ({initial})'
-    else:
-        prompt += ending
+            data_name_str = f'"{data_name} ({initial})"'
+
+    prompt += f" of {data_name_str}{ending}"
 
     return prompt
 
@@ -351,48 +358,45 @@ def print_connection_warning(verbose=False):
                   "The current instance relies on local backup.")
 
 
-def print_instance_connection_error(update=False, verbose=False, e=None, raise_error=False):
+def handle_connection_error(update=False, verbose=False, e=None, raise_error=False):
     """
-    Handles connection errors during data retrieval or update processes.
+    Handle connection errors occurring during data processing or update lifecycles.
 
-    This function processes connection failures by printing targeted feedback based on the
-    verbosity configuration, while offering options to suppress or propagate errors.
+    This utility processes network connection failures by issuing localised feedback notifications
+    based on system configurations, while facilitating optional error escalation controls.
 
-    :param update: Indicates whether the error occurred during a data update. Defaults to ``False``.
+    :param update: Indicates whether the error occurred during a package update phase.
+        Defaults to ``False``.
     :type update: bool
-    :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
+    :param verbose: Whether to print descriptive details to the console output.
+        Defaults to ``False``.
     :type verbose: bool | int
-    :param e: An optional exception instance to display or raise.
+    :param e: An optional exception instance to evaluate or raise.
     :type e: Exception | None
-    :param raise_error: Whether to raise the exception;
-        if ``False`` (default), the error is suppressed.
+    :param raise_error: Whether to propagate the exception out of scope; defaults to ``False``.
     :type raise_error: bool
-    :return: None if the exception is suppressed.
+    :return: None if execution proceeds or errors are suppressed.
     :rtype: None
 
-    :raises ConnectionError: If ``raise_error`` is ``True`` and no exception ``e`` is provided.
-    :raises Exception: Re-raises ``e`` if ``raise_error`` is ``True``.
+    :raises ConnectionError: If ``raise_error=True`` and no explicit context ``e`` is provided.
+    :raises Exception: Propagates the native exception ``e`` if execution triggers ``raise_error``.
 
     **Examples**::
 
-        >>> from pyrcs.utils import print_instance_connection_error
+        >>> from pyrcs.utils import handle_connection_error
 
-        >>> print_instance_connection_error(verbose=True)
+        >>> handle_connection_error(verbose=True)
         The Internet connection is not available.
 
-        >>> print_instance_connection_error(update=True, verbose=True)
+        >>> handle_connection_error(update=True, verbose=True)
         The Internet connection is not available. Failed to update the data.
 
-        >>> print_instance_connection_error(update=True, verbose=2, raise_error=True)
+        >>> handle_connection_error(update=True, verbose=2, raise_error=True)
         Failed. The Internet connection is not available. Failed to update the data.
         Traceback (most recent call last):
           ...
-            ...
-        TypeError: exceptions must derive from BaseException
+        ConnectionError: The Internet connection is not available. Failed to update the data.
     """
-
-    if not verbose:
-        return None  # Nothing to print when verbosity is disabled
 
     if verbose == 2:
         print("Failed.", end=" ")
@@ -407,7 +411,20 @@ def print_instance_connection_error(update=False, verbose=False, e=None, raise_e
     if update:
         err_msg += " Failed to update the data."
 
-    _print_failure_message(err_msg, "", verbose=True, raise_error=raise_error)
+    # Build the real exception wrapper to pass downward for type safety
+    exc_object = e if e is not None else ConnectionError(err_msg)
+
+    if verbose:
+        print(err_msg)
+
+    if raise_error:
+        # If e exists, ensure its text description includes the update failure context if requested
+        if e is not None and update and hasattr(exc_object, 'args') and exc_object.args:
+            # Safely append update failure status string context to original exception trace notes
+            exc_msg = str(exc_object.args[0]) + " Failed to update the data."
+            exc_object.args = (exc_msg,) + exc_object.args[1:]
+
+        _print_failure_message(exc_object, prefix="", verbose=False, raise_error=True)
 
 
 def print_void_collection_message(data_name, verbose):
@@ -428,7 +445,7 @@ def print_void_collection_message(data_name, verbose):
     """
 
     if verbose:
-        print(f"No data of \"{data_name.title()}\" has been freshly collected.")
+        print(f"No data of \"{data_name}\" has been freshly collected.")
 
 
 # == Save and retrieve pre-packed data =============================================================

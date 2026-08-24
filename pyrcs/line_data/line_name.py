@@ -104,8 +104,9 @@ class LineNames(_Base):
         return line_names_data
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection PyUnresolvedReferences
         """
-        Collects data of `railway line names`_ and associated route data from the source web page.
+        Collect data of `railway line names`_ and associated route data from the source web page.
 
         .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 
@@ -125,19 +126,22 @@ class LineNames(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import LineNames  # from pyrcs import LineNames
+
             >>> ln = LineNames()
-            >>> line_names_codes = ln.collect_codes()
-            To collect British railway line names
-            ? [No]|Yes: yes
+
+            >>> line_names_codes = ln.collect_codes(verbose=True)
+            Proceed with collecting data of "railway line names"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(line_names_codes)
             dict
             >>> list(line_names_codes.keys())
             ['Line names', 'Last updated date']
-            >>> ln.KEY
-            'Line names'
-            >>> line_names_codes_dat = line_names_codes[ln.KEY]
+
+            >>> line_names_codes_dat = line_names_codes['Line names']  # line_names_codes[ln.KEY]
             >>> type(line_names_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> line_names_codes_dat.head()
                       Line name  ... Route_note
             0        Abbey Line  ...       None
@@ -149,15 +153,19 @@ class LineNames(_Base):
         """
 
         data = self._collect_data_from_source(
-            data_name=self.NAME.lower(), method=self._collect_codes, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose,
-            raise_error=raise_error)
+            data_name=self.NAME.lower(),
+            method=self._collect_codes,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return data
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches data of `railway line names`_ and associated route data.
+        Fetch data of `railway line names`_ and associated route data.
 
         .. _`railway line names`: http://www.railwaycodes.org.uk/misc/line_names.shtm
 

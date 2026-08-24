@@ -7,9 +7,10 @@ Collects codes of `HABD and WILD`_.
 import urllib.parse
 
 import bs4
+import pandas as pd
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_tr
+from ..parser import _parse_th_tag, parse_tr
 from ..utils import homepage_url
 
 
@@ -59,41 +60,73 @@ class HabdWild(_Base):
             data_dir=data_dir, data_category="other-assets", update=update, verbose=verbose)
 
     def _collect_codes(self, source, verbose=False):
-        try:
-            sub_keys = self.KEY.split(' and ')
-        except ValueError:
-            sub_keys = [self.KEY + ' 1', self.KEY + ' 2']
+        """
+        Extract and parse HABD and WILD codes from the provided HTML source.
 
-        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        This method parses HABD (Hot Axle Box Detector) and WILD (Wheel Impact Load
+        Detector) location code tables from the HTML content, formats them into
+        DataFrames and persists the resulting dataset.
+
+        :param source: The HTTP response object, BeautifulSoup instance or raw
+            HTML content string.
+        :type source: requests.Response | bs4.BeautifulSoup | str
+        :param verbose: Whether to print progress logs; defaults to ``False``.
+        :type verbose: bool | int
+        :return: A dictionary containing the parsed HABD and WILD code DataFrames
+            and metadata.
+        :rtype: dict
+
+        **Examples**::
+
+            >>> from pyrcs.other_assets import HabdWild
+            >>> habd_wild = HabdWild()
+            >>> # # Internal collection call
+            >>> # data = habd_wild._collect_codes(source=source, verbose=True)
+        """
+
+        if ' and ' in self.KEY:
+            sub_keys = self.KEY.split(' and ')
+        else:
+            sub_keys = [f'{self.KEY} 1', f'{self.KEY} 2']
+
+        content = source.content if hasattr(source, 'content') else source
+        soup = bs4.BeautifulSoup(markup=content, features='html.parser')
 
         codes_list = []
         for h3 in soup.find_all('h3'):
-            ths = [th.text.strip() for th in h3.find_next('thead').find_all('th')]
-            trs = h3.find_next('tbody').find_all('tr')
+            table = h3.find_next('table')
+            if not table:
+                continue
 
-            dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+            thead = table.find('thead')
+            tbody = table.find('tbody')
 
-            codes_list.append(dat)
+            if thead and tbody:
+                ths = [_parse_th_tag(th) for th in thead.find_all('th')]
+                trs = tbody.find_all('tr')
+                dat: pd.DataFrame = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+                str_cols = dat.select_dtypes(['string']).columns
+                for col in str_cols:
+                    dat[col] = dat[col].str.replace('  /  ', ' / ')
+
+                codes_list.append(dat)
 
         habds_and_wilds_codes_dat = dict(zip(sub_keys, codes_list))
 
-        habds_and_wilds_codes = {
-            self.KEY: habds_and_wilds_codes_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=habds_and_wilds_codes, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        habds_and_wilds_codes = self._pack_and_save_data(
+            data=habds_and_wilds_codes_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return habds_and_wilds_codes
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects codes of `HABDs and WILDs`_ from the source web page.
+        Collect codes of `HABDs and WILDs`_ from the source web page.
 
         .. _`HABDs and WILDs`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 
@@ -118,24 +151,30 @@ class HabdWild(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import HabdWild  # from pyrcs import HABDWILD
+
             >>> hw = HabdWild()
-            >>> hw_codes = hw.collect_codes()
-            To collect data of HABD and WILD
-            ? [No]|Yes: yes
+
+            >>> hw_codes = hw.collect_codes(verbose=True)
+            Proceed with collecting data of "HABD and WILD"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(hw_codes)
             dict
-            >>> list(hw_codes.keys())
+            >>> list(hw_codes)
             ['HABD and WILD', 'Last updated date']
-            >>> hw.KEY
-            'HABD and WILD'
-            >>> hw_codes_dat = hw_codes[hw.KEY]
+
+            >>> hw_codes_dat = hw_codes['HABD and WILD']
             >>> type(hw_codes_dat)
             dict
-            >>> list(hw_codes_dat.keys())
+            >>> list(hw_codes_dat)
             ['HABD', 'WILD']
+
             >>> habd_dat = hw_codes_dat['HABD']
             >>> type(habd_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> habd_dat.shape
+            (241, 5)
             >>> habd_dat.head()
                 ELR  ...                                              Notes
             0  BAG2  ...
@@ -144,28 +183,36 @@ class HabdWild(_Base):
             3  BAG2  ...                          removed 29 September 1997
             4  BAG2  ...           present in 1969, later moved to 89m 00ch
             [5 rows x 5 columns]
+
             >>> wild_dat = hw_codes_dat['WILD']
             >>> type(wild_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> wild_dat.shape
+            (47, 5)
             >>> wild_dat.head()
                 ELR  ...                                              Notes
             0  AYR3  ...
             1  BAG2  ...
             2  BML1  ...
-            3  BML1  ...
-            4  CGJ3  ...  moved to 183m 68ch from 8 September 2018 / mov...
+            3  BML1  ...      removed 20 March 2023 / removed 20 March 2023
+            4  BML1  ...  brought into use 1 May 2023, delayed from 20 M...
             [5 rows x 5 columns]
         """
 
         habds_and_wilds_codes = self._collect_data_from_source(
-            data_name=self.KEY, method=self._collect_codes, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.KEY,
+            method=self._collect_codes,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return habds_and_wilds_codes
 
     def fetch_codes(self, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches codes of `HABDs and WILDs`_.
+        Fetch codes of `HABDs and WILDs`_.
 
         .. _`HABDs and WILDs`: http://www.railwaycodes.org.uk/misc/habdwild.shtm
 
@@ -183,22 +230,29 @@ class HabdWild(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import HabdWild  # from pyrcs import HABDWILD
+
             >>> hw = HabdWild()
+
             >>> hw_codes = hw.fetch_codes()
             >>> type(hw_codes)
             dict
-            >>> list(hw_codes.keys())
+            >>> list(hw_codes)
             ['HABD and WILD', 'Last updated date']
+
             >>> hw.KEY
             'HABD and WILD'
+
             >>> hw_codes_dat = hw_codes[hw.KEY]
             >>> type(hw_codes_dat)
             dict
             >>> list(hw_codes_dat.keys())
             ['HABD', 'WILD']
+
             >>> habd_dat = hw_codes_dat['HABD']
             >>> type(habd_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> habd_dat.shape
+            (241, 5)
             >>> habd_dat.head()
                 ELR  ...                                              Notes
             0  BAG2  ...
@@ -207,16 +261,19 @@ class HabdWild(_Base):
             3  BAG2  ...                          removed 29 September 1997
             4  BAG2  ...           present in 1969, later moved to 89m 00ch
             [5 rows x 5 columns]
+
             >>> wild_dat = hw_codes_dat['WILD']
             >>> type(wild_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> wild_dat.shape
+            (47, 5)
             >>> wild_dat.head()
                 ELR  ...                                              Notes
             0  AYR3  ...
             1  BAG2  ...
             2  BML1  ...
-            3  BML1  ...
-            4  CGJ3  ...  moved to 183m 68ch from 8 September 2018 / mov...
+            3  BML1  ...      removed 20 March 2023 / removed 20 March 2023
+            4  BML1  ...  brought into use 1 May 2023, delayed from 20 M...
             [5 rows x 5 columns]
         """
 
@@ -224,10 +281,10 @@ class HabdWild(_Base):
             'data_name': self.KEY,
             'method': self.collect_codes,
             'data_dir': self._cdd("..", "features"),
-        }
-        kwargs.update(args)
+        } | kwargs
 
         habds_and_wilds_codes = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update, dump_dir=dump_dir, verbose=verbose, **args
+        )
 
         return habds_and_wilds_codes

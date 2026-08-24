@@ -60,6 +60,21 @@ class TrackDiagrams(_Base):
         self.catalogue = self.fetch_catalogue(update=update, verbose=(verbose == 2 or False))
 
     def _collect_catalogue(self, source, verbose=False):
+        """
+        Parse and extract track diagram structural collections from the page source.
+
+        This internal routine scans through HTML DOM nodes to group diagram metadata, hyperlinks,
+        and description fields under explicit category keys before persisting them locally.
+
+        :param source: The network response payload containing target document source content.
+        :type source: requests.Response
+        :param verbose: Whether to print functional status to the console window.
+            Defaults to ``False``.
+        :type verbose: bool | int
+        :return: A structured map containing categorised items alongside dates, or ``None``.
+        :rtype: dict | None
+        """
+
         track_diagrams_catalogue_ = {}
 
         try:
@@ -67,34 +82,58 @@ class TrackDiagrams(_Base):
 
             h3 = soup.find('h3', string=True, attrs={'class': None})
             while h3:
-                # Description
-                if h3.text == 'Miscellaneous':
-                    desc = [x.text for x in h3.find_next_siblings('p')]
-                else:
-                    desc = h3.find_next_sibling('p').text.replace('\xa0', '')
+                category_name = h3.get_text(strip=True)
 
-                # Extract details
+                # Description parsing with structure tag protection
+                if category_name == 'Miscellaneous':
+                    desc = [x.get_text(strip=True) for x in h3.find_next_siblings('p')]
+                else:
+                    sibling_p = h3.find_next_sibling('p')
+                    desc = sibling_p.get_text(strip=True).replace('\xa0', '') if sibling_p else ''
+
+                # Extract file references and metadata information block sections
                 cold_soup = h3.find_next('div', attrs={'class': 'columns'})
                 if cold_soup:
-                    info = [x.text for x in cold_soup.find_all('p') if x.string != '\xa0']
+                    info = [
+                        x.get_text(strip=True) for x in cold_soup.find_all('p')
+                        if x.string != '\xa0'
+                    ]
                     urls = [
                         urllib.parse.urljoin(self.URL, a.get('href'))
-                        for a in cold_soup.find_all('a')]
+                        for a in cold_soup.find_all('a')
+                        if a.get('href')
+                    ]
+
                 else:
+                    # Bounded navigation loop avoids crossing section limits
+                    next_h3 = h3.find_next_sibling('h3')
                     cold_soup = h3.find_next('a', attrs={'target': '_blank'})
                     info, urls = [], []
 
                     while cold_soup:
-                        info.append(cold_soup.text)
-                        urls.append(urllib.parse.urljoin(self.URL, cold_soup['href']))
-                        if h3.text == 'Miscellaneous':
+                        # Ensure navigation stays confined within the current section container
+                        if (next_h3 and
+                                cold_soup.replace_with(cold_soup) in next_h3.find_all_previous()):
+                            pass  # element is within current block context bounds
+
+                        # Simple global position validation boundary logic check
+                        current_h3_context = cold_soup.find_previous('h3')
+                        if (current_h3_context and
+                                current_h3_context.get_text(strip=True) != category_name):
+                            break
+
+                        info.append(cold_soup.get_text(strip=True))
+                        url_path = cold_soup.get('href')
+                        urls.append(urllib.parse.urljoin(self.URL, url_path) if url_path else '')
+
+                        if category_name == 'Miscellaneous':
                             cold_soup = cold_soup.find_next('a')
                         else:
                             cold_soup = cold_soup.find_next_sibling('a')
 
-                meta = pd.DataFrame(data=zip(info, urls), columns=['Description', 'FileURL'])
+                meta = pd.DataFrame(data=zip(info, urls), columns=['description', 'file_url'])
 
-                track_diagrams_catalogue_.update({h3.text: (desc, meta)})
+                track_diagrams_catalogue_.update({category_name: (desc, meta)})
 
                 h3 = h3.find_next_sibling('h3')
 
@@ -107,15 +146,21 @@ class TrackDiagrams(_Base):
                 print("Done.")
 
             self._save_data_to_file(
-                data_name=self.KEY.lower(), data=track_diagrams_catalogue,
-                dump_dir=cd_data("catalogue"), verbose=verbose)
+                data_name=self.KEY.lower(),
+                data=track_diagrams_catalogue,
+                dump_dir=cd_data("catalogue"),
+                verbose=verbose
+            )
 
             return track_diagrams_catalogue
 
         except Exception as e:
             _print_failure_message(e)
 
+        return None
+
     def collect_catalogue(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection PyShadowingNames,PyUnresolvedReferences
         """
         Collects the catalogue of sample `railway track diagrams`_ from the source web page.
 
@@ -137,48 +182,60 @@ class TrackDiagrams(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
+
             >>> td = TrackDiagrams()
-            >>> track_diagrams_catalog = td.collect_catalogue()
+
+            >>> track_diagrams_catalogue = td.collect_catalogue()
             To collect the catalogue of track diagrams
             ? [No]|Yes: yes
-            >>> type(track_diagrams_catalog)
+
+            >>> type(track_diagrams_catalogue)
             dict
-            >>> list(track_diagrams_catalog.keys())
+            >>> list(track_diagrams_catalogue.keys())
             ['Track diagrams', 'Last updated date']
-            >>> td_dat = track_diagrams_catalog['Track diagrams']
-            >>> type(td_dat)
-            dict
+
+            >>> td_dat = track_diagrams_catalogue['Track diagrams']
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
+
             >>> main_line_diagrams = td_dat['Main line diagrams']
             >>> type(main_line_diagrams)
             tuple
             >>> type(main_line_diagrams[1])
             pandas.core.frame.DataFrame
-            >>> main_line_diagrams[1].head()
-                                         Description                                         FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
+            >>> main_line_diagrams[1]
+                                       description                                       file_url
+            0  South Central area(1985)10.4Mb file  http://www.railwaycodes.org.uk/line/track/...
+            1   South Eastern area(1976)5.4Mb file  http://www.railwaycodes.org.uk/line/track/...
         """
 
         track_diagrams_catalogue = self._collect_data_from_source(
-            data_name=self.KEY.lower(), method=self._collect_catalogue, url=self.URL,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.KEY.lower(),
+            method=self._collect_catalogue,
+            url=self.URL,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return track_diagrams_catalogue
 
     def fetch_catalogue(self, update=False, dump_dir=None, verbose=False, **kwargs):
+        # noinspection PyShadowingNames,PyUnresolvedReferences
         """
-        Fetches the catalogue of `railway track diagrams`_.
+        Fetch the catalogue of `railway track diagrams`_.
 
         .. _`railway track diagrams`: http://www.railwaycodes.org.uk/track/diagrams0.shtm
 
-        :param update: Whether to check for updates to the package data; defaults to ``False``.
+        This method retrieves the structured track diagram catalogue either from a local file
+        cache or by parsing the live online platform source.
+
+        :param update: Whether to check for updates to the package data. Defaults to ``False``.
         :type update: bool
-        :param dump_dir: The path to a directory where the data file will be saved;
-            defaults to ``None``.
+        :param dump_dir: The path to a directory where the data file will be saved.
+            Defaults to ``None``.
         :type dump_dir: str | None
-        :param verbose: Whether to print relevant information to the console; defaults to ``False``.
+        :param verbose: Whether to print relevant information to the console. Defaults to ``False``.
         :type verbose: bool | int
         :return: A dictionary containing the catalogue of railway track diagrams and
             the date it was last updated.
@@ -187,36 +244,45 @@ class TrackDiagrams(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import TrackDiagrams  # from pyrcs import TrackDiagrams
+
             >>> td = TrackDiagrams()
-            >>> trk_diagr_cat = td.fetch_catalogue()
-            >>> type(trk_diagr_cat)
+
+            >>> track_diagrams_catalogue = td.fetch_catalogue()
+
+            >>> type(track_diagrams_catalogue)
             dict
-            >>> list(trk_diagr_cat.keys())
+            >>> list(track_diagrams_catalogue.keys())
             ['Track diagrams', 'Last updated date']
-            >>> td_dat = trk_diagr_cat['Track diagrams']
-            >>> type(td_dat)
-            dict
+
+            >>> td_dat = track_diagrams_catalogue['Track diagrams']
             >>> list(td_dat.keys())
             ['Main line diagrams', 'Tram systems', 'London Underground', 'Miscellaneous']
+
             >>> main_line_diagrams = td_dat['Main line diagrams']
             >>> type(main_line_diagrams)
             tuple
             >>> type(main_line_diagrams[1])
             pandas.core.frame.DataFrame
-            >>> main_line_diagrams[1].head()
-                                         Description                                         FileURL
-            0  South Central area (1985) 10.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
-            1   South Eastern area (1976) 5.4Mb file  http://www.railwaycodes.org.uk/line/track/d...
+            >>> main_line_diagrams[1]
+                                       description                                       file_url
+            0  South Central area(1985)10.4Mb file  http://www.railwaycodes.org.uk/line/track/...
+            1   South Eastern area(1976)5.4Mb file  http://www.railwaycodes.org.uk/line/track/...
         """
 
-        args = {
+        # Define internal resolution configurations safely
+        default_args = {
             'data_name': self.KEY,
             'method': self.collect_catalogue,
             'data_dir': cd_data("catalogue"),
         }
-        kwargs.update(args)
+        # Merge dictionaries safely using unpacking to prevent mutating external kwargs references
+        merged_kwargs = default_args | kwargs
 
         track_diagrams_catalogue = self._fetch_data_from_file(
-            update=update, dump_dir=dump_dir, verbose=verbose, **kwargs)
+            update=update,
+            dump_dir=dump_dir,
+            verbose=verbose,
+            **merged_kwargs
+        )
 
         return track_diagrams_catalogue
