@@ -17,12 +17,12 @@ With PyRCS, users can leverage Python's power to streamline workflows and enhanc
 
 ## Installation
 
-PyHelpers can be installed using [`uv`](https://docs.astral.sh/uv/) (recommended) or [`pip`](https://pip.pypa.io/en/stable/cli/pip/).
+PyRCS can be installed using [`uv`](https://docs.astral.sh/uv/) (recommended) or [`pip`](https://pip.pypa.io/en/stable/cli/pip/).
 
 <details open>
 <summary><b>Using <code>uv</code> (Recommended)</b></summary>
 
-To add PyHelpers to an existing project:
+To add PyRCS to an existing project:
 
 ```bash
 uv add pyrcs
