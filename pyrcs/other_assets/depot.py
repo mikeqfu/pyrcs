@@ -160,11 +160,11 @@ class Depots(_Base):
         """
 
         two_char_tops_codes_data = self._collect_data_from_source(
-            data_name=self.KEY_TO_TOPS.lower(), 
+            data_name=self.KEY_TO_TOPS.lower(),
             method=self._collect_tops_codes,
             url=self.catalogue[self.KEY_TO_TOPS],  # noqa
-            confirmation_required=confirmation_required, 
-            verbose=verbose, 
+            confirmation_required=confirmation_required,
+            verbose=verbose,
             raise_error=raise_error
         )
 
