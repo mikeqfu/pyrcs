@@ -249,7 +249,7 @@ def format_confirmation_prompt(data_name, initial=None, ending="?\n"):
     """
     Format a message confirming whether to proceed with collecting a dataset.
 
-    This function pieces together user-facing terminal prompts, customizing output layouts
+    This function pieces together user-facing terminal prompts, customising output layouts
     depending on alphabetical index constraints.
 
     :param data_name: The name of the dataset to be collected, e.g. ``"Railway Codes"``.

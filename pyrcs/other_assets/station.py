@@ -11,7 +11,7 @@ import bs4
 import pandas as pd
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, get_catalogue, parse_tr
+from ..parser import _align_column_list_lengths, _get_last_updated_date, get_catalogue, parse_tr
 from ..utils import cd_data, get_collect_verbosity_for_fetch, handle_connection_error, \
     homepage_url, is_homepage_connectable, print_void_collection_message, validate_initial
 
@@ -78,46 +78,6 @@ def _split_elr_mileage_column(dat):
     return dat
 
 
-def _align_list_lengths(df, target_cols):
-    """
-    Equalise list lengths across target columns for each row in a DataFrame.
-
-    This function ensures all specified columns contain lists of identical length for
-    every row, repeating single-element lists or padding shorter lists with empty
-    strings to prevent errors during multi-column explosion.
-
-    :param df: Target DataFrame containing list elements.
-    :type df: pandas.DataFrame
-    :param target_cols: Column names whose list lengths should be equalised.
-    :type target_cols: list[str]
-    :return: DataFrame with aligned list lengths across target columns.
-    :rtype: pandas.DataFrame
-    """
-
-    cols = [c for c in target_cols if c in df.columns]
-    if not cols or df.empty:
-        return df
-
-    for col in cols:
-        df[col] = df[col].map(lambda x: x if isinstance(x, list) else [x])
-
-    def _pad_row(row):
-        lengths = [len(row[c]) for c in cols]
-        max_len = max(lengths) if lengths else 1
-        if max_len <= 1 or all(length == max_len for length in lengths):
-            return row
-        for c in cols:
-            curr_len = len(row[c])
-            if curr_len < max_len:
-                if curr_len == 1:
-                    row[c] = row[c] * max_len
-                else:
-                    row[c] = row[c] + [''] * (max_len - curr_len)
-        return row
-
-    return df.apply(_pad_row, axis=1)
-
-
 def _check_row_spans(dat):
     """
     Check and expand data rows containing row spans in coordinate or mileage columns.
@@ -174,7 +134,7 @@ def _check_row_spans(dat):
                 lambda x: x.split(' &&& ') if isinstance(x, str) and ' &&& ' in x else [x]
             )
 
-        dat0 = _align_list_lengths(dat0, active_em_cols)
+        dat0 = _align_column_list_lengths(dat0, active_em_cols)
         dat0 = dat0.explode(active_em_cols, ignore_index=True)
 
     return dat0

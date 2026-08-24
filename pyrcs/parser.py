@@ -485,6 +485,76 @@ def parse_date(str_date, as_date_type=False):
     return parsed_date.date() if as_date_type else parsed_date.date().isoformat()
 
 
+def _align_column_list_lengths(df, target_cols, fill_value='', repeat_single=True):
+    # noinspection shadowing-names
+    """
+    Equalise list lengths across target columns for each row in a DataFrame.
+
+    This function ensures all specified target columns contain lists of identical
+    length for every row. Non-list entries are wrapped into single-element lists,
+    single-element lists are optionally repeated and shorter lists are padded with
+    a custom fill value prior to multi-column explosion.
+
+    :param df: Target DataFrame containing list or scalar elements.
+    :type df: pandas.DataFrame
+    :param target_cols: Column names whose list lengths should be equalised.
+    :type target_cols: list[str]
+    :param fill_value: Value used to pad lists shorter than the maximum list length
+        in a given row. Defaults to ``''``.
+    :type fill_value: Any
+    :param repeat_single: Whether single-element lists should be repeated to match
+        the maximum list length. If ``False``, they are padded with ``fill_value``.
+        Defaults to ``True``.
+    :type repeat_single: bool
+    :return: A copy of the DataFrame with aligned list lengths across target columns.
+    :rtype: pandas.DataFrame
+
+    **Examples**::
+
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'A': [['x', 'y']],
+        ...     'B': ['z'],
+        ...     'C': [[1]]
+        ... })
+
+        >>> _align_column_list_lengths(df, ['A', 'B', 'C'], fill_value=None, repeat_single=True)
+               A       B       C
+        0  [x, y]  [z, z]  [1, 1]
+
+        >>> _align_column_list_lengths(df, ['A', 'B', 'C'], fill_value=None, repeat_single=False)
+               A          B          C
+        0  [x, y]  [z, None]  [1, None]
+    """
+
+    cols = [c for c in target_cols if c in df.columns]
+    if not cols or df.empty:
+        return df
+
+    res_df = df.copy()
+
+    for col in cols:
+        res_df[col] = res_df[col].map(lambda x: x if isinstance(x, list) else [x])
+
+    def _align_row(row):
+        lengths = [len(row[c]) for c in cols]
+        max_len = max(lengths) if lengths else 1
+
+        if max_len <= 1 or all(length == max_len for length in lengths):
+            return row
+
+        for c in cols:
+            curr_len = len(row[c])
+            if curr_len < max_len:
+                if curr_len == 1 and repeat_single:
+                    row[c] = row[c] * max_len
+                else:
+                    row[c] = row[c] + [fill_value] * (max_len - curr_len)
+        return row
+
+    return res_df.apply(_align_row, axis=1)
+
+
 # == Extract information ===========================================================================
 
 
