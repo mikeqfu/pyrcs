@@ -325,6 +325,46 @@ def parse_tr(trs, ths, sep=' / ', as_dataframe=False):
     return records
 
 
+def _parse_th_tag(th_tag):
+    """
+    Parse a table header tag and format emphasis elements for column names.
+
+    This function extracts text from a ``<th>`` tag, converting any nested ``<em>``
+    tags into parenthesised text and standardising internal whitespace to produce
+    clean DataFrame column headers.
+
+    :param th_tag: The table header element or HTML string fragment.
+    :type th_tag: bs4.element.Tag | str
+    :return: Formatted column header string suitable for a DataFrame.
+    :rtype: str
+
+    **Examples**::
+
+        >>> raw_html = '<th>Code <em>number of buzzes or groups separated by pauses</em></th>'
+        >>> _parse_th_tag(raw_html)
+        'Code (number of buzzes or groups separated by pauses)'
+        >>> _parse_th_tag('<th>Location</th>')
+        'Location'
+    """
+
+    if isinstance(th_tag, str):
+        soup = bs4.BeautifulSoup(th_tag, 'html.parser')
+        th_tag = soup.find('th') or soup
+
+    if not th_tag:
+        return ''
+
+    # Copy tag to prevent mutating the caller's parsed BeautifulSoup DOM tree
+    tag_copy = copy.copy(th_tag)
+
+    for em in tag_copy.find_all('em'):
+        em_text = em.get_text(strip=True)
+        em.replace_with(f' ({em_text})' if em_text else '')
+
+    header_text = tag_copy.get_text(separator=' ')
+    return re.sub(r'\s+', ' ', header_text).strip()
+
+
 def parse_table(source, parser='html.parser', as_dataframe=False):
     """
     Parses HTML ``<tr>`` elements to create a table from the given source.
@@ -370,7 +410,7 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
     tables = []
     for thead, tbody in zip(theads, tbodies):
-        ths = [th.get_text(strip=True).replace('\n', '') for th in thead.find_all('th')]
+        ths = [_parse_th_tag(th) for th in thead.find_all('th')]
         trs = tbody.find_all(name='tr')
 
         if as_dataframe:
