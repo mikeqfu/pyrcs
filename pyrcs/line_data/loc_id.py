@@ -1417,12 +1417,9 @@ class LocationIdentifiers(_Base):
 
         location_codes = {}
         for dat, key in zip(data_list, keys):
-            if dat is None:
-                location_codes.update({key: None})
-            else:
-                for k, v in dat.items():
-                    if k != self.KEY_TO_LAST_UPDATED_DATE:
-                        location_codes.update({k: v})
+            for k, v in dat.items():
+                if k != self.KEY_TO_LAST_UPDATED_DATE:
+                    location_codes.update({k: v})
 
         # Get the latest updated date
         latest_update_date = max(d[self.KEY_TO_LAST_UPDATED_DATE] for d in filter(None, data_list))
