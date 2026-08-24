@@ -26,6 +26,28 @@ from ..parser import _get_last_updated_date, parse_table
 from ..utils import get_collect_verbosity_for_fetch, handle_connection_error, homepage_url, \
     is_homepage_connectable, is_str_float, print_void_collection_message, validate_initial
 
+_LOCATION_SEP_PAT = re.compile(r' (?:and|&|to|-) ')
+_PAREN_PAT = re.compile(r'^(.*?)\s*\(([^)]+)\)')
+
+
+def _split_locations(text):
+    """
+    Split a string into two location names around standard separators.
+
+    :param text: The text string to evaluate and split.
+    :type text: str
+    :return: A tuple of two cleaned location strings, or ``None`` if splitting fails.
+    :rtype: tuple[str, str] | None
+    """
+    if not text:
+        return None
+
+    parts = _LOCATION_SEP_PAT.split(text)
+    if len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
+
+    return None
+
 
 def _parse_non_float_str_mileage(mileage):
     """
@@ -646,14 +668,66 @@ class ELRMileages(_Base):
         return mileage_file_alt
 
     @staticmethod
-    def _parse_line_details(elr_dat, notes):
+    def _resolve_locations(line_name, mileages, datum, notes_str):
+        """
+        Determine the line name and terminal location names from record fields.
+
+        Evaluates parenthetical line names, datum mileages and notes sequentially to extract
+        the terminal locations.
+
+        :param line_name: The raw line name string.
+        :type line_name: str
+        :param mileages: The mileage range string.
+        :type mileages: str
+        :param datum: The datum location string.
+        :type datum: str
+        :param notes_str: Cleaned explanatory notes string.
+        :type notes_str: str
+        :return: A tuple containing the resolved line name, start location and end location.
+        :rtype: tuple[str, str, str]
+        """
+
+        paren_match = _PAREN_PAT.search(line_name)
+        if paren_match:
+            outer = paren_match.group(1).strip()
+            inner = paren_match.group(2).strip()
+
+            locs = _split_locations(inner)
+            if locs:
+                return outer, locs[0], locs[1]
+
+            locs = _split_locations(notes_str)
+            if locs:
+                return inner, locs[0], locs[1]
+
+            return line_name, '', ''
+
+        if mileages.startswith('0.00') and datum:
+            loc_a = datum
+            if loc_a in line_name:
+                parts = _LOCATION_SEP_PAT.split(line_name)
+                loc_b = parts[1].strip() if len(parts) >= 2 else line_name
+            else:
+                loc_b = line_name
+            return line_name, loc_a, loc_b
+
+        locs = _split_locations(notes_str) or _split_locations(line_name)
+        if locs:
+            return line_name, locs[0], locs[1]
+
+        if line_name:
+            return line_name, line_name, line_name
+
+        return line_name, '', ''
+
+    def _parse_line_details(self, elr_dat, notes):
         """
         Parse ELR record details to extract the line name and mileage locations.
 
         This method processes string descriptions using regular expressions to extract
         geographic termini and map them to their corresponding mileage bounds.
 
-        :param elr_dat: A single-row DataFrame containing ``'Line name'``, ``'Mileages'``,
+        :param elr_dat: A single-row DataFrame containing ``'Line name'``, ``'Mileages'``
             and ``'Datum'`` columns.
         :type elr_dat: pandas.DataFrame
         :param notes: Explanatory notes that may detail route variations or boundaries.
@@ -670,67 +744,11 @@ class ELRMileages(_Base):
         datum = str(row_values[2]).strip()
         notes_str = str(notes).strip() if notes else ''
 
-        # Non-capturing group prevents the separator itself from appearing in the split list
-        pat = re.compile(r' (?:and|&|to|-) ')
-
-        def _split_locs(text):
-            """Safely split text into exactly two locations."""
-            txt_parts = pat.split(text)
-            if len(txt_parts) == 2:
-                return txt_parts[0].strip(), txt_parts[1].strip()
-            raise ValueError("String does not contain exactly one separator.")
-
-        loc_a, loc_b = '', ''
-
-        if re.match(r'(\w ?)+ \((\w ?)+\)', line_name):
-            # Extract text inside and outside parentheses
-            inner_match = re.search(r'\(([^)]+)\)', line_name)
-            outer_match = re.search(r'^(.*?)\s*\(', line_name)
-
-            line_name_inner = inner_match.group(1).strip() if inner_match else ''
-            line_name_outer = outer_match.group(1).strip() if outer_match else line_name
-
-            try:
-                loc_a, loc_b = _split_locs(line_name_inner)
-                line_name = line_name_outer
-            except ValueError:
-                try:
-                    loc_a, loc_b = _split_locs(notes_str)
-                    line_name = line_name_inner
-                except ValueError:
-                    loc_a, loc_b = '', ''
-
-        elif mileages.startswith('0.00') and datum != '':
-            loc_a = datum
-            if loc_a in line_name:
-                parts = pat.split(line_name)
-                loc_b = parts[1].strip() if len(parts) >= 2 else line_name
-            else:
-                loc_b = line_name
-
-        elif re.match(r'(\w ?)+ (and|&|to) (\w ?)+', notes_str):
-            try:
-                loc_a, loc_b = _split_locs(notes_str)
-            except ValueError:
-                loc_a, loc_b = '', ''
-
-        else:
-            try:
-                loc_a, loc_b = _split_locs(notes_str)
-            except ValueError:
-                try:
-                    loc_a, loc_b = _split_locs(line_name)
-                except ValueError:
-                    pass
-
-            # Fix: Only fallback to line_name if no valid locations were parsed previously
-            if not loc_a and line_name:
-                loc_a, loc_b = line_name, line_name
+        line_name, loc_a, loc_b = self._resolve_locations(line_name, mileages, datum, notes_str)
 
         miles_chains = mileages.split(' - ')
         locations = [loc_a, loc_b]
 
-        # Safely bind extracted mileages to their corresponding parsed locations
         parsed_content = [[m, l] for m, l in zip(miles_chains, locations)]
 
         return line_name, parsed_content
