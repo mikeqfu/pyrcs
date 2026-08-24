@@ -276,7 +276,7 @@ latex_maketitle = r'''
         \Large {{Last updated:}} \large \textbf{{\MonthYearFormat\today}} \par
     
         \vspace{20mm}
-        \large \textcopyright \space Copyright %s \par
+        \large Copyright \textcopyright\space %s \par
 
     \end{titlepage}
     \restoregeometry
@@ -307,6 +307,7 @@ latex_maketitle = r'''
 latex_preamble = r'''
     \setlength{\headheight}{14pt}
     \DeclareUnicodeCharacter{229E}{\ensuremath{\boxplus}}
+    \DeclareUnicodeCharacter{2161}{II}
     \setcounter{tocdepth}{2}
     \setcounter{secnumdepth}{2}
     \usepackage{float,textcomp,textgreek,graphicx,blindtext,color,svg,booktabs,newunicodechar}
