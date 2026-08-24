@@ -372,8 +372,9 @@ class ELRMileages(_Base):
         return data
 
     def collect_elr(self, initial, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects Engineer's Line References (ELRs) that begin with a specified initial letter
+        Collect Engineer's Line References (ELRs) that begin with a specified initial letter
         from the source web page.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR.
@@ -389,20 +390,29 @@ class ELRMileages(_Base):
         :type raise_error: bool
         :return: A dictionary containing ELR data whose names start with the given initial letter,
             along with the date of the last update.
-        :rtype: dict
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+
             >>> em = ELRMileages()
-            >>> elrs_a_codes = em.collect_elr(initial='a')
+
+            >>> elrs_a_codes = em.collect_elr(initial='a', verbose=True)
+            Proceed with collecting data of "Engineer's Line References (ELRs)" beginning with "A"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> type(elrs_a_codes)
             dict
-            >>> list(elrs_a_codes.keys())
+            >>> list(elrs_a_codes)
             ['A', 'Last updated date']
+
             >>> elrs_a_codes_dat = elrs_a_codes['A']
             >>> type(elrs_a_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> elrs_a_codes_dat.shape
+            (193, 5)
             >>> elrs_a_codes_dat.head()
                ELR  ...         Notes
             0  AAL  ...      Now NAJ3
@@ -411,11 +421,18 @@ class ELRMileages(_Base):
             3  ABB  ...       Now AHB
             4  ABB  ...
             [5 rows x 5 columns]
-            >>> elrs_q_codes = em.collect_elr(initial='Q')
+
+            >>> elrs_q_codes = em.collect_elr(initial='Q', verbose=True)
+            Proceed with collecting data of "Engineer's Line References (ELRs)" beginning with "Q"?
+             [No]|Yes: yes
+            Collecting the data ... Done.
+
             >>> elrs_q_codes_dat = elrs_q_codes['Q']
+            >>> elrs_q_codes_dat.shape
+            (10, 5)
             >>> elrs_q_codes_dat.head()
-                ELR  ...            Notes
-            0   QAB  ...  Duplicates ALB?
+                ELR  ...             Notes
+            0   QAB  ...  Duplicates ALB ?
             1   QBL  ...
             2   QDS  ...
             3   QLT  ...
@@ -426,14 +443,19 @@ class ELRMileages(_Base):
         initial_ = validate_initial(initial=initial)
 
         data = self._collect_data_from_source(
-            data_name=self.NAME, method=self._collect_elr, initial=initial_,
-            confirmation_required=confirmation_required, verbose=verbose, raise_error=raise_error)
+            data_name=self.NAME,
+            method=self._collect_elr,
+            initial=initial_,
+            confirmation_required=confirmation_required,
+            verbose=verbose,
+            raise_error=raise_error
+        )
 
         return data
 
     def fetch_elr(self, initial=None, update=False, dump_dir=None, verbose=False, **kwargs):
         """
-        Fetches data of ELRs and their associated mileages.
+        Fetch data of ELRs and their associated mileages.
 
         :param initial: The initial letter (e.g. ``'a'``, ``'z'``) of an ELR; defaults to ``None``.
         :type initial: str | None
@@ -451,17 +473,23 @@ class ELRMileages(_Base):
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
+
             >>> em = ELRMileages()
+
             >>> elrs_codes = em.fetch_elr()
             >>> type(elrs_codes)
             dict
-            >>> list(elrs_codes.keys())
+            >>> list(elrs_codes)
             ['ELRs and mileages', 'Last updated date']
+
             >>> em.KEY
             'ELRs and mileages'
+
             >>> elrs_codes_dat = elrs_codes[em.KEY]
             >>> type(elrs_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
+            >>> elrs_codes_dat.shape
+            (4579, 5)
             >>> elrs_codes_dat.head()
                ELR  ...         Notes
             0  AAL  ...      Now NAJ3
@@ -550,7 +578,7 @@ class ELRMileages(_Base):
 
         self._save_data_to_file(
             data=mileage_file,
-            data_name=data_name,
+            data_name=data_name.upper(),
             ext=".pkl",
             dump_dir=target_dir,
             verbose=verbose
@@ -911,8 +939,13 @@ class ELRMileages(_Base):
         :param verbose: Whether to print progress details to the console. Defaults to ``False``.
         :type verbose: bool | int
         :return: A compiled dictionary containing line info, mileage data, and notes.
-        :rtype: dict
+        :rtype: dict | None
         """
+
+        if source.status_code == 300:
+            if verbose in {True, 1}:
+                print("Not available.")
+            return None
 
         soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
@@ -1000,9 +1033,10 @@ class ELRMileages(_Base):
 
     def collect_mileage_file(self, elr, parsed=True, confirmation_required=True, dump_dir=False,
                              verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
-        Collects the mileage file for a specific ELR from the source web page.
-
+        Collect the mileage file for a specific ELR from the source web page.
+    
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
         :type elr: str
@@ -1021,52 +1055,44 @@ class ELRMileages(_Base):
             if ``raise_error=False`` (default), the error will be suppressed.
         :type raise_error: bool
         :return: A dictionary containing the mileage file for the specified ELR.
-        :rtype: dict
-
+        :rtype: dict | None
+    
         .. note::
-
+    
             - In some cases, mileages may be unknown and thus left blank
               (e.g. ``'ANI2, Orton Junction with ROB (~3.05)'``).
             - Mileages in parentheses are not on that ELR but are included for reference
               (e.g. ``'ANL, (8.67) NORTHOLT [London Underground]'``).
             - As with the main ELR list, mileages preceded by a tilde (~) are approximate.
-
+    
         **Examples**::
-
+    
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
-
+    
             >>> em = ELRMileages()
-
+    
             >>> gam_mileage_file = em.collect_mileage_file(elr='GAM', verbose=True)
             Proceed with collecting the mileage file of "GAM"?
              [No]|Yes: yes
-            Collecting the mileage file ... Done.
-
-            >>> list(gam_mileage_file)
-            ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-            >>> gam_mileage_file['Mileage']
-               Mileage Mileage_Note Miles_Chains  ... Link_1 Link_1_ELR Link_1_Mile_Chain
-            0   8.1518                      8.69  ...
-            1  10.0264                     10.12  ...
-            [2 rows x 8 columns]
+            Collecting the mileage file ... Not available.
 
             >>> xrc2_mileage_file = em.collect_mileage_file(elr='XRC2', verbose=True)
             Proceed with collecting the mileage file of "XRC2"?
              [No]|Yes: yes
             Collecting the mileage file ... Done.
-
+    
             >>> xrc2_mileage_file['Mileage']
               Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0  9.0158     14.629km  ...
             1  9.0447     14.893km  ...
             2  9.0557     14.994km  ...
             [3 rows x 8 columns]
-
+    
             >>> xre_mileage_file = em.collect_mileage_file(elr='XRE', verbose=True)
             Proceed with collecting the mileage file of "XRE"?
              [No]|Yes: yes
             Collecting the mileage file ... Done.
-
+    
             >>> xre_mileage_file['Mileage']
               Mileage Mileage_Note  ... Link_2_ELR Link_2_Mile_Chain
             0  7.0073     11.333km  ...
@@ -1077,16 +1103,16 @@ class ELRMileages(_Base):
             5  9.0439   (14.886)km  ...
             6  9.0540   (14.978)km  ...
             [7 rows x 11 columns]
-
+    
             >>> mor_mileage_file = em.collect_mileage_file(elr='MOR', verbose=True)
             Proceed with collecting the mileage file of "MOR"?
              [No]|Yes: yes
             Collecting the mileage file ... Done.
-
+    
             >>> mor_mileage_file_data = mor_mileage_file['Mileage']
-
             >>> list(mor_mileage_file_data)
             ['Original measure', 'Later measure']
+
             >>> mor_mileage_file_data['Original measure']
                Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
             0   0.0000                      0.00  ...  SWA (215.18)        SWA            215.18
@@ -1101,7 +1127,7 @@ class ELRMileages(_Base):
             9                                     ...
             10  3.0462                      3.21  ...   SDI2 (2.79)       SDI2              2.79
             [11 rows x 8 columns]
-
+    
             >>> mor_mileage_file_data['Later measure']
                Mileage Mileage_Note Miles_Chains  ...        Link_1 Link_1_ELR Link_1_Mile_Chain
             0   0.0000                      0.00  ...  SWA (215.26)        SWA            215.26
@@ -1117,16 +1143,16 @@ class ELRMileages(_Base):
             10                                    ...
             11  3.0638                      3.29  ...   SDI2 (2.79)       SDI2              2.79
             [12 rows x 8 columns]
-
+    
             >>> fed_mileage_file = em.collect_mileage_file(elr='FED', verbose=True)
             Proceed with collecting the mileage file of "FED"?
              [No]|Yes: yes
             Collecting the mileage file ... Done.
-
+    
             >>> fed_mileage_file_data = fed_mileage_file['Mileage']
             >>> list(fed_mileage_file_data)
             ['Current measure', 'Original route']
-
+    
             >>> fed_mileage_file_data['Current measure']
                Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0  83.1254               ...        FEL
@@ -1137,7 +1163,7 @@ class ELRMileages(_Base):
             5  85.1122               ...
             6  85.1188               ...        TFN              2.13
             [7 rows x 8 columns]
-
+    
             >>> fed_mileage_file_data['Original route']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  FEL (84.22)        FEL             84.22
@@ -1183,8 +1209,9 @@ class ELRMileages(_Base):
 
     def fetch_mileage_file(self, elr, update=False, dump_dir=None, verbose=False,
                            raise_error=False):
+        # noinspection unresolved-references
         """
-        Fetches the mileage file for a specific ELR.
+        Fetch the mileage file for a specific ELR.
 
         :param elr: The ELR for which the mileage file is requested
             (e.g. ``'CJD'``, ``'MLA'``, ``'FED'``).
@@ -1201,25 +1228,32 @@ class ELRMileages(_Base):
         :type raise_error: bool
         :return: A dictionary containing the mileage file (codes), line name and
             any additional information or notes.
-        :rtype: dict
+        :rtype: dict | None
 
         **Examples**::
 
             >>> from pyrcs.line_data import ELRMileages  # from pyrcs import ELRMileages
             >>> import tempfile
             >>> import pathlib
+
             >>> tmp_path = pathlib.Path(tempfile.TemporaryDirectory().name)
+
             >>> em = ELRMileages()
+
             >>> # Get the mileage file of 'AAL' (Now 'NAJ3')
             >>> aal_mileage_file = em.fetch_mileage_file(elr='AAL', dump_dir=tmp_path)
+
             >>> type(aal_mileage_file)
             dict
-            >>> list(aal_mileage_file.keys())
+            >>> list(aal_mileage_file)
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes', 'Formerly']
+
             >>> aal_mileage_file['ELR']
             'NAJ3'
+
             >>> aal_mileage_file['Notes']
             'Note that Ashendon Junction up line junction is on NAJ2'
+
             >>> aal_mileage_file['Mileage']
                 Mileage Mileage_Note  ... Link_1_ELR Link_1_Mile_Chain
             0    0.0000               ...       NAJ2             33.69
@@ -1236,23 +1270,27 @@ class ELRMileages(_Base):
             11  18.0572               ...        DCL             81.10
             12  18.0638               ...        DCL             81.12
             [13 rows x 8 columns]
+
             >>> # Get the mileage file of 'MLA'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='MLA', dump_dir=tmp_path)
             >>> type(mla_mileage_file)
             dict
             >>> list(mla_mileage_file.keys())
             ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
+
             >>> mla_mileage_file_mileages = mla_mileage_file['Mileage']
             >>> type(mla_mileage_file_mileages)
             dict
             >>> list(mla_mileage_file_mileages.keys())
             ['Current measure', 'Original measure']
+
             >>> mla_mileage_file_mileages['Original measure']
               Mileage Mileage_Note  ... Link_3_ELR Link_3_Mile_Chain
             0  4.1386               ...       NEM4              0.00
             1  5.0616               ...
             2  5.1122               ...
             [3 rows x 14 columns]
+
             >>> mla_mileage_file_mileages['Current measure']
               Mileage Mileage_Note Miles_Chains  ...       Link_1 Link_1_ELR Link_1_Mile_Chain
             0  0.0000                      0.00  ...  MRL2 (4.44)       MRL2              4.44
@@ -1260,6 +1298,7 @@ class ELRMileages(_Base):
             2  0.1540                      0.70  ...         None
             3  0.1606                      0.73  ...         None
             [4 rows x 8 columns]
+
             >>> # Get the mileage file of 'LCG'
             >>> mla_mileage_file = em.fetch_mileage_file(elr='LCG', dump_dir=tmp_path)
         """
@@ -1279,13 +1318,26 @@ class ELRMileages(_Base):
             else:
                 verbose_ = get_collect_verbosity_for_fetch(data_dir=dump_dir, verbose=verbose)
                 mileage_file = self.collect_mileage_file(
-                    elr=target_elr, parsed=True, confirmation_required=False, dump_dir=None,
-                    verbose=verbose_)
+                    elr=target_elr,
+                    parsed=True,
+                    confirmation_required=False,
+                    dump_dir=None,
+                    verbose=verbose_
+                )
+
+                if mileage_file is None:
+                    if verbose:
+                        print(f"The mileage file of \"{data_name.upper()}\" is not available.")
+                    return None
 
             if dump_dir not in {False, None}:
                 self._save_data_to_file(
-                    data=mileage_file, data_name=data_name, ext=ext, dump_dir=dump_dir,
-                    verbose=verbose)
+                    data=mileage_file,
+                    data_name=data_name.upper(),
+                    ext=ext,
+                    dump_dir=dump_dir,
+                    verbose=verbose
+                )
 
             return mileage_file
 
@@ -1294,6 +1346,7 @@ class ELRMileages(_Base):
 
     @staticmethod
     def search_conn(start_elr, start_em, end_elr, end_em):
+        # noinspection unresolved-references
         """
         Searches for connections between two pairs of ELRs and their associated mileages.
 

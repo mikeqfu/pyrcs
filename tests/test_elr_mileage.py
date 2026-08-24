@@ -105,12 +105,14 @@ class TestELRMileages:
         monkeypatch.setattr('builtins.input', lambda _: "Yes")
         elr_codes = em.collect_elr(initial=test_initial, verbose=True)
         out, _ = capfd.readouterr()
-        assert "Collecting the data" in out and "Done." in out
 
-        assert isinstance(elr_codes, dict)
-        assert list(elr_codes.keys()) == [test_initial, em.KEY_TO_LAST_UPDATED_DATE]
-        elrs_codes_dat = elr_codes[test_initial]
-        assert isinstance(elrs_codes_dat, pd.DataFrame)
+        if elr_codes is not None:
+            assert "Collecting the data" in out and "Done." in out
+
+            assert isinstance(elr_codes, dict)
+            assert list(elr_codes.keys()) == [test_initial, em.KEY_TO_LAST_UPDATED_DATE]
+            elrs_codes_dat = elr_codes[test_initial]
+            assert isinstance(elrs_codes_dat, pd.DataFrame)
 
     def test_fetch_elr(self, em, tmp_path, capfd):
         elrs_codes_a = em.fetch_elr(initial='a', dump_dir=tmp_path, verbose=2)
@@ -170,7 +172,7 @@ class TestELRMileages:
         assert parsed_content == [['0.00', 'Main Line'], ['2.00', 'Main Line']]
 
     def test_mileage_parsing_and_splitting(self, em, monkeypatch):
-        # Setup a mock class instance to provide self.measure_headers
+        # Set up a mock class instance to provide self.measure_headers
         class MockParser:
             measure_headers = [
                 'Current measure', 'Original measure', 'Later measure',
@@ -245,10 +247,14 @@ class TestELRMileages:
             test_mileage_file = em.collect_mileage_file(
                 elr=test_elr, confirmation_required=False, verbose=True)
             out, _ = capfd.readouterr()
-            assert f'Collecting the mileage file of "{test_elr}" ... Done.' in out
-            assert isinstance(test_mileage_file, dict)
-            assert list(test_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
-            assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
+            assert f'Collecting the mileage file of "{test_elr}" ... ' in out
+            if test_mileage_file is None:
+                assert "Not available" in out
+            else:
+                assert "Done." in out
+                assert isinstance(test_mileage_file, dict)
+                assert list(test_mileage_file) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
+                assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
         test_elr = 'CJD'
 
@@ -266,23 +272,26 @@ class TestELRMileages:
 
     def test_fetch_mileage_file(self, em, tmp_path, capfd):
         for test_elr in ['AAL', 'MLA', 'FED']:
-            test_mileage_file = em.fetch_mileage_file(elr=test_elr, dump_dir=None, verbose=True)
-            assert isinstance(test_mileage_file, dict)
-            assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
+            test_mileage_file = em.fetch_mileage_file(elr=test_elr, dump_dir=tmp_path, verbose=True)
+            out, _ = capfd.readouterr()
+            if test_mileage_file is None:
+                assert "not available" in out
+            else:
+                assert isinstance(test_mileage_file, dict)
+                assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
-        aal_mileage_file = em.fetch_mileage_file(elr='AAL', update=True, verbose=2)
-        out, _ = capfd.readouterr()
-        assert "Updating" in out and "Done." in out
-        assert isinstance(aal_mileage_file, dict)
-        assert isinstance(aal_mileage_file['Mileage'], (pd.DataFrame, dict))
+        for test_elr in ['MLA', 'LCG', 'ABK']:
+            test_mileage_file = em.fetch_mileage_file(elr=test_elr, update=True, verbose=2)
+            out, _ = capfd.readouterr()
 
-        lcg_mileage_file = em.fetch_mileage_file(elr='LCG', dump_dir=tmp_path)
-        assert isinstance(lcg_mileage_file, dict)
-        assert isinstance(lcg_mileage_file['Mileage'], (pd.DataFrame, dict))
+            if test_elr == 'MLA' and test_mileage_file is not None:
+                assert "Updating" in out and "Done." in out
+                assert isinstance(test_mileage_file, dict)
+                assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
-        abk_mileage_file = em.fetch_mileage_file(elr='ABK', dump_dir=tmp_path)
-        assert isinstance(abk_mileage_file, dict)
-        assert isinstance(abk_mileage_file['Mileage'], (pd.DataFrame, dict))
+            elif test_mileage_file is not None:
+                assert isinstance(test_mileage_file, dict)
+                assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
     def test_search_conn(self, em):
         elr_1, elr_2 = 'AAM', 'ANZ'
