@@ -8,6 +8,7 @@ import copy
 import inspect
 import os
 
+import bs4
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
@@ -15,7 +16,8 @@ from pyhelpers.dirs import cd, resolve_dir_path
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
-from .parser import _get_last_updated_date, get_catalogue, get_introduction, get_last_updated_date
+from .parser import _get_last_updated_date, _parse_th_tag, get_catalogue, get_introduction, \
+    get_last_updated_date, parse_tr
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
     handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
     print_void_collection_message, validate_page_name
@@ -296,6 +298,41 @@ class _Base:
                 data.update({additional_fields: None})
 
         return data
+
+    @staticmethod
+    def _parse_table_source(source, dataset_label):
+        """
+        Parse HTML source to extract table data as a DataFrame along with the soup.
+
+        Parses the HTML markup, verifies the existence of required ``thead`` and ``tbody``
+        tags, extracts header text and rows and returns a DataFrame along with the BeautifulSoup
+        instance.
+
+        :param source: HTML response object or BeautifulSoup instance containing table markup.
+        :type source: requests.Response | bs4.BeautifulSoup
+        :param dataset_label: Name of the dataset being processed for error context.
+        :type dataset_label: str
+        :return: Tuple containing the parsed DataFrame and the BeautifulSoup instance.
+        :rtype: tuple[pandas.DataFrame, bs4.BeautifulSoup]
+        :raises ValueError: If the required ``thead`` or ``tbody`` elements are missing.
+        """
+
+        if isinstance(source, bs4.BeautifulSoup):
+            soup = source
+        else:
+            soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
+        thead, tbody = soup.find('thead'), soup.find('tbody')
+        if not thead or not tbody:
+            raise ValueError(
+                f"HTML source is missing mandatory 'thead' or 'tbody' elements for {dataset_label}."
+            )
+
+        ths = [_parse_th_tag(th) for th in thead.find_all(name='th')]
+        trs = tbody.find_all(name='tr')
+        df = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+
+        return df, soup
 
     def _collect_data_from_source(self, data_name, method, url=None, initial=None,
                                   additional_fields=None, confirmation_required=True,
