@@ -11,19 +11,43 @@
 
 PyRCS is an open-source Python package that simplifies the collection and management of railway codes used across different systems in the UK rail industry. It provides a practical toolkit for researchers, practitioners and frequent users of the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website who work extensively with railway codes in the UK. By leveraging Python's capabilities, PyRCS enables efficient access, retrieval and manipulation of railway code data, enhancing productivity and effectiveness in working with these codes.
 
-During [installation](https://pyrcs.readthedocs.io/en/latest/installation.html), PyRCS includes a set of pre-packaged data. When users request data from a specific category on the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website, PyRCS loads the corresponding pre-packaged data for that category by default. Additionally, it provides functionality for direct access to the latest data from the source website, ensuring users stay up to date. Users can also update the pre-packaged data as needed, keeping their resources synchronized with the latest developments.
+During [installation](https://pyrcs.readthedocs.io/en/latest/installation.html), PyRCS includes a set of pre-packaged data. When users request data from a specific category on the [Railway Codes](http://www.railwaycodes.org.uk/index.shtml) website, PyRCS loads the corresponding pre-packaged data for that category by default. Additionally, it provides functionality for direct access to the latest data from the source website, ensuring users stay up to date. Users can also update the pre-packaged data as needed, keeping their resources synchronised with the latest developments.
 
 With PyRCS, users can leverage Python's power to streamline workflows and enhance productivity when working with railway codes in the UK rail industry.
 
 ## Installation
 
-To install the latest version of pyrcs from [PyPI](https://pypi.org/project/pyrcs/) via [pip](https://pip.pypa.io/en/stable/cli/pip/):
+PyHelpers can be installed using [`uv`](https://docs.astral.sh/uv/) (recommended) or [`pip`](https://pip.pypa.io/en/stable/cli/pip/).
+
+<details open>
+<summary><b>Using <code>uv</code> (Recommended)</b></summary>
+
+To add PyHelpers to an existing project:
 
 ```bash
-$ pip install --upgrade pyrcs
+uv add pyrcs
 ```
 
-For more information, see the [Installation](https://pyrcs.readthedocs.io/en/latest/installation.html). 
+If you are working in an activated virtual environment:
+
+```bash
+uv pip install --upgrade pyrcs
+```
+
+</details>
+
+<details>
+<summary><b>Using pip</b></summary>
+
+If you prefer standard Python packaging tools, ensure your `virtual environment`_ is activated:
+
+```bash
+pip install --upgrade pyrcs
+```
+
+</details>
+
+For detailed options, development setup and Windows troubleshooting (e.g. installing C-extension wheels), see the full [Installation Guide](https://pyrcs.readthedocs.io/en/latest/installation.html).
 
 ## Quick start
 

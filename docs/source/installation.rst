@@ -2,43 +2,76 @@
 Installation
 ============
 
-To install the latest release of pyrcs from `PyPI`_ via `pip`_:
+PyRCS can be installed using `uv`_ (recommended for speed, reliability and modern dependency resolution) or traditional `pip`_.
 
-.. _`PyPI`: https://pypi.org/project/pyrcs/
-.. _`pip`: https://pip.pypa.io/en/stable/cli/pip/
+Using ``uv`` (Recommended)
+==========================
 
-.. code-block:: bash
+`uv`_ is a fast Python package installer and project manager written in Rust.
 
-   pip install --upgrade pyrcs
+Adding to a ``uv`` Project
+---------------------------
 
-To install the most recent version of pyrcs hosted on `GitHub`_:
+To add the latest release of PyRCS to your existing project managed by ``uv``:
 
-.. _`GitHub`: https://github.com/mikeqfu/pyrcs
+.. code-block:: console
 
-.. code-block:: bash
+    > uv add pyrcs
 
-   pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
+Installing in a Virtual Environment
+-----------------------------------
+
+If you are working inside an active virtual environment and wish to install PyRCS directly using ``uv pip``:
+
+.. code-block:: console
+
+    > uv pip install --upgrade pyrcs
+
+To install the latest development version directly from `GitHub <https://github.com/mikeqfu/pyrcs>`_:
+
+.. code-block:: console
+
+    > uv pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
+
+
+Using ``pip``
+=============
+
+If you prefer standard Python packaging tools, ensure your `virtual environment`_ is activated and use `pip install`_:
+
+.. code-block:: console
+
+    > pip install --upgrade pyrcs
+
+To install the development version from GitHub:
+
+.. code-block:: console
+
+    > pip install --upgrade git+https://github.com/mikeqfu/pyrcs.git
 
 
 .. note::
 
-    - If using a `virtual environment`_, make sure it is activated.
-    - It is recommended to add `pip install`_ the option ``--upgrade`` (or ``-U``) to ensure that you are getting the latest stable release of the package.
-    - For more general instructions on the installation of Python packages, please refer to the official guide on `Installing Packages`_.
-
-    .. _`virtual environment`: https://packaging.python.org/glossary/#term-Virtual-Environment
-    .. _`pip install`: https://pip.pypa.io/en/stable/cli/pip_install/
-    .. _`Installing Packages`: https://packaging.python.org/tutorials/installing-packages/
+    - For general guidelines on Python virtual environments and dependency management, refer to the `Python Packaging User Guide`_.
 
 
-To check whether pyrcs has been correctly installed, try to import the package via an interpreter shell:
+Verification
+============
+
+To verify the installation, import the package in a Python interpreter shell:
 
 .. code-block:: python
     :name: cmd current version
 
     >>> import pyrcs
-
     >>> pyrcs.__version__  # Check the latest version
 
 .. parsed-literal::
     The latest version is: |version|
+
+
+.. _`uv`: https://docs.astral.sh/uv/
+.. _`virtual environment`: https://packaging.python.org/glossary/#term-Virtual-Environment
+.. _`pip install`: https://pip.pypa.io/en/stable/cli/pip_install/
+.. _`pip`: https://pip.pypa.io/en/stable/cli/pip/
+.. _`Python Packaging User Guide`: https://packaging.python.org/tutorials/installing-packages/
