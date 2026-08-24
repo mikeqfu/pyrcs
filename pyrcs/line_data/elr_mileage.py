@@ -1348,8 +1348,10 @@ class ELRMileages(_Base):
             key_idx = start_temp.index[0]
             mile_chain_col = [x for x in start_temp.columns if re.match(r'.*_Mile_Chain', x)][0]
 
-            start_dest_mileage = start_em.loc[key_idx, 'Mileage']  # Mileage of the Start ELR
-            end_orig_mile_chain = start_temp.loc[key_idx, mile_chain_col]  # Mileage of the End ELR
+            # Mileage of the Start ELR
+            start_dest_mileage = start_em.loc[key_idx, 'Mileage']
+            # Mileage of the End ELR
+            end_orig_mile_chain: str | None = start_temp.loc[key_idx, mile_chain_col]
 
             if end_orig_mile_chain and end_orig_mile_chain != 'Unknown':
                 end_orig_mileage = mile_chain_to_mileage(end_orig_mile_chain)
