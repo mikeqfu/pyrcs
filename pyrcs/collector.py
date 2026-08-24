@@ -169,17 +169,18 @@ class LineData(_Base):
                 # Electrification
                 print(f"\n{self.Electrification.NAME}:")
                 _ = self.Electrification.get_independent_lines_catalogue(**update_args)
-                _ = self.Electrification.fetch_codes(**update_args)
+                # noinspection DuplicatedCode
+                _ = self.Electrification.fetch_codes(**update_args)  # noqa
 
                 time.sleep(interval)
 
-                # Location
+                # CRS, NLC, TIPLOC and STANOX Codes
                 print(f"\n{self.LocationIdentifiers.NAME}:")
                 _ = self.LocationIdentifiers.fetch_codes(**update_args)
 
                 time.sleep(interval)
 
-                # Line of routes
+                # Line of Route (LOR/PRIDE)
                 print(f"\n{self.LOR.NAME}:")
                 _ = self.LOR.get_keys_to_prefixes(prefixes_only=True, **update_args)
                 _ = self.LOR.get_keys_to_prefixes(prefixes_only=False, **update_args)
@@ -187,7 +188,8 @@ class LineData(_Base):
                 _ = self.LOR.fetch_codes(**update_args)
                 _ = self.LOR.fetch_elr_lor_converter(**update_args)
 
-                time.sleep(interval)
+                # noinspection DuplicatedCode
+                time.sleep(interval)  # noqa
 
                 # Line names
                 print(f"\n{self.LineNames.NAME}:")
@@ -338,7 +340,8 @@ class OtherAssets(_Base):
                 _ = self.SignalBoxes.fetch_wr_mas_dates(**update_args)
                 _ = self.SignalBoxes.fetch_bell_codes(**update_args)
 
-                time.sleep(interval)
+                # noinspection DuplicatedCode
+                time.sleep(interval)  # noqa
 
                 # Tunnels
                 print(f"\n{self.Tunnels.NAME}:")
@@ -357,7 +360,8 @@ class OtherAssets(_Base):
                 _ = self.Stations.fetch_catalogue(**update_args)
                 _ = self.Stations.fetch_locations(**update_args)
 
-                time.sleep(interval)
+                # noinspection DuplicatedCode
+                time.sleep(interval)  # noqa
 
                 # Depots
                 print(f"\n{self.Depots.NAME}:")
