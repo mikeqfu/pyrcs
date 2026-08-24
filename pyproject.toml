@@ -1,17 +1,17 @@
 [build-system]
-requires = ["setuptools>=70", "wheel", "build"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pyrcs"
-dynamic = [
-    "version",
-    "description",
-    "urls",
-    "authors",
-    "license"
+version = "1.1.0"
+description = "An open-source tool for collecting railway codes used in different UK rail industry systems"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Qian Fu", email = "q.fu@bham.ac.uk" }
 ]
-readme = { file = "README.md", content-type = "text/markdown" }
 keywords = [
     "Python",
     "Railway",
@@ -42,11 +42,6 @@ keywords = [
     "Depots",
     "Tracks"
 ]
-requires-python = ">=3.12"
-dependencies = [
-    "pyhelpers ~= 2.5.0",
-    "beautifulsoup4"
-]
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
@@ -59,6 +54,137 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux"
 ]
+dependencies = [
+    "pyhelpers ~= 2.5.0",
+    "beautifulsoup4",
+    "requests",
+    "pandas",
+    "numpy",
+]
 
-[tool.setuptools]
-packages = { find = {} }
+[project.urls]
+Homepage = "https://github.com/mikeqfu/pyrcs"
+Documentation = "https://pyrcs.readthedocs.io/en/latest/"
+Source = "https://github.com/mikeqfu/pyrcs"
+"Bug Tracker" = "https://github.com/mikeqfu/pyrcs/issues"
+
+
+# -----------------------
+# Local developer tooling
+# -----------------------
+[dependency-groups]
+dev = [
+    "notebook",
+    "jsonschema[format]",
+    "rfc3987-syntax",
+]
+docs = [
+    "sphinx",
+    "furo",
+    "sphinx-copybutton",
+    "sphinx-new-tab-link",
+    "sphinx-toggleprompt"
+]
+test = [
+    "pytest",
+    "coverage",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist"
+]
+
+
+# --------------------
+# Build configuration
+# --------------------
+[tool.hatch.build.targets.sdist]
+include = [
+    "pyrcs",
+    "pyproject.toml",
+    "CHANGELOG.md",
+    "CITATION.cff",
+    "LICENSE",
+    "README.md"
+]
+exclude = [
+    ".venv",
+    "docs",
+    "tests",
+    "tutorials"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["pyrcs"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"pyproject.toml" = "pyrcs/pyproject.toml"
+
+# Custom metadata section
+[tool.custom.metadata]
+funder = ""
+project_start = "August 2019"
+corresponding_author = [
+    { name = "Qian Fu", affiliation = "Birmingham Energy Institute, University of Birmingham", email = "q.fu@bham.ac.uk" },
+]
+
+
+# --------------------
+# Pytest configuration
+# --------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "-v",
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=pyrcs",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-report=html",
+    "-n",
+    "auto"
+]
+xfail_strict = true
+
+filterwarnings = [
+    "error",
+    "ignore:Support for class-based `config` is deprecated:UserWarning",
+    "ignore:distutils Version classes are deprecated:DeprecationWarning",
+]
+
+# ----------------------
+# Coverage configuration
+# ----------------------
+[tool.coverage.run]
+source = ["pyrcs"]
+branch = true
+parallel = true
+relative_files = true
+
+[tool.coverage.paths]
+source = [
+    "pyrcs",
+    "*/site-packages/pyrcs",
+    "*/pyrcs",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+exclude_also = [
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "@overload",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+# Report destinations
+[tool.coverage.xml]
+output = "reports/coverage.xml"
+
+[tool.coverage.html]
+directory = "reports/htmlcov"
+

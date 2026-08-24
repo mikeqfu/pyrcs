@@ -2,25 +2,28 @@
 Configuration file for the Sphinx documentation builder.
 """
 
-# == Path setup ====================================================================================
 import os
 import sys
 
-# (If the directory is relative to the docs root, use os.path.abspath to make it absolute)
+from pygments.formatters.latex import LatexFormatter
+from sphinx.highlighting import PygmentsBridge
+
+from pyrcs import __affiliation__, __author__, __copyright__, __description__, __first_release__, \
+    __pkgname__, __project__, __version__
+
+# == Path setup ====================================================================================
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../pyrcs'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/line_data'))
 sys.path.insert(0, os.path.abspath('../../pyrcs/other_assets'))
 
 # == Project information (General information about the project) ===================================
-from pyrcs import __affil__, __author__, __copyright__, __desc__, __first_release__, __pkgname__, \
-    __project__, __version__  # noqa
-
 project = __project__
-copyright = __copyright__
+# noinspection shadowing-builtins
+copyright = __copyright__.replace('Copyright (c) ', '')
 
 # The version info for the project:
-version = __version__  # The short X.Y version
+version = __version__  # The short X.Y.Z version
 release = version  # The full version, including alpha/beta/rc tags
 
 # == General configuration =========================================================================
@@ -225,10 +228,6 @@ copybutton_prompt_is_regexp = True
 
 
 # == Options for LaTeX output ======================================================================
-from pygments.formatters.latex import LatexFormatter  # noqa
-from sphinx.highlighting import PygmentsBridge  # noqa
-
-
 class CustomLatexFormatter(LatexFormatter):
     def __init__(self, **options):
         super(CustomLatexFormatter, self).__init__(**options)
@@ -277,7 +276,7 @@ latex_maketitle = r'''
         \Large {{Last updated:}} \large \textbf{{\MonthYearFormat\today}} \par
     
         \vspace{20mm}
-        \large \textcopyright \space Copyright %s \par
+        \large Copyright \textcopyright\space %s \par
 
     \end{titlepage}
     \restoregeometry
@@ -297,16 +296,18 @@ latex_maketitle = r'''
     \clearpage
     \pagenumbering{arabic}
     ''' % (__project__,
-           __desc__.replace('different UK', 'different \\newline UK'),
+           __description__.replace('different UK', 'different \\newline UK'),
            __version__,
            __author__,
-           __affil__,
+           __affiliation__,
            __first_release__,
-           __copyright__)
+           __copyright__.replace('Copyright (c) ', '')
+           )
 
 latex_preamble = r'''
     \setlength{\headheight}{14pt}
     \DeclareUnicodeCharacter{229E}{\ensuremath{\boxplus}}
+    \DeclareUnicodeCharacter{2161}{II}
     \setcounter{tocdepth}{2}
     \setcounter{secnumdepth}{2}
     \usepackage{float,textcomp,textgreek,graphicx,blindtext,color,svg,booktabs,newunicodechar}

@@ -139,11 +139,11 @@ class Viaducts(_Base):
             >>> type(viaducts_page_1_data)
             pandas.DataFrame
             >>> viaducts_page_1_data.shape
-            (630, 7)
+            (631, 7)
             >>> viaducts_page_1_data.head()
-                   Name  ... Spans/arches
-            0  7 Arches  ...              7
-            1   36 Arch  ...             36
+                   Name  ... Spans/ arches
+            0  7 Arches  ...             7
+            1   36 Arch  ...            36
             2   42 Arch  ...
             3       A46  ...
             4      A413  ...
@@ -210,8 +210,8 @@ class Viaducts(_Base):
             >>> page_6_codes.shape
             (319, 7)
             >>> page_6_codes.head()
-                     Name                                 Notes  ... End mileage Spans/arches
-            0   Tadcaster  crosses River Wharfe; grade Ⅱ listed  ...                       11
+                     Name                                 Notes  ... End mileage Spans/ arches
+            0   Tadcaster  crosses River Wharfe; grade Ⅱ listed  ...                        11
             1        Taff                        see Red Bridge  ...
             2        Taff                                        ...
             3  Taff River                 also called Afon Taff  ...   170m 42ch
