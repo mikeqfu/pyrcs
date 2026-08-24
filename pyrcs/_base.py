@@ -37,6 +37,7 @@ class _Base:
 
     def __init__(self, data_dir=None, content_type=None, data_category="", data_cluster=None,
                  update=False, verbose=True):
+        # noinspection unresolved-references
         """
         :param data_dir: Path to the directory where the data is stored; defaults to ``None``.
         :type data_dir: str | None
@@ -109,7 +110,7 @@ class _Base:
             data_dir=data_dir, category=data_category, cluster=data_cluster)
 
     def _setup_data_dir(self, data_dir, category, cluster=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Specifies the initial data directory for a class instance to manage a specific data cluster.
 
@@ -150,6 +151,7 @@ class _Base:
         return self.data_dir, self.current_data_dir
 
     def _cdd(self, *sub_dir, mkdir=True, **kwargs):
+        # noinspection unresolved-references
         """
         Changes the current directory to the package's data directory,
         or its specified subdirectories (or file).
@@ -230,7 +232,7 @@ class _Base:
 
     @staticmethod
     def _format_confirmation_message(data_name, confirmation_prompt=None, initial=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Generates a confirmation prompt message.
 
@@ -299,6 +301,7 @@ class _Base:
                                   additional_fields=None, confirmation_required=True,
                                   confirmation_prompt=None, verbose=False, raise_error=False,
                                   **kwargs):
+        # noinspection unresolved-references
         """
         Collects and parses data from a specified source webpage.
 
@@ -469,6 +472,7 @@ class _Base:
         )
 
     def _make_file_pathname(self, data_name, ext=".pkl", data_dir=None, sub_dir=None, **kwargs):
+        # noinspection unresolved-references
         """
         Generates a standardised file pathname for saving data.
 
@@ -519,7 +523,7 @@ class _Base:
 
     def _save_data_to_file(self, data, data_name, ext=".pkl", dump_dir=None, sub_dir=None,
                            verbose=False, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection unresolved-references,shadowing-names
         """
         Saves the provided ``data`` to a file using the specified format and location.
 
@@ -620,7 +624,7 @@ class _Base:
     def _fetch_data_from_file(self, data_name, method, ext=".pkl", update=False, dump_dir=None,
                               verbose=False, raise_error=False, data_dir=None, sub_dir=None,
                               save_data_kwargs=None, **kwargs):
-        # noinspection PyShadowingNames
+        # noinspection shadowing-names,unresolved-references
         """
         Fetches data from a stored file or generates it using the specified ``method``.
 
