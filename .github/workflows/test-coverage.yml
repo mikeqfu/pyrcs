@@ -39,10 +39,10 @@ jobs:
           cache-suffix: py${{ matrix.python-version }}
           python-version: ${{ matrix.python-version }}
 
-      - name: Install system C dependencies for geospatial packages
+      - name: Install system C dependencies for native packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y libproj-dev proj-bin
+          sudo apt-get install -y libproj-dev proj-bin libgeos-dev libpq-dev
 
       - name: Install dependencies
         run: uv sync --locked --all-extras --all-groups
