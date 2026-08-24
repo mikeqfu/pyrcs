@@ -33,7 +33,7 @@ Print messages
     format_confirmation_prompt
     print_collection_message
     print_connection_warning
-    print_instance_connection_error
+    handle_connection_error
     print_void_collection_message
 
 Save and retrieve pre-packed data
