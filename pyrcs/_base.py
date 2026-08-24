@@ -15,7 +15,7 @@ from pyhelpers.dirs import cd, resolve_dir_path
 from pyhelpers.ops import confirmed, fake_requests_headers
 from pyhelpers.store import load_data, save_data
 
-from .parser import get_catalogue, get_introduction, get_last_updated_date
+from .parser import _get_last_updated_date, get_catalogue, get_introduction, get_last_updated_date
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
     handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
     print_void_collection_message, validate_page_name
@@ -579,6 +579,43 @@ class _Base:
 
         else:
             print_void_collection_message(data_name=data_name, verbose=verbose)
+
+    def _pack_and_save_data(self, data, soup, dump_dir, verbose=False):
+        """
+        Format asset data with metadata, print completion status and save to disk.
+
+        This helper encapsulates the boilerplate logic shared across asset classes for
+        constructing the final dataset dictionary, printing progress logs and persisting
+        the results to disk.
+
+        :param data: Extracted asset data payload.
+        :type data: dict | list
+        :param soup: BeautifulSoup instance used to extract the last updated date.
+        :type soup: bs4.element.Tag | bs4.BeautifulSoup
+        :param dump_dir: Target output directory path.
+        :type dump_dir: str | None
+        :param verbose: Level of logging detail. Defaults to ``False``.
+        :type verbose: bool | int
+        :return: Formatted dictionary containing the asset data payload and metadata.
+        :rtype: dict
+        """
+
+        formatted_data = {
+            self.KEY: data,
+            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
+        }
+
+        if verbose in {True, 1}:
+            print("Done.")
+
+        self._save_data_to_file(
+            data=formatted_data,
+            data_name=self.KEY,
+            dump_dir=dump_dir,
+            verbose=verbose
+        )
+
+        return formatted_data
 
     def _fetch_data_from_file(self, data_name, method, ext=".pkl", update=False, dump_dir=None,
                               verbose=False, raise_error=False, data_dir=None, sub_dir=None,

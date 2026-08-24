@@ -9,7 +9,7 @@ import urllib.parse
 import bs4
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_tr
+from ..parser import parse_tr
 from ..utils import homepage_url
 
 
@@ -77,17 +77,12 @@ class HabdWild(_Base):
 
         habds_and_wilds_codes_dat = dict(zip(sub_keys, codes_list))
 
-        habds_and_wilds_codes = {
-            self.KEY: habds_and_wilds_codes_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=habds_and_wilds_codes, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        habds_and_wilds_codes = self._pack_and_save_data(
+            data=habds_and_wilds_codes_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return habds_and_wilds_codes
 

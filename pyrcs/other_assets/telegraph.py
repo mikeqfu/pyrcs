@@ -5,9 +5,10 @@ Collects `telegraph codes <http://www.railwaycodes.org.uk/misc/telegraph.shtm>`_
 import urllib.parse
 
 import bs4
+import pandas as pd
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_tr
+from ..parser import parse_tr
 from ..utils import homepage_url
 
 
@@ -76,7 +77,7 @@ class Telegraph(_Base):
             ths = [th.text.strip() for th in h3.find_next('thead').find_all('th')]
             trs = h3.find_next('tbody').find_all('tr')
 
-            dat = parse_tr(trs=trs, ths=ths, as_dataframe=True)
+            dat: pd.DataFrame = parse_tr(trs=trs, ths=ths, as_dataframe=True)
 
             if 'In use' in dat.columns:
                 dat['In use'] = dat['In use'].map(_parse_telegraph_in_use_term)
@@ -85,17 +86,12 @@ class Telegraph(_Base):
 
         telegraph_code_words_dat = dict(zip(sub_keys, codes_list))
 
-        telegraph_code_words = {
-            self.KEY: telegraph_code_words_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=telegraph_code_words, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        telegraph_code_words = self._pack_and_save_data(
+            data=telegraph_code_words_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return telegraph_code_words
 

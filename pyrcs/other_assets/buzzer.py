@@ -5,7 +5,7 @@ Collects `driver/guard buzzer codes <http://www.railwaycodes.org.uk/misc/buzzer.
 import urllib.parse
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, parse_table
+from ..parser import parse_table
 from ..utils import homepage_url
 
 
@@ -62,21 +62,17 @@ class Buzzer(_Base):
 
         codes_dat.columns = column_names
 
-        buzzer_codes = {
-            self.KEY: codes_dat,
-            self.KEY_TO_LAST_UPDATED_DATE: _get_last_updated_date(soup=soup),
-        }
-
-        if verbose in {True, 1}:
-            print("Done.")
-
-        self._save_data_to_file(
-            data=buzzer_codes, data_name=self.KEY, dump_dir=self._cdd("..", "features"),
-            verbose=verbose)
+        buzzer_codes = self._pack_and_save_data(
+            data=codes_dat,
+            soup=soup,
+            dump_dir=self._cdd("..", "features"),
+            verbose=verbose
+        )
 
         return buzzer_codes
 
     def collect_codes(self, confirmation_required=True, verbose=False, raise_error=False):
+        # noinspection unresolved-references
         """
         Collects data of `buzzer codes`_ from the source web page.
 
@@ -98,19 +94,20 @@ class Buzzer(_Base):
         **Examples**::
 
             >>> from pyrcs.other_assets import Buzzer  # from pyrcs import Buzzer
+
             >>> buz = Buzzer()
+
             >>> buz_codes = buz.collect_codes()
             To collect data of Buzzer codes
             ? [No]|Yes: yes
             >>> type(buz_codes)
             dict
-            >>> list(buz_codes.keys())
+            >>> list(buz_codes)
             ['Buzzer codes', 'Last updated date']
-            >>> buz.KEY
-            'Buzzer codes'
-            >>> buz_codes_dat = buz_codes[buz.KEY]
+
+            >>> buz_codes_dat = buz_codes['Buzzer codes']
             >>> type(buz_codes_dat)
-            pandas.core.frame.DataFrame
+            pandas.DataFrame
             >>> buz_codes_dat.head()
               Code [number of buzzes or groups separated by pauses]            Meaning
             0                                                  1                  Stop
