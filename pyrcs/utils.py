@@ -445,7 +445,7 @@ def print_void_collection_message(data_name, verbose):
     """
 
     if verbose:
-        print(f"No data of \"{data_name.title()}\" has been freshly collected.")
+        print(f"No data of \"{data_name}\" has been freshly collected.")
 
 
 # == Save and retrieve pre-packed data =============================================================

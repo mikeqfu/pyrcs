@@ -134,7 +134,7 @@ class TestBase:
         data_name = "test_data_name"
         _b._save_data_to_file(data=None, data_name=data_name, verbose=True)
         out, _ = capfd.readouterr()
-        assert f'No data of "{data_name.title()}" has been freshly collected.' in out
+        assert f'No data of "{data_name}" has been freshly collected.' in out
 
         _b._save_data_to_file(
             data=pd.DataFrame(), data_name=data_name, ext=ext, dump_dir=tmp_path, verbose=2)
