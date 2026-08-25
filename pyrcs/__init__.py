@@ -37,6 +37,7 @@ from .other_assets import Buzzer, Depots, Features, HabdWild, SignalBoxes, Stati
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
+
 def _load_metadata():
     """
     Extract package metadata from local configuration or installed distribution.
@@ -128,7 +129,7 @@ __project__ = 'PyRCS'
 __pkgname__ = METADATA.get('name')
 __description__ = METADATA.get('description')
 
-__title__ = f"{__project__}: {__description__}" if __description__ else __project__
+__title__ = f"{__project__}: {__description__.strip('.')}" if __description__ else __project__
 
 __version__ = METADATA.get('version')
 __license__ = METADATA.get('license')
