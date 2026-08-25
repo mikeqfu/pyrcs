@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "pyrcs"
 version = "1.2.0"
-description = "An open-source tool for collecting railway codes used in different UK rail industry systems"
+description = "An open-source tool for collecting railway codes used in different UK rail industry systems."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { file = "LICENSE" }
+license = { text = "MIT" }
 authors = [
-    { name = "Qian Fu", email = "q.fu@bham.ac.uk" }
+    { name = "Qian Fu" }
 ]
 keywords = [
     "Python",
@@ -59,14 +59,14 @@ dependencies = [
     "beautifulsoup4",
     "requests",
     "pandas",
-    "numpy",
 ]
 
 [project.urls]
 Homepage = "https://github.com/mikeqfu/pyrcs"
 Documentation = "https://pyrcs.readthedocs.io/en/latest/"
-Source = "https://github.com/mikeqfu/pyrcs"
+Repository = "https://github.com/mikeqfu/pyrcs"
 "Bug Tracker" = "https://github.com/mikeqfu/pyrcs/issues"
+Changelog = "https://github.com/mikeqfu/pyrcs/blob/master/CHANGELOG.md"
 
 
 # -----------------------
