@@ -1,5 +1,7 @@
 # PyRCS
 
+*An open-source tool for collecting railway codes used in different UK rail industry systems.*
+
 [![PyPI Release Version](https://img.shields.io/pypi/v/pyrcs)](https://pypi.org/project/pyrcs/)
 [![Python Version](https://img.shields.io/pypi/pyversions/pyrcs)](https://docs.python.org/3/)
 [![License](https://img.shields.io/github/license/mikeqfu/pyrcs)](https://github.com/mikeqfu/pyrcs/blob/master/LICENSE)
