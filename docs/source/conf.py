@@ -296,7 +296,7 @@ latex_maketitle = r'''
     \clearpage
     \pagenumbering{arabic}
     ''' % (__project__,
-           __description__.replace('different UK', 'different \\newline UK'),
+           __description__.replace('different UK', 'different \\newline UK').strip('.'),
            __version__,
            __author__,
            __affiliation__,

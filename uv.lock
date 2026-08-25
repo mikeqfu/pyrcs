@@ -1527,7 +1527,7 @@ wheels = [
 
 [[package]]
 name = "pyhelpers"
-version = "2.5.1"
+version = "2.5.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -1538,9 +1538,9 @@ dependencies = [
     { name = "shapely" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/c8/8d3c46a286a4fd9b816d5d7ab31164c051cc23e891a51f29b67f10c00d2c/pyhelpers-2.5.1.tar.gz", hash = "sha256:756ce9f097ea2e208f3b8e7fbe70435a809adc10034ffa575532c79b34e2c4b3", size = 236404, upload-time = "2026-08-24T12:00:18.884Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/9a/b672d11d346a18d7a25434ccdf0723eef2951f6534c20593ea18584d24f2/pyhelpers-2.5.2.tar.gz", hash = "sha256:7a1c2982363bdaaa2fc557c7ce6b47eeda501ccf0bfe28a8db31a38a6db90740", size = 236485, upload-time = "2026-08-25T09:29:22.946Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/fc/c5d45877f123087f8df657794a85be66ceddaac011048283813c2cbfad3b/pyhelpers-2.5.1-py3-none-any.whl", hash = "sha256:6f1ae28342e51f54ebaec3403a80ec2ba3eca47b97a76d52f26cf38f9e1c2395", size = 244430, upload-time = "2026-08-24T12:00:16.87Z" },
+    { url = "https://files.pythonhosted.org/packages/41/54/b79e294005887367d15b538887da8740a2bbae055d90fce33e63283dbadf/pyhelpers-2.5.2-py3-none-any.whl", hash = "sha256:26ddbfa00343979e82237a9f0369fbbfbbafcb9e9d9b0e5c7316e2113687dae0", size = 243827, upload-time = "2026-08-25T09:29:21.315Z" },
 ]
 
 [[package]]
@@ -1605,7 +1605,6 @@ version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
-    { name = "numpy" },
     { name = "pandas" },
     { name = "pyhelpers" },
     { name = "requests" },
@@ -1635,7 +1634,6 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4" },
-    { name = "numpy" },
     { name = "pandas" },
     { name = "pyhelpers", specifier = "~=2.5.0" },
     { name = "requests" },
