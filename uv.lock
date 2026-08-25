@@ -1605,7 +1605,6 @@ version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
-    { name = "numpy" },
     { name = "pandas" },
     { name = "pyhelpers" },
     { name = "requests" },
@@ -1635,7 +1634,6 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4" },
-    { name = "numpy" },
     { name = "pandas" },
     { name = "pyhelpers", specifier = "~=2.5.0" },
     { name = "requests" },
