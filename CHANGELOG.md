@@ -1,6 +1,26 @@
 # Changelog / Release notes
 
 
+## **[1.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.2.0)**
+
+(*25 August 2026*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.1.0...1.2.0) since [1.1.0](https://pypi.org/project/pyrcs/1.1.0/):
+
+- **Packaging & build system:**
+  - Migrated project dependency management and package resolution to `uv` (#90).
+  - Standardised PyPI packaging metadata, module attributes and lockfile definitions (#92).
+  - Upgraded `pyhelpers` dependency to `>=2.5.0` (#87).
+- **Refactoring & maintenance:**
+  - Resolved static type warnings and refactored internal parsing helpers (#89).
+- **Documentation & CI/CD:**
+  - Optimised GitHub Actions workflow frequency, concurrency controls and runner resource utilisation.
+  - Fixed Sphinx documentation build failures on Read the Docs.
+  - Corrected typos and updated project subtitles in `README.md` and Sphinx documentation.
+
+**For more information and detailed specifications, check out the [PyRCS 1.2.0 documentation](https://pyrcs.readthedocs.io/en/1.2.0/).**
+
+
 ## **[1.1.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.1.0)**
 
 (*14 April 2026*)
