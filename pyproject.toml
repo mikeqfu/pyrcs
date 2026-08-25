@@ -97,6 +97,11 @@ test = [
 # --------------------
 # Build configuration
 # --------------------
+[tool.hatch.build]
+artifacts = [
+    "pyrcs/data/**/*"
+]
+
 [tool.hatch.build.targets.sdist]
 include = [
     "pyrcs",
