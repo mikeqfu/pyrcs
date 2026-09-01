@@ -1,6 +1,22 @@
 # Changelog / Release notes
 
 
+## **[1.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/1.2.1)**
+
+(*1 September 2026*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.2.0...1.2.1) since [1.2.0](https://pypi.org/project/pyrcs/1.2.0/):
+
+- **Packaging & build system:**
+  - Fixed distribution packaging to recursively include all data assets and subdirectories under `pyrcs/data/` using Hatchling build artefacts.
+  - Configured force inclusion of `pyproject.toml` into package resources (`pyrcs/pyproject.toml`) for internal configuration loading.
+  - Removed redundant `MANIFEST.in` file in favour of native Hatchling configuration in `pyproject.toml`.
+- **Maintenance & dependencies:**
+  - Upgraded all pinned project dependencies across `dev`, `docs` and `test` groups in `uv.lock`.
+
+**For more information and detailed specifications, check out the [PyRCS 1.2.1 documentation](https://pyrcs.readthedocs.io/en/1.2.1/).**
+
+
 ## **[1.2.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.2.0)**
 
 (*25 August 2026*)

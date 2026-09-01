@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyrcs"
-version = "1.2.0"
+version = "1.2.1"
 description = "An open-source tool for collecting railway codes used in different UK rail industry systems."
 readme = "README.md"
 requires-python = ">=3.12"
