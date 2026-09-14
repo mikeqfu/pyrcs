@@ -4,14 +4,17 @@ PyRCS
 
 *An open-source tool for collecting railway codes used in different UK rail industry systems.*
 
-|PyPI| |Python| |License| |Docs| |Build| |Codacy| |Codecov| |DOI|
+|PyPI| |Conda-Forge| |Python| |License| |Docs| |Build| |Codacy| |Codecov| |DOI|
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs
-    :alt: PyPI Release Version
+.. |PyPI| image:: https://img.shields.io/pypi/v/pyrcs?logo=pypi
+    :alt: PyPI Version
     :target: https://pypi.org/project/pyrcs/
-.. |Python| image:: https://img.shields.io/pypi/pyversions/pyrcs
+.. |Conda-Forge| image:: https://img.shields.io/conda/vn/conda-forge/pyrcs?logo=anaconda
+    :alt: Conda-Forge Version
+    :target: https://anaconda.org/channels/conda-forge/packages/pyrcs/overview
+.. |Python| image:: https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fmikeqfu%2Fpyrcs%2Frefs%2Fheads%2Fmaster%2Fpyproject.toml
     :alt: Python Version
-    :target: https://docs.python.org/3/
+    :target: https://www.python.org/downloads/
 .. |License| image:: https://img.shields.io/github/license/mikeqfu/pyrcs
     :alt: License
     :target: https://github.com/mikeqfu/pyrcs/blob/master/LICENSE
