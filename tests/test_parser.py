@@ -8,12 +8,11 @@ import bs4
 import pandas as pd
 import pytest
 import requests
-from pyhelpers.ops import fake_requests_headers
 
 from pyrcs.line_data import Electrification
-from pyrcs.parser import get_catalogue, get_category_menu, get_financial_year, get_heading_text, \
-    get_hypertext, get_introduction, get_last_updated_date, get_page_catalogue, get_site_map, \
-    parse_date, parse_table, parse_tr
+from pyrcs.parser import _requests_get, get_catalogue, get_category_menu, get_financial_year, \
+    get_heading_text, get_hypertext, get_introduction, get_last_updated_date, get_page_catalogue, \
+    get_site_map, parse_date, parse_table, parse_tr
 
 
 def test_parse_tr():
@@ -32,7 +31,7 @@ def test_parse_tr():
 
 
 def test_parse_table():
-    source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
+    source_dat = _requests_get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
 
     (columns_dat, records_dat), _ = parse_table(source_dat)
 
@@ -205,7 +204,8 @@ def test_get_heading_text():
     assert isinstance(elec.catalogue, dict)
     url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
 
-    source = requests.get(url, headers=fake_requests_headers())
+    source = _requests_get(url)
+    assert isinstance(source, requests.Response)
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
     h3 = soup.find('h3')
@@ -249,8 +249,7 @@ def test_get_hypertext():
         pytest.skip("Target catalog dictionary element key is missing.")
 
     try:
-        source = requests.get(url)
-        source.raise_for_status()
+        source: requests.Response = _requests_get(url)
     except requests.RequestException:
         return pytest.skip("External data platform service is offline.")
 
