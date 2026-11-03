@@ -18,11 +18,53 @@ from pyrcs.parser import _requests_get, get_catalogue, get_category_menu, get_fi
 
 
 def test__requests_get_retry_exhaustion(mocker):
-    mocker.patch("time.sleep")  # Bypasses actual sleep delays during tests
-    mocker.patch("curl_cffi.requests.get", side_effect=TimeoutError)
+    """
+    Test _requests_get behaviour across success, retries and exhaustion.
+    """
 
+    mocker.patch("time.sleep")
+
+    # 1. Test success on first attempt without custom headers
+    mock_resp_success = mocker.Mock(ok=True)
+    mock_get = mocker.patch("curl_cffi.requests.get", return_value=mock_resp_success)
+    assert _requests_get("http://example.com") == mock_resp_success
+    mock_get.assert_called_once_with(
+        url="http://example.com",
+        impersonate=mocker.ANY,
+        timeout=10,
+    )
+
+    # 2. Test success with custom headers passed
+    custom_headers = {"X-Test-Header": "value"}
+    assert _requests_get("http://example.com", headers=custom_headers) == mock_resp_success
+    mock_get.assert_called_with(
+        url="http://example.com",
+        headers=custom_headers,
+        impersonate=mocker.ANY,
+        timeout=10,
+    )
+
+    # 3. Test success after a transient timeout on first try
+    mock_resp_retry = mocker.Mock(ok=True)
+    mock_get_retry = mocker.patch(
+        "curl_cffi.requests.get",
+        side_effect=[TimeoutError, mock_resp_retry]
+    )
+    assert _requests_get("http://example.com") == mock_resp_retry
+    assert mock_get_retry.call_count == 2
+
+    # 4. Test exception exhaustion
+    mocker.patch("curl_cffi.requests.get", side_effect=TimeoutError)
     with pytest.raises(TimeoutError):
-        _requests_get("http://example.com", max_retries=3)
+        _requests_get("http://example.com")
+
+    # 5. Test status code exhaustion e.g. 403 Forbidden
+    mock_resp_fail = mocker.Mock(ok=False)
+    mock_resp_fail.raise_for_status.side_effect = Exception("403 Forbidden")
+    mocker.patch("curl_cffi.requests.get", return_value=mock_resp_fail)
+    with pytest.raises(Exception, match="403 Forbidden"):
+        _requests_get("http://example.com")
+    assert mock_resp_fail.raise_for_status.call_count == 1
 
 
 def test_parse_tr():
@@ -248,38 +290,38 @@ def test_get_page_catalogue(capfd):
 
 def test_get_hypertext():
     """
-    Test the extraction and formatting of DOM link segments in ``get_hypertext``.
-
-    This reads web structure text strings to assert Markdown conversion integrity.
+    Test the extraction and formatting of DOM link segments in get_hypertext.
     """
 
-    elec = Electrification()
+    # 1. Test non-tag input (e.g. NavigableString or string fallback)
+    soup_text = bs4.BeautifulSoup("Plain text string", "html.parser")
+    assert get_hypertext(soup_text.string) == "Plain text string"
 
-    assert isinstance(elec.catalogue, dict)
-    url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
-    if not url:
-        pytest.skip("Target catalog dictionary element key is missing.")
+    # 2. Test Markdown style hyperlink extraction
+    html = '<p>Visit <a href="https://example.com">Example Site</a> for details.</p>'
+    soup = bs4.BeautifulSoup(html, "html.parser")
+    assert (get_hypertext(soup.p, md_style=True) ==
+            "Visit [Example Site](https://example.com) for details.")
 
-    # noinspection broad-exception
-    try:
-        source: curl_cffi.Response = _requests_get(url)
-    except Exception:
-        return pytest.skip("External data platform service is offline.")
+    # 3. Test plain-text reference style hyperlink extraction
+    assert (get_hypertext(soup.p, md_style=False) ==
+            "Visit Example Site (https://example.com) for details.")
 
-    soup = bs4.BeautifulSoup(source.content, 'html.parser')
-    h3 = soup.find('h3')
-    if not h3:
-        return pytest.skip("Structural document format alteration detected.")
+    # 4. Test missing href attribute fallback
+    html_no_href = '<p>Anchor without link <a>Placeholder</a> text.</p>'
+    soup_no_href = bs4.BeautifulSoup(html_no_href, "html.parser")
+    assert get_hypertext(soup_no_href.p, md_style=True) == "Anchor without link Placeholder text."
 
-    p_tags = h3.find_all_next('p')
-    if len(p_tags) <= 8:
-        return pytest.skip("Paragraph sequence length does not reach evaluation index.")
+    # 5. Test custom tag name support
+    html_custom = '<p>Check <custom href="https://example.com">resource</custom> here.</p>'
+    soup_custom = bs4.BeautifulSoup(html_custom, "html.parser")
+    assert (get_hypertext(soup_custom.p, hyperlink_tag_name="custom", md_style=True) ==
+            "Check [resource](https://example.com) here.")
 
-    hypertext_tag = p_tags[8]
-    assert isinstance(hypertext_tag, bs4.element.Tag)
-
-    result_text = get_hypertext(hypertext_tag=hypertext_tag, md_style=True)
-    assert isinstance(result_text, str)
+    # 6. Test normalisation of non-breaking spaces and duplicate spacing
+    html_space = '<p>Text&nbsp;with&nbsp;non-breaking spaces  and extra spaces.</p>'
+    soup_space = bs4.BeautifulSoup(html_space, "html.parser")
+    assert get_hypertext(soup_space.p) == "Text with non-breaking spaces and extra spaces."
 
 
 if __name__ == '__main__':

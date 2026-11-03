@@ -1494,6 +1494,6 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
             else:
                 hypertext_parts.append('')
 
-    result_text = "".join(hypertext_parts).replace("\xa0", "").replace("  ", " ")
+    result_text = "".join(hypertext_parts).replace("\xa0", " ").replace("  ", " ")
 
     return result_text
