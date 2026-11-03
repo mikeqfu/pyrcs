@@ -18,12 +18,11 @@ from pyhelpers._cache import _print_failure_message
 from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
-from requests.exceptions import RequestException
 
 from .utils import cd_data, handle_connection_error, homepage_url
 
 
-def _requests_get(url, headers=None, max_retries=3):
+def _requests_get(url, headers=None, max_retries=10):
     # noinspection shadowing-names
     """
     Execute an HTTP GET request with exponential backoff on failure.
@@ -36,7 +35,7 @@ def _requests_get(url, headers=None, max_retries=3):
     :type url: str
     :param headers: Request headers dictionary. Defaults to ``None``.
     :type headers: dict | None
-    :param max_retries: Maximum permitted retry attempts. Defaults to ``3``.
+    :param max_retries: Maximum permitted retry attempts. Defaults to ``10``.
     :type max_retries: int
     :return: The HTTP response object or ``None`` if retries are exhausted.
     :rtype: requests.Response | None
@@ -56,7 +55,7 @@ def _requests_get(url, headers=None, max_retries=3):
     delay = 1
     for attempt in range(1, max_retries + 1):
         try:
-            response = requests.get(url=url, headers=headers, timeout=15)
+            response = requests.get(url=url, headers=headers, timeout=30)
 
             if response.status_code == 403:
                 if attempt == max_retries:
@@ -67,7 +66,7 @@ def _requests_get(url, headers=None, max_retries=3):
             response.raise_for_status()
             return response
 
-        except RequestException:
+        except requests.exceptions.RequestException:
             if attempt == max_retries:
                 raise
             time.sleep(delay)
