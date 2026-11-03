@@ -22,7 +22,7 @@ from pyhelpers.text import find_similar_str
 from .utils import cd_data, handle_connection_error, homepage_url
 
 
-def _requests_get(url, headers=None, max_retries=10):
+def _requests_get(url, headers=None, max_retries=3):
     # noinspection shadowing-names
     """
     Execute an HTTP GET request with exponential backoff on failure.
@@ -31,11 +31,11 @@ def _requests_get(url, headers=None, max_retries=10):
     firewall blocks or rate limiting on 403 responses by retrying with an
     incremental delay.
 
-    :param url: Target endpoint ``url`` to query.
+    :param url: Target endpoint url to query.
     :type url: str
     :param headers: Request headers dictionary. Defaults to ``None``.
     :type headers: dict | None
-    :param max_retries: Maximum permitted retry attempts. Defaults to ``10``.
+    :param max_retries: Maximum permitted retry attempts. Defaults to ``3``.
     :type max_retries: int
     :return: The HTTP response object or ``None`` if retries are exhausted.
     :rtype: requests.Response | None
@@ -56,13 +56,13 @@ def _requests_get(url, headers=None, max_retries=10):
     for attempt in range(1, max_retries + 1):
         # noinspection broad-exception
         try:
-            response = requests.get(url=url, headers=headers, timeout=30)
+            response = requests.get(url=url, headers=headers, timeout=10)
 
             if not response.ok:
                 if attempt == max_retries:
                     response.raise_for_status()
                 time.sleep(delay)
-                delay *= 2
+                delay = min(delay * 2, 16)  # Cap maximum delay at 16 seconds
                 continue
 
             return response
@@ -71,7 +71,7 @@ def _requests_get(url, headers=None, max_retries=10):
             if attempt == max_retries:
                 raise
             time.sleep(delay)
-            delay *= 2
+            delay = min(delay * 2, 16)
 
     return None
 

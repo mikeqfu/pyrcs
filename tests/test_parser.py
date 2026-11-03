@@ -15,6 +15,14 @@ from pyrcs.parser import _requests_get, get_catalogue, get_category_menu, get_fi
     get_site_map, parse_date, parse_table, parse_tr
 
 
+def test__requests_get_retry_exhaustion(mocker):
+    mocker.patch("time.sleep")  # Bypasses actual sleep delays during tests
+    mocker.patch("requests.get", side_effect=requests.exceptions.Timeout)
+
+    with pytest.raises(requests.exceptions.Timeout):
+        _requests_get("http://example.com", max_retries=3)
+
+
 def test_parse_tr():
     example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
     source = requests.get(example_url)
