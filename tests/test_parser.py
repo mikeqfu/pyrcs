@@ -96,13 +96,24 @@ def test_parse_table():
 
 
 def test_parse_date():
-    str_date_dat = '2020-01-01'
+    """
+    Test parse_date handling across standard strings, date types, typo recoveries and failures.
+    """
 
-    parsed_date_dat = parse_date(str_date_dat)
-    assert parsed_date_dat == '2020-01-01'
+    # 1. Test standard successful parse returning string (default)
+    assert parse_date('2020-01-01') == '2020-01-01'
 
-    parsed_date_dat = parse_date(str_date_dat, as_date_type=True)
-    assert parsed_date_dat == datetime.date(2020, 1, 1)
+    # 2. Test standard successful parse returning datetime.date object
+    assert parse_date('2020-01-01', as_date_type=True) == datetime.date(2020, 1, 1)
+
+    # 3. Test fallback typo recovery parse with a misspelled month name
+    # noinspection SpellCheckingInspection
+    assert parse_date('15 Janurary 2020') == '2020-01-15'
+    # noinspection SpellCheckingInspection
+    assert parse_date('15 Janurary 2020', as_date_type=True) == datetime.date(2020, 1, 15)
+
+    # 4. Test failure path where unparseable strings return None
+    assert parse_date('completely invalid date') is None
 
 
 def test_get_site_map(monkeypatch, capfd):
