@@ -6,16 +6,17 @@ import calendar
 import collections
 import copy
 import os
+import random
 import re
 import time
 import urllib.parse
 
 import bs4
+import curl_cffi.requests
 import dateutil.parser
 import pandas as pd
-import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
+from pyhelpers.ops import confirmed, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
@@ -25,22 +26,21 @@ from .utils import cd_data, handle_connection_error, homepage_url
 def _requests_get(url, headers=None, max_retries=3):
     # noinspection shadowing-names
     """
-    Execute an HTTP GET request with exponential backoff on failure.
+    Execute an HTTP GET request with exponential backoff and browser TLS impersonation.
 
     This helper function manages connection timeouts and handles temporary web application
     firewall blocks or rate limiting on 403 responses by retrying with an
-    incremental delay.
+    incremental delay and rotated modern browser profiles.
 
     :param url: Target endpoint url to query.
     :type url: str
-    :param headers: Request headers dictionary. Defaults to ``None``.
+    :param headers: Optional custom request headers dictionary. Defaults to ``None``.
     :type headers: dict | None
     :param max_retries: Maximum permitted retry attempts. Defaults to ``3``.
     :type max_retries: int
     :return: The HTTP response object or ``None`` if retries are exhausted.
-    :rtype: requests.Response | None
-    :raises requests.exceptions.RequestException: If network or HTTP errors persist
-        after all retry attempts.
+    :rtype: curl_cffi.requests.Response | None
+    :raises Exception: If network or HTTP errors persist after all retry attempts.
 
     **Examples**::
 
@@ -49,20 +49,29 @@ def _requests_get(url, headers=None, max_retries=3):
         >>> response = _requests_get("http://www.railwaycodes.org.uk/")
     """
 
-    if headers is None:
-        headers = fake_requests_headers()
+    browser_profiles = ["chrome", "edge", "safari", "firefox"]
+    impersonate_target = random.choice(browser_profiles)
 
     delay = 1
     for attempt in range(1, max_retries + 1):
         # noinspection broad-exception
         try:
-            response = requests.get(url=url, headers=headers, timeout=10)
+            kwargs = {
+                "url": url,
+                "impersonate": impersonate_target,
+                "timeout": 10,
+            }
+            if headers is not None:
+                kwargs["headers"] = headers
+
+            response = curl_cffi.requests.get(**kwargs)
 
             if not response.ok:
                 if attempt == max_retries:
                     response.raise_for_status()
                 time.sleep(delay)
-                delay = min(delay * 2, 16)  # Cap maximum delay at 16 seconds
+                delay = min(delay * 2, 16)
+                impersonate_target = random.choice(browser_profiles)
                 continue
 
             return response
@@ -72,6 +81,7 @@ def _requests_get(url, headers=None, max_retries=3):
                 raise
             time.sleep(delay)
             delay = min(delay * 2, 16)
+            impersonate_target = random.choice(browser_profiles)
 
     return None
 
@@ -915,7 +925,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
     """
 
     try:  # Request to get connected to the given url
-        source: requests.Response = _requests_get(url.lower())
+        source: curl_cffi.Response = _requests_get(url.lower())
     except Exception as e:
         _print_failure_message(e, verbose=verbose, raise_error=raise_error)
 
@@ -1226,7 +1236,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
         print(f"Collecting category menu for \"{name.title()}\"", end=" ... ")
 
     try:
-        source: requests.Response = _requests_get(homepage_url())
+        source: curl_cffi.Response = _requests_get(homepage_url())
     except Exception as e:
         handle_connection_error(
             update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
@@ -1369,7 +1379,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
     """
 
     try:
-        source: requests.Response = _requests_get(url)
+        source: curl_cffi.Response = _requests_get(url)
     except Exception as e:
         handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
         return None

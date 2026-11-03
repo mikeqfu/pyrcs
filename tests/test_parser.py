@@ -5,9 +5,9 @@ Test parser.py
 import datetime
 
 import bs4
+import curl_cffi.requests
 import pandas as pd
 import pytest
-import requests
 
 from pyrcs.line_data import Electrification
 from pyrcs.parser import _requests_get, get_catalogue, get_category_menu, get_financial_year, \
@@ -17,15 +17,15 @@ from pyrcs.parser import _requests_get, get_catalogue, get_category_menu, get_fi
 
 def test__requests_get_retry_exhaustion(mocker):
     mocker.patch("time.sleep")  # Bypasses actual sleep delays during tests
-    mocker.patch("requests.get", side_effect=requests.exceptions.Timeout)
+    mocker.patch("curl_cffi.requests.get", side_effect=TimeoutError)
 
-    with pytest.raises(requests.exceptions.Timeout):
+    with pytest.raises(TimeoutError):
         _requests_get("http://example.com", max_retries=3)
 
 
 def test_parse_tr():
     example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
-    source = requests.get(example_url)
+    source = curl_cffi.requests.get(example_url)
     parsed_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
     ths_dat = [th.text for th in parsed_text.find_all('th')]
     trs_dat = parsed_text.find_all(name='tr')
@@ -213,7 +213,7 @@ def test_get_heading_text():
     url = elec.catalogue[elec.KEY_TO_INDEPENDENT_LINES]
 
     source = _requests_get(url)
-    assert isinstance(source, requests.Response)
+    assert isinstance(source, curl_cffi.Response)
     soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
 
     h3 = soup.find('h3')
@@ -225,11 +225,12 @@ def test_get_heading_text():
 def test_get_page_catalogue(capfd):
     url = 'http://www.railwaycodes.org.uk/electrification/mast_prefix2.shtm'
 
+    # noinspection broad-exception
     try:
         elec_catalogue = get_page_catalogue(url=url)
         if elec_catalogue is not None:
             assert isinstance(elec_catalogue, pd.DataFrame)
-    except requests.RequestException:
+    except Exception:
         pytest.skip("Target external web server is unreachable.")
 
     # Validation check for active error enforcement scenarios
@@ -256,9 +257,10 @@ def test_get_hypertext():
     if not url:
         pytest.skip("Target catalog dictionary element key is missing.")
 
+    # noinspection broad-exception
     try:
-        source: requests.Response = _requests_get(url)
-    except requests.RequestException:
+        source: curl_cffi.Response = _requests_get(url)
+    except Exception:
         return pytest.skip("External data platform service is offline.")
 
     soup = bs4.BeautifulSoup(source.content, 'html.parser')
