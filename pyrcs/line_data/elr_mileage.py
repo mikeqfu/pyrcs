@@ -13,7 +13,6 @@ import urllib.parse
 import bs4
 import numpy as np
 import pandas as pd
-import requests
 from pyhelpers._cache import _print_failure_message
 from pyhelpers.ops import confirmed, loop_in_pairs
 from pyhelpers.store import load_data
