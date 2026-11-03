@@ -114,30 +114,35 @@ def test_get_financial_year():
     assert financial_year == 2020
 
 
-@pytest.mark.parametrize('update', [False, True])
-@pytest.mark.parametrize('raise_error', [False, True])
-def test_get_introduction(update, raise_error, capfd):
-    url = 'http://www.railwaycodes.org.uk/bridges/bridges0.shtm'
+def test_get_introduction(capfd):
+    """
+    Test the functionality of retrieving introduction text under valid and invalid conditions.
 
-    intro_text = get_introduction(url=url, update=update, verbose=True)
+    :param capfd: Pytest fixture for capturing stdout and stderr.
+    :type capfd: pytest.CaptureFixture
+    """
+
+    # 1. Test successful retrieval with a valid URL
+    valid_url = "http://www.railwaycodes.org.uk/bridges/bridges0.shtm"
+    intro_text = get_introduction(url=valid_url, update=True, verbose=True)
     out, _ = capfd.readouterr()
-    if update:
-        assert "Updating" in out and "Done." in out
+    assert "Updating" in out and "Done." in out
     assert isinstance(intro_text, str)
 
-    url_ = url.replace('railwaycodes', '123')
-    if raise_error:
-        with pytest.raises(Exception):
-            get_introduction(url=url_, update=True, raise_error=raise_error)
+    intro_text = get_introduction(url=valid_url, update=False, verbose=True)
+    out, _ = capfd.readouterr()
+    assert not out
+    assert isinstance(intro_text, str)
 
-    else:
-        intro_text = get_introduction(url=url_, update=True, raise_error=raise_error)
-        assert intro_text is None
+    # 2. Test failure handling with an invalid URL
+    invalid_url = "http://123.railwaycodes.org.uk/bridges/bridges0.shtm"
+    with pytest.raises(Exception):
+        get_introduction(url=invalid_url, update=True, raise_error=True)
 
-        intro_text = get_introduction(url=url_, update=True, verbose=True, raise_error=raise_error)
-        out, _ = capfd.readouterr()
-        assert intro_text is None
-        assert "Failed" in out
+    intro_text = get_introduction(invalid_url, update=True, verbose=True, raise_error=False)
+    out, _ = capfd.readouterr()
+    assert "Failed" in out
+    assert intro_text is None
 
 
 def test_get_catalogue(capsys):
