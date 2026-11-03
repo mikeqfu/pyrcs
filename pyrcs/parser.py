@@ -54,19 +54,20 @@ def _requests_get(url, headers=None, max_retries=10):
 
     delay = 1
     for attempt in range(1, max_retries + 1):
+        # noinspection broad-exception
         try:
             response = requests.get(url=url, headers=headers, timeout=30)
 
-            if response.status_code == 403:
+            if not response.ok:
                 if attempt == max_retries:
                     response.raise_for_status()
-                time.sleep(delay * 2)
+                time.sleep(delay)
+                delay *= 2
                 continue
 
-            response.raise_for_status()
             return response
 
-        except requests.exceptions.RequestException:
+        except Exception:  # noqa
             if attempt == max_retries:
                 raise
             time.sleep(delay)
