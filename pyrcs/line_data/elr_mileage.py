@@ -15,14 +15,14 @@ import numpy as np
 import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.ops import confirmed, fake_requests_headers, loop_in_pairs
+from pyhelpers.ops import confirmed, loop_in_pairs
 from pyhelpers.store import load_data
 from pyhelpers.text import remove_punctuation
 
 from .._base import _Base
 from ..converter import kilometer_to_yard, mile_chain_to_mileage, mileage_to_mile_chain, \
     yard_to_mileage
-from ..parser import _get_last_updated_date, parse_table
+from ..parser import _get_last_updated_date, _requests_get, parse_table
 from ..utils import get_collect_verbosity_for_fetch, handle_connection_error, homepage_url, \
     is_homepage_connectable, is_str_float, print_void_collection_message, validate_initial
 
@@ -1210,8 +1210,7 @@ class ELRMileages(_Base):
                 url = urllib.parse.urljoin(
                     homepage_url(),
                     f'/elrs/_mileages/{target_elr[0]}/{target_elr}.shtm'.lower())
-                source = requests.get(url=url, headers=fake_requests_headers())
-                source.raise_for_status()
+                source = _requests_get(url)
             except Exception as e:
                 handle_connection_error(verbose=verbose, e=e)
                 return None
