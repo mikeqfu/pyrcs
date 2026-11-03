@@ -920,7 +920,7 @@ class Stations(_Base):
             stn_data: pd.DataFrame = pd.concat(stn_dat_tbl, axis=0, ignore_index=True, sort=False)
 
             stn_data = stn_data.where(pd.notna(stn_data), None)
-            stn_data.sort_values(['Station'], inplace=True)
+            stn_data = stn_data.sort_values(['Station'])
 
             stn_data.index = range(len(stn_data))
 
