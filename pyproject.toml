@@ -55,9 +55,9 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-    "pyhelpers ~= 2.5.0",
+    "pyhelpers~=2.5.3",
     "beautifulsoup4",
-    "requests",
+    "curl-cffi",
     "pandas",
 ]
 
@@ -73,24 +73,39 @@ Changelog = "https://github.com/mikeqfu/pyrcs/blob/master/CHANGELOG.md"
 # Local developer tooling
 # -----------------------
 [dependency-groups]
-dev = [
+notebook = [
     "notebook",
+]
+test = [
+    "coverage",
     "jsonschema[format]",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
     "rfc3987-syntax",
 ]
 docs = [
-    "sphinx",
     "furo",
+    "sphinx",
     "sphinx-copybutton",
     "sphinx-new-tab-link",
     "sphinx-toggleprompt"
 ]
-test = [
-    "pytest",
-    "coverage",
-    "pytest-cov",
-    "pytest-mock",
-    "pytest-xdist"
+dev = [
+    { include-group = "notebook" },
+    { include-group = "test" },
+    { include-group = "docs" },
+]
+
+
+# -----------------
+# UV configuration
+# -----------------
+[tool.uv]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 
 
@@ -157,6 +172,7 @@ filterwarnings = [
     "error",
     "ignore:Support for class-based `config` is deprecated:UserWarning",
     "ignore:distutils Version classes are deprecated:DeprecationWarning",
+    "ignore:codecs\\.open\\(\\) is deprecated:DeprecationWarning",
 ]
 
 # ----------------------
@@ -192,4 +208,3 @@ output = "reports/coverage.xml"
 
 [tool.coverage.html]
 directory = "reports/htmlcov"
-

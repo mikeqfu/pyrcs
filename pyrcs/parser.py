@@ -7,18 +7,83 @@ import collections
 import copy
 import os
 import re
+import secrets
+import time
 import urllib.parse
 
 import bs4
+import curl_cffi.requests
 import dateutil.parser
 import pandas as pd
-import requests
 from pyhelpers._cache import _print_failure_message
-from pyhelpers.ops import confirmed, fake_requests_headers, update_dict_keys
+from pyhelpers.ops import confirmed, update_dict_keys
 from pyhelpers.store import load_data, save_data
 from pyhelpers.text import find_similar_str
 
 from .utils import cd_data, handle_connection_error, homepage_url
+
+
+def _requests_get(url, headers=None, max_retries=3):
+    # noinspection shadowing-names
+    """
+    Execute an HTTP GET request with exponential backoff and browser TLS impersonation.
+
+    This helper function manages connection timeouts and handles temporary web application
+    firewall blocks or rate limiting on 403 responses by retrying with an
+    incremental delay and rotated modern browser profiles.
+
+    :param url: Target endpoint url to query.
+    :type url: str
+    :param headers: Optional custom request headers dictionary. Defaults to ``None``.
+    :type headers: dict | None
+    :param max_retries: Maximum permitted retry attempts. Defaults to ``3``.
+    :type max_retries: int
+    :return: The HTTP response object or ``None`` if retries are exhausted.
+    :rtype: curl_cffi.requests.Response | None
+    :raises Exception: If network or HTTP errors persist after all retry attempts.
+
+    **Examples**::
+
+        >>> from pyrcs.parser import _requests_get
+
+        >>> response = _requests_get("http://www.railwaycodes.org.uk/")
+    """
+
+    browser_profiles = ["chrome", "edge", "safari", "firefox"]
+    impersonate_target = secrets.choice(browser_profiles)
+
+    delay = 1
+    for attempt in range(1, max_retries + 1):
+        # noinspection broad-exception
+        try:
+            kwargs = {
+                "url": url,
+                "impersonate": impersonate_target,
+                "timeout": 10,
+            }
+            if headers is not None:
+                kwargs["headers"] = headers
+
+            response = curl_cffi.requests.get(**kwargs)
+
+            if not response.ok:
+                if attempt == max_retries:
+                    response.raise_for_status()
+                time.sleep(delay)
+                delay = min(delay * 2, 16)
+                impersonate_target = secrets.choice(browser_profiles)
+                continue
+
+            return response
+
+        except Exception:  # noqa
+            if attempt == max_retries:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 16)
+            impersonate_target = secrets.choice(browser_profiles)
+
+    return None
 
 
 # == Preprocess contents ===========================================================================
@@ -388,14 +453,19 @@ def parse_table(source, parser='html.parser', as_dataframe=False):
 
         >>> from pyrcs.parser import parse_table
         >>> import requests
+
         >>> source_dat = requests.get(url='http://www.railwaycodes.org.uk/elrs/elra.shtm')
         >>> columns_dat, records_dat = parse_table(source_dat)
+
         >>> columns_dat
         ['ELR', 'Line name', 'Mileages', 'Datum', 'Notes']
+
         >>> type(records_dat)
         list
+
         >>> len(records_dat) // 100
         1
+
         >>> records_dat[0]
         ['AAL',
          'Ashendon and Aynho Line',
@@ -764,11 +834,14 @@ def get_site_map(update=False, confirmation_required=True, verbose=False, raise_
 
         try:
             url = urllib.parse.urljoin(homepage_url(), "/misc/sitemap.shtm")
-            source = requests.get(url=url, headers=fake_requests_headers())
-            source.raise_for_status()
+            source = _requests_get(url)
         except Exception as e:
             handle_connection_error(
-                update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+                update=update,
+                verbose=True if update else verbose,
+                e=e,
+                raise_error=raise_error
+            )
             return None
 
         try:
@@ -852,8 +925,7 @@ def get_last_updated_date(url, parsed=True, as_date_type=False, verbose=False, r
     """
 
     try:  # Request to get connected to the given url
-        source = requests.get(url=url.lower(), headers=fake_requests_headers(), timeout=5)
-        source.raise_for_status()
+        source: curl_cffi.Response = _requests_get(url.lower())
     except Exception as e:
         _print_failure_message(e, verbose=verbose, raise_error=raise_error)
 
@@ -937,10 +1009,12 @@ def _parse_introduction(source, delimiter='\n'):
         if prev_h3 != intro_h3 or prev_h4 is not None:
             break
 
+        # noinspection unresolved-references
         para_text = p.text.replace('  ', ' ')
         if para_text.strip():
             intro_paras.append(para_text)
 
+        # noinspection unresolved-references
         p = p.find_next(name='p')
 
     introduction = delimiter.join(intro_paras)
@@ -989,10 +1063,14 @@ def get_introduction(url, delimiter='\n', update=False, verbose=False, raise_err
         return load_data(path_to_file)
 
     try:
-        source = requests.get(url=url, headers=fake_requests_headers())
+        source = _requests_get(url)
     except Exception as e:
         handle_connection_error(
-            update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
+            update=update,
+            verbose=True if update else verbose,
+            e=e,
+            raise_error=raise_error
+        )
         return None
 
     try:
@@ -1090,8 +1168,7 @@ def get_catalogue(url, update=False, json_it=True, verbose=False, raise_error=Fa
         return load_data(path_to_file)
 
     try:
-        source = requests.get(url=url, headers=fake_requests_headers())
-        source.raise_for_status()
+        source = _requests_get(url)
     except Exception as e:
         _print_failure_message(e=e, verbose=verbose, raise_error=raise_error)
         return None
@@ -1159,8 +1236,7 @@ def get_category_menu(name, update=False, confirmation_required=True, verbose=Fa
         print(f"Collecting category menu for \"{name.title()}\"", end=" ... ")
 
     try:
-        source = requests.get(url=homepage_url(), headers=fake_requests_headers())
-        source.raise_for_status()
+        source: curl_cffi.Response = _requests_get(homepage_url())
     except Exception as e:
         handle_connection_error(
             update=update, verbose=True if update else verbose, e=e, raise_error=raise_error)
@@ -1303,8 +1379,7 @@ def get_page_catalogue(url, head_tag_name='nav', head_tag_txt='Jump to:', featur
     """
 
     try:
-        source = requests.get(url=url, headers=fake_requests_headers())
-        source.raise_for_status()
+        source: curl_cffi.Response = _requests_get(url)
     except Exception as e:
         handle_connection_error(verbose=verbose, e=e, raise_error=raise_error)
         return None
@@ -1419,6 +1494,6 @@ def get_hypertext(hypertext_tag, hyperlink_tag_name='a', md_style=True):
             else:
                 hypertext_parts.append('')
 
-    result_text = "".join(hypertext_parts).replace("\xa0", "").replace("  ", " ")
+    result_text = "".join(hypertext_parts).replace("\xa0", " ").replace("  ", " ")
 
     return result_text

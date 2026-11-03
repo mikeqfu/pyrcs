@@ -13,11 +13,11 @@ import pandas as pd
 import requests
 from pyhelpers._cache import _print_failure_message
 from pyhelpers.dirs import cd, resolve_dir_path
-from pyhelpers.ops import confirmed, fake_requests_headers
+from pyhelpers.ops import confirmed
 from pyhelpers.store import load_data, save_data
 
-from .parser import _get_last_updated_date, _parse_th_tag, get_catalogue, get_introduction, \
-    get_last_updated_date, parse_tr
+from .parser import _get_last_updated_date, _parse_th_tag, _requests_get, get_catalogue, \
+    get_introduction, get_last_updated_date, parse_tr
 from .utils import cd_data, format_confirmation_prompt, get_collect_verbosity_for_fetch, \
     handle_connection_error, homepage_url, print_collection_message, print_connection_warning, \
     print_void_collection_message, validate_page_name
@@ -430,8 +430,7 @@ class _Base:
         # Fetch and process
         try:
             # Network request
-            source = requests.get(url=target_url, headers=fake_requests_headers(), timeout=30)
-            source.raise_for_status()  # Raises HTTPError for bad responses
+            source = _requests_get(target_url)
 
             # Dynamic argument injection
             collector_kwargs = kwargs.copy()

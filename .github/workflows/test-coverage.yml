@@ -62,7 +62,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          uv run --locked pytest --junitxml=reports/junit.xml
+          uv run --locked pytest --maxfail=1 --junitxml=reports/junit.xml
 
       - name: Upload reports as artifacts
         if: always()
