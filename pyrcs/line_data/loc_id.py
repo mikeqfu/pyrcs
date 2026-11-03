@@ -10,15 +10,14 @@ import urllib.parse
 
 import bs4
 import pandas as pd
-import requests
 from pyhelpers._cache import _print_failure_message
 from pyhelpers.dirs import resolve_dir_path
-from pyhelpers.ops import fake_requests_headers
 
 from .._base import _Base
-from ..parser import _get_last_updated_date, get_page_catalogue, parse_tr
-from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, handle_connection_error, \
-    homepage_url, is_homepage_connectable, print_void_collection_message, validate_initial
+from ..parser import _get_last_updated_date, _requests_get, get_page_catalogue, parse_tr
+from ..utils import format_confirmation_prompt, get_collect_verbosity_for_fetch, \
+    handle_connection_error, homepage_url, is_homepage_connectable, \
+    print_void_collection_message, validate_initial
 
 
 def _parse_raw_location_name(x):
@@ -745,22 +744,22 @@ class LocationIdentifiers(_Base):
             return None
 
         loc_id_notes = {}
-        with requests.Session() as session:  # Using a Session is faster for multiple requests
-            session.headers.update(fake_requests_headers())
+        for idx, link_tag in zip(indices, note_links):
+            crs_code = data.at[idx, 'CRS']
+            # noinspection PyBroadException
+            try:
+                url = urllib.parse.urljoin(base_url, link_tag['href'])
+                response = _requests_get(url)
 
-            for idx, link_tag in zip(indices, note_links):
-                crs_code = data.at[idx, 'CRS']
-                # noinspection PyBroadException
-                try:
-                    url = urllib.parse.urljoin(base_url, link_tag['href'])
-                    response = session.get(url, timeout=10)
-
+                if response is not None:
                     parsed_content, _ = self._parse_notes_page(response)
-                    # Get the first element if it's a list
+                    # Get the first element if it is a list
                     loc_id_notes[crs_code] = parsed_content[0] if parsed_content else None
-
-                except Exception:
+                else:
                     loc_id_notes[crs_code] = None
+
+            except Exception:
+                loc_id_notes[crs_code] = None
 
         return loc_id_notes
 

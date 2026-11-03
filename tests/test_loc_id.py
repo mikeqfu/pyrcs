@@ -126,7 +126,7 @@ def test__stanox_note():
     assert _stanox_note(None) == ('', '')
     assert _stanox_note(pd.NA) == ('', '')  # Ensuring pandas compatibility
 
-    # Edge case: The "Hanging Parenthesis" logic, testing the 'note.endswith(")")' cleanup
+    # Edge case: The "Hanging Parenthesis" logic, testing the 'note.endswith(")")' clean-up
     assert _stanox_note('12345 Extra Text)') == ('12345', 'Extra Text')
 
     # Fallback: No 5-digit code found, testing the 'else: stanox = x' logic
@@ -305,7 +305,7 @@ class TestLocationIdentifiers:
             'CRS_Note': ['Standard', 'see note (1)', 'see note (2)']
         })
 
-        # Setup mock soup - HTML with <a> tags containing 'note' (case insensitive)
+        # Setup mock soup - HTML with <a> tags containing 'note' (case-insensitive)
         html_content = b"""
         <html>
             <a href="note1.shtm">Note 1</a>
@@ -318,8 +318,8 @@ class TestLocationIdentifiers:
         assert isinstance(lid.catalogue, dict)
         lid.catalogue.update({'AA': 'http://example.com/'})
 
-        # Use mocker.patch for external calls and mocker.patch.object for internal methods
-        mock_get = mocker.patch('requests.Session.get')
+        # Patch _requests_get directly where it is imported in the module
+        mock_get = mocker.patch('pyrcs.line_data.loc_id._requests_get')
         mock_get.side_effect = [mocker.MagicMock(), mocker.MagicMock()]
 
         # Mock the return value of _parse_notes_page
