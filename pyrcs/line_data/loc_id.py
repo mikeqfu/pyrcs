@@ -811,7 +811,7 @@ class LocationIdentifiers(_Base):
         #     except Exception:
         #         print(i)
         #         break
-        data.replace(_amendment_to_location_names(), regex=True, inplace=True)
+        data = data.replace(_amendment_to_location_names(), regex=True)
 
         # Apply structural code parsing and clean-up functions
         data = _parse_mult_alt_codes(data=data)  # Cleanse multiple alternatives for every column
