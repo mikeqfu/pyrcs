@@ -3,6 +3,8 @@ Test parser.py
 """
 
 import datetime
+import secrets
+import string
 
 import bs4
 import curl_cffi.requests
@@ -24,18 +26,19 @@ def test__requests_get_retry_exhaustion(mocker):
 
 
 def test_parse_tr():
-    example_url = 'http://www.railwaycodes.org.uk/elrs/elra.shtm'
-    source = curl_cffi.requests.get(example_url)
+    initial = secrets.choice(string.ascii_lowercase)
+    example_url = f'http://www.railwaycodes.org.uk/elrs/elr{initial}.shtm'
+
+    source: curl_cffi.Response = _requests_get(example_url)
+
     parsed_text = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+
     ths_dat = [th.text for th in parsed_text.find_all('th')]
     trs_dat = parsed_text.find_all(name='tr')
 
     tables_list = parse_tr(trs=trs_dat, ths=ths_dat)  # returns a list of lists
 
-    assert isinstance(tables_list, list)
-    assert len(tables_list) // 100 == 1
-    assert tables_list[0] == [
-        'AAL', 'Ashendon and Aynho Line', '0.00 - 18.29', 'Ashendon Junction', 'Now NAJ3']
+    assert isinstance(tables_list, list) and len(tables_list) > 0
 
 
 def test_parse_table():

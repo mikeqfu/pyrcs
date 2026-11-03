@@ -6,8 +6,8 @@ import calendar
 import collections
 import copy
 import os
-import random
 import re
+import secrets
 import time
 import urllib.parse
 
@@ -50,7 +50,7 @@ def _requests_get(url, headers=None, max_retries=3):
     """
 
     browser_profiles = ["chrome", "edge", "safari", "firefox"]
-    impersonate_target = random.choice(browser_profiles)
+    impersonate_target = secrets.choice(browser_profiles)
 
     delay = 1
     for attempt in range(1, max_retries + 1):
@@ -71,7 +71,7 @@ def _requests_get(url, headers=None, max_retries=3):
                     response.raise_for_status()
                 time.sleep(delay)
                 delay = min(delay * 2, 16)
-                impersonate_target = random.choice(browser_profiles)
+                impersonate_target = secrets.choice(browser_profiles)
                 continue
 
             return response
@@ -81,7 +81,7 @@ def _requests_get(url, headers=None, max_retries=3):
                 raise
             time.sleep(delay)
             delay = min(delay * 2, 16)
-            impersonate_target = random.choice(browser_profiles)
+            impersonate_target = secrets.choice(browser_profiles)
 
     return None
 
