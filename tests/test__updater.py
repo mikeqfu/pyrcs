@@ -6,17 +6,15 @@ import unittest.mock
 
 import pytest
 
+from pyrcs._updater import _update_prepacked_data
+
 
 def test__update_prepacked_data(capfd):
-    from pyrcs._updater import _update_prepacked_data
-
-    mod = 'pyrcs._updater'
-
-    with unittest.mock.patch(f'{mod}.is_homepage_connectable') as mock_connectable, \
-            unittest.mock.patch(f'{mod}.confirmed') as mock_confirmed, \
-            unittest.mock.patch(f'{mod}.get_site_map') as mock_gsm, \
-            unittest.mock.patch(f'{mod}.LineData') as mock_ld, \
-            unittest.mock.patch(f'{mod}.OtherAssets') as mock_oa:
+    with unittest.mock.patch(f'pyrcs._updater.is_homepage_connectable') as mock_connectable, \
+            unittest.mock.patch(f'pyrcs._updater.confirmed') as mock_confirmed, \
+            unittest.mock.patch(f'pyrcs._updater.get_site_map') as mock_gsm, \
+            unittest.mock.patch(f'pyrcs._updater.LineData') as mock_ld, \
+            unittest.mock.patch(f'pyrcs._updater.OtherAssets') as mock_oa:
 
         # 1. Cover 'if not is_home_connectable' and 'print_conn_err'
         mock_connectable.return_value = False
