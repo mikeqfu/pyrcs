@@ -9,6 +9,10 @@ resolution-markers = [
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
+required-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "platform_machine == 'AMD64' and sys_platform == 'win32'",
+]
 
 [[package]]
 name = "accessible-pygments"
@@ -1636,9 +1640,19 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "coverage" },
+    { name = "furo" },
     { name = "jsonschema", extra = ["format"] },
     { name = "notebook" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-xdist" },
     { name = "rfc3987-syntax" },
+    { name = "sphinx" },
+    { name = "sphinx-copybutton" },
+    { name = "sphinx-new-tab-link" },
+    { name = "sphinx-toggleprompt" },
 ]
 docs = [
     { name = "furo" },
@@ -1647,12 +1661,17 @@ docs = [
     { name = "sphinx-new-tab-link" },
     { name = "sphinx-toggleprompt" },
 ]
+notebook = [
+    { name = "notebook" },
+]
 test = [
     { name = "coverage" },
+    { name = "jsonschema", extra = ["format"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-xdist" },
+    { name = "rfc3987-syntax" },
 ]
 
 [package.metadata]
@@ -1665,9 +1684,19 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "coverage" },
+    { name = "furo" },
     { name = "jsonschema", extras = ["format"] },
     { name = "notebook" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-xdist" },
     { name = "rfc3987-syntax" },
+    { name = "sphinx" },
+    { name = "sphinx-copybutton" },
+    { name = "sphinx-new-tab-link" },
+    { name = "sphinx-toggleprompt" },
 ]
 docs = [
     { name = "furo" },
@@ -1676,12 +1705,15 @@ docs = [
     { name = "sphinx-new-tab-link" },
     { name = "sphinx-toggleprompt" },
 ]
+notebook = [{ name = "notebook" }]
 test = [
     { name = "coverage" },
+    { name = "jsonschema", extras = ["format"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-xdist" },
+    { name = "rfc3987-syntax" },
 ]
 
 [[package]]
