@@ -784,7 +784,7 @@ class ELRMileages(_Base):
                     new_m_key = d[m_key] + ' measure'
                     dat.loc[-1] = ['', new_m_key]  # adding a row
                     dat.index = dat.index + 1
-                    dat.sort_index(inplace=True)
+                    dat = dat.sort_index()
 
             # if measure_headers_indices[-1] != dat.index[-1] - 1:
             #     sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1]])
