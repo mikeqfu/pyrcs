@@ -55,9 +55,9 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-    "pyhelpers ~= 2.5.0",
+    "pyhelpers~=2.5.3",
     "beautifulsoup4",
-    "requests",
+    "curl-cffi",
     "pandas",
 ]
 
