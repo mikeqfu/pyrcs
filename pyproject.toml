@@ -1,14 +1,18 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
+
+# ----------------
+# Project metadata
+# ----------------
 [project]
 name = "pyrcs"
 version = "1.2.1"
 description = "An open-source tool for collecting railway codes used in different UK rail industry systems."
 readme = "README.md"
-requires-python = ">=3.12"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Qian Fu" }
 ]
@@ -42,6 +46,7 @@ keywords = [
     "Depots",
     "Tracks"
 ]
+requires-python = ">=3.12"
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
@@ -51,6 +56,11 @@ classifiers = [
     "Topic :: Software Development",
     "Topic :: Utilities",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux"
 ]
@@ -58,7 +68,6 @@ dependencies = [
     "pyhelpers~=2.5.3",
     "beautifulsoup4",
     "curl-cffi",
-    "pandas",
 ]
 
 [project.urls]
@@ -73,6 +82,13 @@ Changelog = "https://github.com/mikeqfu/pyrcs/blob/master/CHANGELOG.md"
 # Local developer tooling
 # -----------------------
 [dependency-groups]
+docs = [
+    "furo",
+    "sphinx",
+    "sphinx-copybutton",
+    "sphinx-new-tab-link",
+    "sphinx-toggleprompt"
+]
 notebook = [
     "notebook",
 ]
@@ -85,33 +101,27 @@ test = [
     "pytest-xdist",
     "rfc3987-syntax",
 ]
-docs = [
-    "furo",
-    "sphinx",
-    "sphinx-copybutton",
-    "sphinx-new-tab-link",
-    "sphinx-toggleprompt"
-]
 dev = [
+    { include-group = "docs" },
     { include-group = "notebook" },
     { include-group = "test" },
-    { include-group = "docs" },
 ]
 
 
-# -----------------
+# ----------------
 # UV configuration
-# -----------------
+# ----------------
 [tool.uv]
+link-mode = "copy"
 required-environments = [
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
     "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 
 
-# --------------------
+# -------------------
 # Build configuration
-# --------------------
+# -------------------
 [tool.hatch.build]
 artifacts = [
     "pyrcs/data/**/*"
@@ -140,12 +150,15 @@ packages = ["pyrcs"]
 "pyproject.toml" = "pyrcs/pyproject.toml"
 
 # Custom metadata section
-[tool.custom.metadata]
+[tool.pyrcs.metadata]
 funder = ""
-project_start = "August 2019"
-corresponding_author = [
-    { name = "Qian Fu", affiliation = "Birmingham Energy Institute, University of Birmingham", email = "q.fu@bham.ac.uk" },
-]
+project-name = "PyRCS"
+project-start = "2019-08"
+
+[[tool.pyrcs.metadata.corresponding-author]]
+name = "Qian Fu"
+affiliation = "Birmingham Energy Institute, University of Birmingham"
+email = "q.fu@bham.ac.uk"
 
 
 # --------------------
