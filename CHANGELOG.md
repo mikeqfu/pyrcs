@@ -1,6 +1,25 @@
 # Changelog / Release notes
 
 
+## **[1.3.0](https://github.com/mikeqfu/pyrcs/releases/tag/1.3.0)**
+
+(*4 November 2026*)
+
+### Notable [changes](https://github.com/mikeqfu/pyrcs/compare/1.2.1...1.3.0) since [1.2.1](https://pypi.org/project/pyrcs/1.2.1/):
+
+- **Compatibility & robustness:**
+  - Resolved pandas 3.1.0 compatibility issues by removing deprecated `inplace=True` usage across parsing modules in compliance with PDEP-8 (#114).
+  - Introduced a resilient request wrapper featuring exponential backoff, retry logic and header standardisation to mitigate intermittent 403 errors on cloud runners (#111).
+- **Build system & dependencies:**
+  - Modernised dependency management with PEP 735 dependency groups and established target environment constraints for `uv` (#111).
+  - Upgraded runtime and development dependencies via routine dependency maintenance (#99 - #107).
+- **Documentation & project structure:**
+  - Refactored documentation directory structure by renaming `_generated` to `api` and updating cleanup routines in `Makefile` and `make.bat` to ensure a pristine build environment (#115).
+  - Added Conda-Forge and Pixi installation options to documentation guides (#98).
+
+**For more information and detailed specifications, check out the [PyRCS 1.3.0 documentation](https://pyrcs.readthedocs.io/en/1.3.0/).**
+
+
 ## **[1.2.1](https://github.com/mikeqfu/pyrcs/releases/tag/1.2.1)**
 
 (*1 September 2026*)
