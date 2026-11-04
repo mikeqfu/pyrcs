@@ -2,6 +2,7 @@
 Configuration file for the Sphinx documentation builder.
 """
 
+import datetime
 import os
 import sys
 
@@ -300,7 +301,7 @@ latex_maketitle = r'''
            __version__,
            __author__,
            __affiliation__,
-           __first_release__,
+           datetime.datetime.strptime(__first_release__, '%Y-%m').strftime('%B %Y'),
            __copyright__.replace('Copyright (c) ', '')
            )
 
