@@ -10,7 +10,7 @@ other_assets
     :no-inherited-members:
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: class.rst
 
     SignalBoxes
