@@ -195,7 +195,10 @@ def _parse_node_connection(prep_nodes, col_name='Connection'):
     max_conn = max(map(len, conn_node_lst))
 
     # Create DataFrame with dynamic column names
-    nodes_ = pd.DataFrame(conn_node_lst, columns=[f'Link_{i + 1}' for i in range(max_conn)])
+    nodes_ = pd.DataFrame(
+        [row + [None] * (max_conn - len(row)) for row in conn_node_lst],
+        columns=[f'Link_{i + 1}' for i in range(max_conn)]
+    )
 
     return nodes_
 
@@ -784,7 +787,7 @@ class ELRMileages(_Base):
                     new_m_key = d[m_key] + ' measure'
                     dat.loc[-1] = ['', new_m_key]  # adding a row
                     dat.index = dat.index + 1
-                    dat.sort_index(inplace=True)
+                    dat = dat.sort_index()
 
             # if measure_headers_indices[-1] != dat.index[-1] - 1:
             #     sep_rows_idx = loop_in_pairs(measure_headers_indices + [dat.index[-1]])
@@ -921,14 +924,24 @@ class ELRMileages(_Base):
 
         if any('Distances in km' in x for x in notes_dat):
             parsed_content = [
-                [x[0] + 'km', x[1]] if not x[0].endswith('km') else x for x in parsed_content]
+                [x[0] + 'km', x[1]] if not x[0].endswith('km') else x
+                for x in parsed_content
+            ]
+
+        # Normalise row lengths to prevent pandas 3.1.0 mismatched sequence length errors
+        normalised_content = [
+            row + [''] * (2 - len(row)) if len(row) < 2 else row[:2]
+            for row in parsed_content
+        ]
 
         # Create a table of the mileage data
-        mileage_data = pd.DataFrame(parsed_content, columns=['Mileage', 'Node'])
+        mileage_data = pd.DataFrame(normalised_content, columns=['Mileage', 'Node'])
 
         # If there are multiple measures in 'mileage_data', e.g. current/former measures
         mileage_data = self._split_measures(
-            mileage_data=mileage_data, measure_headers_indices=measure_headers_indices)
+            mileage_data=mileage_data,
+            measure_headers_indices=measure_headers_indices
+        )
 
         # Make a dict of note
         notes_data = {'Notes': ' '.join(notes_dat).strip()}
@@ -964,7 +977,7 @@ class ELRMileages(_Base):
                 print("Not available.")
             return None
 
-        soup = bs4.BeautifulSoup(markup=source.content, features='html.parser')
+        soup = bs4.BeautifulSoup(source.content, features='html.parser')
 
         # Safely extract headers
         h3_tag = soup.find('h3')

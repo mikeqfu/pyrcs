@@ -241,15 +241,21 @@ class TestELRMileages:
         # Check that 'km' was appended to the mileage string
         assert mil_dat_km.iloc[0]['Mileage'] == '10.00km'
 
-    def test_collect_mileage_file(self, em, monkeypatch, capfd):
+    def test_collect_mileage_file(self, em, tmp_path, monkeypatch, capfd):
         test_elrs = ['GAM', 'SLD', 'ELR', 'BTJ']
+
         for test_elr in test_elrs:
             test_mileage_file = em.collect_mileage_file(
-                elr=test_elr, confirmation_required=False, verbose=True)
+                elr=test_elr,
+                confirmation_required=False,
+                dump_dir=tmp_path,
+                verbose=True,
+            )
             out, _ = capfd.readouterr()
             assert f'Collecting the mileage file of "{test_elr}" ... ' in out
+
             if test_mileage_file is None:
-                assert "Not available" in out
+                assert "Not available." in out
             else:
                 assert "Done." in out
                 assert isinstance(test_mileage_file, dict)
@@ -265,7 +271,7 @@ class TestELRMileages:
         monkeypatch.setattr('builtins.input', lambda _: "Yes")
         test_mileage_file = em.collect_mileage_file(elr=test_elr, verbose=True)
         out, _ = capfd.readouterr()
-        assert 'Collecting the mileage file ... Done.' in out and "Done." in out
+        assert 'Collecting the mileage file ... Done.' in out
         assert isinstance(test_mileage_file, dict)
         assert list(test_mileage_file.keys()) == ['ELR', 'Line', 'Sub-Line', 'Mileage', 'Notes']
         assert isinstance(test_mileage_file['Mileage'], pd.DataFrame)
@@ -293,7 +299,7 @@ class TestELRMileages:
                 assert isinstance(test_mileage_file, dict)
                 assert isinstance(test_mileage_file['Mileage'], (pd.DataFrame, dict))
 
-    def test_search_conn(self, em):
+    def test_search_conn(self, em, tmp_path):
         elr_1, elr_2 = 'AAM', 'ANZ'
 
         mileage_file_1, mileage_file_2 = map(
