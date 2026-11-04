@@ -13,7 +13,7 @@ Preprocess contents
 ~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     parse_tr
@@ -24,7 +24,7 @@ Extract information
 ~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     get_site_map

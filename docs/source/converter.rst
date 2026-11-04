@@ -13,7 +13,7 @@ Convert mileage data
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     fix_mileage
@@ -30,7 +30,7 @@ Convert other data
 ~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     fix_stanox

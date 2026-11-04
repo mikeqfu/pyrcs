@@ -13,7 +13,7 @@ Validate inputs
 ~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     is_homepage_connectable
@@ -27,7 +27,7 @@ Print messages
 ~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     format_confirmation_prompt
@@ -40,7 +40,7 @@ Save and retrieve pre-packed data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
-    :toctree: _generated/
+    :toctree: api/
     :template: function.rst
 
     fetch_location_names_errata
